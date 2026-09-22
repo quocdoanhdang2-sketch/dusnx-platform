@@ -1,0 +1,25 @@
+seed: 42
+data: data/synthetic_300k.jsonl
+checkpoint: artifacts/dusnx_prototype.pt
+device: auto
+sequence_len: 32
+stride: 4
+batch_size: 4
+gradient_accumulation_steps: 8
+mixed_precision: true
+epochs: 20
+early_stopping_patience: 3
+learning_rate: 0.0003
+train_ratio: 0.8
+val_ratio: 0.1
+model:
+  vocab_size: 32768
+  max_tokens: 32
+  token_dim: 128
+  platform_dim: 32
+  event_type_dim: 16
+  event_hidden: 192
+  global_state_dim: 192
+  platform_state_dim: 128
+  task_state_dim: 128
+  dropout: 0.15

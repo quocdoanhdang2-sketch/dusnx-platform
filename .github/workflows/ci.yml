@@ -1,0 +1,35 @@
+name: DUSN-X CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Python project
+        run: pip install -e "./python[dev]"
+      - name: Run tests
+        env:
+          PYTHONPATH: python/src:python
+        run: pytest python/tests -q
+      - name: Compile Python files
+        run: python -m compileall -q python
+
+  dotnet-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build Gateway
+        run: dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release

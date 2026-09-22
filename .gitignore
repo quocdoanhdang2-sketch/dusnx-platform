@@ -1,16 +1,11 @@
-# Python / AI Artifacts
-__pycache__/
-*.py[cod]
-.venv/
-checkpoint/
-datasets/
-*.pt
-*.safetensors
-
-# .NET / C#
-[Bb]in/
-[Oo]bj/
-appsettings.Development.json
-
-# DUSN-X specific
-*.docx
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+*.pyc
+artifacts/*.pt
+artifacts/*.metrics.json
+data/*.jsonl
+runtime/
+.env
+bin/
+obj/
