@@ -1,0 +1,16 @@
+# Python / AI Artifacts
+__pycache__/
+*.py[cod]
+.venv/
+checkpoint/
+datasets/
+*.pt
+*.safetensors
+
+# .NET / C#
+[Bb]in/
+[Oo]bj/
+appsettings.Development.json
+
+# DUSN-X specific
+*.docx
