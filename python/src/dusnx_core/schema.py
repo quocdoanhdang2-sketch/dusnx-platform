@@ -45,4 +45,5 @@ class ProcessResponse(BaseModel):
     confidence: float
     state_snapshot: StateSnapshot
     runtime_mode: str = "trained_dusnx"
+    routing_source: str = "model"
     agent_output: dict[str, Any] = Field(default_factory=dict)

@@ -13,6 +13,7 @@ from dusnx_core.checkpoint import load_checkpoint
 from dusnx_core.config import ModelConfig
 from dusnx_core.constants import PLATFORMS
 from dusnx_core.inference import process_one, state_to_snapshot
+from dusnx_core.routing_policy import match_explicit_route
 from dusnx_core.schema import ProcessRequest, ProcessResponse, StateSnapshot
 
 app = FastAPI(title="DUSN-X AI API", version="0.2.0")
@@ -62,6 +63,9 @@ def health():
 
 
 def detect_route(content: str) -> tuple[str, str, str, float]:
+    explicit = match_explicit_route("web", content)
+    if explicit is not None:
+        return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence
     text = content.casefold()
     if any(word in text for word in ("slide", "powerpoint", "trình chiếu", "speaker note")):
         return "presentation_edit", "productivity", "edit_slide", 0.82
@@ -179,6 +183,7 @@ def process(req: ProcessRequest):
     if MODEL is None:
         intent, agent, next_action, confidence = detect_route(req.content)
         snapshot = bootstrap_state_update(req, intent)
+        routing_source = "bootstrap_rules"
     else:
         result = process_one(MODEL, CFG, req, DEVICE)
         intent = result["intent"]
@@ -187,6 +192,19 @@ def process(req: ProcessRequest):
         confidence = result["confidence"]
         version = (req.previous_state.state_version if req.previous_state else 0) + 1
         snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version))
+        routing_source = "model"
+
+        explicit = match_explicit_route(req.platform, req.content)
+        if explicit is not None and (
+            intent != explicit.intent
+            or agent != explicit.agent
+            or next_action != explicit.next_action
+        ):
+            intent = explicit.intent
+            agent = explicit.agent
+            next_action = explicit.next_action
+            confidence = explicit.confidence
+            routing_source = "business_rule_override"
 
     return ProcessResponse(
         global_user_id=req.global_user_id,
@@ -196,5 +214,6 @@ def process(req: ProcessRequest):
         confidence=confidence,
         state_snapshot=snapshot,
         runtime_mode=RUNTIME_MODE,
+        routing_source=routing_source,
         agent_output=execute_demo_agent(agent, req, intent, next_action),
     )

@@ -9,12 +9,39 @@ from pathlib import Path
 PLATFORMS = ["web", "zalo", "powerpoint"]
 
 TEMPLATES = {
-    "chat": ["xin chào", "giải thích giúp tôi", "nói rõ hơn phần này"],
-    "research": ["tìm tài liệu về {topic}", "phân tích {topic}", "nghiên cứu tiếp {topic}"],
-    "summarize": ["tóm tắt phần {topic}", "rút gọn nội dung về {topic}", "tổng hợp ý chính {topic}"],
-    "presentation_edit": ["làm slide về {topic}", "rút chữ slide {topic}", "biến phần {topic} thành sơ đồ"],
-    "recommendation": ["gợi ý nội dung tiếp theo về {topic}", "đề xuất cách làm {topic}", "nên làm gì tiếp với {topic}"],
-    "followup": ["làm tiếp phần hôm trước", "tiếp tục công việc đang làm", "mở lại ngữ cảnh trước"],
+    "chat": [
+        "xin chào", "giải thích giúp tôi về {topic}", "nói rõ hơn phần này",
+        "{topic} có ý nghĩa gì", "trả lời câu hỏi về {topic}",
+    ],
+    "research": [
+        "tìm tài liệu về {topic}", "phân tích {topic}", "nghiên cứu tiếp {topic}",
+        "tra cứu nguồn đáng tin cậy về {topic}", "so sánh các hướng nghiên cứu {topic}",
+        "tìm bài báo về {topic} rồi phân tích ưu nhược điểm",
+    ],
+    "summarize": [
+        "tóm tắt phần {topic}", "rút gọn nội dung về {topic}", "tổng hợp ý chính {topic}",
+        "tóm tắt nội dung {topic} tôi đang nghiên cứu",
+        "rút gọn kết quả tìm kiếm về {topic} thành các ý chính",
+        "đọc phần nghiên cứu trước và tóm tắt lại {topic}",
+        "tổng hợp tài liệu vừa tìm được về {topic}",
+    ],
+    "presentation_edit": [
+        "làm slide về {topic}", "rút chữ slide {topic}", "biến phần {topic} thành sơ đồ",
+        "tạo 5 slide từ chủ đề {topic} tôi vừa nghiên cứu",
+        "chuyển kết quả tìm kiếm {topic} thành bài trình chiếu",
+        "tóm tắt nghiên cứu {topic} thành 5 slide",
+        "soạn PowerPoint từ nội dung {topic} trên Web",
+    ],
+    "recommendation": [
+        "gợi ý nội dung tiếp theo về {topic}", "đề xuất cách làm {topic}",
+        "nên làm gì tiếp với {topic}", "khuyên tôi chọn hướng nào cho {topic}",
+        "đề xuất ba bước tiếp theo sau khi nghiên cứu {topic}",
+    ],
+    "followup": [
+        "làm tiếp phần hôm trước", "tiếp tục công việc đang làm", "mở lại ngữ cảnh trước",
+        "tiếp tục phần {topic} vừa làm trên Web", "dùng lại nội dung {topic} lúc nãy",
+        "làm tiếp nhưng giữ nguyên phong cách trước đó",
+    ],
 }
 TOPICS = ["DUSN-X", "AI Agent", "machine learning", "dataset", "PowerPoint", "Zalo", "MLOps"]
 
@@ -48,6 +75,21 @@ def choose_intent(platform: str, last_intent: str | None):
     return random.choices(intents, weights=weights, k=1)[0]
 
 
+def choose_content(intent: str, topic: str, platform: str) -> str:
+    candidates = list(TEMPLATES[intent])
+    if platform == "powerpoint" and intent == "presentation_edit":
+        candidates += [
+            "tạo bố cục 5 phần cho {topic}",
+            "chuyển nội dung vừa nghiên cứu thành 5 trang trình chiếu về {topic}",
+        ]
+    if platform == "zalo" and intent == "followup":
+        candidates += [
+            "gửi tiếp phần {topic} tôi đang xem trên Web",
+            "tiếp tục chủ đề {topic} lúc nãy nhé",
+        ]
+    return random.choice(candidates).format(topic=topic)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--events", type=int, default=10000)
@@ -74,7 +116,7 @@ def main():
                 platform = random.choices(PLATFORMS, weights=[0.45, 0.30, 0.25], k=1)[0]
                 intent = choose_intent(platform, last_intent)
                 topic = random.choice(TOPICS)
-                content = random.choice(TEMPLATES[intent]).format(topic=topic)
+                content = choose_content(intent, topic, platform)
                 gap = random.expovariate(1/8.0)
                 current += timedelta(hours=gap)
                 positive = random.random() < 0.82

@@ -1,0 +1,25 @@
+seed: 42
+data: data/synthetic_30k_v2.jsonl
+checkpoint: artifacts/dusnx_smoke_v2.pt
+device: auto
+sequence_len: 8
+stride: 4
+batch_size: 8
+gradient_accumulation_steps: 4
+mixed_precision: true
+epochs: 6
+early_stopping_patience: 2
+learning_rate: 0.0004
+train_ratio: 0.8
+val_ratio: 0.1
+model:
+  vocab_size: 16384
+  max_tokens: 32
+  token_dim: 96
+  platform_dim: 24
+  event_type_dim: 8
+  event_hidden: 160
+  global_state_dim: 160
+  platform_state_dim: 112
+  task_state_dim: 112
+  dropout: 0.15

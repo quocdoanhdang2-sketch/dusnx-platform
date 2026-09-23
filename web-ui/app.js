@@ -29,6 +29,7 @@ $("send").onclick = async () => {
       confidence: data.confidence,
       state_version: data.state_snapshot?.state_version,
       runtime_mode: data.runtime_mode,
+      routing_source: data.routing_source,
       agent_output: data.agent_output
     });
   } catch (e) {
