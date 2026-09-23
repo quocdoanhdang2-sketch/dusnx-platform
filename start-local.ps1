@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $ProjectRoot = $PSScriptRoot
 $PythonExe = Join-Path $ProjectRoot "python\.venv\Scripts\python.exe"
-$Checkpoint = Join-Path $ProjectRoot "artifacts\dusnx_smoke.pt"
+$Checkpoint = Join-Path $ProjectRoot "artifacts\dusnx_smoke_v2.pt"
 
 function Test-ListeningPort {
     param([int]$Port)
@@ -80,3 +80,4 @@ foreach ($Service in $Services) {
 
 Write-Host "DUSN-X local startup finished." -ForegroundColor Cyan
 Write-Host "Open: http://127.0.0.1:3000" -ForegroundColor Cyan
+

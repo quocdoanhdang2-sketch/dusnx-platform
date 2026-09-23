@@ -9,3 +9,6 @@ runtime/
 .env
 bin/
 obj/
+
+gateway-dotnet/data/
+**/*.egg-info/
