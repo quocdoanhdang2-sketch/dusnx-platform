@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -81,7 +82,7 @@ def test_training_metadata_records_causal_feedback_and_dataset_provenance():
     metadata = build_training_metadata(dataset_path, "configs/smoke_v2.yaml", seed=42)
 
     assert metadata["feedback_contract"] == "previous_event_feedback_v1"
-    assert metadata["dataset_sha256"] == "b9d7ea6451526fe0b13912abc4256f957d5bc01883e4c1d46aeac5473f8bc06d"
+    assert metadata["dataset_sha256"] == hashlib.sha256(dataset_path.read_bytes()).hexdigest()
     assert metadata["data"] == str(dataset_path)
     assert metadata["config"] == "configs/smoke_v2.yaml"
     assert metadata["seed"] == 42
