@@ -3,6 +3,9 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+STATE_SCHEMA_VERSION = 2
+
+
 class IngressEvent(BaseModel):
     platform: str
     platform_user_id: str
@@ -30,7 +33,12 @@ class StateSnapshot(BaseModel):
     global_state: list[float]
     platform_states: list[list[float]]
     task_state: list[float]
+    # Counts state updates only; it is not a compatibility version.
     state_version: int = 0
+    # Compatibility metadata. None is deliberately retained for legacy states
+    # so the service can reset them explicitly rather than guessing.
+    state_schema_version: int | None = None
+    model_version: str | None = None
 
 
 class ProcessRequest(BaseModel):
@@ -56,3 +64,5 @@ class ProcessResponse(BaseModel):
     runtime_mode: str = "trained_dusnx"
     routing_source: str = "model"
     agent_output: dict[str, Any] = Field(default_factory=dict)
+    state_reset: bool = False
+    reset_reason: str | None = None

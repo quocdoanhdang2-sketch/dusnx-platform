@@ -1,5 +1,47 @@
 # DUSN-X Platform — Phase 1
 
+## Checkpoint v2 (default runtime)
+
+The default checkpoint is `artifacts/dusnx_smoke_v2.pt`. It is local-only: do not commit checkpoints, datasets, `.env`, or secrets.
+
+Windows native and Docker use different paths for the same mounted artifact:
+
+- Native: `D:\Projects\dusnx-platform\artifacts\dusnx_smoke_v2.pt` (or another host path through `DUSNX_CHECKPOINT`).
+- Docker Compose: `/app/artifacts/dusnx_smoke_v2.pt` (or another **container** path through `.env`). Do not put a Windows path in `.env` for Docker.
+
+### Create the v2 dataset and checkpoint on Windows
+
+```powershell
+cd D:\Projects\dusnx-platform
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+Push-Location .\python
+python -m pip install -e ".[dev]"
+Pop-Location
+python .\python\scripts\generate_synthetic.py --events 30000 --users 1000 --out .\data\synthetic_30k_v2.jsonl
+python .\python\scripts\train.py --config .\configs\smoke_v2.yaml
+```
+
+### Run and verify native Windows
+
+```powershell
+cd D:\Projects\dusnx-platform
+.\start-local.ps1
+Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
+```
+
+`/health` must show `runtime_mode` as `trained_dusnx`, a non-empty `checkpoint_loaded` pointing to the host v2 checkpoint, and a non-empty `model_version`. The same `model_version` is written to each `state_snapshot`.
+
+### Run and verify Docker Compose
+
+```powershell
+cd D:\Projects\dusnx-platform
+docker compose up --build
+Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
+```
+
+For Docker, `.env` uses `/app/artifacts/dusnx_smoke_v2.pt`; `checkpoint_loaded` must report that container path. If the checkpoint is absent, FastAPI correctly reports `bootstrap_rules` and returns an exact v2 generation/training command in `metadata.warning`.
+
 Starter project cho **Cross-Platform Dynamic User State Network for Adaptive Multi-Agent Systems**.
 
 ## Phase 1 đã có gì?
@@ -7,7 +49,7 @@ Starter project cho **Cross-Platform Dynamic User State Network for Adaptive Mul
 - DUSN-X Core viết bằng PyTorch: Event Encoder, Time-Aware State Update, Global/Platform/Task State và Agent Router.
 - FastAPI AI Service chạy được ở hai chế độ:
   - `bootstrap_rules`: demo ngay khi chưa có checkpoint.
-  - `trained_dusnx`: tự chuyển sang model đã train khi có `artifacts/dusnx_smoke.pt`.
+  - `trained_dusnx`: tự chuyển sang model đã train khi có `artifacts/dusnx_smoke_v2.pt`.
 - ASP.NET Core API Gateway với `/api/v1`, Problem Details và event validation.
 - State được lưu xuống `runtime/gateway-data`, không mất ngay khi Gateway restart.
 - Presentation job bất đồng bộ: `queued → processing → completed/failed`.
@@ -37,17 +79,17 @@ Mở:
 
 Lần chạy đầu chưa cần checkpoint. API sẽ báo `runtime_mode=bootstrap_rules`.
 
-## Huấn luyện checkpoint đầu tiên
+## Ghi chú về checkpoint cũ
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup.ps1
 .\.venv\Scripts\Activate.ps1
 $env:PYTHONPATH="$PWD\python\src"
-python .\python\scripts\train.py --config .\configs\smoke.yaml
+python .\python\scripts\train.py --config .\configs\smoke_v2.yaml
 ```
 
-Sau khi sinh `artifacts/dusnx_smoke.pt`:
+Sau khi sinh `artifacts/dusnx_smoke_v2.pt`:
 
 ```powershell
 docker compose down

@@ -277,7 +277,13 @@ public sealed class AiOrchestrator
         using var document = JsonDocument.Parse(body);
         var root = document.RootElement.Clone();
         if (root.TryGetProperty("state_snapshot", out var snapshot))
+        {
+            if (previous is not null
+                && root.TryGetProperty("state_reset", out var stateReset)
+                && stateReset.ValueKind == JsonValueKind.True)
+                await _store.ArchiveAsync(globalUserId, previous, now, cancellationToken);
             await _store.SaveAsync(globalUserId, snapshot.Clone(), now, cancellationToken);
+        }
 
         await _store.AppendEventAsync(new
         {
@@ -301,6 +307,7 @@ public sealed class LocalStateStore
     private readonly ConcurrentDictionary<string, byte> _seenEventIds = new();
     private readonly SemaphoreSlim _fileGate = new(1, 1);
     private readonly string _stateDirectory;
+    private readonly string _archiveDirectory;
     private readonly string _eventsPath;
 
     public LocalStateStore(IWebHostEnvironment environment)
@@ -308,8 +315,10 @@ public sealed class LocalStateStore
         var dataDirectory = Environment.GetEnvironmentVariable("DUSNX_DATA_DIR")
             ?? Path.Combine(environment.ContentRootPath, "data");
         _stateDirectory = Path.Combine(dataDirectory, "state");
+        _archiveDirectory = Path.Combine(_stateDirectory, "archive");
         _eventsPath = Path.Combine(dataDirectory, "events.jsonl");
         Directory.CreateDirectory(_stateDirectory);
+        Directory.CreateDirectory(_archiveDirectory);
     }
 
     public bool TryMarkEvent(string eventId) => _seenEventIds.TryAdd(eventId, 0);
@@ -340,6 +349,23 @@ public sealed class LocalStateStore
         _states[globalUserId] = state;
         var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(StatePath(globalUserId), json, cancellationToken);
+    }
+
+    public async Task ArchiveAsync(
+        string globalUserId,
+        StoredState state,
+        DateTimeOffset archivedAt,
+        CancellationToken cancellationToken)
+    {
+        var archive = new
+        {
+            archived_at = archivedAt,
+            reason = "state_reset_by_ai_api",
+            previous_state = state
+        };
+        var fileName = $"{globalUserId}.{archivedAt.UtcDateTime.Ticks}.json";
+        var json = JsonSerializer.Serialize(archive, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(Path.Combine(_archiveDirectory, fileName), json, cancellationToken);
     }
 
     public async Task AppendEventAsync(object eventRecord, CancellationToken cancellationToken)

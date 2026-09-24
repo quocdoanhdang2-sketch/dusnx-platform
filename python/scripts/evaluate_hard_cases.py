@@ -5,7 +5,7 @@ import json
 
 import torch
 
-from dusnx_core.checkpoint import load_checkpoint
+from dusnx_core.checkpoint import load_checkpoint, model_identifier
 from dusnx_core.inference import process_one
 from dusnx_core.routing_policy import match_explicit_route
 from dusnx_core.schema import ProcessRequest
@@ -32,6 +32,7 @@ def main() -> None:
     device = "cuda" if args.device != "cpu" and torch.cuda.is_available() else "cpu"
     model, cfg, metadata = load_checkpoint(args.checkpoint, device)
     model.eval()
+    model_version = model_identifier(args.checkpoint, cfg, "trained_dusnx")
 
     model_correct = 0
     final_correct = 0
@@ -43,7 +44,7 @@ def main() -> None:
             content=content,
             event_type="message",
         )
-        result = process_one(model, cfg, request, device)
+        result = process_one(model, cfg, request, model_version, device)
         model_intent = result["intent"]
         model_correct += int(model_intent == expected)
 
@@ -64,6 +65,7 @@ def main() -> None:
     report = {
         "checkpoint": args.checkpoint,
         "metadata": metadata,
+        "model_version": model_version,
         "device": device,
         "cases": len(CASES),
         "model_accuracy": model_correct / len(CASES),

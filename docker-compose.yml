@@ -2,7 +2,8 @@ services:
   ai-api:
     build: ./python
     environment:
-      DUSNX_CHECKPOINT: /app/artifacts/dusnx_smoke.pt
+      # Container path; override in .env only with another /app/... path.
+      DUSNX_CHECKPOINT: ${DUSNX_CHECKPOINT:-/app/artifacts/dusnx_smoke_v2.pt}
       DUSNX_DEVICE: cpu
       PYTHONPATH: /app/src
     volumes:

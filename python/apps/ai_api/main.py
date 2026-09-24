@@ -9,41 +9,58 @@ from pathlib import Path
 import torch
 from fastapi import FastAPI, HTTPException
 
-from dusnx_core.checkpoint import load_checkpoint
+from dusnx_core.checkpoint import load_checkpoint, model_identifier
 from dusnx_core.config import ModelConfig
 from dusnx_core.constants import PLATFORMS
-from dusnx_core.inference import process_one, state_to_snapshot
+from dusnx_core.inference import process_one, state_reset_reason, state_to_snapshot
 from dusnx_core.routing_policy import match_explicit_route
-from dusnx_core.schema import ProcessRequest, ProcessResponse, StateSnapshot
+from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessResponse, StateSnapshot
 
 app = FastAPI(title="DUSN-X AI API", version="0.2.0")
 
-CHECKPOINT = os.getenv("DUSNX_CHECKPOINT", "/app/artifacts/dusnx_smoke.pt")
+# Source lives in <repo>/python/apps when native and /app/apps in the
+# container, so derive the matching artifact root without relying on cwd.
+SOURCE_ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
+DEFAULT_CHECKPOINT = str(ARTIFACT_ROOT / "artifacts" / "dusnx_smoke_v2.pt")
+CHECKPOINT = os.getenv("DUSNX_CHECKPOINT", DEFAULT_CHECKPOINT)
 DEVICE = "cuda" if torch.cuda.is_available() and os.getenv("DUSNX_DEVICE", "auto") != "cpu" else "cpu"
 MODEL = None
 CFG: ModelConfig | None = None
 META: dict = {}
 RUNTIME_MODE = "bootstrap_rules"
+MODEL_VERSION = model_identifier(CHECKPOINT, ModelConfig(), RUNTIME_MODE)
+LOADED_CHECKPOINT: str | None = None
 
 
 def load_model_once() -> None:
     """Load a trained checkpoint, or keep a deterministic bootstrap mode for first run."""
-    global MODEL, CFG, META, RUNTIME_MODE
+    global MODEL, CFG, META, RUNTIME_MODE, MODEL_VERSION, LOADED_CHECKPOINT
     if MODEL is not None:
         return
 
     path = Path(CHECKPOINT)
     if not path.exists():
+        missing_path = path.resolve()
         CFG = ModelConfig()
         META = {
             "mode": "bootstrap_rules",
-            "warning": "No checkpoint loaded. Train configs/smoke.yaml to enable DUSN-X inference.",
+            "warning": (
+                f"Checkpoint not found: {missing_path}. From the repository root, run: "
+                "python python/scripts/generate_synthetic.py --events 30000 --users 1000 "
+                "--out data/synthetic_30k_v2.jsonl; then "
+                "python python/scripts/train.py --config configs/smoke_v2.yaml"
+            ),
         }
         RUNTIME_MODE = "bootstrap_rules"
+        MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
+        LOADED_CHECKPOINT = None
         return
 
     MODEL, CFG, META = load_checkpoint(path, DEVICE)
     RUNTIME_MODE = "trained_dusnx"
+    MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
+    LOADED_CHECKPOINT = str(path.resolve())
 
 
 @app.on_event("startup")
@@ -58,7 +75,9 @@ def health():
         "device": DEVICE,
         "runtime_mode": RUNTIME_MODE,
         "checkpoint": CHECKPOINT,
+        "checkpoint_loaded": LOADED_CHECKPOINT,
         "metadata": META,
+        "model_version": MODEL_VERSION,
     }
 
 
@@ -87,6 +106,8 @@ def initial_bootstrap_state() -> StateSnapshot:
         platform_states=[[0.0] * cfg.platform_state_dim for _ in PLATFORMS],
         task_state=[0.0] * cfg.task_state_dim,
         state_version=0,
+        state_schema_version=STATE_SCHEMA_VERSION,
+        model_version=MODEL_VERSION,
     )
 
 
@@ -120,6 +141,8 @@ def bootstrap_state_update(req: ProcessRequest, intent: str) -> StateSnapshot:
         platform_states=platform_states,
         task_state=task_state,
         state_version=previous.state_version + 1,
+        state_schema_version=STATE_SCHEMA_VERSION,
+        model_version=MODEL_VERSION,
     )
 
 
@@ -180,18 +203,25 @@ def process(req: ProcessRequest):
     if req.platform not in PLATFORMS:
         raise HTTPException(status_code=400, detail=f"platform must be one of {PLATFORMS}")
 
+    # A state update counter is unrelated to compatibility. Do not coerce a
+    # legacy/mismatched vector: reset from the current model's initial state.
+    active_cfg = CFG or ModelConfig()
+    reset_reason = state_reset_reason(req.previous_state, active_cfg, MODEL_VERSION)
+    state_reset = reset_reason is not None
+    effective_req = req.model_copy(update={"previous_state": None}) if state_reset else req
+
     if MODEL is None:
         intent, agent, next_action, confidence = detect_route(req.content)
-        snapshot = bootstrap_state_update(req, intent)
+        snapshot = bootstrap_state_update(effective_req, intent)
         routing_source = "bootstrap_rules"
     else:
-        result = process_one(MODEL, CFG, req, DEVICE)
+        result = process_one(MODEL, CFG, effective_req, MODEL_VERSION, DEVICE)
         intent = result["intent"]
         agent = result["selected_agent"]
         next_action = result["next_action"]
         confidence = result["confidence"]
-        version = (req.previous_state.state_version if req.previous_state else 0) + 1
-        snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version))
+        version = (effective_req.previous_state.state_version if effective_req.previous_state else 0) + 1
+        snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version, STATE_SCHEMA_VERSION, MODEL_VERSION))
         routing_source = "model"
 
         explicit = match_explicit_route(req.platform, req.content)
@@ -216,4 +246,6 @@ def process(req: ProcessRequest):
         runtime_mode=RUNTIME_MODE,
         routing_source=routing_source,
         agent_output=execute_demo_agent(agent, req, intent, next_action),
+        state_reset=state_reset,
+        reset_reason=reset_reason,
     )
