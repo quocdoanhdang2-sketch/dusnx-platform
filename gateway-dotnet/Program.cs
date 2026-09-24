@@ -262,6 +262,8 @@ public sealed class AiOrchestrator
             content = request.Content.Trim(),
             event_type = string.IsNullOrWhiteSpace(request.EventType) ? "message" : request.EventType.Trim(),
             time_gap_hours = gapHours,
+            // This value is known before the current event. It is not a rating
+            // of the response that this request is about to produce.
             feedback_value = Math.Clamp(request.FeedbackValue ?? 0.0, -1.0, 1.0),
             previous_state = previous?.StateSnapshot
         };
@@ -284,7 +286,7 @@ public sealed class AiOrchestrator
             platform,
             event_type = payload.event_type,
             content = payload.content,
-            feedback_value = payload.feedback_value,
+            known_feedback_value = payload.feedback_value,
             event_time_utc = now,
             result = root
         }, cancellationToken);

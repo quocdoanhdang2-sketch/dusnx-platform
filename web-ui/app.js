@@ -12,6 +12,8 @@ $("send").onclick = async () => {
     platformUserId: $("user").value,
     content: $("content").value,
     eventType: "message",
+    // The Gateway/API keep this name for demo compatibility. Its value is
+    // feedback already known from the previous event, not this response.
     feedbackValue: Number($("feedback").value || 0),
     linkedUserId: $("linked").value
   };

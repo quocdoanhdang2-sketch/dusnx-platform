@@ -43,7 +43,10 @@ class SequenceWindowDataset(Dataset):
     def __init__(self, rows: list[dict], cfg, sequence_len: int = 12, stride: int = 4, allowed_users: set[str] | None = None):
         self.cfg = cfg
         self.sequence_len = sequence_len
-        self.samples: list[list[dict]] = []
+        # Each sample retains the feedback known immediately before its first
+        # event.  feedback_value in JSONL is produced *after* an event, so it
+        # must only be supplied to the following event for the same user.
+        self.samples: list[tuple[list[dict], float]] = []
         grouped = group_sorted(rows)
         for uid, events in grouped.items():
             if allowed_users is not None and uid not in allowed_users:
@@ -52,15 +55,23 @@ class SequenceWindowDataset(Dataset):
                 continue
             for end in range(2, len(events) + 1, stride):
                 start = max(0, end - sequence_len)
-                self.samples.append(events[start:end])
-            if self.samples and self.samples[-1][-1] is not events[-1]:
-                self.samples.append(events[max(0, len(events)-sequence_len):])
+                previous_feedback = self._feedback_after(events[start - 1]) if start else 0.0
+                self.samples.append((events[start:end], previous_feedback))
+            if self.samples and self.samples[-1][0][-1] is not events[-1]:
+                start = max(0, len(events) - sequence_len)
+                previous_feedback = self._feedback_after(events[start - 1]) if start else 0.0
+                self.samples.append((events[start:], previous_feedback))
+
+    @staticmethod
+    def _feedback_after(event: dict) -> float:
+        """Return feedback emitted after an event; absent feedback means neutral."""
+        return float(event.get("feedback_value", 0.0) or 0.0)
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        events = self.samples[idx]
+        events, previous_feedback = self.samples[idx]
         L = self.sequence_len
         max_tokens = self.cfg.max_tokens
 
@@ -85,7 +96,11 @@ class SequenceWindowDataset(Dataset):
                 gap = max(0.0, (t - prev_time).total_seconds() / 3600.0)
             prev_time = t
             time_gap[j, 0] = gap
-            feedback[j, 0] = float(e.get("feedback_value", 0.0) or 0.0)
+            # This is feedback available before event e, never its own
+            # post-event feedback.  Carrying previous_feedback into a window
+            # also makes a window starting mid-history causal.
+            feedback[j, 0] = previous_feedback
+            previous_feedback = self._feedback_after(e)
             valid_mask[j, 0] = 1.0
 
         target = events[-1]

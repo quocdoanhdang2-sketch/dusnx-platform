@@ -26,13 +26,14 @@ def state_to_snapshot(state, version: int):
 
 @torch.inference_mode()
 def process_one(model, cfg, req, device):
+    """Process one event using only feedback known before that event."""
     token_ids = torch.tensor([encode_text(req.content, cfg.vocab_size, cfg.max_tokens)], dtype=torch.long, device=device)
     platform_ids = torch.tensor([PLATFORM_TO_ID[req.platform]], dtype=torch.long, device=device)
     event_type_ids = torch.tensor([EVENT_TYPE_TO_ID.get(req.event_type, 0)], dtype=torch.long, device=device)
     gap = torch.tensor([[float(req.time_gap_hours)]], dtype=torch.float32, device=device)
-    feedback = torch.tensor([[float(req.feedback_value)]], dtype=torch.float32, device=device)
+    known_feedback = torch.tensor([[float(req.feedback_value)]], dtype=torch.float32, device=device)
     state = snapshot_to_state(req.previous_state, model, device)
-    out, new_state = model.step(token_ids, platform_ids, event_type_ids, gap, feedback, state)
+    out, new_state = model.step(token_ids, platform_ids, event_type_ids, gap, known_feedback, state)
     intent_prob = torch.softmax(out["intent_logits"], dim=-1)[0]
     route_prob = torch.softmax(out["router_logits"], dim=-1)[0]
     action_prob = torch.softmax(out["next_action_logits"], dim=-1)[0]

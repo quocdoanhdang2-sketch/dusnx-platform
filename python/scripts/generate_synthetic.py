@@ -120,7 +120,9 @@ def main():
                 gap = random.expovariate(1/8.0)
                 current += timedelta(hours=gap)
                 positive = random.random() < 0.82
-                feedback = random.uniform(0.2, 1.0) if positive else random.uniform(-1.0, -0.1)
+                # This is observed after this event is handled.  The dataset
+                # shifts it to the next event before sending it to the model.
+                feedback_after_event = random.uniform(0.2, 1.0) if positive else random.uniform(-1.0, -0.1)
                 row = {
                     "event_id": str(uuid.uuid4()),
                     "global_user_id": uid,
@@ -132,7 +134,7 @@ def main():
                     "intent_label": intent,
                     "selected_agent": AGENT_FOR_INTENT[intent],
                     "next_action_label": ACTION_FOR_INTENT[intent],
-                    "feedback_value": round(feedback, 4),
+                    "feedback_value": round(feedback_after_event, 4),
                     "task_success": positive,
                     "synthetic": True,
                 }

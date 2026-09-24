@@ -8,7 +8,10 @@ class IngressEvent(BaseModel):
     platform_user_id: str
     content: str = ""
     event_type: str = "message"
-    feedback_value: float = 0.0
+    feedback_value: float = Field(
+        default=0.0,
+        description="Feedback from the previous event, known before this event is processed.",
+    )
 
 
 class CanonicalUserEvent(BaseModel):
@@ -17,7 +20,10 @@ class CanonicalUserEvent(BaseModel):
     content: str = ""
     event_type: str = "message"
     time_gap_hours: float = 0.0
-    feedback_value: float = 0.0
+    feedback_value: float = Field(
+        default=0.0,
+        description="Feedback from the previous event, known before this event is processed.",
+    )
 
 
 class StateSnapshot(BaseModel):
@@ -33,7 +39,10 @@ class ProcessRequest(BaseModel):
     content: str
     event_type: str = "message"
     time_gap_hours: float = 0.0
-    feedback_value: float = 0.0
+    feedback_value: float = Field(
+        default=0.0,
+        description="Feedback from the previous event, known before this event is processed.",
+    )
     previous_state: StateSnapshot | None = None
 
 
