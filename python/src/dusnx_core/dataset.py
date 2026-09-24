@@ -11,6 +11,9 @@ from .constants import PLATFORM_TO_ID, EVENT_TYPE_TO_ID, INTENT_TO_ID, AGENT_TO_
 from .tokenizer import encode_text
 
 
+FEEDBACK_CONTRACT_VERSION = "previous_event_feedback_v1"
+
+
 def read_jsonl(path: str | Path) -> list[dict]:
     rows = []
     with open(path, "r", encoding="utf-8") as f:

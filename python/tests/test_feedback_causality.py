@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pytest
 
 from dusnx_core.dataset import SequenceWindowDataset
+from scripts.train import build_training_metadata
 
 
 class TinyConfig:
@@ -71,3 +74,15 @@ def test_feedback_does_not_cross_users_and_missing_is_neutral():
 
     assert valid_feedback(dataset[0]) == pytest.approx([0.0, 0.9])
     assert valid_feedback(dataset[1]) == pytest.approx([0.0, -0.8])
+
+
+def test_training_metadata_records_causal_feedback_and_dataset_provenance():
+    dataset_path = Path(__file__).parent / "fixtures" / "benchmark_v1_fixture.jsonl"
+    metadata = build_training_metadata(dataset_path, "configs/smoke_v2.yaml", seed=42)
+
+    assert metadata["feedback_contract"] == "previous_event_feedback_v1"
+    assert metadata["dataset_sha256"] == "b9d7ea6451526fe0b13912abc4256f957d5bc01883e4c1d46aeac5473f8bc06d"
+    assert metadata["data"] == str(dataset_path)
+    assert metadata["config"] == "configs/smoke_v2.yaml"
+    assert metadata["seed"] == 42
+    assert metadata["trained_at_utc"].endswith("Z")

@@ -66,7 +66,7 @@ Starter project cho **Cross-Platform Dynamic User State Network for Adaptive Mul
 Yêu cầu: Docker Desktop, Git, Python 3.12 và .NET 8.
 
 ```powershell
-cd D:\Projects\DUSN-X-Platform-Phase1
+cd D:\Projects\dusnx-platform
 docker compose up --build
 ```
 
@@ -133,6 +133,7 @@ Thay `TEN_REPOSITORY` bằng tên mày chọn. Không commit `.env`, dataset th�
 ## Đọc tiếp
 
 - `docs/START_HERE_PHASE1.md`: thứ tự làm từng bước.
+- `docs/INDEPENDENT_BENCHMARK_GUIDE.md`: schema và quy trình hai người để soạn benchmark độc lập.
 - `docs/GITHUB_VA_MO_RONG.md`: cách đặt tên GitHub và thêm tính năng/connector.
 - `docs/ARCHITECTURE.md`: kiến trúc tổng quan.
 - `docs/GUIDE_TUNG_BUOC.md`: hướng dẫn MVP chi tiết cũ để tham khảo.

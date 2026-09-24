@@ -1,9 +1,11 @@
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 import os
 import random
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -16,13 +18,35 @@ from torch.utils.data import DataLoader
 from dusnx_core.checkpoint import save_checkpoint
 from dusnx_core.config import ModelConfig
 from dusnx_core.constants import INTENTS, AGENTS, NEXT_ACTIONS
-from dusnx_core.dataset import read_jsonl, group_sorted, split_users, SequenceWindowDataset
+from dusnx_core.dataset import (
+    FEEDBACK_CONTRACT_VERSION,
+    SequenceWindowDataset,
+    group_sorted,
+    read_jsonl,
+    split_users,
+)
 from dusnx_core.model import DUSNXModel
 
 
 def set_seed(seed: int):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
+
+
+def build_training_metadata(data_path: str | Path, config_path: str | Path, seed: int) -> dict:
+    dataset = Path(data_path)
+    digest = hashlib.sha256()
+    with dataset.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {
+        "seed": seed,
+        "data": str(data_path),
+        "dataset_sha256": digest.hexdigest(),
+        "config": str(config_path),
+        "feedback_contract": FEEDBACK_CONTRACT_VERSION,
+        "trained_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
 
 
 def run_epoch(model, loader, device, optimizer=None, *, accumulation_steps=1, use_amp=False):
@@ -70,6 +94,7 @@ def main():
     cfg_raw=yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
     seed=int(cfg_raw.get("seed",42)); set_seed(seed)
     data_path=args.data or cfg_raw["data"]
+    training_metadata = build_training_metadata(data_path, args.config, seed)
     rows=read_jsonl(data_path)
     users=sorted(group_sorted(rows).keys())
     tr_u, va_u, te_u = split_users(users, seed=seed, train=cfg_raw.get("train_ratio",0.8), val=cfg_raw.get("val_ratio",0.1))
@@ -100,7 +125,11 @@ def main():
         print(f"epoch={epoch} train={tm} val={vm} score={score:.4f}")
         if score>best:
             best=score; patience=0
-            save_checkpoint(best_path,model,model_cfg,{"seed":seed,"best_val_score":best,"data":data_path,"epoch":epoch})
+            save_checkpoint(best_path,model,model_cfg,{
+                **training_metadata,
+                "best_val_score":best,
+                "epoch":epoch,
+            })
         else:
             patience+=1
             if patience>=int(cfg_raw.get("early_stopping_patience",3)):
