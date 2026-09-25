@@ -44,3 +44,20 @@ Phase 2 sẽ thay thế từng adapter nhưng giữ nguyên API contract:
 - Outline result → MinIO artifact.
 - Bootstrap rules → trained DUSN-X checkpoint.
 - Development identity → JWT + linked identity table.
+
+## Local event timeline
+
+Gateway appends one compact JSON object per processed event to
+`runtime/gateway-data/events.jsonl`. Writes are serialized so concurrent requests cannot
+interleave bytes. Processing is also serialized per resolved `global_user_id`, preserving
+state/event order for one linked identity while allowing unrelated users to proceed.
+
+`GET /api/v1/history/{platform}/{platformUserId}` resolves the same identity as event
+ingestion, projects only timeline fields, skips blank or locally damaged legacy lines, and
+returns at most 100 records. Results are newest-first; pass `next_cursor` back as `before`
+to read the next older page. The physical JSONL line position is the stable tie-breaker,
+including when timestamps are equal.
+
+This endpoint is a development/local observability feature. It accepts loopback requests
+and local browser origins by default and has no production authentication. `DUSNX_ALLOW_REMOTE_DEV_HISTORY=true`
+is an explicit development override, not an authentication mechanism.

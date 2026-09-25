@@ -32,6 +32,47 @@ Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
 
 `/health` must show `runtime_mode` as `trained_dusnx`, a non-empty `checkpoint_loaded` pointing to the host v2 checkpoint, and a non-empty `model_version`. The same `model_version` is written to each `state_snapshot`.
 
+### Timeline local và smoke test xuyên nền tảng
+
+Endpoint timeline là công cụ quan sát **dev/local**, chưa có authentication production.
+Mặc định Gateway chỉ trả endpoint này cho request loopback. Không bật
+`DUSNX_ALLOW_REMOTE_DEV_HISTORY=true` ngoài môi trường development được kiểm soát.
+
+```powershell
+cd D:\Projects\dusnx-platform
+.\start-local.ps1
+
+# Gửi một event và đọc trang timeline mới nhất (tối đa 100 record/trang).
+$body = @{
+  platform = "web"
+  platformUserId = "web-demo"
+  linkedUserId = "local-demo-shared"
+  content = "Tìm tài liệu về DUSN-X"
+  eventType = "message"
+  feedbackValue = 0.0
+} | ConvertTo-Json
+Invoke-RestMethod http://127.0.0.1:8080/api/v1/events -Method Post -ContentType application/json -Body $body
+Invoke-RestMethod "http://127.0.0.1:8080/api/v1/history/web/web-demo?linkedUserId=local-demo-shared&limit=25"
+
+# Smoke test tự tạo linked key duy nhất rồi gửi Web → Zalo → PowerPoint.
+.\smoke-test.ps1
+```
+
+Kết quả timeline được sắp mới nhất trước. Nếu response có `next_cursor`, truyền nó qua
+query `before` để lấy trang cũ hơn. Cùng `linkedUserId` cho ba platform sẽ dùng chung
+identity; khác linked key sẽ tách lịch sử. `known_feedback_value` luôn là feedback đã
+biết trước event hiện tại.
+
+Các lựa chọn Zalo/PowerPoint trong Web UI chỉ mô phỏng request đầu vào. Router chỉ đề
+xuất `next_action`; phiên bản này chưa gửi tin Zalo, chưa chỉnh file PowerPoint, chưa
+thực hiện Internet search/RAG retrieval thật. `routing_source=business_rule_override`
+cho biết route cuối đã được rule thay đổi, nhưng API hiện không trả thêm dự đoán model
+thuần cho từng event.
+
+Smoke test ghi record với prefix/run ID duy nhất vào `runtime/gateway-data`. Có thể xóa
+toàn bộ thư mục đó khi chắc chắn không cần giữ bất kỳ state local nào; script không tự
+xóa hoặc đụng dữ liệu có sẵn.
+
 ### Run and verify Docker Compose
 
 ```powershell

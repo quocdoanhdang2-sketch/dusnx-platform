@@ -9,31 +9,34 @@
 <body>
   <main class="wrap">
     <h1>DUSN-X Cross-Platform Demo</h1>
-    <p>Web là nền tảng chính. Dùng cùng một ID logic để thử Web/Zalo/PowerPoint và quan sát state_version tăng.</p>
+    <p class="notice">Đây là demo local. Chọn Zalo hoặc PowerPoint chỉ mô phỏng đầu vào đã chuẩn hóa; hệ thống chưa gửi tin Zalo, chỉnh file PowerPoint hay truy xuất Internet thật.</p>
     <section class="panel">
-      <label>Platform
-        <select id="platform">
-          <option value="web">web</option>
-          <option value="zalo">zalo</option>
-          <option value="powerpoint">powerpoint</option>
-        </select>
+      <label>Platform mô phỏng
+        <select id="platform"><option value="web">Web</option><option value="zalo">Zalo</option><option value="powerpoint">PowerPoint</option></select>
       </label>
       <label>Platform user ID <input id="user" value="web-user-001" /></label>
-      <label>Linked user key (dùng cùng giá trị giữa Web/Zalo/PowerPoint) <input id="linked" value="global-demo-001" /></label>
-      <label>Nội dung <textarea id="content">phân tích DUSN-X và làm tiếp phần hôm trước</textarea></label>
-      <label>Feedback của sự kiện trước (-1..1; đã biết trước khi gửi) <input id="feedback" type="number" min="-1" max="1" step="0.1" value="0" /></label>
-      <button id="send">Gửi sự kiện</button>
+      <label>Linked user key (dùng cùng giá trị giữa ba platform) <input id="linked" value="global-demo-001" /></label>
+      <label>Nội dung <textarea id="content">Phân tích DUSN-X và làm tiếp phần hôm trước</textarea></label>
+      <label>Feedback của sự kiện trước (-1..1; đã biết trước request này) <input id="feedback" type="number" min="-1" max="1" step="0.1" value="0" /></label>
+      <button id="send">Gửi sự kiện mô phỏng</button>
     </section>
     <section class="panel">
-      <h2>Kết quả</h2>
+      <h2>Kết quả routing</h2>
+      <p><code>routing_source=model</code> là route model; <code>business_rule_override</code> là kết quả cuối đã bị rule thay đổi. <code>next_action</code> chỉ là đề xuất định tuyến, không chứng minh action đã được thực thi.</p>
       <pre id="output">Chưa có dữ liệu.</pre>
     </section>
     <section class="panel">
-      <h2>Presentation Job bất đồng bộ</h2>
-      <p>Tạo job PowerPoint và theo dõi trạng thái queued → processing → completed.</p>
+      <div class="section-heading"><div><h2>Timeline người dùng</h2><p id="timelineStatus">Bấm tải lại để đọc lịch sử.</p></div><button id="reloadTimeline">Tải lại</button></div>
+      <p>Thử lần lượt Web → Zalo → PowerPoint với cùng linked key và đổi platform user ID tùy ý. Timeline sẽ dùng chung identity và cho thấy <code>state_version</code> tăng.</p>
+      <div id="timeline" class="timeline" aria-live="polite"></div>
+      <button id="loadOlder" hidden>Tải event cũ hơn</button>
+    </section>
+    <section class="panel">
+      <h2>Presentation Job mô phỏng</h2>
+      <p>Job tạo outline/routing bất đồng bộ; chưa chỉnh file PowerPoint thật.</p>
       <label>Số slide <input id="slideCount" type="number" min="1" max="20" value="5" /></label>
       <label>Yêu cầu <textarea id="slidePrompt">Tạo slide về kiến trúc DUSN-X cross-platform</textarea></label>
-      <button id="generateSlides">Tạo job PowerPoint</button>
+      <button id="generateSlides">Tạo job mô phỏng</button>
       <pre id="jobOutput">Chưa có job.</pre>
     </section>
   </main>

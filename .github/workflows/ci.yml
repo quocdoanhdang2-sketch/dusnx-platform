@@ -33,3 +33,18 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Build Gateway
         run: dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release
+      - name: Run Gateway history tests
+        run: dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release
+      - name: Test local startup health checks
+        shell: pwsh
+        run: ./scripts/tests/local-health.tests.ps1
+
+  web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test safe timeline rendering
+        run: node --test web-ui/app.test.js
