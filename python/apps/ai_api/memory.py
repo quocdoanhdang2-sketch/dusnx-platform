@@ -208,6 +208,17 @@ class MemoryDB:
         self._conn.commit()
         return self.get_memory(user_id, new_id)
 
+    def get_memory_history(self, user_id: str, memory_id: str) -> list[dict]:
+        """Get full version history for a memory chain (oldest to newest)."""
+        target = self.get_memory(user_id, memory_id)
+        if target is None:
+            return []
+        rows = self._conn.execute(
+            "SELECT * FROM memories WHERE user_id=? AND created_at=? ORDER BY version ASC",
+            (user_id, target["created_at"]),
+        ).fetchall()
+        return [_row_to_memory(r) for r in rows]
+
     def delete_memory(self, user_id: str, memory_id: str) -> bool:
         """Soft-delete: deactivate without removing the audit trail."""
         now = _now()
@@ -278,6 +289,18 @@ class MemoryDB:
             (title, _now(), session_id, user_id),
         )
         self._conn.commit()
+
+    def delete_session(self, user_id: str, session_id: str) -> bool:
+        cur = self._conn.execute(
+            "DELETE FROM chat_sessions WHERE session_id=? AND user_id=?",
+            (session_id, user_id),
+        )
+        self._conn.execute(
+            "DELETE FROM chat_messages WHERE session_id=? AND user_id=?",
+            (session_id, user_id),
+        )
+        self._conn.commit()
+        return cur.rowcount > 0
 
     def _touch_session(self, user_id: str, session_id: str) -> None:
         self._conn.execute(

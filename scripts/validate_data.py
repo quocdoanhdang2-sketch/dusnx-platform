@@ -29,6 +29,14 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Safe encoding on Windows consoles
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 REQUIRED_FIELDS = {"global_user_id", "event_time_utc", "platform", "content", "intent_label", "selected_agent", "next_action_label"}
 VALID_INTENTS = {"chat", "research", "summarize", "presentation_edit", "recommendation", "followup"}
@@ -69,12 +77,12 @@ def validate(data_path: Path, strict: bool = False) -> int:
     print(f"{'='*60}\n")
 
     if not data_path.exists():
-        print(f"❌ ERROR: File not found: {data_path}")
+        print(f"[ERROR] File not found: {data_path}")
         return 1
 
     rows = read_jsonl(data_path)
     total = len(rows)
-    print(f"📄 Total lines: {total}")
+    print(f"[INFO] Total lines: {total}")
 
     errors: list[str] = []
     warnings: list[str] = []
@@ -85,7 +93,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
     if parse_errors:
         errors.append(f"{len(parse_errors)} lines failed JSON parse (lines: {[r['_lineno'] for r in parse_errors[:5]]})")
 
-    print(f"✅ Valid JSON rows: {len(valid_rows)}")
+    print(f"[OK] Valid JSON rows: {len(valid_rows)}")
 
     # 2. Schema check
     schema_errors = []
@@ -96,7 +104,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
     if schema_errors:
         errors.append(f"{len(schema_errors)} rows missing required fields. First: line {schema_errors[0][0]} missing {schema_errors[0][1]}")
     else:
-        print("✅ Schema: all required fields present")
+        print("[OK] Schema: all required fields present")
 
     # 3. Label validation
     bad_intent = [r for r in valid_rows if r.get("intent_label") not in VALID_INTENTS]
@@ -112,7 +120,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
             vals = list({r.get(label_name) for r in bad_rows[:3]})
             errors.append(f"{len(bad_rows)} rows with invalid {label_name}: {vals}")
         else:
-            print(f"✅ {label_name}: all valid")
+            print(f"[OK] {label_name}: all valid")
 
     # 4. Provenance check
     has_provenance = [r for r in valid_rows if "provenance" in r]
@@ -120,7 +128,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
         bad_prov = [r for r in has_provenance if r.get("provenance") not in VALID_PROVENANCE]
         if bad_prov:
             warnings.append(f"{len(bad_prov)} rows with unrecognized provenance tags")
-        print(f"📋 Provenance present: {len(has_provenance)}/{len(valid_rows)} rows")
+        print(f"[PROVENANCE] Present: {len(has_provenance)}/{len(valid_rows)} rows")
         prov_counts = Counter(r.get("provenance", "unknown") for r in valid_rows)
         for prov, count in prov_counts.most_common():
             pct = count / len(valid_rows) * 100
@@ -129,7 +137,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
         warnings.append("No 'provenance' field found. Consider adding for data lineage tracking.")
 
     # 5. Label distribution
-    print("\n📊 Label distribution:")
+    print("\n[STATS] Label distribution:")
     intent_counts = Counter(r.get("intent_label", "MISSING") for r in valid_rows)
     agent_counts = Counter(r.get("selected_agent", "MISSING") for r in valid_rows)
     action_counts = Counter(r.get("next_action_label", "MISSING") for r in valid_rows)
@@ -162,7 +170,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
             user_events[uid].append(r)
 
     n_users = len(user_events)
-    print(f"\n👥 Users: {n_users}")
+    print(f"\n[USERS] Users: {n_users}")
     seq_lengths = [len(evts) for evts in user_events.values()]
     if seq_lengths:
         print(f"   Sequences per user: min={min(seq_lengths)}, max={max(seq_lengths)}, avg={sum(seq_lengths)/len(seq_lengths):.1f}")
@@ -184,7 +192,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
     if oor_users:
         errors.append(f"{len(oor_users)} users have out-of-order timestamps: {oor_users[:3]}")
     else:
-        print("✅ Timestamps: all in order per user")
+        print("[OK] Timestamps: all in order per user")
 
     # 8. Duplicate detection (same user + content + time)
     seen = set()
@@ -197,14 +205,9 @@ def validate(data_path: Path, strict: bool = False) -> int:
     if dupes > 0:
         errors.append(f"{dupes} duplicate (user, content, time) combinations found")
     else:
-        print("✅ No duplicate (user, content, time) combinations")
+        print("[OK] No duplicate (user, content, time) combinations")
 
     # 9. Future feedback leakage check
-    # The dataset stores feedback_value. In a sequence, each event's feedback_value
-    # should represent the rating of the PREVIOUS event (not the current one).
-    # We can only check for gross violations: if every event in a user's sequence
-    # has a non-zero feedback_value including the first event (no prior event to rate),
-    # that is suspicious.
     suspicious_feedback = []
     for uid, events in user_events.items():
         if len(events) >= 2:
@@ -217,18 +220,18 @@ def validate(data_path: Path, strict: bool = False) -> int:
             f"(first event has no prior event to rate). Examples: {suspicious_feedback[:3]}"
         )
     else:
-        print("✅ No obvious future feedback leakage on first events")
+        print("[OK] No obvious future feedback leakage on first events")
 
     # 10. Check for reviewer field (diagnostic benchmark specific)
     has_reviewer = [r for r in valid_rows if r.get("reviewer")]
     if has_reviewer:
-        print(f"👁️  Reviewer-annotated rows: {len(has_reviewer)}/{len(valid_rows)}")
+        print(f"[REVIEWER] Annotated rows: {len(has_reviewer)}/{len(valid_rows)}")
         unreviewed = [r for r in valid_rows if not r.get("reviewer")]
         if unreviewed:
             warnings.append(f"{len(unreviewed)} rows lack 'reviewer' field — treat results as pilot/unreviewed")
 
     # 11. Print anonymized samples
-    print(f"\n🔍 Sample rows (anonymized):")
+    print(f"\n[SAMPLES] Sample rows (anonymized):")
     import random
     sample_size = min(5, len(valid_rows))
     for r in random.sample(valid_rows, sample_size):
@@ -236,7 +239,7 @@ def validate(data_path: Path, strict: bool = False) -> int:
         content = anonymize(str(r.get("content", "")))
         intent = r.get("intent_label", "?")
         agent = r.get("selected_agent", "?")
-        print(f"  user={uid_short}… intent={intent} agent={agent} content='{content}'")
+        print(f"  user={uid_short}... intent={intent} agent={agent} content='{content}'")
 
     # ── Summary ──────────────────────────────────────────────────────────────
     print(f"\n{'='*60}")
@@ -244,27 +247,27 @@ def validate(data_path: Path, strict: bool = False) -> int:
     print(f"{'='*60}")
 
     if errors:
-        print(f"❌ ERRORS ({len(errors)}):")
+        print(f"[ERROR] ERRORS ({len(errors)}):")
         for e in errors:
-            print(f"   • {e}")
+            print(f"   * {e}")
     else:
-        print("✅ No blocking errors")
+        print("[OK] No blocking errors")
 
     if warnings:
-        print(f"⚠️  WARNINGS ({len(warnings)}):")
+        print(f"[WARN] WARNINGS ({len(warnings)}):")
         for w in warnings:
-            print(f"   • {w}")
+            print(f"   * {w}")
     else:
-        print("✅ No warnings")
+        print("[OK] No warnings")
 
     if errors:
-        print("\n🔴 Result: INVALID — fix errors before training")
+        print("\n[RESULT] INVALID — fix errors before training")
         return 1
     elif warnings and strict:
-        print("\n🟡 Result: WARNINGS (strict mode — treating as failure)")
+        print("\n[RESULT] WARNINGS (strict mode — treating as failure)")
         return 2
     else:
-        print("\n🟢 Result: VALID — data can be used for training")
+        print("\n[RESULT] VALID — data can be used for training")
         return 0
 
 

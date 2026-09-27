@@ -4,6 +4,7 @@ import hashlib
 import math
 import os
 import re
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -22,16 +23,6 @@ from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessRespo
 from .auth import get_auth_db
 from .memory import get_memory_db
 from .provider import generate_response, get_provider_health
-
-app = FastAPI(title="DUSN-X AI API", version="0.3.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ── Model loading (unchanged from Phase 1) ─────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
@@ -74,12 +65,28 @@ def load_model_once() -> None:
     LOADED_CHECKPOINT = str(path.resolve())
 
 
-@app.on_event("startup")
 def startup() -> None:
     load_model_once()
     # Pre-warm DBs
     get_auth_db()
     get_memory_db()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    startup()
+    yield
+
+
+app = FastAPI(title="DUSN-X AI API", version="0.3.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ── Auth dependency ────────────────────────────────────────────────────────────
@@ -208,6 +215,14 @@ def get_memory(memory_id: str, user: CurrentUser):
     return mem
 
 
+@app.get("/v1/memories/{memory_id}/history")
+def get_memory_history(memory_id: str, user: CurrentUser):
+    mem = get_memory_db().get_memory(user["user_id"], memory_id)
+    if mem is None:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return get_memory_db().get_memory_history(user["user_id"], memory_id)
+
+
 @app.put("/v1/memories/{memory_id}")
 def update_memory(memory_id: str, req: MemoryUpdateRequest, user: CurrentUser):
     updated = get_memory_db().update_memory(
@@ -294,6 +309,14 @@ def get_messages(session_id: str, user: CurrentUser, limit: int = 100, offset: i
     if sess is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return get_memory_db().get_messages(user["user_id"], session_id, limit=limit, offset=offset)
+
+
+@app.delete("/v1/sessions/{session_id}")
+def delete_session(session_id: str, user: CurrentUser):
+    ok = get_memory_db().delete_session(user["user_id"], session_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"ok": True}
 
 
 # ── Chat endpoint (main interaction) ──────────────────────────────────────────

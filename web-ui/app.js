@@ -7,9 +7,8 @@
  * - User cannot supply arbitrary linkedUserId to read other users' memory
  */
 
-// ── Config ─────────────────────────────────────────────────────────────────────
-const AI_API = window.DUSNX_AI_API || "http://localhost:8000";
-const GATEWAY = window.DUSNX_GATEWAY || "http://localhost:8080";
+const AI_API = window.DUSNX_AI_API || (window.location?.port === "8080" ? "" : "http://localhost:8000");
+const GATEWAY = window.DUSNX_GATEWAY || (window.location?.port === "8080" ? "" : "http://localhost:8080");
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let authToken = sessionStorage.getItem("dusnx_token") || null;

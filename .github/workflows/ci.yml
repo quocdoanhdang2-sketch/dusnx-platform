@@ -21,7 +21,7 @@ jobs:
         env:
           PYTHONPATH: "python/src:python/apps:python:."
           DUSNX_DATA_DIR: "/tmp/dusnx-test-data"
-        run: pytest python/tests -q --tb=short --ignore=python/tests/test_feedback_causality.py
+        run: pytest python/tests -q --tb=short
       - name: Compile Python files
         run: python -m compileall -q python
 

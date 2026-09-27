@@ -38,13 +38,42 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseCors();
 
+var webUiPath = Environment.GetEnvironmentVariable("DUSNX_WEB_UI_DIR") 
+    ?? Path.Combine(builder.Environment.ContentRootPath, "..", "web-ui");
+if (!Directory.Exists(webUiPath))
+    webUiPath = Path.Combine(Directory.GetCurrentDirectory(), "web-ui");
+
+if (Directory.Exists(webUiPath))
+{
+    var physicalProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Path.GetFullPath(webUiPath));
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = physicalProvider });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = physicalProvider });
+}
+
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",
     service = "dusnx-gateway",
-    phase = "phase-1",
+    phase = "week-1",
     utc = DateTimeOffset.UtcNow
 }));
+
+var proxyMethods = new[] { "GET", "POST", "PUT", "DELETE", "PATCH" };
+string[] proxyServices = ["auth", "memories", "sessions", "projects"];
+foreach (var prefix in new[] { "/api/v1", "/v1" })
+{
+    app.MapMethods($"{prefix}/chat", ["POST"], (HttpContext ctx, IHttpClientFactory f) => 
+        ProxyToAiApi(ctx, "/v1/chat", f));
+
+    foreach (var service in proxyServices)
+    {
+        app.MapMethods($"{prefix}/{service}", proxyMethods, (HttpContext ctx, IHttpClientFactory f) => 
+            ProxyToAiApi(ctx, $"/v1/{service}", f));
+        app.MapMethods($"{prefix}/{service}/{{**remainder}}", proxyMethods, (string? remainder, HttpContext ctx, IHttpClientFactory f) => 
+            ProxyToAiApi(ctx, $"/v1/{service}/{remainder}", f));
+    }
+}
+app.MapGet("/api/v1/ai/health", (HttpContext ctx, IHttpClientFactory f) => ProxyToAiApi(ctx, "/health", f));
 
 app.MapPost("/api/v1/events", async (
     EventRequest request,
@@ -199,6 +228,60 @@ app.MapPost("/webhooks/zalo", async (
 });
 
 app.MapHub<JobHub>("/hubs/jobs");
+
+async Task ProxyToAiApi(HttpContext context, string targetPath, IHttpClientFactory httpClientFactory)
+{
+    var client = httpClientFactory.CreateClient("ai");
+    var queryString = context.Request.QueryString.Value;
+    var requestUri = targetPath + queryString;
+
+    using var requestMessage = new HttpRequestMessage(new HttpMethod(context.Request.Method), requestUri);
+
+    if (HttpMethods.IsPost(context.Request.Method) ||
+        HttpMethods.IsPut(context.Request.Method) ||
+        HttpMethods.IsPatch(context.Request.Method))
+    {
+        var streamContent = new StreamContent(context.Request.Body);
+        if (!string.IsNullOrEmpty(context.Request.ContentType))
+        {
+            streamContent.Headers.TryAddWithoutValidation("Content-Type", context.Request.ContentType);
+        }
+        requestMessage.Content = streamContent;
+    }
+
+    foreach (var header in context.Request.Headers)
+    {
+        if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase) ||
+            header.Key.StartsWith("X-", StringComparison.OrdinalIgnoreCase) ||
+            header.Key.Equals("Accept", StringComparison.OrdinalIgnoreCase))
+        {
+            requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+        }
+    }
+
+    try
+    {
+        using var response = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+        context.Response.StatusCode = (int)response.StatusCode;
+        foreach (var header in response.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value.ToArray();
+        }
+        foreach (var header in response.Content.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value.ToArray();
+        }
+        context.Response.Headers.Remove("Transfer-Encoding");
+        await response.Content.CopyToAsync(context.Response.Body, context.RequestAborted);
+    }
+    catch (HttpRequestException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { detail = $"AI API unavailable: {ex.Message}" });
+    }
+}
+
 app.Run();
 
 public sealed record EventRequest(
