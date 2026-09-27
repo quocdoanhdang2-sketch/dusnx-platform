@@ -2,7 +2,7 @@ name: DUSN-X CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, "feature/*"]
   pull_request:
     branches: [main, develop]
 
@@ -17,10 +17,11 @@ jobs:
           cache: pip
       - name: Install Python project
         run: pip install -e "./python[dev]"
-      - name: Run tests
+      - name: Run all tests (core + week1 acceptance)
         env:
-          PYTHONPATH: python/src:python
-        run: pytest python/tests -q
+          PYTHONPATH: "python/src:python/apps:python:."
+          DUSNX_DATA_DIR: "/tmp/dusnx-test-data"
+        run: pytest python/tests -q --tb=short
       - name: Compile Python files
         run: python -m compileall -q python
 
@@ -46,5 +47,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Test safe timeline rendering
+      - name: Test safe rendering (XSS prevention, memory cards, chat bubbles)
         run: node --test web-ui/app.test.js

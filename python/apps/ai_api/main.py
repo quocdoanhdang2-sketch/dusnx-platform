@@ -5,9 +5,12 @@ import math
 import os
 import re
 from pathlib import Path
+from typing import Annotated, Optional
 
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Header, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from dusnx_core.checkpoint import load_checkpoint, model_identifier
 from dusnx_core.config import ModelConfig
@@ -16,10 +19,21 @@ from dusnx_core.inference import process_one, state_reset_reason, state_to_snaps
 from dusnx_core.routing_policy import match_explicit_route
 from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessResponse, StateSnapshot
 
-app = FastAPI(title="DUSN-X AI API", version="0.2.0")
+from .auth import get_auth_db
+from .memory import get_memory_db
+from .provider import generate_response, get_provider_health
 
-# Source lives in <repo>/python/apps when native and /app/apps in the
-# container, so derive the matching artifact root without relying on cwd.
+app = FastAPI(title="DUSN-X AI API", version="0.3.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ── Model loading (unchanged from Phase 1) ─────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
 DEFAULT_CHECKPOINT = str(ARTIFACT_ROOT / "artifacts" / "dusnx_smoke_v2.pt")
@@ -34,11 +48,9 @@ LOADED_CHECKPOINT: str | None = None
 
 
 def load_model_once() -> None:
-    """Load a trained checkpoint, or keep a deterministic bootstrap mode for first run."""
     global MODEL, CFG, META, RUNTIME_MODE, MODEL_VERSION, LOADED_CHECKPOINT
     if MODEL is not None:
         return
-
     path = Path(CHECKPOINT)
     if not path.exists():
         missing_path = path.resolve()
@@ -56,7 +68,6 @@ def load_model_once() -> None:
         MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
         LOADED_CHECKPOINT = None
         return
-
     MODEL, CFG, META = load_checkpoint(path, DEVICE)
     RUNTIME_MODE = "trained_dusnx"
     MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
@@ -66,7 +77,28 @@ def load_model_once() -> None:
 @app.on_event("startup")
 def startup() -> None:
     load_model_once()
+    # Pre-warm DBs
+    get_auth_db()
+    get_memory_db()
 
+
+# ── Auth dependency ────────────────────────────────────────────────────────────
+
+def _get_current_user(authorization: Annotated[Optional[str], Header()] = None) -> dict:
+    """Extract and verify Bearer token from Authorization header."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = authorization[7:]
+    user = get_auth_db().verify_token(token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Token không hợp lệ hoặc đã hết hạn")
+    return user
+
+
+CurrentUser = Annotated[dict, Depends(_get_current_user)]
+
+
+# ── Health ─────────────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
@@ -78,8 +110,345 @@ def health():
         "checkpoint_loaded": LOADED_CHECKPOINT,
         "metadata": META,
         "model_version": MODEL_VERSION,
+        "provider": get_provider_health(),
     }
 
+
+# ── Auth endpoints ─────────────────────────────────────────────────────────────
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/v1/auth/register", status_code=201)
+def register(req: RegisterRequest):
+    try:
+        user = get_auth_db().register(req.username, req.password)
+        return {"user_id": user["user_id"], "username": user["username"], "created_at": user["created_at"]}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/v1/auth/login")
+def login(req: LoginRequest):
+    token = get_auth_db().login(req.username, req.password)
+    if token is None:
+        raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng")
+    return {"token": token, "token_type": "Bearer"}
+
+
+@app.post("/v1/auth/logout")
+def logout(user: CurrentUser, authorization: Annotated[Optional[str], Header()] = None):
+    if authorization and authorization.startswith("Bearer "):
+        get_auth_db().logout(authorization[7:])
+    return {"ok": True}
+
+
+@app.get("/v1/auth/me")
+def me(user: CurrentUser):
+    return {"user_id": user["user_id"], "username": user["username"]}
+
+
+# ── Memory endpoints ───────────────────────────────────────────────────────────
+
+class MemoryCreateRequest(BaseModel):
+    info_type: str = Field(..., description="Loại thông tin: preference, goal, decision, project_fact, ...")
+    content: str
+    source_session: Optional[str] = None
+    project_id: Optional[str] = None
+
+
+class MemoryUpdateRequest(BaseModel):
+    content: str
+    info_type: Optional[str] = None
+    source_session: Optional[str] = None
+
+
+@app.post("/v1/memories", status_code=201)
+def create_memory(req: MemoryCreateRequest, user: CurrentUser):
+    return get_memory_db().create_memory(
+        user_id=user["user_id"],
+        info_type=req.info_type,
+        content=req.content,
+        source_session=req.source_session,
+        project_id=req.project_id,
+    )
+
+
+@app.get("/v1/memories")
+def list_memories(
+    user: CurrentUser,
+    project_id: Optional[str] = None,
+    include_inactive: bool = False,
+    search: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+):
+    return get_memory_db().list_memories(
+        user_id=user["user_id"],
+        project_id=project_id,
+        include_inactive=include_inactive,
+        search=search,
+        limit=min(limit, 200),
+        offset=offset,
+    )
+
+
+@app.get("/v1/memories/{memory_id}")
+def get_memory(memory_id: str, user: CurrentUser):
+    mem = get_memory_db().get_memory(user["user_id"], memory_id)
+    if mem is None:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return mem
+
+
+@app.put("/v1/memories/{memory_id}")
+def update_memory(memory_id: str, req: MemoryUpdateRequest, user: CurrentUser):
+    updated = get_memory_db().update_memory(
+        user_id=user["user_id"],
+        memory_id=memory_id,
+        new_content=req.content,
+        new_type=req.info_type,
+        source_session=req.source_session,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return updated
+
+
+@app.delete("/v1/memories/{memory_id}", status_code=204)
+def delete_memory(memory_id: str, user: CurrentUser):
+    ok = get_memory_db().delete_memory(user["user_id"], memory_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Memory not found or already inactive")
+
+
+# ── Project endpoints ──────────────────────────────────────────────────────────
+
+class ProjectCreateRequest(BaseModel):
+    name: str
+    description: str = ""
+
+
+@app.post("/v1/projects", status_code=201)
+def create_project(req: ProjectCreateRequest, user: CurrentUser):
+    return get_memory_db().create_project(user["user_id"], req.name, req.description)
+
+
+@app.get("/v1/projects")
+def list_projects(user: CurrentUser):
+    return get_memory_db().list_projects(user["user_id"])
+
+
+@app.get("/v1/projects/{project_id}")
+def get_project(project_id: str, user: CurrentUser):
+    proj = get_memory_db().get_project(user["user_id"], project_id)
+    if proj is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return proj
+
+
+@app.get("/v1/projects/{project_id}/decisions")
+def get_project_decisions(project_id: str, user: CurrentUser, include_inactive: bool = False):
+    """Get memories (decisions) for a project. Active only by default."""
+    return get_memory_db().list_memories(
+        user_id=user["user_id"],
+        project_id=project_id,
+        include_inactive=include_inactive,
+    )
+
+
+# ── Chat Session endpoints ─────────────────────────────────────────────────────
+
+class SessionCreateRequest(BaseModel):
+    title: Optional[str] = None
+
+
+@app.post("/v1/sessions", status_code=201)
+def create_session(req: SessionCreateRequest, user: CurrentUser):
+    return get_memory_db().create_session(user["user_id"], title=req.title)
+
+
+@app.get("/v1/sessions")
+def list_sessions(user: CurrentUser):
+    return get_memory_db().list_sessions(user["user_id"])
+
+
+@app.get("/v1/sessions/{session_id}")
+def get_session(session_id: str, user: CurrentUser):
+    sess = get_memory_db().get_session(user["user_id"], session_id)
+    if sess is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return sess
+
+
+@app.get("/v1/sessions/{session_id}/messages")
+def get_messages(session_id: str, user: CurrentUser, limit: int = 100, offset: int = 0):
+    sess = get_memory_db().get_session(user["user_id"], session_id)
+    if sess is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return get_memory_db().get_messages(user["user_id"], session_id, limit=limit, offset=offset)
+
+
+# ── Chat endpoint (main interaction) ──────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str
+    project_id: Optional[str] = None
+    feedback_value: float = Field(default=0.0)
+
+
+class ChatResponse(BaseModel):
+    message_id: str
+    reply: str
+    intent: str
+    selected_agent: str
+    next_action: str
+    confidence: float
+    runtime_mode: str
+    routing_source: str
+    provider_used: str
+    provider_ok: bool
+    state_version: Optional[int]
+    memory_ids_used: list[str]
+    session_id: str
+
+
+@app.post("/v1/chat", response_model=ChatResponse)
+def chat(req: ChatRequest, user: CurrentUser):
+    db = get_memory_db()
+    user_id = user["user_id"]
+
+    # Verify session ownership
+    sess = db.get_session(user_id, req.session_id)
+    if sess is None:
+        raise HTTPException(status_code=404, detail="Session not found or not owned by this user")
+
+    # Save user message
+    db.append_message(req.session_id, user_id, "user", req.message)
+
+    # Get active memories for context
+    memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, limit=20)
+    memory_ids = [m["memory_id"] for m in memories]
+
+    # Get recent session history (for context)
+    history = db.get_messages(user_id, req.session_id, limit=12)
+    # Exclude the just-added user message from history (it's the current input)
+    history = history[:-1] if history else []
+
+    # Determine project name if applicable
+    project_name = None
+    if req.project_id:
+        proj = db.get_project(user_id, req.project_id)
+        project_name = proj["name"] if proj else None
+
+    # Get previous state from gateway store (global_user_id based lookup)
+    global_user_id = _compute_global_user_id(user_id)
+
+    # Run DUSN-X routing/state update
+    active_cfg = CFG or ModelConfig()
+    # For chat, we use a simplified previous_state lookup (state stored in files by gateway)
+    # Here we use bootstrap since FastAPI doesn't hold state between calls (gateway does)
+    dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source, state_version = _run_dusnx(
+        global_user_id=global_user_id,
+        platform="web",
+        content=req.message,
+        feedback_value=req.feedback_value,
+        active_cfg=active_cfg,
+    )
+
+    # Generate text response using provider
+    reply_text, provider_ok, provider_used = generate_response(
+        user_message=req.message,
+        memories=memories,
+        intent=dusnx_intent,
+        session_history=history,
+        project_name=project_name,
+    )
+
+    # Save assistant message
+    msg = db.append_message(
+        req.session_id,
+        user_id,
+        "assistant",
+        reply_text,
+        memory_ids_used=memory_ids,
+        state_version=state_version,
+    )
+
+    # Auto-update session title from first user message
+    if len(history) == 0:
+        title = req.message[:60].strip()
+        if title:
+            db.update_session_title(user_id, req.session_id, title)
+
+    return ChatResponse(
+        message_id=msg["message_id"],
+        reply=reply_text,
+        intent=dusnx_intent,
+        selected_agent=dusnx_agent,
+        next_action=dusnx_action,
+        confidence=confidence,
+        runtime_mode=RUNTIME_MODE,
+        routing_source=routing_source,
+        provider_used=provider_used,
+        provider_ok=provider_ok,
+        state_version=state_version,
+        memory_ids_used=memory_ids,
+        session_id=req.session_id,
+    )
+
+
+def _compute_global_user_id(user_id: str) -> str:
+    """Compute a stable global_user_id for a local user_id."""
+    identity = f"local:{user_id}"
+    import hashlib
+    import struct
+    b = hashlib.sha256(identity.encode()).digest()
+    return f"{b[0]:02x}{b[1]:02x}{b[2]:02x}{b[3]:02x}-{b[4]:02x}{b[5]:02x}-{b[6]:02x}{b[7]:02x}-{b[8]:02x}{b[9]:02x}-{b[10]:02x}{b[11]:02x}{b[12]:02x}{b[13]:02x}{b[14]:02x}{b[15]:02x}"
+
+
+def _run_dusnx(
+    global_user_id: str,
+    platform: str,
+    content: str,
+    feedback_value: float,
+    active_cfg: ModelConfig,
+) -> tuple[str, str, str, float, str, Optional[int]]:
+    """Run DUSN-X model or bootstrap rules. Returns (intent, agent, action, confidence, routing_source, state_version)."""
+    reset_reason = state_reset_reason(None, active_cfg, MODEL_VERSION)
+
+    if MODEL is None:
+        intent, agent, action, conf = detect_route(content)
+        return intent, agent, action, conf, "bootstrap_rules", None
+    else:
+        import torch as _torch
+        from dusnx_core.inference import process_one as _process_one
+        from dusnx_core.schema import ProcessRequest as _PR
+        req = _PR(
+            global_user_id=global_user_id,
+            platform=platform,
+            content=content,
+            event_type="message",
+            time_gap_hours=0.0,
+            feedback_value=feedback_value,
+            previous_state=None,
+        )
+        result = _process_one(MODEL, CFG, req, MODEL_VERSION, DEVICE)
+        explicit = match_explicit_route(platform, content)
+        if explicit is not None:
+            return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence, "business_rule_override", None
+        return result["intent"], result["selected_agent"], result["next_action"], result["confidence"], "model", None
+
+
+# ── Legacy /v1/process endpoint (kept for Gateway compatibility) ────────────────
 
 def detect_route(content: str) -> tuple[str, str, str, float]:
     explicit = match_explicit_route("web", content)
@@ -120,6 +489,7 @@ def bootstrap_state_update(req: ProcessRequest, intent: str) -> StateSnapshot:
 
     words = re.findall(r"\w+", req.content.casefold(), flags=re.UNICODE) or [req.content]
     for word in words:
+        import hashlib
         digest = hashlib.sha256(word.encode("utf-8")).digest()
         index = int.from_bytes(digest[:4], "big") % len(global_state)
         signal = 0.04 + (digest[4] / 255.0) * 0.06
@@ -155,21 +525,19 @@ def requested_slide_count(content: str) -> int:
 
 def build_slide_outline(content: str) -> list[dict]:
     count = requested_slide_count(content)
-    topic = re.sub(r"^(?:create|tạo)\s+\d{1,2}\s+slides?\.?\s*", "", content, flags=re.I).strip()
+    topic = re.sub(r"^(?:create|tạo)\s+\d{1,2}\s+slides?\.\?\s*", "", content, flags=re.I).strip()
     topic = topic or "DUSN-X"
     slides = []
     for index in range(1, count + 1):
-        slides.append(
-            {
-                "index": index,
-                "title": f"{topic} — phần {index}",
-                "bullets": [
-                    f"Mục tiêu của phần {index}",
-                    "Luận điểm hoặc dữ liệu cần trình bày",
-                    "Kết nối với trạng thái người dùng DUSN-X",
-                ],
-            }
-        )
+        slides.append({
+            "index": index,
+            "title": f"{topic} — phần {index}",
+            "bullets": [
+                f"Mục tiêu của phần {index}",
+                "Luận điểm hoặc dữ liệu cần trình bày",
+                "Kết nối với trạng thái người dùng DUSN-X",
+            ],
+        })
     return slides
 
 
@@ -203,8 +571,6 @@ def process(req: ProcessRequest):
     if req.platform not in PLATFORMS:
         raise HTTPException(status_code=400, detail=f"platform must be one of {PLATFORMS}")
 
-    # A state update counter is unrelated to compatibility. Do not coerce a
-    # legacy/mismatched vector: reset from the current model's initial state.
     active_cfg = CFG or ModelConfig()
     reset_reason = state_reset_reason(req.previous_state, active_cfg, MODEL_VERSION)
     state_reset = reset_reason is not None
@@ -226,9 +592,7 @@ def process(req: ProcessRequest):
 
         explicit = match_explicit_route(req.platform, req.content)
         if explicit is not None and (
-            intent != explicit.intent
-            or agent != explicit.agent
-            or next_action != explicit.next_action
+            intent != explicit.intent or agent != explicit.agent or next_action != explicit.next_action
         ):
             intent = explicit.intent
             agent = explicit.agent

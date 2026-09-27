@@ -12,3 +12,7 @@ obj/
 
 gateway-dotnet/data/
 **/*.egg-info/
+
+# Runtime databases — never commit user data
+data/*.db
+python/tests/test_runtime/

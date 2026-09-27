@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dusnx-platform"
-version = "0.2.0"
-description = "DUSN-X research MVP: cross-platform dynamic user state network"
+version = "0.3.0"
+description = "DUSN-X: Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng"
 requires-python = ">=3.11,<3.14"
 dependencies = [
   "torch>=2.3",
@@ -18,10 +18,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest>=8.0", "ruff>=0.6", "httpx>=0.27"]
 
 [tool.pytest.ini_options]
-pythonpath = [".", "src"]
+pythonpath = [".", "src", "..", "../scripts"]
 
 [tool.ruff]
 line-length = 120

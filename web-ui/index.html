@@ -1,45 +1,226 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DUSN-X Web Demo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DUSN-X — Trợ lý AI cá nhân hóa</title>
+  <meta name="description" content="DUSN-X: Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="wrap">
-    <h1>DUSN-X Cross-Platform Demo</h1>
-    <p class="notice">Đây là demo local. Chọn Zalo hoặc PowerPoint chỉ mô phỏng đầu vào đã chuẩn hóa; hệ thống chưa gửi tin Zalo, chỉnh file PowerPoint hay truy xuất Internet thật.</p>
-    <section class="panel">
-      <label>Platform mô phỏng
-        <select id="platform"><option value="web">Web</option><option value="zalo">Zalo</option><option value="powerpoint">PowerPoint</option></select>
-      </label>
-      <label>Platform user ID <input id="user" value="web-user-001" /></label>
-      <label>Linked user key (dùng cùng giá trị giữa ba platform) <input id="linked" value="global-demo-001" /></label>
-      <label>Nội dung <textarea id="content">Phân tích DUSN-X và làm tiếp phần hôm trước</textarea></label>
-      <label>Feedback của sự kiện trước (-1..1; đã biết trước request này) <input id="feedback" type="number" min="-1" max="1" step="0.1" value="0" /></label>
-      <button id="send">Gửi sự kiện mô phỏng</button>
-    </section>
-    <section class="panel">
-      <h2>Kết quả routing</h2>
-      <p><code>routing_source=model</code> là route model; <code>business_rule_override</code> là kết quả cuối đã bị rule thay đổi. <code>next_action</code> chỉ là đề xuất định tuyến, không chứng minh action đã được thực thi.</p>
-      <pre id="output">Chưa có dữ liệu.</pre>
-    </section>
-    <section class="panel">
-      <div class="section-heading"><div><h2>Timeline người dùng</h2><p id="timelineStatus">Bấm tải lại để đọc lịch sử.</p></div><button id="reloadTimeline">Tải lại</button></div>
-      <p>Thử lần lượt Web → Zalo → PowerPoint với cùng linked key và đổi platform user ID tùy ý. Timeline sẽ dùng chung identity và cho thấy <code>state_version</code> tăng.</p>
-      <div id="timeline" class="timeline" aria-live="polite"></div>
-      <button id="loadOlder" hidden>Tải event cũ hơn</button>
-    </section>
-    <section class="panel">
-      <h2>Presentation Job mô phỏng</h2>
-      <p>Job tạo outline/routing bất đồng bộ; chưa chỉnh file PowerPoint thật.</p>
-      <label>Số slide <input id="slideCount" type="number" min="1" max="20" value="5" /></label>
-      <label>Yêu cầu <textarea id="slidePrompt">Tạo slide về kiến trúc DUSN-X cross-platform</textarea></label>
-      <button id="generateSlides">Tạo job mô phỏng</button>
-      <pre id="jobOutput">Chưa có job.</pre>
-    </section>
+
+<!-- ═══════════════════ AUTH SCREEN ═══════════════════ -->
+<div id="authScreen" class="screen active">
+  <div class="auth-bg">
+    <div class="auth-glow g1"></div>
+    <div class="auth-glow g2"></div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">DUSN-X</span>
+    </div>
+    <p class="auth-tagline">Trí tuệ cá nhân hóa thích ứng</p>
+
+    <div class="tab-row" role="tablist">
+      <button id="tabLogin" class="tab active" role="tab" aria-selected="true" onclick="switchTab('login')">Đăng nhập</button>
+      <button id="tabRegister" class="tab" role="tab" aria-selected="false" onclick="switchTab('register')">Đăng ký</button>
+    </div>
+
+    <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+      <label for="loginUsername" class="field-label">Tên đăng nhập</label>
+      <input id="loginUsername" class="field-input" type="text" autocomplete="username" placeholder="your_username" required />
+      <label for="loginPassword" class="field-label">Mật khẩu</label>
+      <input id="loginPassword" class="field-input" type="password" autocomplete="current-password" placeholder="••••••••" required />
+      <div id="loginError" class="auth-error" role="alert" hidden></div>
+      <button id="loginBtn" class="btn-primary" type="submit">Đăng nhập</button>
+    </form>
+
+    <form id="registerForm" class="auth-form" hidden onsubmit="handleRegister(event)">
+      <label for="regUsername" class="field-label">Tên đăng nhập</label>
+      <input id="regUsername" class="field-input" type="text" autocomplete="username" placeholder="Tối thiểu 3 ký tự" required />
+      <label for="regPassword" class="field-label">Mật khẩu</label>
+      <input id="regPassword" class="field-input" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự" required />
+      <div id="registerError" class="auth-error" role="alert" hidden></div>
+      <button id="registerBtn" class="btn-primary" type="submit">Tạo tài khoản</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════ MAIN APP ═══════════════════ -->
+<div id="appScreen" class="screen">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar" aria-label="Điều hướng">
+    <div class="sidebar-header">
+      <span class="logo-icon small">⬡</span>
+      <span class="sidebar-brand">DUSN-X</span>
+      <button class="icon-btn sidebar-toggle-mobile" onclick="toggleSidebar()" aria-label="Đóng menu">✕</button>
+    </div>
+
+    <button id="newChatBtn" class="btn-new-chat" onclick="startNewSession()">
+      <span>＋</span> Phiên chat mới
+    </button>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Phiên chat</div>
+      <ul id="sessionList" class="session-list" role="list"></ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-nav-item" onclick="showView('memory')" id="navMemory">
+        <span class="nav-icon">🧠</span> Trí nhớ của tôi
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('projects')" id="navProjects">
+        <span class="nav-icon">📁</span> Dự án
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('timeline')" id="navTimeline">
+        <span class="nav-icon">📡</span> Quan sát hệ thống
+      </button>
+      <button class="sidebar-nav-item logout-btn" onclick="handleLogout()">
+        <span class="nav-icon">↩</span> Đăng xuất
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content" id="mainContent">
+
+    <!-- Mobile header -->
+    <header class="mobile-header">
+      <button class="icon-btn" onclick="toggleSidebar()" aria-label="Mở menu">☰</button>
+      <span class="mobile-title" id="mobileTitle">DUSN-X</span>
+    </header>
+
+    <!-- Chat View -->
+    <div id="viewChat" class="view active">
+      <div class="chat-header">
+        <h1 class="chat-title" id="chatTitle">Phiên chat mới</h1>
+        <div class="chat-meta" id="chatMeta"></div>
+      </div>
+
+      <!-- Welcome state (empty session) -->
+      <div id="welcomeState" class="welcome-state">
+        <div class="welcome-icon">⬡</div>
+        <h2 class="welcome-title">Xin chào! Tôi là DUSN-X</h2>
+        <p class="welcome-sub">Trợ lý AI cá nhân hóa thích ứng của bạn. Tôi nhớ những gì bạn chia sẻ và học cách hỗ trợ bạn tốt hơn theo thời gian.</p>
+        <div class="welcome-hints">
+          <button class="hint-chip" onclick="useHint(this)">Dự án tôi đang làm là gì?</button>
+          <button class="hint-chip" onclick="useHint(this)">Tóm tắt những gì tôi đã chia sẻ</button>
+          <button class="hint-chip" onclick="useHint(this)">Tôi đang ưu tiên gì?</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messageList" class="message-list" role="log" aria-live="polite" aria-label="Lịch sử chat"></div>
+
+      <!-- Input area -->
+      <div class="input-area">
+        <div id="statusIndicator" class="status-indicator" hidden>
+          <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+          <span id="statusText">Đang xử lý…</span>
+        </div>
+        <div id="errorBanner" class="error-banner" hidden role="alert"></div>
+        <div class="input-row">
+          <label for="projectSelect" class="sr-only">Chọn dự án</label>
+          <select id="projectSelect" class="project-select" title="Dự án hiện tại">
+            <option value="">Không có dự án</option>
+          </select>
+          <label for="messageInput" class="sr-only">Nhập tin nhắn</label>
+          <textarea
+            id="messageInput"
+            class="message-input"
+            placeholder="Nhập tin nhắn…"
+            rows="1"
+            onkeydown="handleInputKeydown(event)"
+            oninput="autoResizeTextarea(this)"
+            aria-label="Tin nhắn"
+          ></textarea>
+          <button id="sendBtn" class="send-btn" onclick="sendMessage()" aria-label="Gửi">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M2 10L18 2L10 18L8 12L2 10Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-footer">
+          <span id="providerStatus" class="provider-status">Đang kiểm tra provider…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory View -->
+    <div id="viewMemory" class="view">
+      <div class="view-header">
+        <h1 class="view-title">🧠 Trí nhớ của tôi</h1>
+        <button class="btn-secondary" onclick="showAddMemoryModal()">＋ Thêm trí nhớ</button>
+      </div>
+      <div class="memory-controls">
+        <input id="memorySearch" class="field-input compact" type="search" placeholder="Tìm kiếm trí nhớ…" oninput="filterMemories()" aria-label="Tìm trí nhớ" />
+        <label class="toggle-label">
+          <input type="checkbox" id="showInactive" onchange="filterMemories()" />
+          Hiện cả bản cũ (không hiệu lực)
+        </label>
+      </div>
+      <div id="memoryList" class="card-list" role="list"></div>
+    </div>
+
+    <!-- Projects View -->
+    <div id="viewProjects" class="view">
+      <div class="view-header">
+        <h1 class="view-title">📁 Dự án của tôi</h1>
+        <button class="btn-secondary" onclick="showAddProjectModal()">＋ Tạo dự án</button>
+      </div>
+      <div id="projectList" class="card-list" role="list"></div>
+      <div id="projectDetail" hidden>
+        <div class="view-header">
+          <h2 class="view-title" id="projectDetailName"></h2>
+          <button class="btn-ghost" onclick="closeProjectDetail()">← Quay lại</button>
+        </div>
+        <p id="projectDetailDesc" class="project-desc"></p>
+        <h3 class="section-label">Quyết định đang hiệu lực</h3>
+        <div id="projectDecisions" class="card-list"></div>
+        <h3 class="section-label">Lịch sử quyết định (bao gồm đã thay thế)</h3>
+        <div id="projectHistory" class="card-list"></div>
+      </div>
+    </div>
+
+    <!-- Timeline View -->
+    <div id="viewTimeline" class="view">
+      <div class="view-header">
+        <h1 class="view-title">📡 Quan sát hệ thống</h1>
+        <span class="badge-note">Công cụ dev/local — chỉ xem sự kiện loopback</span>
+      </div>
+      <div class="timeline-controls">
+        <input id="tlPlatform" class="field-input compact" value="web" placeholder="platform" />
+        <input id="tlUser" class="field-input compact" placeholder="platformUserId" />
+        <input id="tlLinked" class="field-input compact" placeholder="linkedUserId (tùy chọn)" />
+        <button class="btn-secondary" onclick="loadTimeline()">Tải timeline</button>
+      </div>
+      <div id="timelineStatus" class="status-text" role="status"></div>
+      <div id="timelineList" class="timeline-list"></div>
+      <div class="timeline-note">
+        <strong>Lưu ý:</strong> Zalo/PowerPoint trong timeline dev cũ chỉ là đầu vào mô phỏng, không phải gửi tin Zalo thật hay chỉnh file PowerPoint thật.
+        Web chat ở trên là giao diện chính của DUSN-X Tuần 1.
+      </div>
+    </div>
+
   </main>
-  <script src="app.js"></script>
+</div>
+
+<!-- ═══════════════════ MODALS ═══════════════════ -->
+<div id="modalOverlay" class="modal-overlay" hidden onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">Modal</h2>
+      <button class="icon-btn" onclick="closeModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
