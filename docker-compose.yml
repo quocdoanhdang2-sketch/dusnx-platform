@@ -4,12 +4,19 @@ services:
     environment:
       # Container path; override in .env only with another /app/... path.
       DUSNX_CHECKPOINT: ${DUSNX_CHECKPOINT:-/app/artifacts/dusnx_smoke_v2.pt}
-      DUSNX_DEVICE: cpu
+      DUSNX_DEVICE: ${DUSNX_DEVICE:-cpu}
+      DUSNX_DATA_DIR: /app/data
+      DUSNX_PROVIDER: ${DUSNX_PROVIDER:-ollama}
+      DUSNX_OLLAMA_URL: ${DUSNX_OLLAMA_URL:-http://host.docker.internal:11434}
       PYTHONPATH: /app/src
     volumes:
       - ./artifacts:/app/artifacts:ro
+      - ./runtime/ai-data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
+
 
   gateway:
     build: ./gateway-dotnet

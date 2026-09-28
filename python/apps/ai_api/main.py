@@ -108,17 +108,24 @@ CurrentUser = Annotated[dict, Depends(_get_current_user)]
 # ── Health ─────────────────────────────────────────────────────────────────────
 
 @app.get("/health")
+@app.get("/v1/health")
 def health():
+    p_health = get_provider_health()
+    model_loaded = (LOADED_CHECKPOINT is not None) or (MODEL is not None)
+    provider_ok = bool(p_health.get("available", False))
     return {
         "status": "ok",
         "device": DEVICE,
         "runtime_mode": RUNTIME_MODE,
         "checkpoint": CHECKPOINT,
         "checkpoint_loaded": LOADED_CHECKPOINT,
+        "model_loaded": model_loaded,
+        "provider_ok": provider_ok,
         "metadata": META,
         "model_version": MODEL_VERSION,
-        "provider": get_provider_health(),
+        "provider": p_health,
     }
+
 
 
 # ── Auth endpoints ─────────────────────────────────────────────────────────────
@@ -328,6 +335,8 @@ _DECISION_MODIFY_PATTERNS = [
     r"(?:không dùng|bỏ|huỷ|hủy)\s+.+(?:nữa|thay vào đó)",
     r"(?:replace|change|update|modify)\s+(?:the\s+)?(?:decision|choice|plan)",
     r"(?:instead of|no longer use|switch from)",
+    r"\b(?:đổi|chuyển|thay)\s+.+?\s+(?:sang|thành|bằng)\s+.+",
+    r"\b(?:thay đổi|cập nhật)\s+.+?\s+(?:sang|thành|bằng)\s+.+",
 ]
 
 # Phrases that signal uncertainty or hesitation => return None immediately (ask again)
@@ -420,20 +429,171 @@ def _detect_confirm(text: str) -> Optional[bool]:
     return None
 def _find_best_matching_decision(
     memories: list[dict], message: str
-) -> Optional[dict]:
-    """Best-effort: pick the active decision memory most relevant to the message."""
+) -> tuple[Optional[dict], bool, list[dict]]:
+    """
+    Pick the active decision memory most relevant to the message.
+    Returns (best_match, is_ambiguous, candidate_list).
+    If there are multiple active decisions with close high overlap, is_ambiguous=True.
+    """
+    import re as _re
     decisions = [m for m in memories if m["info_type"] in ("decision", "preference", "goal")]
     if not decisions:
-        return None
-    # Simple keyword overlap score
-    words = set(message.lower().split())
-    best, best_score = None, 0
+        return None, False, []
+
+    words = set(_re.findall(r"\w+", message.lower(), flags=_re.UNICODE))
+    scored = []
     for mem in decisions:
-        overlap = len(words & set(mem["content"].lower().split()))
-        if overlap > best_score:
-            best_score = overlap
-            best = mem
-    return best  # may be None if no overlap — caller handles
+        mem_words = set(_re.findall(r"\w+", mem["content"].lower(), flags=_re.UNICODE))
+        overlap = len(words & mem_words)
+        if overlap > 0:
+            scored.append((overlap, mem))
+
+    if not scored:
+        return None, False, []
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    best_score, best_mem = scored[0]
+
+    # Check for ambiguity: multiple decisions with high, nearly identical scores
+    top_candidates = [m for s, m in scored if s == best_score or (s >= 2 and best_score - s <= 1)]
+    if len(top_candidates) > 1 and best_score >= 1:
+        unique_contents = {m["content"].strip().lower() for m in top_candidates}
+        if len(unique_contents) > 1:
+            return None, True, top_candidates[:3]
+
+    return best_mem, False, [best_mem]
+
+
+_REMEMBER_EXPLICIT_PATTERNS = [
+    r"^(?:hãy\s+)?(?:nhớ|ghi nhớ|lưu|lưu lại)\s+(?:rằng|là|quyết định|lựa chọn|kế hoạch)?\s*[:：,]?\s*(.+)$",
+    r"^(?:hãy\s+)?lưu\s+(?:quyết định|lựa chọn|ý này)\s*[:：,]?\s*(.+)$",
+    r"^(?:nhớ|ghi nhớ)\s+giúp\s+tôi\s+(?:rằng|là)?\s*[:：,]?\s*(.+)$",
+]
+
+
+def _detect_remember_intent(text: str) -> Optional[tuple[str, str]]:
+    """
+    Check if message is an explicit memory instruction.
+    Returns (info_type, clean_content) or None.
+    """
+    import re as _re
+    t = text.strip()
+    for pat in _REMEMBER_EXPLICIT_PATTERNS:
+        m = _re.search(pat, t, flags=_re.IGNORECASE)
+        if m:
+            content = m.group(1).strip()
+            content = _re.sub(r"[.?!]+$", "", content).strip()
+            if not content or len(content) < 3:
+                continue
+            lower = t.lower()
+            if any(w in lower for w in ("quyết định", "lựa chọn", "kế hoạch", "chốt")):
+                itype = "decision"
+            elif any(w in lower for w in ("ưu tiên", "thích", "muốn")):
+                itype = "preference"
+            elif any(w in lower for w in ("mục tiêu", "target", "goal")):
+                itype = "goal"
+            else:
+                itype = "decision"
+            return itype, content
+    return None
+
+
+def _detect_missing_context_query(text: str) -> bool:
+    """Check if user asks for previous context/choice that requires context."""
+    import re as _re
+    t = text.lower()
+    patterns = [
+        r"\b(?:cái|điều|ý|nội dung|quyết định|lựa chọn)\s+(?:vừa nói|trước đó|hôm trước|nãy)\b",
+        r"\b(?:tôi vừa nói gì|nhắc lại cái vừa nói|quyết định của tôi là gì)\b",
+    ]
+    return any(_re.search(p, t) for p in patterns)
+
+
+def _calculate_time_gap_hours(stored: Optional[dict]) -> float:
+    if not stored or not stored.get("updated_at"):
+        return 0.0
+    try:
+        from datetime import datetime, timezone
+        prev_time = datetime.fromisoformat(stored["updated_at"])
+        if prev_time.tzinfo is None:
+            prev_time = prev_time.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        diff_hours = (now - prev_time).total_seconds() / 3600.0
+        return max(0.0, min(8760.0, diff_hours))
+    except Exception:
+        return 0.0
+
+
+def _compute_global_user_id(user_id: str) -> str:
+    """Compute a stable global_user_id for a local user_id."""
+    identity = f"local:{user_id}"
+    import hashlib
+    b = hashlib.sha256(identity.encode()).digest()
+    return f"{b[0]:02x}{b[1]:02x}{b[2]:02x}{b[3]:02x}-{b[4]:02x}{b[5]:02x}-{b[6]:02x}{b[7]:02x}-{b[8]:02x}{b[9]:02x}-{b[10]:02x}{b[11]:02x}{b[12]:02x}{b[13]:02x}{b[14]:02x}{b[15]:02x}"
+
+
+def _run_dusnx(
+    global_user_id: str,
+    platform: str,
+    content: str,
+    feedback_value: float,
+    active_cfg: ModelConfig,
+    previous_state_blob: Optional[dict] = None,
+    time_gap_hours: float = 0.0,
+) -> tuple[str, str, str, float, str, Optional[int], Optional[dict]]:
+    """Run DUSN-X model or bootstrap rules.
+    Returns (intent, agent, action, confidence, routing_source, state_version, new_state_blob).
+    new_state_blob is a JSON-serializable dict for DB storage.
+    """
+    from dusnx_core.schema import StateSnapshot as _SS
+
+    def _snapshot_from_blob(blob: dict) -> Optional[_SS]:
+        try:
+            return _SS(**blob)
+        except Exception:
+            return None
+
+    if MODEL is None:
+        # Bootstrap rules path
+        previous_snapshot = _snapshot_from_blob(previous_state_blob) if previous_state_blob else None
+        from dusnx_core.schema import ProcessRequest as _PR
+        req = _PR(
+            global_user_id=global_user_id,
+            platform=platform,
+            content=content,
+            event_type="message",
+            time_gap_hours=max(0.0, float(time_gap_hours)),
+            feedback_value=feedback_value,
+            previous_state=previous_snapshot,
+        )
+        intent, agent, action, conf = detect_route(content)
+        new_snapshot = bootstrap_state_update(req, intent)
+        new_blob = new_snapshot.model_dump()
+        return intent, agent, action, conf, "bootstrap_rules", new_snapshot.state_version, new_blob
+    else:
+        from dusnx_core.inference import process_one as _process_one
+        from dusnx_core.schema import ProcessRequest as _PR
+        previous_snapshot = _snapshot_from_blob(previous_state_blob) if previous_state_blob else None
+        reset_reason = state_reset_reason(previous_snapshot, active_cfg, MODEL_VERSION)
+        if reset_reason:
+            previous_snapshot = None
+        req = _PR(
+            global_user_id=global_user_id,
+            platform=platform,
+            content=content,
+            event_type="message",
+            time_gap_hours=max(0.0, float(time_gap_hours)),
+            feedback_value=feedback_value,
+            previous_state=previous_snapshot,
+        )
+        result = _process_one(MODEL, CFG, req, MODEL_VERSION, DEVICE)
+        version = (previous_snapshot.state_version if previous_snapshot else 0) + 1
+        new_snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version, STATE_SCHEMA_VERSION, MODEL_VERSION))
+        new_blob = new_snapshot.model_dump()
+        explicit = match_explicit_route(platform, content)
+        if explicit is not None:
+            return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence, "business_rule_override", version, new_blob
+        return result["intent"], result["selected_agent"], result["next_action"], result["confidence"], "model", version, new_blob
 
 
 def _advance_user_state(
@@ -441,23 +601,58 @@ def _advance_user_state(
     user_id: str,
     content: str,
     feedback_value: float = 0.0,
-) -> tuple[int, Optional[dict]]:
-    """Advance DUSN-X state vector for a user turn and persist to DB."""
-    global_user_id = _compute_global_user_id(user_id)
-    stored = db.get_dusnx_state(user_id)
-    prev_blob = stored["state_blob"] if stored else None
-    active_cfg = CFG or ModelConfig()
-    _, _, _, _, _, s_ver, new_blob = _run_dusnx(
-        global_user_id=global_user_id,
-        platform="web",
-        content=content,
-        feedback_value=feedback_value,
-        active_cfg=active_cfg,
-        previous_state_blob=prev_blob,
-    )
-    if new_blob is not None:
-        db.set_dusnx_state(user_id, new_blob, s_ver or 1)
-    return s_ver or 1, new_blob
+    platform: str = "web",
+    event_type: str = "message",
+    project_id: Optional[str] = None,
+    event_id: Optional[str] = None,
+) -> tuple[int, Optional[dict], str, str, str, float, str]:
+    """Advance DUSN-X state vector for a user turn and persist to DB atomically."""
+    with db._lock:
+        if event_id:
+            existing = db.get_user_event(user_id, event_id)
+            if existing:
+                stored = db.get_dusnx_state(user_id)
+                return (
+                    existing.get("state_version", stored["state_version"] if stored else 1),
+                    stored["state_blob"] if stored else None,
+                    existing.get("intent", "chat"),
+                    existing.get("selected_agent", "conversation"),
+                    existing.get("next_action", "reply"),
+                    existing.get("confidence", 0.7),
+                    "deduplicated_event",
+                )
+
+        global_user_id = _compute_global_user_id(user_id)
+        stored = db.get_dusnx_state(user_id)
+        time_gap = _calculate_time_gap_hours(stored)
+        prev_blob = stored["state_blob"] if stored else None
+        active_cfg = CFG or ModelConfig()
+        intent, agent, action, conf, r_source, s_ver, new_blob = _run_dusnx(
+            global_user_id=global_user_id,
+            platform=platform,
+            content=content,
+            feedback_value=feedback_value,
+            active_cfg=active_cfg,
+            previous_state_blob=prev_blob,
+            time_gap_hours=time_gap,
+        )
+        if new_blob is not None:
+            db.set_dusnx_state(user_id, new_blob, s_ver or 1)
+        db.record_user_event(
+            user_id=user_id,
+            platform=platform,
+            event_type=event_type,
+            content=content,
+            project_id=project_id,
+            feedback_value=feedback_value,
+            event_id=event_id,
+            state_version=s_ver or 1,
+            intent=intent,
+            selected_agent=agent,
+            next_action=action,
+            confidence=conf,
+        )
+        return s_ver or 1, new_blob, intent, agent, action, conf, r_source
 
 
 class ChatRequest(BaseModel):
@@ -465,6 +660,7 @@ class ChatRequest(BaseModel):
     message: str
     project_id: Optional[str] = None
     feedback_value: float = Field(default=0.0)
+    is_retry: bool = Field(default=False)
 
 
 class ChatResponse(BaseModel):
@@ -493,11 +689,16 @@ def chat(req: ChatRequest, user: CurrentUser):
     if sess is None:
         raise HTTPException(status_code=404, detail="Session not found or not owned by this user")
 
-    # Save user message
-    db.append_message(req.session_id, user_id, "user", req.message)
+    # Retry check: prevent duplicate user message
+    if req.is_retry:
+        last_msgs = db.get_messages(user_id, req.session_id, limit=1)
+        if not (last_msgs and last_msgs[0]["role"] == "user" and last_msgs[0]["content"] == req.message):
+            db.append_message(req.session_id, user_id, "user", req.message)
+    else:
+        db.append_message(req.session_id, user_id, "user", req.message)
 
-    # Get active memories for context
-    memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, limit=20)
+    # Get active memories for context (filtered and scored by query/project)
+    memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, query=req.message, limit=15)
     memory_ids = [m["memory_id"] for m in memories]
 
     # Get recent session history (for context)
@@ -510,6 +711,57 @@ def chat(req: ChatRequest, user: CurrentUser):
     if req.project_id:
         proj = db.get_project(user_id, req.project_id)
         project_name = proj["name"] if proj else None
+
+    # ── Missing context guard ─────────────────────────────────────────────────
+    if _detect_missing_context_query(req.message):
+        has_context = bool(history) or bool(memories)
+        if not has_context:
+            s_ver, _, _, _, _, _, _ = _advance_user_state(
+                db, user_id, req.message, req.feedback_value, platform="web", event_type="chat_message", project_id=req.project_id
+            )
+            reply_text = "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?"
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=[], state_version=s_ver,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="clarify_missing_context", selected_agent="conversation",
+                next_action="clarify", confidence=0.9,
+                runtime_mode=RUNTIME_MODE, routing_source="context_guard",
+                provider_used="none", provider_ok=True,
+                state_version=s_ver, memory_ids_used=[],
+                session_id=req.session_id,
+            )
+
+    # ── Explicit memory instruction flow ──────────────────────────────────────
+    remember_intent = _detect_remember_intent(req.message)
+    if remember_intent is not None:
+        itype, clean_content = remember_intent
+        new_mem = db.create_memory(
+            user_id=user_id,
+            info_type=itype,
+            content=clean_content,
+            source_session=req.session_id,
+            project_id=req.project_id,
+        )
+        s_ver, _, _, _, _, _, _ = _advance_user_state(
+            db, user_id, req.message, req.feedback_value, platform="web", event_type="memory_create", project_id=req.project_id
+        )
+        reply_text = f"Đã ghi nhớ {itype}: \"{clean_content}\"."
+        msg = db.append_message(
+            req.session_id, user_id, "assistant", reply_text,
+            memory_ids_used=[new_mem["memory_id"]], state_version=s_ver,
+        )
+        return ChatResponse(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="memory_create", selected_agent="memory",
+            next_action="create_memory", confidence=0.95,
+            runtime_mode=RUNTIME_MODE, routing_source="explicit_memory",
+            provider_used="none", provider_ok=True,
+            state_version=s_ver, memory_ids_used=[new_mem["memory_id"]],
+            session_id=req.session_id,
+        )
 
     # ── Decision modification flow ────────────────────────────────────────────
     # First check: is there a pending confirmation waiting?
@@ -524,7 +776,9 @@ def chat(req: ChatRequest, user: CurrentUser):
                 accepted=True,
                 source_session=req.session_id,
             )
-            s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
+            s_ver, _, _, _, _, _, _ = _advance_user_state(
+                db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_confirm", project_id=req.project_id
+            )
             if res["success"]:
                 reply_text = (
                     f"✅ Đã cập nhật quyết định.\n"
@@ -560,7 +814,9 @@ def chat(req: ChatRequest, user: CurrentUser):
                 accepted=False,
                 source_session=req.session_id,
             )
-            s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
+            s_ver, _, _, _, _, _, _ = _advance_user_state(
+                db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_reject", project_id=req.project_id
+            )
             reply_text = (
                 f"Đã huỷ yêu cầu sửa đổi quyết định. Giữ nguyên quyết định hiện tại:\n"
                 f"**Hiện tại:** {pending['old_content']}"
@@ -580,7 +836,9 @@ def chat(req: ChatRequest, user: CurrentUser):
             )
         else:
             # Ambiguous / uncertain / contradictory — ask again without modifying
-            s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
+            s_ver, _, _, _, _, _, _ = _advance_user_state(
+                db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_unclear", project_id=req.project_id
+            )
             reply_text = (
                 f"Tôi chưa rõ ý bạn. Bạn có muốn thay đổi quyết định sau không?\n"
                 f"**Hiện tại:** {pending['old_content']}\n"
@@ -603,9 +861,31 @@ def chat(req: ChatRequest, user: CurrentUser):
 
     # Second check: does the new message request a decision modification?
     if _detect_decision_modify_intent(req.message):
-        matched = _find_best_matching_decision(memories, req.message)
-        s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
-        if matched is not None:
+        matched, is_ambiguous, candidates = _find_best_matching_decision(memories, req.message)
+        s_ver, _, _, _, _, _, _ = _advance_user_state(
+            db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_modify_request", project_id=req.project_id
+        )
+        if is_ambiguous:
+            cand_text = "\n".join(f"- {c['content']}" for c in candidates)
+            reply_text = (
+                "Tôi thấy bạn có nhiều quyết định gần giống nhau liên quan đến nội dung này:\n"
+                f"{cand_text}\n\n"
+                "Vui lòng nêu rõ nội dung quyết định cụ thể bạn muốn thay đổi."
+            )
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=[c["memory_id"] for c in candidates], state_version=s_ver,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="clarify_ambiguous_decision", selected_agent="memory",
+                next_action="clarify", confidence=0.85,
+                runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
+                provider_used="none", provider_ok=True,
+                state_version=s_ver, memory_ids_used=[c["memory_id"] for c in candidates],
+                session_id=req.session_id,
+            )
+        elif matched is not None:
             # Extract proposed new content: text after keywords like "thành", "sang", "bằng", "to"
             import re as _re
             proposed = _re.sub(
@@ -661,26 +941,15 @@ def chat(req: ChatRequest, user: CurrentUser):
             )
 
     # ── Normal chat flow ──────────────────────────────────────────────────────
-    global_user_id = _compute_global_user_id(user_id)
-
-    # Load previous persistent state from DB
-    stored = db.get_dusnx_state(user_id)
-    previous_state_blob = stored["state_blob"] if stored else None
-
-    # Run DUSN-X routing/state update with persistent previous_state
-    active_cfg = CFG or ModelConfig()
-    dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source, state_version, new_state_blob = _run_dusnx(
-        global_user_id=global_user_id,
-        platform="web",
+    state_version, _, dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source = _advance_user_state(
+        db,
+        user_id=user_id,
         content=req.message,
         feedback_value=req.feedback_value,
-        active_cfg=active_cfg,
-        previous_state_blob=previous_state_blob,
+        platform="web",
+        event_type="chat_message",
+        project_id=req.project_id,
     )
-
-    # Persist the updated state back to DB
-    if new_state_blob is not None:
-        db.set_dusnx_state(user_id, new_state_blob, state_version or 1)
 
     # Generate text response using provider
     reply_text, provider_ok, provider_used = generate_response(
@@ -691,15 +960,23 @@ def chat(req: ChatRequest, user: CurrentUser):
         project_name=project_name,
     )
 
-    # Save assistant message
-    msg = db.append_message(
-        req.session_id,
-        user_id,
-        "assistant",
-        reply_text,
-        memory_ids_used=memory_ids,
-        state_version=state_version,
-    )
+    if provider_ok:
+        # Save assistant message only on success
+        msg = db.append_message(
+            req.session_id,
+            user_id,
+            "assistant",
+            reply_text,
+            memory_ids_used=memory_ids,
+            state_version=state_version,
+        )
+        msg_id = msg["message_id"]
+    else:
+        # DO NOT save provider error as a valid assistant message in history
+        import uuid as _uuid
+        msg_id = f"err_{_uuid.uuid4().hex[:12]}"
+        if not reply_text.startswith("["):
+            reply_text = f"[Lỗi Provider {provider_used}]: {reply_text}"
 
     # Auto-update session title from first user message
     if len(history) == 0:
@@ -708,7 +985,7 @@ def chat(req: ChatRequest, user: CurrentUser):
             db.update_session_title(user_id, req.session_id, title)
 
     return ChatResponse(
-        message_id=msg["message_id"],
+        message_id=msg_id,
         reply=reply_text,
         intent=dusnx_intent,
         selected_agent=dusnx_agent,
@@ -719,82 +996,116 @@ def chat(req: ChatRequest, user: CurrentUser):
         provider_used=provider_used,
         provider_ok=provider_ok,
         state_version=state_version,
-        memory_ids_used=memory_ids,
+        memory_ids_used=memory_ids if provider_ok else [],
         session_id=req.session_id,
     )
 
 
-def _compute_global_user_id(user_id: str) -> str:
-    """Compute a stable global_user_id for a local user_id."""
-    identity = f"local:{user_id}"
-    import hashlib
-    import struct
-    b = hashlib.sha256(identity.encode()).digest()
-    return f"{b[0]:02x}{b[1]:02x}{b[2]:02x}{b[3]:02x}-{b[4]:02x}{b[5]:02x}-{b[6]:02x}{b[7]:02x}-{b[8]:02x}{b[9]:02x}-{b[10]:02x}{b[11]:02x}{b[12]:02x}{b[13]:02x}{b[14]:02x}{b[15]:02x}"
+# ── Authenticated User State & Event endpoints (/v1/me/...) ───────────────────
+
+class UserEventCreateRequest(BaseModel):
+    platform: str = Field(default="web", description="Platform: web, powerpoint, zalo, ...")
+    event_type: str = Field(default="message", description="Event type: message, slide_change, action, ...")
+    content: str = Field(..., description="Event content text")
+    project_id: Optional[str] = None
+    feedback_value: float = Field(default=0.0)
+    event_id: Optional[str] = None
 
 
-def _run_dusnx(
-    global_user_id: str,
-    platform: str,
-    content: str,
-    feedback_value: float,
-    active_cfg: ModelConfig,
-    previous_state_blob: Optional[dict] = None,
-) -> tuple[str, str, str, float, str, Optional[int], Optional[dict]]:
-    """Run DUSN-X model or bootstrap rules.
-    Returns (intent, agent, action, confidence, routing_source, state_version, new_state_blob).
-    new_state_blob is a JSON-serializable dict for DB storage.
+@app.post("/v1/me/events", status_code=201)
+def create_my_event(req: UserEventCreateRequest, user: CurrentUser):
     """
-    from dusnx_core.schema import StateSnapshot as _SS
+    Authenticated event ingestion for the logged-in user.
+    Uses the exact same state store as Web chat.
+    user_id is strictly resolved from Bearer token.
+    """
+    db = get_memory_db()
+    user_id = user["user_id"]
 
-    def _snapshot_from_blob(blob: dict) -> Optional[_SS]:
-        try:
-            return _SS(**blob)
-        except Exception:
-            return None
+    # Check for deduplication
+    if req.event_id:
+        existing = db.get_user_event(user_id, req.event_id)
+        if existing:
+            st = db.get_dusnx_state(user_id)
+            return {
+                "status": "already_processed",
+                "event_id": req.event_id,
+                "user_id": user_id,
+                "platform": existing["platform"],
+                "event_type": existing["event_type"],
+                "state_version": existing["state_version"],
+                "intent": existing["intent"],
+                "selected_agent": existing["selected_agent"],
+                "next_action": existing["next_action"],
+                "confidence": existing["confidence"],
+                "created_at": existing["created_at"],
+            }
 
-    if MODEL is None:
-        # Bootstrap rules path
-        previous_snapshot = _snapshot_from_blob(previous_state_blob) if previous_state_blob else None
-        from dusnx_core.schema import ProcessRequest as _PR
-        req = _PR(
-            global_user_id=global_user_id,
-            platform=platform,
-            content=content,
-            event_type="message",
-            time_gap_hours=0.0,
-            feedback_value=feedback_value,
-            previous_state=previous_snapshot,
-        )
-        intent, agent, action, conf = detect_route(content)
-        new_snapshot = bootstrap_state_update(req, intent)
-        new_blob = new_snapshot.model_dump()
-        return intent, agent, action, conf, "bootstrap_rules", new_snapshot.state_version, new_blob
-    else:
-        import torch as _torch
-        from dusnx_core.inference import process_one as _process_one
-        from dusnx_core.schema import ProcessRequest as _PR
-        previous_snapshot = _snapshot_from_blob(previous_state_blob) if previous_state_blob else None
-        reset_reason = state_reset_reason(previous_snapshot, active_cfg, MODEL_VERSION)
-        if reset_reason:
-            previous_snapshot = None
-        req = _PR(
-            global_user_id=global_user_id,
-            platform=platform,
-            content=content,
-            event_type="message",
-            time_gap_hours=0.0,
-            feedback_value=feedback_value,
-            previous_state=previous_snapshot,
-        )
-        result = _process_one(MODEL, CFG, req, MODEL_VERSION, DEVICE)
-        version = (previous_snapshot.state_version if previous_snapshot else 0) + 1
-        new_snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version, STATE_SCHEMA_VERSION, MODEL_VERSION))
-        new_blob = new_snapshot.model_dump()
-        explicit = match_explicit_route(platform, content)
-        if explicit is not None:
-            return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence, "business_rule_override", version, new_blob
-        return result["intent"], result["selected_agent"], result["next_action"], result["confidence"], "model", version, new_blob
+    s_ver, _, intent, agent, action, conf, _ = _advance_user_state(
+        db=db,
+        user_id=user_id,
+        content=req.content,
+        feedback_value=req.feedback_value,
+        platform=req.platform,
+        event_type=req.event_type,
+        project_id=req.project_id,
+        event_id=req.event_id,
+    )
+    return {
+        "status": "recorded",
+        "event_id": req.event_id,
+        "user_id": user_id,
+        "platform": req.platform,
+        "event_type": req.event_type,
+        "state_version": s_ver,
+        "intent": intent,
+        "selected_agent": agent,
+        "next_action": action,
+        "confidence": conf,
+    }
+
+
+@app.get("/v1/me/state")
+def get_my_state(user: CurrentUser):
+    """Get authoritative DUSN-X state for the authenticated user."""
+    db = get_memory_db()
+    st = db.get_dusnx_state(user["user_id"])
+    if not st:
+        return {
+            "user_id": user["user_id"],
+            "state_version": 0,
+            "state_schema_version": STATE_SCHEMA_VERSION,
+            "model_version": MODEL_VERSION,
+            "state_blob": None,
+            "updated_at": None,
+        }
+    return {
+        "user_id": user["user_id"],
+        "state_version": st["state_version"],
+        "state_schema_version": STATE_SCHEMA_VERSION,
+        "model_version": MODEL_VERSION,
+        "state_blob": st["state_blob"],
+        "updated_at": st["updated_at"],
+    }
+
+
+@app.get("/v1/me/events")
+def get_my_events(
+    user: CurrentUser,
+    platform: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Get chronological events / timeline for the authenticated user."""
+    db = get_memory_db()
+    events = db.list_user_events(
+        user_id=user["user_id"],
+        platform=platform,
+        limit=min(limit, 100),
+        offset=offset,
+    )
+    return {"events": events, "count": len(events)}
+
 
 
 # ── Pending Decision API endpoints ─────────────────────────────────────────────

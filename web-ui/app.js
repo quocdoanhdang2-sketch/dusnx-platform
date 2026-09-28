@@ -7,8 +7,7 @@
  * - User cannot supply arbitrary linkedUserId to read other users' memory
  */
 
-const AI_API = window.DUSNX_AI_API || (window.location?.port === "8080" ? "" : "http://localhost:8000");
-const GATEWAY = window.DUSNX_GATEWAY || (window.location?.port === "8080" ? "" : "http://localhost:8080");
+const GATEWAY = window.DUSNX_GATEWAY || (window.location?.port === "8080" || window.location?.port === "3000" ? "" : "http://localhost:8080");
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let authToken = sessionStorage.getItem("dusnx_token") || null;
@@ -36,7 +35,7 @@ function formatDate(iso) {
 }
 
 async function apiFetch(path, options = {}) {
-  const base = path.startsWith("/v1/auth") ? AI_API : AI_API;
+  const base = (window.location?.port === "8080" || window.location?.port === "3000") ? "" : (window.DUSNX_GATEWAY || "http://localhost:8080");
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
   const resp = await fetch(`${base}${path}`, { ...options, headers });
@@ -48,6 +47,7 @@ async function apiFetch(path, options = {}) {
   if (resp.status === 204) return null;
   return resp.json();
 }
+
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
 
@@ -173,25 +173,40 @@ function toggleSidebar() {
 
 async function checkProviderHealth() {
   const statusEl = el("providerStatus");
+  const modelEl = el("modelStatus");
   try {
     const health = await apiFetch("/health");
     const provider = health.provider || {};
-    if (provider.reachable === true && provider.model_available === true) {
-      statusEl.textContent = `✓ ${provider.provider} / ${provider.configured_model}`;
+    const modelLoaded = health.model_loaded;
+    const providerOk = health.provider_ok;
+
+    if (modelEl) {
+      if (modelLoaded) {
+        modelEl.textContent = `⬡ DUSN-X: ${health.model_version || "v2"} (${health.runtime_mode === "trained_dusnx" ? "Trained" : "Bootstrap"})`;
+        modelEl.className = "model-status ok";
+      } else {
+        modelEl.textContent = `⬡ DUSN-X: Bootstrap`;
+        modelEl.className = "model-status";
+      }
+    }
+
+    if (providerOk) {
+      statusEl.textContent = `✓ LLM: ${provider.configured_model || provider.provider} (sẵn sàng)`;
       statusEl.className = "provider-status ok";
-    } else if (provider.reachable === true) {
-      statusEl.textContent = `⚠ ${provider.provider} — model '${provider.configured_model}' chưa tải`;
-      statusEl.className = "provider-status warn";
     } else {
-      const errMsg = provider.error ? `(${provider.error.slice(0, 60)})` : "";
-      statusEl.textContent = `✕ ${provider.provider || "provider"} không khả dụng ${errMsg}`;
+      const pName = provider.provider || "none";
+      const err = provider.error ? `: ${provider.error.slice(0, 45)}` : "";
+      statusEl.textContent = `✕ LLM không khả dụng (${pName}${err})`;
       statusEl.className = "provider-status err";
     }
   } catch (err) {
-    statusEl.textContent = `✕ Không kết nối được AI API: ${err.message.slice(0, 80)}`;
-    statusEl.className = "provider-status err";
+    if (statusEl) {
+      statusEl.textContent = `✕ Không kết nối được Gateway/API: ${err.message.slice(0, 60)}`;
+      statusEl.className = "provider-status err";
+    }
   }
 }
+
 
 // ── Sessions ───────────────────────────────────────────────────────────────────
 
@@ -236,6 +251,7 @@ async function startNewSession() {
     el("chatMeta").textContent = "";
     el("mobileTitle").textContent = "DUSN-X";
     await loadSessions();
+    renderPendingBanner(null);
     showView("chat");
     el("messageInput").focus();
   } catch (err) {
@@ -268,10 +284,12 @@ async function openSession(sessionId, title) {
     }
     if (messages.length > 0) el("welcomeState").style.display = "none";
     scrollToBottom();
+    await checkPendingDecisions();
   } catch (err) {
     console.error("Load messages failed:", err);
   }
 }
+
 
 // ── Chat ───────────────────────────────────────────────────────────────────────
 
@@ -293,25 +311,133 @@ function useHint(btn) {
   el("messageInput").focus();
 }
 
-async function sendMessage() {
+// ── Pending Decisions in Chat ──────────────────────────────────────────────────
+
+async function checkPendingDecisions() {
+  if (!currentSessionId) return;
+  try {
+    const pendings = await apiFetch(`/v1/pending-decisions?session_id=${encodeURIComponent(currentSessionId)}`);
+    renderPendingBanner(pendings && pendings.length > 0 ? pendings[0] : null);
+  } catch {
+    renderPendingBanner(null);
+  }
+}
+
+function renderPendingBanner(pending) {
+  let banner = el("pendingDecisionBanner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "pendingDecisionBanner";
+    banner.className = "pending-decision-banner";
+    const inputArea = document.querySelector(".input-area");
+    if (inputArea) inputArea.prepend(banner);
+  }
+  if (!pending) {
+    banner.hidden = true;
+    banner.replaceChildren();
+    return;
+  }
+  banner.hidden = false;
+  banner.replaceChildren();
+
+  const title = document.createElement("div");
+  title.className = "pending-title";
+  title.textContent = "⚠️ Xác nhận sửa đổi quyết định:";
+
+  const body = document.createElement("div");
+  body.className = "pending-body";
+
+  const oldP = document.createElement("p");
+  const oldStrong = document.createElement("strong");
+  oldStrong.textContent = "Cũ: ";
+  const oldSpan = document.createElement("span");
+  oldSpan.textContent = pending.old_content;
+  oldP.appendChild(oldStrong);
+  oldP.appendChild(oldSpan);
+
+  const newP = document.createElement("p");
+  const newStrong = document.createElement("strong");
+  newStrong.textContent = "Mới: ";
+  const newSpan = document.createElement("span");
+  newSpan.textContent = pending.proposed_content;
+  newP.appendChild(newStrong);
+  newP.appendChild(newSpan);
+
+  body.appendChild(oldP);
+  body.appendChild(newP);
+
+  const actions = document.createElement("div");
+  actions.className = "pending-actions";
+
+  const btnConfirm = document.createElement("button");
+  btnConfirm.className = "btn-primary btn-sm";
+  btnConfirm.textContent = "✓ Đồng ý sửa (Confirm)";
+  btnConfirm.onclick = () => resolvePending(pending.pending_id, true);
+
+  const btnReject = document.createElement("button");
+  btnReject.className = "btn-secondary btn-sm";
+  btnReject.textContent = "✕ Giữ bản cũ (Cancel)";
+  btnReject.onclick = () => resolvePending(pending.pending_id, false);
+
+  actions.appendChild(btnConfirm);
+  actions.appendChild(btnReject);
+
+  banner.appendChild(title);
+  banner.appendChild(body);
+  banner.appendChild(actions);
+}
+
+async function resolvePending(pendingId, accepted) {
+  try {
+    showStatus("Đang xử lý quyết định…");
+    const res = await apiFetch(`/v1/pending-decisions/${encodeURIComponent(pendingId)}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ accepted }),
+    });
+    hideStatus();
+    renderPendingBanner(null);
+    if (accepted) {
+      appendMessageBubble("assistant", `✅ Đã cập nhật quyết định thành công:\nCũ: ${res.resolved?.old_content || ""}\nMới: ${res.resolved?.proposed_content || ""}`, {
+        created_at: new Date().toISOString(),
+        intent: "decision_update",
+      });
+    } else {
+      appendMessageBubble("assistant", `Đã huỷ sửa đổi, giữ nguyên quyết định hiện tại:\n${res.resolved?.old_content || ""}`, {
+        created_at: new Date().toISOString(),
+        intent: "decision_update_cancelled",
+      });
+    }
+    await loadMemories();
+    scrollToBottom();
+  } catch (err) {
+    hideStatus();
+    showError(`Lỗi xử lý quyết định: ${err.message}`);
+  }
+}
+
+async function sendMessage(overrideText = null, { isRetry = false } = {}) {
   if (isSending) return;
   const input = el("messageInput");
-  const text = input.value.trim();
+  const text = (overrideText !== null ? overrideText : input.value).trim();
   if (!text) return;
   if (!currentSessionId) {
     await startNewSession();
   }
 
   isSending = true;
-  input.value = "";
-  input.style.height = "auto";
+  if (overrideText === null) {
+    input.value = "";
+    input.style.height = "auto";
+  }
   el("sendBtn").disabled = true;
   hideError();
 
-  // Show user message immediately
-  el("welcomeState").style.display = "none";
-  appendMessageBubble("user", text, { created_at: new Date().toISOString() });
-  scrollToBottom();
+  // Show user message immediately only if not retry
+  if (!isRetry) {
+    el("welcomeState").style.display = "none";
+    appendMessageBubble("user", text, { created_at: new Date().toISOString() });
+    scrollToBottom();
+  }
 
   // Show typing indicator
   showStatus("Đang xử lý…");
@@ -325,30 +451,35 @@ async function sendMessage() {
         message: text,
         project_id: projectId || null,
         feedback_value: 0,
+        is_retry: isRetry,
       }),
     });
 
     hideStatus();
-    appendMessageBubble("assistant", response.reply, {
-      intent: response.intent,
-      agent: response.selected_agent,
-      routing: response.routing_source,
-      runtime: response.runtime_mode,
-      provider_ok: response.provider_ok,
-      provider: response.provider_used,
-      state_version: response.state_version,
-      memory_ids_used: response.memory_ids_used,
-      created_at: new Date().toISOString(),
-    });
+
+    if (response.provider_ok) {
+      appendMessageBubble("assistant", response.reply, {
+        intent: response.intent,
+        agent: response.selected_agent,
+        routing: response.routing_source,
+        runtime: response.runtime_mode,
+        provider_ok: response.provider_ok,
+        provider: response.provider_used,
+        state_version: response.state_version,
+        memory_ids_used: response.memory_ids_used,
+        created_at: new Date().toISOString(),
+      });
+    } else {
+      // Clear error presentation: DO NOT present error as valid AI reply
+      appendProviderErrorCard(response.reply, response.provider_used, text);
+    }
     scrollToBottom();
+
+    // Check for pending decisions
+    await checkPendingDecisions();
 
     // Update session title in sidebar
     await loadSessions();
-
-    // Warn if provider failed
-    if (!response.provider_ok) {
-      showError(`Provider sinh văn bản không khả dụng (${response.provider_used}). Trả lời trên là thông báo lỗi, không phải phản hồi AI.`);
-    }
   } catch (err) {
     hideStatus();
     showError(`Lỗi gửi tin: ${err.message}`);
@@ -357,6 +488,37 @@ async function sendMessage() {
     el("sendBtn").disabled = false;
     el("messageInput").focus();
   }
+}
+
+function appendProviderErrorCard(errorText, providerName, failedMessage) {
+  const list = el("messageList");
+  const card = document.createElement("div");
+  card.className = "message system-error";
+
+  const header = document.createElement("div");
+  header.className = "error-header";
+  header.textContent = `⚠️ Lỗi Provider sinh câu trả lời (${providerName || "LLM"})`;
+
+  const body = document.createElement("div");
+  body.className = "error-body";
+  safeText(body, errorText);
+
+  const actions = document.createElement("div");
+  actions.className = "error-actions";
+
+  const retryBtn = document.createElement("button");
+  retryBtn.className = "btn-secondary btn-sm";
+  retryBtn.textContent = "🔄 Thử lại (Retry)";
+  retryBtn.onclick = () => {
+    card.remove();
+    sendMessage(failedMessage, { isRetry: true });
+  };
+
+  actions.appendChild(retryBtn);
+  card.appendChild(header);
+  card.appendChild(body);
+  card.appendChild(actions);
+  list.appendChild(card);
 }
 
 function appendMessageBubble(role, content, meta = {}) {
@@ -407,7 +569,7 @@ function appendMessageBubble(role, content, meta = {}) {
     if (meta.memory_ids_used && meta.memory_ids_used.length > 0) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
-      tag.textContent = `${meta.memory_ids_used.length} trí nhớ`;
+      tag.textContent = `🧠 ${meta.memory_ids_used.length} trí nhớ`;
       metaEl.appendChild(tag);
     }
   }
@@ -418,6 +580,7 @@ function appendMessageBubble(role, content, meta = {}) {
   wrapper.appendChild(col);
   list.appendChild(wrapper);
 }
+
 
 function scrollToBottom() {
   const list = el("messageList");
@@ -854,40 +1017,31 @@ function closeModal() {
   el("modalOverlay").hidden = true;
 }
 
-// ── Timeline (dev/local only) ──────────────────────────────────────────────────
+// ── Timeline (Authenticated User Events) ───────────────────────────────────────
 
-async function loadTimeline({ append = false } = {}) {
-  const platform = el("tlPlatform").value.trim() || "web";
-  const user = el("tlUser").value.trim();
-  const linked = el("tlLinked").value.trim();
+async function loadTimeline() {
   const statusEl = el("timelineStatus");
+  statusEl.textContent = "Đang tải timeline tài khoản…";
+  const list = el("timelineList");
+  list.replaceChildren();
 
-  if (!user) {
-    statusEl.textContent = "Nhập platformUserId trước khi tải timeline.";
-    return;
+  const filterEl = el("tlPlatformFilter");
+  const platform = filterEl ? filterEl.value.trim() : "";
+  let url = "/v1/me/events?limit=50";
+  if (platform) {
+    url += `&platform=${encodeURIComponent(platform)}`;
   }
 
-  statusEl.textContent = "Đang tải…";
-  const params = new URLSearchParams({ limit: "25" });
-  if (linked) params.set("linkedUserId", linked);
-  if (append && nextTimelineCursor) params.set("before", nextTimelineCursor);
-
   try {
-    const resp = await fetch(`${GATEWAY}/api/v1/history/${platform}/${encodeURIComponent(user)}?${params}`);
-    const body = await resp.json();
-    if (!resp.ok) throw new Error(body.detail || body.title || JSON.stringify(body));
-
-    const list = el("timelineList");
-    if (!append) list.replaceChildren();
-    for (const item of body.items) {
+    const data = await apiFetch(url);
+    const events = data.events || [];
+    for (const item of events) {
       list.appendChild(renderTimelineItem(item));
     }
-    nextTimelineCursor = body.next_cursor;
-
     const count = list.childElementCount;
     statusEl.textContent = count === 0
-      ? "Chưa có event cho identity này."
-      : `Đang hiển thị ${count} event, mới nhất trước.`;
+      ? "Chưa có sự kiện nào cho tài khoản này."
+      : `Hiển thị ${count} sự kiện của tài khoản, mới nhất trước.`;
   } catch (err) {
     statusEl.textContent = `Không tải được timeline: ${err.message}`;
   }
@@ -905,7 +1059,7 @@ function renderTimelineItem(item) {
   badge.textContent = item.platform || "?";
 
   const time = document.createElement("time");
-  time.textContent = formatDate(item.event_time_utc);
+  time.textContent = formatDate(item.created_at || item.event_time_utc);
 
   header.appendChild(badge);
   header.appendChild(time);
@@ -930,12 +1084,14 @@ function renderTimelineItem(item) {
     details.appendChild(f);
   };
 
+  if (item.event_type) addField("event", item.event_type);
   addField("intent", item.intent);
   addField("agent", item.selected_agent);
   addField("next action", item.next_action);
-  addField("runtime", item.runtime_mode);
-  addField("model", item.model_version);
   addField("state v", item.state_version);
+  if (item.confidence) addField("conf", typeof item.confidence === "number" ? item.confidence.toFixed(2) : item.confidence);
+  if (item.runtime_mode) addField("runtime", item.runtime_mode);
+  if (item.model_version) addField("model", item.model_version);
   if (item.state_reset !== null && item.state_reset !== undefined) {
     addField("reset", item.state_reset ? `có — ${item.reset_reason || ""}` : "không");
   }
@@ -945,6 +1101,7 @@ function renderTimelineItem(item) {
   card.appendChild(details);
   return card;
 }
+
 
 // ── Auto-login if token exists ─────────────────────────────────────────────────
 

@@ -59,7 +59,7 @@ app.MapGet("/health", () => Results.Ok(new
 }));
 
 var proxyMethods = new[] { "GET", "POST", "PUT", "DELETE", "PATCH" };
-string[] proxyServices = ["auth", "memories", "sessions", "projects"];
+string[] proxyServices = ["auth", "memories", "sessions", "projects", "pending-decisions", "me"];
 foreach (var prefix in new[] { "/api/v1", "/v1" })
 {
     app.MapMethods($"{prefix}/chat", ["POST"], (HttpContext ctx, IHttpClientFactory f) => 
@@ -74,6 +74,8 @@ foreach (var prefix in new[] { "/api/v1", "/v1" })
     }
 }
 app.MapGet("/api/v1/ai/health", (HttpContext ctx, IHttpClientFactory f) => ProxyToAiApi(ctx, "/health", f));
+app.MapGet("/v1/health", (HttpContext ctx, IHttpClientFactory f) => ProxyToAiApi(ctx, "/health", f));
+app.MapGet("/api/v1/health", (HttpContext ctx, IHttpClientFactory f) => ProxyToAiApi(ctx, "/health", f));
 
 app.MapPost("/api/v1/events", async (
     EventRequest request,

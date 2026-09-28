@@ -993,3 +993,38 @@ body {
   font-size: 14px;
 }
 .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+/* ── Pending Decision Banner ─────────────────────── */
+.pending-decision-banner {
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid rgba(245, 166, 35, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  animation: slideUp 0.2s ease-out;
+}
+.pending-decision-banner[hidden] { display: none; }
+.pending-title { font-weight: 600; color: #f5a623; font-size: 13px; margin-bottom: 6px; }
+.pending-body { font-size: 13px; color: var(--text-primary); margin-bottom: 8px; line-height: 1.4; }
+.pending-actions { display: flex; gap: 8px; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* ── System Error & Provider Error Card ───────────── */
+.message.system-error {
+  max-width: 80%;
+  margin: 12px auto;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.error-header { font-weight: 600; color: #ef4444; font-size: 13px; }
+.error-body { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+.error-actions { display: flex; gap: 8px; }
+
+/* ── Model & Provider status ─────────────────────── */
+.model-status { font-size: 12px; color: var(--text-muted); margin-right: 12px; }
+.model-status.ok { color: var(--accent-bright); }

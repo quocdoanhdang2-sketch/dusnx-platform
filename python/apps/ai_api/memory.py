@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -94,6 +96,24 @@ def _init_db(conn: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+        -- Authenticated timeline events per user (unified state / cross-client event store)
+        CREATE TABLE IF NOT EXISTS user_events (
+            event_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            project_id TEXT,
+            feedback_value REAL NOT NULL DEFAULT 0.0,
+            event_time_utc TEXT NOT NULL,
+            provenance TEXT NOT NULL,
+            state_version INTEGER NOT NULL,
+            intent TEXT,
+            selected_agent TEXT,
+            next_action TEXT,
+            confidence REAL,
+            created_at TEXT NOT NULL
+        );
         CREATE INDEX IF NOT EXISTS idx_memories_user ON memories(user_id);
         CREATE INDEX IF NOT EXISTS idx_memories_user_active ON memories(user_id, is_active);
         CREATE INDEX IF NOT EXISTS idx_memories_project ON memories(project_id);
@@ -101,6 +121,7 @@ def _init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_sessions_user ON chat_sessions(user_id);
         CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages(session_id);
         CREATE INDEX IF NOT EXISTS idx_pending_user ON pending_decision_updates(user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_events_user_time ON user_events(user_id, event_time_utc DESC);
     """)
     conn.commit()
 
@@ -130,6 +151,7 @@ class MemoryDB:
     """Thread-safe memory database."""
 
     def __init__(self) -> None:
+        self._lock = threading.RLock()
         self._db_path = _get_db_path()
         self._conn = _get_conn(self._db_path)
         _init_db(self._conn)
@@ -156,20 +178,22 @@ class MemoryDB:
     ) -> dict:
         memory_id = secrets.token_hex(16)
         now = _now()
-        self._conn.execute(
-            """INSERT INTO memories(memory_id, user_id, info_type, content,
-               source_event, source_session, project_id, created_at, updated_at,
-               version, is_active) VALUES(?,?,?,?,?,?,?,?,?,1,1)""",
-            (memory_id, user_id, info_type, content, source_event, source_session, project_id, now, now),
-        )
-        self._conn.commit()
-        return self.get_memory(user_id, memory_id)
+        with self._lock:
+            self._conn.execute(
+                """INSERT INTO memories(memory_id, user_id, info_type, content,
+                   source_event, source_session, project_id, created_at, updated_at,
+                   version, is_active) VALUES(?,?,?,?,?,?,?,?,?,1,1)""",
+                (memory_id, user_id, info_type, content, source_event, source_session, project_id, now, now),
+            )
+            self._conn.commit()
+            return self.get_memory(user_id, memory_id)
 
     def get_memory(self, user_id: str, memory_id: str) -> Optional[dict]:
-        row = self._conn.execute(
-            "SELECT * FROM memories WHERE memory_id=? AND user_id=?", (memory_id, user_id)
-        ).fetchone()
-        return _row_to_memory(row) if row else None
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM memories WHERE memory_id=? AND user_id=?", (memory_id, user_id)
+            ).fetchone()
+            return _row_to_memory(row) if row else None
 
     def list_memories(
         self,
@@ -193,8 +217,9 @@ class MemoryDB:
             params.extend([like, like])
         query += " ORDER BY updated_at DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
-        rows = self._conn.execute(query, params).fetchall()
-        return [_row_to_memory(r) for r in rows]
+        with self._lock:
+            rows = self._conn.execute(query, params).fetchall()
+            return [_row_to_memory(r) for r in rows]
 
     def update_memory(
         self,
@@ -205,53 +230,114 @@ class MemoryDB:
         source_session: Optional[str] = None,
     ) -> Optional[dict]:
         """Supersede old memory and create a new version. Returns new memory."""
-        old = self.get_memory(user_id, memory_id)
-        if old is None:
-            return None
-        new_id = secrets.token_hex(16)
-        now = _now()
-        new_type = new_type or old["info_type"]
-        # Create new version
-        self._conn.execute(
-            """INSERT INTO memories(memory_id, user_id, info_type, content,
-               source_event, source_session, project_id, created_at, updated_at,
-               version, is_active) VALUES(?,?,?,?,?,?,?,?,?,?,1)""",
-            (new_id, user_id, new_type, new_content,
-             old["source_event"], source_session or old["source_session"],
-             old["project_id"], old["created_at"], now, old["version"] + 1),
-        )
-        # Deactivate old version and link to new
-        self._conn.execute(
-            "UPDATE memories SET is_active=0, superseded_by=?, updated_at=? WHERE memory_id=? AND user_id=?",
-            (new_id, now, memory_id, user_id),
-        )
-        self._conn.commit()
-        return self.get_memory(user_id, new_id)
+        with self._lock:
+            old = self.get_memory(user_id, memory_id)
+            if old is None:
+                return None
+            new_id = secrets.token_hex(16)
+            now = _now()
+            new_type = new_type or old["info_type"]
+            # Create new version
+            self._conn.execute(
+                """INSERT INTO memories(memory_id, user_id, info_type, content,
+                   source_event, source_session, project_id, created_at, updated_at,
+                   version, is_active) VALUES(?,?,?,?,?,?,?,?,?,?,1)""",
+                (new_id, user_id, new_type, new_content,
+                 old["source_event"], source_session or old["source_session"],
+                 old["project_id"], old["created_at"], now, old["version"] + 1),
+            )
+            # Deactivate old version and link to new
+            self._conn.execute(
+                "UPDATE memories SET is_active=0, superseded_by=?, updated_at=? WHERE memory_id=? AND user_id=?",
+                (new_id, now, memory_id, user_id),
+            )
+            self._conn.commit()
+            return self.get_memory(user_id, new_id)
 
     def get_memory_history(self, user_id: str, memory_id: str) -> list[dict]:
         """Get full version history for a memory chain (oldest to newest)."""
-        target = self.get_memory(user_id, memory_id)
-        if target is None:
-            return []
-        rows = self._conn.execute(
-            "SELECT * FROM memories WHERE user_id=? AND created_at=? ORDER BY version ASC",
-            (user_id, target["created_at"]),
-        ).fetchall()
-        return [_row_to_memory(r) for r in rows]
+        with self._lock:
+            target = self.get_memory(user_id, memory_id)
+            if target is None:
+                return []
+            rows = self._conn.execute(
+                "SELECT * FROM memories WHERE user_id=? AND created_at=? ORDER BY version ASC",
+                (user_id, target["created_at"]),
+            ).fetchall()
+            return [_row_to_memory(r) for r in rows]
 
     def delete_memory(self, user_id: str, memory_id: str) -> bool:
         """Soft-delete: deactivate without removing the audit trail."""
         now = _now()
-        cur = self._conn.execute(
-            "UPDATE memories SET is_active=0, updated_at=? WHERE memory_id=? AND user_id=? AND is_active=1",
-            (now, memory_id, user_id),
-        )
-        self._conn.commit()
-        return cur.rowcount > 0
+        with self._lock:
+            cur = self._conn.execute(
+                "UPDATE memories SET is_active=0, updated_at=? WHERE memory_id=? AND user_id=? AND is_active=1",
+                (now, memory_id, user_id),
+            )
+            self._conn.commit()
+            return cur.rowcount > 0
 
-    def get_active_memories_for_context(self, user_id: str, project_id: Optional[str] = None, limit: int = 20) -> list[dict]:
-        """Get active memories to include in AI context."""
-        return self.list_memories(user_id, project_id=project_id, include_inactive=False, limit=limit)
+    def get_active_memories_for_context(
+        self,
+        user_id: str,
+        project_id: Optional[str] = None,
+        query: Optional[str] = None,
+        limit: int = 15,
+    ) -> list[dict]:
+        """
+        Explainable selection of active memories for context:
+        - Strict project scoping:
+          - If project_id provided: include global memories (project_id IS NULL or '') AND matching project memories.
+            Never leak other projects' memories!
+          - If project_id NOT provided: only include global memories (project_id IS NULL or '').
+            Never leak project-scoped memories into general chat!
+        - Relevance scoring:
+          - Query token overlap with memory content.
+          - Type weighting: decision (1.5x), preference (1.3x), goal (1.2x), other (1.0x).
+          - Exact project match bonus (+2.0).
+          - Recency boost.
+        """
+        with self._lock:
+            if project_id:
+                query_sql = """
+                    SELECT * FROM memories
+                    WHERE user_id=? AND is_active=1
+                      AND (project_id=? OR project_id IS NULL OR project_id='')
+                    ORDER BY updated_at DESC
+                """
+                rows = self._conn.execute(query_sql, (user_id, project_id)).fetchall()
+            else:
+                query_sql = """
+                    SELECT * FROM memories
+                    WHERE user_id=? AND is_active=1
+                      AND (project_id IS NULL OR project_id='')
+                    ORDER BY updated_at DESC
+                """
+                rows = self._conn.execute(query_sql, (user_id,)).fetchall()
+
+        all_active = [_row_to_memory(r) for r in rows]
+        if not query or not all_active:
+            return all_active[:limit]
+
+        q_tokens = set(re.findall(r"\w+", query.lower(), flags=re.UNICODE))
+
+        def score_memory(mem: dict) -> float:
+            content_tokens = set(re.findall(r"\w+", mem["content"].lower(), flags=re.UNICODE))
+            overlap = len(q_tokens & content_tokens)
+            type_weight = {
+                "decision": 1.5,
+                "preference": 1.3,
+                "goal": 1.2,
+            }.get(mem.get("info_type", ""), 1.0)
+            score = overlap * type_weight
+            if project_id and mem.get("project_id") == project_id:
+                score += 2.0
+            score += min(mem.get("version", 1) * 0.1, 0.5)
+            return score
+
+        scored = [(score_memory(m), m) for m in all_active]
+        scored.sort(key=lambda x: (x[0], x[1]["updated_at"]), reverse=True)
+        return [m for _, m in scored[:limit]]
 
     # ── Project CRUD ───────────────────────────────────────────────────────────
 
@@ -582,6 +668,109 @@ class MemoryDB:
         """Mark pending decision as confirmed or rejected. Returns updated record."""
         res = self.resolve_pending_decision_atomic(user_id, pending_id, accepted)
         return res.get("pending") if res["success"] else None
+
+    # ── Authenticated User Events (Timeline & Cross-Client State) ──────────────
+
+    def record_user_event(
+        self,
+        user_id: str,
+        platform: str,
+        event_type: str,
+        content: str,
+        project_id: Optional[str] = None,
+        feedback_value: float = 0.0,
+        event_id: Optional[str] = None,
+        event_time_utc: Optional[str] = None,
+        provenance: Optional[str] = None,
+        state_version: int = 1,
+        intent: Optional[str] = None,
+        selected_agent: Optional[str] = None,
+        next_action: Optional[str] = None,
+        confidence: Optional[float] = None,
+    ) -> dict:
+        """
+        Record an event for an authenticated user with deduplication & provenance.
+        Returns a dict representing the event, with 'duplicate': True/False.
+        """
+        now = _now()
+        event_time = event_time_utc or now
+        source_prov = provenance or f"client:{platform}"
+        eff_event_id = event_id.strip() if event_id and event_id.strip() else secrets.token_hex(16)
+
+        with self._lock:
+            # Check deduplication
+            existing = self._conn.execute(
+                "SELECT * FROM user_events WHERE event_id=?", (eff_event_id,)
+            ).fetchone()
+            if existing is not None:
+                if existing["user_id"] != user_id:
+                    raise PermissionError("Event ID belongs to another user")
+                res = dict(existing)
+                res["duplicate"] = True
+                return res
+
+            self._conn.execute(
+                """INSERT INTO user_events(
+                       event_id, user_id, platform, event_type, content, project_id,
+                       feedback_value, event_time_utc, provenance, state_version,
+                       intent, selected_agent, next_action, confidence, created_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    eff_event_id, user_id, platform.lower().strip(), event_type.strip(),
+                    content.strip(), project_id, float(feedback_value),
+                    event_time, source_prov, int(state_version),
+                    intent, selected_agent, next_action,
+                    float(confidence) if confidence is not None else None,
+                    now,
+                ),
+            )
+            self._conn.commit()
+            saved = self.get_user_event(user_id, eff_event_id)
+            if saved is None:
+                raise RuntimeError("Failed to retrieve saved user event")
+            saved["duplicate"] = False
+            return saved
+
+    def get_user_event(self, user_id: str, event_id: str) -> Optional[dict]:
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM user_events WHERE event_id=? AND user_id=?", (event_id, user_id)
+            ).fetchone()
+            return dict(row) if row else None
+
+    def list_user_events(
+        self,
+        user_id: str,
+        platform: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+        before_time: Optional[str] = None,
+    ) -> list[dict]:
+        """List authenticated user events in reverse chronological order with optional platform filter and offset."""
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+        query = "SELECT * FROM user_events WHERE user_id=?"
+        params: list[Any] = [user_id]
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
+        if before_time:
+            query += " AND event_time_utc < ?"
+            params.append(before_time)
+        query += " ORDER BY event_time_utc DESC, created_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        with self._lock:
+            rows = self._conn.execute(query, params).fetchall()
+            return [dict(r) for r in rows]
+
+    def get_last_user_event_time(self, user_id: str) -> Optional[str]:
+        """Return ISO timestamp of the most recent event for this user."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT event_time_utc FROM user_events WHERE user_id=? ORDER BY event_time_utc DESC LIMIT 1",
+                (user_id,),
+            ).fetchone()
+            return row["event_time_utc"] if row else None
 
 
 # Singleton

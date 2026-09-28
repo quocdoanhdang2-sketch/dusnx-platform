@@ -1,4 +1,18 @@
-# DUSN-X Platform — Phase 1
+# DUSN-X Platform — Phase 1 & Week 2 Implementation
+
+**DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng**
+
+## Triển khai Hoàn chỉnh Tuần 2 (Week 2 Deliverables)
+
+- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập JWT, quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng.
+- **Điểm gọi API thống nhất qua Gateway YARP:** Toàn bộ request Web UI (`:3000`) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
+- **Một danh tính & state có thẩm quyền cho người dùng:** Các endpoint `/v1/me/events`, `/v1/me/state`, `/v1/me/events` trích xuất `user_id` trực tiếp từ token, tính toán `time_gap_hours`, chống giả mạo danh tính trong body.
+- **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
+- **Trí nhớ có giải thích (Explainable RAG) & Cô lập Project:** Thuật toán chấm điểm theo độ tương quan và độ mới, cách ly nghiêm ngặt theo `project_id`, phản ánh chính xác `memory_ids_used` trong prompt.
+- **Quản lý quyết định & Giải quyết mơ hồ:** Hỗ trợ lưu quyết định từ hội thoại ("Hãy nhớ rằng..."), sửa quyết định với bước xác nhận nguyên tử (đồng ý thì thay 1 lần, từ chối giữ bản cũ). Khi có 2 quyết định tương tự, hệ thống hỏi lại làm rõ thay vì sửa nhầm.
+- **Xử lý lỗi Provider an toàn:** Khi LLM provider mất kết nối, lỗi được hiển thị dưới dạng thẻ lỗi chuyên dụng trên UI kèm nút Thử lại (Retry), tuyệt đối không lưu chuỗi lỗi vào lịch sử DB như câu trả lời AI hợp lệ.
+
+---
 
 ## Checkpoint v2 (default runtime)
 

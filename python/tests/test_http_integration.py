@@ -29,6 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 def isolated_http_env(tmp_path, monkeypatch):
     """Each test runs against an isolated SQLite DB in tmp_path."""
     monkeypatch.setenv("DUSNX_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("DUSNX_PROVIDER", "mock")
     if auth_mod._auth_db is not None:
         auth_mod._auth_db.close()
         auth_mod._auth_db = None
@@ -42,6 +43,7 @@ def isolated_http_env(tmp_path, monkeypatch):
     if mem_mod._memory_db is not None:
         mem_mod._memory_db.close()
         mem_mod._memory_db = None
+
 
 
 @pytest.fixture
@@ -330,8 +332,9 @@ class TestChatStatePersistence:
         data_dir = str(tmp_path / "proc_restart_data")
         script = (
             "import os, sys, json\n"
-            "from fastapi.testclient import TestClient\n"
+            "sys.path.insert(0, 'python/src')\n"
             "sys.path.insert(0, 'python')\n"
+            "from fastapi.testclient import TestClient\n"
             "from apps.ai_api.main import app\n"
             "client = TestClient(app)\n"
             "step = sys.argv[1]\n"
@@ -354,7 +357,9 @@ class TestChatStatePersistence:
 
         env = os.environ.copy()
         env["DUSNX_DATA_DIR"] = data_dir
-        env["PYTHONPATH"] = "python"
+        env["DUSNX_PROVIDER"] = "mock"
+        env["PYTHONPATH"] = f"python/src{os.pathsep}python{os.pathsep}."
+
 
         # Process 1: run step1 and exit
         p1 = subprocess.run(

@@ -14,8 +14,11 @@ import urllib.request
 import urllib.error
 
 
-_raw_provider = os.getenv("DUSNX_PROVIDER", "ollama").strip().lower()
-PROVIDER = "openai" if _raw_provider in ("openai", "openai_compatible") else _raw_provider
+def get_current_provider() -> str:
+    raw = os.getenv("DUSNX_PROVIDER", "ollama").strip().lower()
+    return "openai" if raw in ("openai", "openai_compatible") else raw
+
+PROVIDER = get_current_provider()
 OLLAMA_URL = os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("DUSNX_OLLAMA_MODEL", "llama3.2")
 OLLAMA_TIMEOUT = float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
@@ -23,6 +26,7 @@ OPENAI_BASE_URL = os.getenv("DUSNX_OPENAI_BASE_URL", os.getenv("DUSNX_OPENAI_URL
 OPENAI_MODEL = os.getenv("DUSNX_OPENAI_MODEL", "gpt-4o-mini")
 # API key intentionally NOT defaulted — must be set by operator
 OPENAI_API_KEY = os.getenv("DUSNX_OPENAI_API_KEY", os.getenv("DUSNX_OPENAI_KEY", ""))
+
 
 
 def check_ollama_health() -> dict:
@@ -35,12 +39,13 @@ def check_ollama_health() -> dict:
             available = OLLAMA_MODEL in models or any(OLLAMA_MODEL.split(":")[0] in m for m in models)
             return {
                 "reachable": True,
+                "available": available,
                 "models_available": models,
                 "configured_model": OLLAMA_MODEL,
                 "model_available": available,
             }
     except Exception as exc:
-        return {"reachable": False, "error": str(exc), "configured_model": OLLAMA_MODEL}
+        return {"reachable": False, "available": False, "error": str(exc), "configured_model": OLLAMA_MODEL}
 
 
 def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
@@ -60,7 +65,8 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
     try:
         with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
             data = json.loads(resp.read().decode())
-            return data.get("response", ""), True
+            text = data.get("response", "").strip()
+            return text, True
     except urllib.error.URLError as exc:
         return f"[Ollama không khả dụng: {exc.reason}]", False
     except Exception as exc:
@@ -92,25 +98,35 @@ def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
     try:
         with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
             data = json.loads(resp.read().decode())
-            return data["choices"][0]["message"]["content"], True
+            return data["choices"][0]["message"]["content"].strip(), True
     except Exception as exc:
         return f"[Lỗi OpenAI: {exc}]", False
 
 
 def get_provider_health() -> dict:
     """Return health info for the configured provider."""
-    if PROVIDER == "ollama":
+    p = get_current_provider()
+    if p == "ollama":
         info = check_ollama_health()
         info["provider"] = "ollama"
         return info
-    elif PROVIDER == "openai":
+    elif p == "openai":
+        has_key = bool(OPENAI_API_KEY)
         return {
             "provider": "openai",
+            "available": has_key,
             "configured_model": OPENAI_MODEL,
-            "api_key_set": bool(OPENAI_API_KEY),
-            "reachable": "unknown — not checked at startup",
+            "api_key_set": has_key,
+            "reachable": "configured" if has_key else "missing_api_key",
         }
-    return {"provider": PROVIDER, "status": "unknown_provider"}
+    elif p in ("stub", "mock", "test"):
+        return {
+            "provider": p,
+            "available": True,
+            "configured_model": "mock-llm",
+            "reachable": True,
+        }
+    return {"provider": p, "available": False, "status": "unknown_provider"}
 
 
 def generate_response(
@@ -126,9 +142,10 @@ def generate_response(
 
     Memories are included in context; only active memories are passed here.
     """
-    # Build memory context
+    p = get_current_provider()
+    # Build memory context using exactly the provided memories
     memory_lines = []
-    for m in memories[:15]:  # cap at 15 items to keep context manageable
+    for m in memories:
         tag = f"[{m['info_type']}]"
         proj = f"(dự án: {m['project_id']})" if m.get("project_id") else ""
         memory_lines.append(f"- {tag} {m['content']} {proj}".strip())
@@ -161,15 +178,23 @@ Quan trọng:
 - Intent hiện tại được phân loại là: {intent}
 """
 
-    if PROVIDER == "ollama":
+    if p == "ollama":
         text, ok = _ollama_generate(system_prompt, user_message)
         provider_used = "ollama"
-    elif PROVIDER == "openai":
+    elif p == "openai":
         text, ok = _openai_generate(system_prompt, user_message)
         provider_used = "openai"
+    elif p in ("stub", "mock", "test"):
+        # For tests and stub evaluation: echo relevant context cleanly
+        mem_summary = f" với {len(memories)} trí nhớ hiệu lực" if memories else ""
+        text = f"DUSN-X đã hiểu: '{user_message}'{mem_summary}."
+        if memories:
+            text += f" Trí nhớ hiện tại: {memories[0]['content']}."
+        ok = True
+        provider_used = p
     else:
         text = (
-            f"[Provider '{PROVIDER}' chưa được hỗ trợ. "
+            f"[Provider '{p}' chưa được hỗ trợ. "
             f"Đặt DUSNX_PROVIDER=ollama hoặc DUSNX_PROVIDER=openai và cấu hình đúng biến môi trường.]"
         )
         ok = False

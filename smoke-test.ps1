@@ -17,7 +17,8 @@ if ($aiHealth.runtime_mode -ne "trained_dusnx" -or [string]::IsNullOrWhiteSpace(
 $gatewayHealth = Invoke-RestMethod "$Gateway/health"
 if ($gatewayHealth.status -ne "ok") { throw "Gateway health is not ok." }
 $web = Invoke-WebRequest $WebUi -UseBasicParsing
-if ($web.StatusCode -ne 200 -or $web.Content -notlike "*DUSN-X Cross-Platform Demo*") { throw "Web UI is not ready." }
+if ($web.StatusCode -ne 200 -or $web.Content -notlike "*DUSN-X*") { throw "Web UI is not ready." }
+
 
 Write-Host "[2/5] Send Web -> Zalo -> PowerPoint events for unique test identity"
 $events = @(

@@ -57,6 +57,9 @@ def _init_db(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+import threading
+
+
 def _hash_password(password: str, salt: str) -> str:
     return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
 
@@ -65,15 +68,18 @@ class AuthDB:
     """Thread-safe auth database wrapper."""
 
     def __init__(self) -> None:
+        self._lock = threading.RLock()
         self._db_path = _get_db_path()
         self._conn = _get_conn(self._db_path)
-        _init_db(self._conn)
+        with self._lock:
+            _init_db(self._conn)
 
     def close(self) -> None:
-        try:
-            self._conn.close()
-        except Exception:
-            pass
+        with self._lock:
+            try:
+                self._conn.close()
+            except Exception:
+                pass
 
     def __del__(self) -> None:
         self.close()
@@ -89,65 +95,70 @@ class AuthDB:
         pw_hash = _hash_password(password, salt)
         user_id = secrets.token_hex(16)
         created_at = datetime.now(timezone.utc).isoformat()
-        try:
-            self._conn.execute(
-                "INSERT INTO users(user_id, username, password_hash, salt, created_at) VALUES(?,?,?,?,?)",
-                (user_id, username, pw_hash, salt, created_at),
-            )
-            self._conn.commit()
-        except sqlite3.IntegrityError:
-            raise ValueError(f"Username '{username}' already exists")
+        with self._lock:
+            try:
+                self._conn.execute(
+                    "INSERT INTO users(user_id, username, password_hash, salt, created_at) VALUES(?,?,?,?,?)",
+                    (user_id, username, pw_hash, salt, created_at),
+                )
+                self._conn.commit()
+            except sqlite3.IntegrityError:
+                raise ValueError(f"Username '{username}' already exists")
         return {"user_id": user_id, "username": username, "created_at": created_at}
 
     def login(self, username: str, password: str) -> Optional[str]:
         """Login and return a session token, or None if invalid."""
         username = username.strip().lower()
-        row = self._conn.execute(
-            "SELECT user_id, password_hash, salt FROM users WHERE username=?", (username,)
-        ).fetchone()
-        if row is None:
-            return None
-        pw_hash = _hash_password(password, row["salt"])
-        if not secrets.compare_digest(pw_hash, row["password_hash"]):
-            return None
-        token = secrets.token_hex(32)
-        expires_at = (datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS)).isoformat()
-        self._conn.execute(
-            "INSERT INTO tokens(token, user_id, expires_at) VALUES(?,?,?)",
-            (token, row["user_id"], expires_at),
-        )
-        # Prune old tokens for this user (keep last 10)
-        self._conn.execute(
-            """DELETE FROM tokens WHERE user_id=? AND token NOT IN (
-                SELECT token FROM tokens WHERE user_id=? ORDER BY expires_at DESC LIMIT 10
-            )""",
-            (row["user_id"], row["user_id"]),
-        )
-        self._conn.commit()
-        return token
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT user_id, password_hash, salt FROM users WHERE username=?", (username,)
+            ).fetchone()
+            if row is None:
+                return None
+            pw_hash = _hash_password(password, row["salt"])
+            if not secrets.compare_digest(pw_hash, row["password_hash"]):
+                return None
+            token = secrets.token_hex(32)
+            expires_at = (datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS)).isoformat()
+            self._conn.execute(
+                "INSERT INTO tokens(token, user_id, expires_at) VALUES(?,?,?)",
+                (token, row["user_id"], expires_at),
+            )
+            # Prune old tokens for this user (keep last 10)
+            self._conn.execute(
+                """DELETE FROM tokens WHERE user_id=? AND token NOT IN (
+                    SELECT token FROM tokens WHERE user_id=? ORDER BY expires_at DESC LIMIT 10
+                )""",
+                (row["user_id"], row["user_id"]),
+            )
+            self._conn.commit()
+            return token
 
     def logout(self, token: str) -> None:
-        self._conn.execute("DELETE FROM tokens WHERE token=?", (token,))
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute("DELETE FROM tokens WHERE token=?", (token,))
+            self._conn.commit()
 
     def verify_token(self, token: str) -> Optional[dict]:
         """Return user info if token is valid, else None."""
         now = datetime.now(timezone.utc).isoformat()
-        row = self._conn.execute(
-            """SELECT u.user_id, u.username FROM tokens t
-               JOIN users u ON t.user_id=u.user_id
-               WHERE t.token=? AND t.expires_at > ?""",
-            (token, now),
-        ).fetchone()
-        if row is None:
-            return None
-        return {"user_id": row["user_id"], "username": row["username"]}
+        with self._lock:
+            row = self._conn.execute(
+                """SELECT u.user_id, u.username FROM tokens t
+                   JOIN users u ON t.user_id=u.user_id
+                   WHERE t.token=? AND t.expires_at > ?""",
+                (token, now),
+            ).fetchone()
+            if row is None:
+                return None
+            return {"user_id": row["user_id"], "username": row["username"]}
 
     def get_user_by_id(self, user_id: str) -> Optional[dict]:
-        row = self._conn.execute(
-            "SELECT user_id, username, created_at FROM users WHERE user_id=?", (user_id,)
-        ).fetchone()
-        return dict(row) if row else None
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT user_id, username, created_at FROM users WHERE user_id=?", (user_id,)
+            ).fetchone()
+            return dict(row) if row else None
 
 
 # Singleton

@@ -146,6 +146,7 @@
           </button>
         </div>
         <div class="input-footer">
+          <span id="modelStatus" class="model-status">DUSN-X Model</span>
           <span id="providerStatus" class="provider-status">Đang kiểm tra provider…</span>
         </div>
       </div>
@@ -190,22 +191,26 @@
     <!-- Timeline View -->
     <div id="viewTimeline" class="view">
       <div class="view-header">
-        <h1 class="view-title">📡 Quan sát hệ thống</h1>
-        <span class="badge-note">Công cụ dev/local — chỉ xem sự kiện loopback</span>
+        <h1 class="view-title">📡 Timeline Sự kiện Tài khoản</h1>
+        <span class="badge-note">Sự kiện đã xác thực qua Web và Client mô phỏng</span>
       </div>
       <div class="timeline-controls">
-        <input id="tlPlatform" class="field-input compact" value="web" placeholder="platform" />
-        <input id="tlUser" class="field-input compact" placeholder="platformUserId" />
-        <input id="tlLinked" class="field-input compact" placeholder="linkedUserId (tùy chọn)" />
-        <button class="btn-secondary" onclick="loadTimeline()">Tải timeline</button>
+        <select id="tlPlatformFilter" class="field-input compact" onchange="loadTimeline()" aria-label="Lọc theo nền tảng">
+          <option value="">Tất cả nền tảng</option>
+          <option value="web">Web</option>
+          <option value="powerpoint">PowerPoint (mô phỏng)</option>
+          <option value="zalo">Zalo (mô phỏng)</option>
+        </select>
+        <button class="btn-secondary" onclick="loadTimeline()">🔄 Làm mới Timeline</button>
       </div>
       <div id="timelineStatus" class="status-text" role="status"></div>
       <div id="timelineList" class="timeline-list"></div>
       <div class="timeline-note">
-        <strong>Lưu ý:</strong> Zalo/PowerPoint trong timeline dev cũ chỉ là đầu vào mô phỏng, không phải gửi tin Zalo thật hay chỉnh file PowerPoint thật.
-        Web chat ở trên là giao diện chính của DUSN-X Tuần 1.
+        <strong>Ghi chú Tuần 2:</strong> Timeline chỉ hiển thị sự kiện thuộc tài khoản hiện tại được xác thực bằng token.
+        Các sự kiện từ client thứ hai (ví dụ: HTTP client mô phỏng PowerPoint) gửi kèm Bearer token sẽ lập tức xuất hiện tại đây cùng chung state version.
       </div>
     </div>
+
 
   </main>
 </div>
