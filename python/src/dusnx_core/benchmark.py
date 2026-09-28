@@ -134,7 +134,7 @@ def validate_benchmark(steps: Iterable[BenchmarkStep]) -> list[BenchmarkStep]:
         users = {row.global_user_id for row in sequence}
         if len(users) != 1:
             errors.append(f"sequence {sequence_id} mixes global_user_id values: {sorted(users)}")
-        ordered = sorted(sequence, key=lambda row: row.step)
+        ordered = sequence
         actual_steps = [row.step for row in ordered]
         expected_steps = list(range(1, len(ordered) + 1))
         if actual_steps != expected_steps:

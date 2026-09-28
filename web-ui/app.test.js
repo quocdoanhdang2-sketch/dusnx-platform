@@ -64,6 +64,27 @@ global.fetch = async () => ({ ok: false, status: 401, json: async () => ({}) });
 
 const app = require("./app.js");
 
+describe("Provider health through Gateway", () => {
+  it("reads AI health rather than Gateway liveness", async () => {
+    const previousFetch = global.fetch;
+    let requested;
+    global.fetch = async (url) => {
+      requested = url;
+      return { ok: true, json: async () => ({ model_loaded: true, runtime_mode: "trained_dusnx",
+        model_version: "checkpoint-test", provider_ok: true,
+        provider: { provider: "ollama", configured_model: "test-model" } }) };
+    };
+    try {
+      await app.checkProviderHealth();
+      assert.ok(requested.endsWith("/v1/health"));
+      assert.match(elements.modelStatus.textContent, /Trained/);
+      assert.match(elements.providerStatus.textContent, /sẵn sàng/);
+    } finally {
+      global.fetch = previousFetch;
+    }
+  });
+});
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe("renderTimelineItem — XSS safety", () => {

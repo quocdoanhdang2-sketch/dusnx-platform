@@ -542,6 +542,8 @@ body {
   flex-shrink: 0;
 }
 
+.status-indicator[hidden] { display: none; }
+
 .status-indicator {
   display: flex;
   align-items: center;

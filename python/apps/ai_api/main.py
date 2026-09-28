@@ -503,10 +503,38 @@ def _detect_missing_context_query(text: str) -> bool:
     import re as _re
     t = text.lower()
     patterns = [
-        r"\b(?:cái|điều|ý|nội dung|quyết định|lựa chọn)\s+(?:vừa nói|trước đó|hôm trước|nãy)\b",
+        r"\b(?:cái|điều|ý|nội dung|quyết định|lựa chọn|kế hoạch)\s+(?:vừa nói|trước đó|hôm trước|nãy)\b",
         r"\b(?:tôi vừa nói gì|nhắc lại cái vừa nói|quyết định của tôi là gì)\b",
+        # Recall requests referring to a previous period ("tuần trước", "tháng trước", ...).
+        r"\bnhắc lại\b",
+        r"\b(?:quyết định|lựa chọn|kế hoạch|cấu hình|thiết lập)\b[^?]{0,60}?\b(?:tuần trước|tháng trước|hôm trước|kỳ trước|lần trước|trước đây)\b",
     ]
     return any(_re.search(p, t) for p in patterns)
+
+
+_PROJECT_SCOPE_QUESTION_PATTERNS = [
+    r"\b(?:dự án|dự án này|project)\b[^?]{0,60}\?\s*$",
+]
+
+
+def _detect_project_scoped_question(text: str, project_id: Optional[str]) -> bool:
+    """
+    True when the user asks a question scoped to an explicit project.
+
+    Such a question must be answered from that project's own active memories; if
+    none exist we must clarify rather than let the model answer from nothing.
+    Explicit instructions (remember / modify) are never treated as questions.
+    """
+    import re as _re
+
+    if not project_id:
+        return False
+    t = text.strip()
+    if "?" not in t:
+        return False
+    if _detect_remember_intent(t) is not None or _detect_decision_modify_intent(t):
+        return False
+    return any(_re.search(pat, t.lower()) for pat in _PROJECT_SCOPE_QUESTION_PATTERNS)
 
 
 def _calculate_time_gap_hours(stored: Optional[dict]) -> float:
@@ -676,6 +704,8 @@ class ChatResponse(BaseModel):
     state_version: Optional[int]
     memory_ids_used: list[str]
     session_id: str
+    model_used: Optional[str] = None
+    tokens_generated: Optional[int] = None
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
@@ -712,7 +742,7 @@ def chat(req: ChatRequest, user: CurrentUser):
         project_name = proj["name"] if proj else None
 
     # ── Missing context guard ─────────────────────────────────────────────────
-    if _detect_missing_context_query(req.message):
+    if _detect_missing_context_query(req.message) or _detect_project_scoped_question(req.message, req.project_id):
         has_context = bool(history) or bool(memories)
         if not has_context:
             s_ver, _, _, _, _, _, _ = _advance_user_state(
@@ -893,6 +923,14 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.message,
                 flags=_re.IGNORECASE,
             ).strip() or req.message
+
+            # If user specified "Đổi X sang Y" and X is in old content, perform contextual substitution
+            sub_m = _re.search(r"(?:đổi|thay|chuyển)\s+(.+?)\s+(?:thành|sang|bằng|to|with)\s+(.+)", req.message, _re.IGNORECASE)
+            if sub_m:
+                target_word, repl_word = sub_m.group(1).strip(), sub_m.group(2).strip()
+                if target_word.lower() in matched["content"].lower():
+                    proposed = _re.sub(_re.escape(target_word), repl_word, matched["content"], flags=_re.IGNORECASE)
+
             db.create_pending_decision(
                 user_id=user_id,
                 session_id=req.session_id,
@@ -960,7 +998,7 @@ def chat(req: ChatRequest, user: CurrentUser):
         )
 
     # Generate text response using provider
-    reply_text, provider_ok, provider_used = generate_response(
+    reply_text, provider_ok, provider_used, model_used, tokens_generated = generate_response(
         user_message=req.message,
         memories=memories,
         intent=dusnx_intent,
@@ -1006,6 +1044,8 @@ def chat(req: ChatRequest, user: CurrentUser):
         state_version=state_version,
         memory_ids_used=memory_ids if provider_ok else [],
         session_id=req.session_id,
+        model_used=model_used if provider_ok else None,
+        tokens_generated=tokens_generated if provider_ok else None,
     )
 
 
@@ -1049,7 +1089,7 @@ def create_my_event(req: UserEventCreateRequest, user: CurrentUser):
                 "created_at": existing["created_at"],
             }
 
-    s_ver, _, intent, agent, action, conf, _ = _advance_user_state(
+    s_ver, _, intent, agent, action, conf, routing_source = _advance_user_state(
         db=db,
         user_id=user_id,
         content=req.content,
@@ -1070,6 +1110,7 @@ def create_my_event(req: UserEventCreateRequest, user: CurrentUser):
         "selected_agent": agent,
         "next_action": action,
         "confidence": conf,
+        "routing_source": routing_source,
     }
 
 

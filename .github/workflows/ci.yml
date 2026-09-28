@@ -24,6 +24,12 @@ jobs:
         run: pytest python/tests -q --tb=short
       - name: Compile Python files
         run: python -m compileall -q python
+      - name: Validate and replay personalization pilot (mock, pipeline only)
+        env:
+          PYTHONPATH: "python/src:python:."
+        run: |
+          python python/scripts/evaluate_personalization.py --validate-only
+          python python/scripts/evaluate_personalization.py --provider mock --device cpu --output-dir runtime/ci-pilot
 
   dotnet-build:
     runs-on: ubuntu-latest

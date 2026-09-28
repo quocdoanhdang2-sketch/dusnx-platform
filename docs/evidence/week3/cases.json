@@ -1,0 +1,313 @@
+[
+  {
+    "sequence_id": "case_01_single_state_recall",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_01_single_state_recall-01"
+    ]
+  },
+  {
+    "sequence_id": "case_01_single_state_recall",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_01_single_state_recall-01",
+      "case_01_single_state_recall-02"
+    ]
+  },
+  {
+    "sequence_id": "case_01_single_state_recall",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  },
+  {
+    "sequence_id": "case_02_modify_decision_confirm",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_02_modify_decision_confirm-01",
+      "case_02_modify_decision_confirm-02",
+      "case_02_modify_decision_confirm-03",
+      "case_02_modify_decision_confirm-04"
+    ]
+  },
+  {
+    "sequence_id": "case_02_modify_decision_confirm",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_02_modify_decision_confirm-01",
+      "case_02_modify_decision_confirm-02",
+      "case_02_modify_decision_confirm-03",
+      "case_02_modify_decision_confirm-04"
+    ]
+  },
+  {
+    "sequence_id": "case_02_modify_decision_confirm",
+    "system": "dusnx",
+    "passed": false,
+    "failed_steps": [
+      "case_02_modify_decision_confirm-04"
+    ]
+  },
+  {
+    "sequence_id": "case_03_modify_decision_reject",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_03_modify_decision_reject-01",
+      "case_03_modify_decision_reject-02",
+      "case_03_modify_decision_reject-03"
+    ]
+  },
+  {
+    "sequence_id": "case_03_modify_decision_reject",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_03_modify_decision_reject-01",
+      "case_03_modify_decision_reject-02",
+      "case_03_modify_decision_reject-03"
+    ]
+  },
+  {
+    "sequence_id": "case_03_modify_decision_reject",
+    "system": "dusnx",
+    "passed": false,
+    "failed_steps": [
+      "case_03_modify_decision_reject-04"
+    ]
+  },
+  {
+    "sequence_id": "case_04_contradictory_info",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_04_contradictory_info-01",
+      "case_04_contradictory_info-02"
+    ]
+  },
+  {
+    "sequence_id": "case_04_contradictory_info",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_04_contradictory_info-01",
+      "case_04_contradictory_info-02"
+    ]
+  },
+  {
+    "sequence_id": "case_04_contradictory_info",
+    "system": "dusnx",
+    "passed": false,
+    "failed_steps": [
+      "case_04_contradictory_info-02"
+    ]
+  },
+  {
+    "sequence_id": "case_05_missing_context_guard",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_05_missing_context_guard-01"
+    ]
+  },
+  {
+    "sequence_id": "case_05_missing_context_guard",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_05_missing_context_guard-01"
+    ]
+  },
+  {
+    "sequence_id": "case_05_missing_context_guard",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  },
+  {
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_06_ambiguous_decision_clarify-01",
+      "case_06_ambiguous_decision_clarify-02",
+      "case_06_ambiguous_decision_clarify-03"
+    ]
+  },
+  {
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_06_ambiguous_decision_clarify-01",
+      "case_06_ambiguous_decision_clarify-02",
+      "case_06_ambiguous_decision_clarify-03"
+    ]
+  },
+  {
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  },
+  {
+    "sequence_id": "case_07_cross_session_continuity",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_07_cross_session_continuity-01",
+      "case_07_cross_session_continuity-02"
+    ]
+  },
+  {
+    "sequence_id": "case_07_cross_session_continuity",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_07_cross_session_continuity-01"
+    ]
+  },
+  {
+    "sequence_id": "case_07_cross_session_continuity",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  },
+  {
+    "sequence_id": "case_08_cross_platform_powerpoint_sync",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_08_cross_platform_powerpoint_sync-01"
+    ]
+  },
+  {
+    "sequence_id": "case_08_cross_platform_powerpoint_sync",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_08_cross_platform_powerpoint_sync-01"
+    ]
+  },
+  {
+    "sequence_id": "case_08_cross_platform_powerpoint_sync",
+    "system": "dusnx",
+    "passed": false,
+    "failed_steps": [
+      "case_08_cross_platform_powerpoint_sync-02"
+    ]
+  },
+  {
+    "sequence_id": "case_09_multi_step_override_chain",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_09_multi_step_override_chain-01",
+      "case_09_multi_step_override_chain-02",
+      "case_09_multi_step_override_chain-03",
+      "case_09_multi_step_override_chain-04",
+      "case_09_multi_step_override_chain-05",
+      "case_09_multi_step_override_chain-06"
+    ]
+  },
+  {
+    "sequence_id": "case_09_multi_step_override_chain",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_09_multi_step_override_chain-01",
+      "case_09_multi_step_override_chain-02",
+      "case_09_multi_step_override_chain-03",
+      "case_09_multi_step_override_chain-04",
+      "case_09_multi_step_override_chain-05",
+      "case_09_multi_step_override_chain-06"
+    ]
+  },
+  {
+    "sequence_id": "case_09_multi_step_override_chain",
+    "system": "dusnx",
+    "passed": false,
+    "failed_steps": [
+      "case_09_multi_step_override_chain-06"
+    ]
+  },
+  {
+    "sequence_id": "case_10_project_isolation",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_10_project_isolation-01",
+      "case_10_project_isolation-02"
+    ]
+  },
+  {
+    "sequence_id": "case_10_project_isolation",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_10_project_isolation-01",
+      "case_10_project_isolation-02"
+    ]
+  },
+  {
+    "sequence_id": "case_10_project_isolation",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  },
+  {
+    "sequence_id": "case_11_topic_switch",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_11_topic_switch-01",
+      "case_11_topic_switch-03"
+    ]
+  },
+  {
+    "sequence_id": "case_11_topic_switch",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_11_topic_switch-01"
+    ]
+  },
+  {
+    "sequence_id": "case_11_topic_switch",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  },
+  {
+    "sequence_id": "case_12_preference_change",
+    "system": "baseline_a",
+    "passed": false,
+    "failed_steps": [
+      "case_12_preference_change-01",
+      "case_12_preference_change-02",
+      "case_12_preference_change-03",
+      "case_12_preference_change-04"
+    ]
+  },
+  {
+    "sequence_id": "case_12_preference_change",
+    "system": "baseline_b",
+    "passed": false,
+    "failed_steps": [
+      "case_12_preference_change-01",
+      "case_12_preference_change-02",
+      "case_12_preference_change-03",
+      "case_12_preference_change-04"
+    ]
+  },
+  {
+    "sequence_id": "case_12_preference_change",
+    "system": "dusnx",
+    "passed": true,
+    "failed_steps": []
+  }
+]

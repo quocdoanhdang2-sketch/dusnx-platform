@@ -2,10 +2,53 @@
 
 **DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng**
 
-## Triển khai Hoàn chỉnh Tuần 2 (Week 2 Deliverables)
+## Tuần 2 và benchmark pilot Tuần 3
 
-- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập với Opaque Bearer Token an toàn (lưu SQLite `auth_tokens`), quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng và kết nối trực tiếp với Ollama LLM thật cục bộ (`qwen2.5:0.5b`).
-- **Điểm gọi API thống nhất qua Gateway YARP:** Toàn bộ request Web UI (`:8080` ở chế độ Native hoặc `:3000` qua Nginx reverse-proxy ở Docker Compose) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
+Bằng chứng thực chạy ngày 28/09/2026: [nghiệm thu HTTP và Web Tuần 2](docs/WEEK2_ACCEPTANCE.md),
+[kết quả và giới hạn pilot Tuần 3](docs/WEEK3_PILOT.md). Nhãn pilot **chưa được duyệt độc lập**.
+Gateway dùng HttpClient proxy; auth dùng opaque token trong bảng SQLite `tokens`.
+
+```powershell
+# Từ thư mục gốc, sau khi activate virtualenv đã cài ./python[dev]
+$env:PYTHONPATH="python/src;python;.;scripts"
+python scripts/verify_real_ollama_week2.py --output runtime/week2-http.json
+# UI thật: cần Playwright và Chromium (cài một lần)
+python -m pip install playwright
+python -m playwright install chromium
+python scripts/verify_web_week2.py --output-dir runtime/week2-ui
+
+python python/scripts/evaluate_personalization.py --validate-only
+python python/scripts/evaluate_personalization.py --provider ollama --device cpu --output-dir runtime/week3-pilot
+# Chỉ kiểm tra pipeline, không dùng số mock làm chất lượng LLM:
+python python/scripts/evaluate_personalization.py --provider mock --device cpu --output-dir runtime/week3-mock
+
+python -m pytest python/tests -q
+node --test web-ui/app.test.js
+dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release
+dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release
+git diff --check
+```
+
+HTTP/UI cần dịch vụ chạy bằng `start-local.ps1`; benchmark dùng app FastAPI trong
+process, DB riêng tại `runtime/week3-scratch/<run-id>`, Ollama thật ở `:11434`,
+checkpoint local tại `artifacts/dusnx_smoke_v2.pt`. Không có checkpoint thì ghi
+`bootstrap_rules`, không báo là kết quả model đã train. Script mặc định dùng CPU;
+GPU là tùy chọn. Máy kiểm chứng dùng virtualenv có sẵn `python/.venv`, không cần
+tạo lại nếu đã cài dependencies.
+
+Pilot duy nhất về personalization là `benchmarks/week3_personalization_pilot.jsonl`
+(12 chuỗi/36 bước), chuyển từ bản nháp phiên trước và bổ sung hai tình huống thiếu.
+Các `benchmark_v1/v2_*` có sẵn là bộ chẩn đoán routing riêng, không bị thay thế.
+Output: `predictions.jsonl`, `cases.json`, `summary.json`, `summary.md`, `errors.json`.
+Dùng output-dir mới cho mỗi lượt để giữ bằng chứng trước. Nhãn không vào đầu vào
+predict; không dùng dữ liệu benchmark để train. Đây là pilot AI biên soạn, không
+phải holdout do người độc lập tạo; reviewer cần duyệt nhãn, diễn đạt tương đương,
+phủ định và việc phân biệt nhớ đúng với đoán đúng. Chi tiết trong báo cáo Tuần 3.
+
+## Các thành phần Tuần 2
+
+- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập với Opaque Bearer Token an toàn (lưu SQLite `tokens`), quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng và kết nối trực tiếp với Ollama LLM thật cục bộ (`qwen2.5:0.5b`).
+- **Điểm gọi API thống nhất qua Gateway ASP.NET Core:** Toàn bộ request Web UI (`:8080` ở chế độ Native hoặc `:3000` qua Nginx reverse-proxy ở Docker Compose) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
 - **Một danh tính & state có thẩm quyền cho người dùng:** Các endpoint `/v1/me/events`, `/v1/me/state`, `/v1/me/events` trích xuất `user_id` trực tiếp từ token, tính toán `time_gap_hours`, chống giả mạo danh tính trong body.
 - **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint (phân biệt rõ với Office Add-in tích hợp thực tế) gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
 - **Trí nhớ có giải thích (Explainable RAG) & Cô lập Project:** Thuật toán chấm điểm theo độ tương quan và độ mới, cách ly nghiêm ngặt theo `project_id`, phản ánh chính xác `memory_ids_used` trong prompt.
@@ -204,7 +247,8 @@ Thay `TEN_REPOSITORY` bằng tên mày chọn. Không commit `.env`, dataset th�
 
 ## Giới hạn Phase 1
 
-- Chưa có JWT/refresh token; endpoint xem state hiện là development-only.
+- Chưa có JWT/refresh token. `/v1/me/state` yêu cầu opaque token; endpoint lịch sử
+  `/api/v1/history/...` cũ vẫn là development-only.
 - Zalo mới có normalized webhook skeleton, chưa ký request theo Zalo OA production.
 - PowerPoint mới tạo outline/job; bước chèn slide bằng Office.js sẽ làm ở Phase 2.
 - SQL Server, Redis, MinIO và ChromaDB đã có container profile nhưng chưa phải nguồn lưu trữ chính.

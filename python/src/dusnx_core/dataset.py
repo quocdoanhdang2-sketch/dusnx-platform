@@ -19,7 +19,10 @@ def read_jsonl(path: str | Path) -> list[dict]:
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
-                rows.append(json.loads(line))
+                row = json.loads(line)
+                if "case_id" in row or "expected_intent" in row or "label_source" in row:
+                    raise ValueError("Evaluation benchmark records must not be used as training data")
+                rows.append(row)
     return rows
 
 

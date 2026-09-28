@@ -1,0 +1,155 @@
+{
+  "timestamp_utc": "2026-09-28T16:12:48.358168+00:00",
+  "provider": "ollama",
+  "benchmark_sha256": "2137961651d36f0831013c0b2b749f41fcb252ffd96acb12c29d5c6336e179e1",
+  "checkpoint_sha256": "c1e898a0e4830f3b871026c689fa5376b776eeb015efea577d0d7008f4ba7512",
+  "runtime_mode": "trained_dusnx",
+  "model_version": "checkpoint:dusnx_smoke_v2.pt:sha256-c1e898a0e483:config-03b14389ce98",
+  "review_status": "not_independently_reviewed",
+  "step_count": 36,
+  "sequence_count": 12,
+  "systems": {
+    "baseline_a": {
+      "metrics": {
+        "active_recall": {
+          "passed": 4,
+          "scored": 10,
+          "rate": 0.4
+        },
+        "obsolete_elimination": {
+          "passed": 2,
+          "scored": 6,
+          "rate": 0.3333333333333333
+        },
+        "missing_context_handling": {
+          "passed": 3,
+          "scored": 8,
+          "rate": 0.375
+        },
+        "intent": {
+          "passed": 11,
+          "scored": 36,
+          "rate": 0.3055555555555556
+        },
+        "agent": {
+          "passed": 13,
+          "scored": 36,
+          "rate": 0.3611111111111111
+        },
+        "action": {
+          "passed": 11,
+          "scored": 36,
+          "rate": 0.3055555555555556
+        },
+        "final_answer_success": {
+          "passed": 4,
+          "scored": 12,
+          "rate": 0.3333333333333333
+        }
+      },
+      "attribution": {
+        "rule": 36
+      },
+      "provider_failures": 0,
+      "raw_checkpoint_route": {
+        "passed": 0,
+        "scored": 0
+      }
+    },
+    "baseline_b": {
+      "metrics": {
+        "active_recall": {
+          "passed": 6,
+          "scored": 10,
+          "rate": 0.6
+        },
+        "obsolete_elimination": {
+          "passed": 2,
+          "scored": 6,
+          "rate": 0.3333333333333333
+        },
+        "missing_context_handling": {
+          "passed": 1,
+          "scored": 8,
+          "rate": 0.125
+        },
+        "intent": {
+          "passed": 11,
+          "scored": 36,
+          "rate": 0.3055555555555556
+        },
+        "agent": {
+          "passed": 13,
+          "scored": 36,
+          "rate": 0.3611111111111111
+        },
+        "action": {
+          "passed": 11,
+          "scored": 36,
+          "rate": 0.3055555555555556
+        },
+        "final_answer_success": {
+          "passed": 4,
+          "scored": 12,
+          "rate": 0.3333333333333333
+        }
+      },
+      "attribution": {
+        "rule": 36
+      },
+      "provider_failures": 0,
+      "raw_checkpoint_route": {
+        "passed": 0,
+        "scored": 0
+      }
+    },
+    "dusnx": {
+      "metrics": {
+        "active_recall": {
+          "passed": 10,
+          "scored": 10,
+          "rate": 1.0
+        },
+        "obsolete_elimination": {
+          "passed": 4,
+          "scored": 6,
+          "rate": 0.6666666666666666
+        },
+        "missing_context_handling": {
+          "passed": 8,
+          "scored": 8,
+          "rate": 1.0
+        },
+        "intent": {
+          "passed": 31,
+          "scored": 36,
+          "rate": 0.8611111111111112
+        },
+        "agent": {
+          "passed": 36,
+          "scored": 36,
+          "rate": 1.0
+        },
+        "action": {
+          "passed": 31,
+          "scored": 36,
+          "rate": 0.8611111111111112
+        },
+        "final_answer_success": {
+          "passed": 10,
+          "scored": 12,
+          "rate": 0.8333333333333334
+        }
+      },
+      "attribution": {
+        "rule": 26,
+        "model": 10
+      },
+      "provider_failures": 0,
+      "raw_checkpoint_route": {
+        "passed": 6,
+        "scored": 11
+      }
+    }
+  }
+}

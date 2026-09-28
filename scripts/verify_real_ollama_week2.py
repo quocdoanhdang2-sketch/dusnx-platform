@@ -1,143 +1,113 @@
-"""
-Verification Script: Web -> Gateway -> FastAPI -> Real Ollama (qwen2.5:0.5b)
-=============================================================================
-Runs the complete Week 2 acceptance scenario against the live Ollama daemon:
-1. Register & Login Alice.
-2. State initial decision: "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu."
-3. Request modification: "Đổi PostgreSQL sang MongoDB" -> System asks for confirmation.
-4. Confirm: "Đồng ý" -> System supersedes PostgreSQL and activates MongoDB atomically.
-5. New Session & Ask: "Cơ sở dữ liệu của dự án là gì?" -> Real Ollama generates Vietnamese reply with memory context.
-6. Second Client (simulated PowerPoint connector): Sends event with User A's token, advancing state.
-"""
+"""Real HTTP acceptance through localhost:8080. No TestClient, secrets or raw auth logs."""
 from __future__ import annotations
-
-import os
-import sys
+import argparse
+from datetime import datetime, timezone
+import json
 from pathlib import Path
-
-# Ensure UTF-8 output on Windows console
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-
-# Ensure repo root is on sys.path
-REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT / "python" / "src"))
-sys.path.insert(0, str(REPO_ROOT / "python" / "apps"))
-sys.path.insert(0, str(REPO_ROOT / "python"))
-
-# Configure environment for real Ollama
-os.environ["DUSNX_PROVIDER"] = "ollama"
-os.environ["DUSNX_OLLAMA_MODEL"] = "qwen2.5:0.5b"
-os.environ["DUSNX_OLLAMA_URL"] = "http://127.0.0.1:11434"
-os.environ["DUSNX_DATA_DIR"] = str(REPO_ROOT / "data" / "verify_real_ollama")
-
-from fastapi.testclient import TestClient
-from apps.ai_api.main import app
-import apps.ai_api.auth as auth_mod
-import apps.ai_api.memory as mem_mod
-
-# Reset singletons
-if auth_mod._auth_db:
-    auth_mod._auth_db.close()
-    auth_mod._auth_db = None
-if mem_mod._memory_db:
-    mem_mod._memory_db.close()
-    mem_mod._memory_db = None
-
-client = TestClient(app)
-
-print("=" * 70)
-print("DUSN-X WEEK 2 — REAL OLLAMA (qwen2.5:0.5b) VERIFICATION RUN")
-print("=" * 70)
-
-# Check Ollama health
-h = client.get("/health").json()
-print(f"Health Check: status={h.get('status')}, model_loaded={h.get('model_loaded')}, provider_ok={h.get('provider_ok')}")
-
-# Step 1: Register and login Alice
 import secrets
-username = f"alice_real_{secrets.token_hex(4)}"
-client.post("/v1/auth/register", json={"username": username, "password": "P@ssword123!"})
-login_res = client.post("/v1/auth/login", json={"username": username, "password": "P@ssword123!"}).json()
-token = login_res["token"]
-headers = {"Authorization": f"Bearer {token}"}
-print(f"[OK] Logged in user '{username}'.")
+import sys
+import httpx
 
-# Step 2: Session 1 — Store explicit decision
-s1 = client.post("/v1/sessions", json={"title": "Session 1 - Architecture"}, headers=headers).json()
-s1_id = s1["session_id"]
+GATEWAY_URL = "http://127.0.0.1:8080"
+REMEMBER = "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu."
+CHANGE = "Đổi PostgreSQL sang MongoDB"
+CONFIRM = "Đồng ý"
+QUERY = "Cơ sở dữ liệu của dự án này hiện tại là gì?"
 
-msg1 = "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu."
-print(f"\n[Step 1] User says: \"{msg1}\"")
-r1 = client.post("/v1/chat", json={"session_id": s1_id, "message": msg1}, headers=headers).json()
-print(f"Assistant: {r1['reply']}")
-print(f"Intent: {r1['intent']}, Memory IDs: {r1['memory_ids_used']}, State Version: {r1['state_version']}")
 
-# Verify memory created in DB
-mems = client.get("/v1/memories", headers=headers).json()
-assert len(mems) == 1
-assert "PostgreSQL" in mems[0]["content"]
-print(f"[OK] Memory saved in DB: id={mems[0]['memory_id']}, active={mems[0]['is_active']}, content=\"{mems[0]['content']}\"")
+def check_final(reply, memories, old_id):
+    active = [m for m in memories if m["is_active"]]
+    old = next((m for m in memories if m["memory_id"] == old_id), None)
+    text = reply.get("reply", "").casefold()
+    checks = {
+        "provider_ok": reply.get("provider_ok") is True,
+        "provider_ollama": reply.get("provider_used") == "ollama",
+        "mongodb_active": len(active) == 1 and "mongodb" in active[0]["content"].casefold(),
+        "postgresql_superseded": old is not None and not old["is_active"],
+        "active_memory_used": len(active) == 1 and active[0]["memory_id"] in reply.get("memory_ids_used", []),
+        "old_memory_not_used": old_id not in reply.get("memory_ids_used", []),
+        # Conservative automatic criterion; semantic interpretation also requires UI review.
+        "answer_mongodb_only": "mongodb" in text and "postgresql" not in text,
+    }
+    return checks
 
-# Step 3: Modify decision
-msg2 = "Đổi PostgreSQL sang MongoDB"
-print(f"\n[Step 2] User says: \"{msg2}\"")
-r2 = client.post("/v1/chat", json={"session_id": s1_id, "message": msg2}, headers=headers).json()
-print(f"Assistant: {r2['reply']}")
-print(f"Intent: {r2['intent']}, Next Action: {r2['next_action']}")
-assert r2["intent"] == "decision_modify_intent"
 
-# Step 4: Confirm modification ("Đồng ý")
-msg3 = "Đồng ý"
-print(f"\n[Step 3] User confirms: \"{msg3}\"")
-r3 = client.post("/v1/chat", json={"session_id": s1_id, "message": msg3}, headers=headers).json()
-print(f"Assistant: {r3['reply']}")
-print(f"Intent: {r3['intent']}, State Version: {r3['state_version']}")
-assert r3["intent"] == "decision_update"
+def run_verification(output=Path("runtime/week2-http.json")):
+    report = {"timestamp_utc": datetime.now(timezone.utc).isoformat(), "gateway": GATEWAY_URL,
+              "transport": "real_http", "status": "unverified", "ui_status": "not_measured", "requests": []}
+    headers = {}
+    with httpx.Client(base_url=GATEWAY_URL, timeout=120, trust_env=False) as client:
+        def call(method, path, **kwargs):
+            response = client.request(method, path, headers=headers, **kwargs)
+            report["requests"].append({"method": method, "path": path, "status": response.status_code})
+            if response.status_code >= 400:
+                raise RuntimeError(f"{method} {path}: HTTP {response.status_code}")
+            return response.json()
+        try:
+            gateway = call("GET", "/health")
+            if gateway.get("service") != "dusnx-gateway":
+                raise RuntimeError("Port 8080 is not DUSN-X Gateway")
+            health = call("GET", "/v1/health")
+            report["runtime_mode"] = health.get("runtime_mode")
+            report["model_version"] = health.get("model_version")
+            if health.get("provider_ok") is not True:
+                report["provider_health"] = {k: health.get("provider", {}).get(k)
+                                             for k in ("available", "reachable", "configured_model", "error")}
+                raise RuntimeError("Ollama unavailable according to Gateway /v1/health")
+            credentials = {"username": f"acceptance_{secrets.token_hex(8)}", "password": secrets.token_urlsafe(24)}
+            call("POST", "/v1/auth/register", json=credentials)
+            token = call("POST", "/v1/auth/login", json=credentials)["token"]
+            headers["Authorization"] = f"Bearer {token}"
+            s1 = call("POST", "/v1/sessions", json={"title": "Acceptance setup"})["session_id"]
+            def chat(sid, message):
+                return call("POST", "/v1/chat", json={"session_id": sid, "message": message})
+            chat(s1, REMEMBER)
+            memories = call("GET", "/v1/memories?include_inactive=true")
+            if len(memories) != 1 or "PostgreSQL" not in memories[0]["content"]:
+                raise RuntimeError("Initial PostgreSQL memory missing")
+            old_id = memories[0]["memory_id"]
+            change = chat(s1, CHANGE)
+            if (change.get("intent"), change.get("next_action")) != ("decision_modify_intent", "await_confirm"):
+                raise RuntimeError("Change did not request confirmation")
+            if chat(s1, CONFIRM).get("intent") != "decision_update":
+                raise RuntimeError("Confirmation did not update decision")
+            s2 = call("POST", "/v1/sessions", json={"title": "Acceptance recall"})["session_id"]
+            if s1 == s2:
+                raise RuntimeError("New session was not created")
+            reply = chat(s2, QUERY)
+            memories = call("GET", "/v1/memories?include_inactive=true")
+            report["checks"] = check_final(reply, memories, old_id)
+            report["final_response"] = {k: reply.get(k) for k in
+                ("reply", "provider_ok", "provider_used", "state_version", "model_used", "tokens_generated")
+                if reply.get(k) is not None}
+            event = call("POST", "/v1/me/events", json={"platform": "powerpoint", "event_type": "slide_overview",
+                        "content": "Slide trình bày kiến trúc: Cơ sở dữ liệu MongoDB", "feedback_value": 0.0})
+            state = call("GET", "/v1/me/state")
+            timeline = call("GET", "/v1/me/events")["events"]
+            report["checks"]["cross_client_state"] = (
+                event["state_version"] > reply["state_version"] and state["state_version"] == event["state_version"]
+                and {"web", "powerpoint"}.issubset({e["platform"] for e in timeline}))
+            report["status"] = "passed" if all(report["checks"].values()) else "unverified"
+        except Exception as exc:
+            # Never include request objects/headers or auth bodies.
+            report["error"] = f"{type(exc).__name__}: {exc}" if not isinstance(exc, httpx.HTTPError) else type(exc).__name__
+        finally:
+            if headers:
+                try:
+                    call("POST", "/v1/auth/logout")
+                except Exception:
+                    report["logout"] = "failed"
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return report["status"] == "passed"
 
-# Verify active memory is now MongoDB, old PostgreSQL is superseded
-active_mems = client.get("/v1/memories?active_only=true", headers=headers).json()
-assert len(active_mems) == 1
-assert "MongoDB" in active_mems[0]["content"]
-print(f"[OK] Active decision is now: \"{active_mems[0]['content']}\" (version {active_mems[0]['version']})")
 
-# Step 5: Session 2 (brand new session) — Ask with Real Ollama
-s2 = client.post("/v1/sessions", json={"title": "Session 2 - Query"}, headers=headers).json()
-s2_id = s2["session_id"]
-
-query = "Cơ sở dữ liệu của dự án này hiện tại là gì?"
-print(f"\n[Step 4] Session 2 — User asks: \"{query}\"")
-print("Calling Real Ollama daemon (qwen2.5:0.5b)...")
-r4 = client.post("/v1/chat", json={"session_id": s2_id, "message": query}, headers=headers).json()
-
-print("-" * 50)
-print(f"REAL OLLAMA RESPONSE:")
-print(f"Reply: {r4['reply']}")
-print(f"Provider OK: {r4['provider_ok']}")
-print(f"Provider Used: {r4['provider_used']}")
-print(f"State Version: {r4['state_version']}")
-print(f"Memory IDs Used in Prompt: {r4['memory_ids_used']}")
-print("-" * 50)
-
-assert r4["provider_ok"] is True, f"Real Ollama generation failed: {r4['reply']}"
-assert "ollama" in r4["provider_used"]
-assert len(r4["memory_ids_used"]) > 0
-
-# Step 6: Second client (simulated PowerPoint connector) sends event with Alice's token
-print("\n[Step 5] Second Client (Simulated PowerPoint Connector) sends event:")
-evt_res = client.post("/v1/me/events", json={
-    "platform": "powerpoint",
-    "event_type": "slide_overview",
-    "content": "Trình bày slide kiến trúc: CSDL MongoDB",
-}, headers=headers).json()
-print(f"Event recorded: platform={evt_res['platform']}, state_version={evt_res['state_version']}, intent={evt_res['intent']}")
-assert evt_res["platform"] == "powerpoint"
-assert evt_res["state_version"] >= r4["state_version"] + 1
-
-# Check timeline
-timeline = client.get("/v1/me/events", headers=headers).json()["events"]
-print(f"[OK] Timeline has {len(timeline)} events across platforms: {[e['platform'] for e in timeline]}")
-
-print("\n" + "=" * 70)
-print("SUCCESS: ALL WEEK 2 STEPS COMPLETED WITH REAL LOCAL OLLAMA (qwen2.5:0.5b)!")
-print("=" * 70)
+if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", default="runtime/week2-http.json")
+    args = parser.parse_args()
+    sys.exit(0 if run_verification(args.output) else 1)

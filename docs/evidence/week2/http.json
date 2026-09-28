@@ -1,0 +1,109 @@
+{
+  "timestamp_utc": "2026-09-28T16:06:21.195562+00:00",
+  "gateway": "http://127.0.0.1:8080",
+  "transport": "real_http",
+  "status": "passed",
+  "ui_status": "not_measured",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/register",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memories?include_inactive=true",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memories?include_inactive=true",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/me/events",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/v1/me/state",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/me/events",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/logout",
+      "status": 200
+    }
+  ],
+  "runtime_mode": "trained_dusnx",
+  "model_version": "checkpoint:dusnx_smoke_v2.pt:sha256-c1e898a0e483:config-03b14389ce98",
+  "checks": {
+    "provider_ok": true,
+    "provider_ollama": true,
+    "mongodb_active": true,
+    "postgresql_superseded": true,
+    "active_memory_used": true,
+    "old_memory_not_used": true,
+    "answer_mongodb_only": true,
+    "cross_client_state": true
+  },
+  "final_response": {
+    "reply": "Cơ sở dữ liệu của dự án này hiện tại là MongoDB.",
+    "provider_ok": true,
+    "provider_used": "ollama",
+    "state_version": 4,
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 15
+  }
+}

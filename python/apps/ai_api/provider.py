@@ -50,7 +50,7 @@ def check_ollama_health() -> dict:
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read().decode())
             models = [m["name"] for m in data.get("models", [])]
-            available = target_model in models or any(target_model.split(":")[0] in m for m in models)
+            available = target_model in models
             return {
                 "reachable": True,
                 "available": available,
@@ -62,19 +62,22 @@ def check_ollama_health() -> dict:
         return {"reachable": False, "available": False, "error": str(exc), "configured_model": target_model}
 
 
-def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
-    """Call Ollama /api/generate. Returns (text, success)."""
+def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
+    """Call Ollama /api/chat (using model native chat template) with fallback to /api/generate. Returns (text, success, model_used, tokens_generated)."""
     url = get_ollama_url()
     model = get_ollama_model()
     timeout = get_ollama_timeout()
     payload = json.dumps({
         "model": model,
-        "prompt": f"<|system|>\n{system_prompt}\n<|user|>\n{user_message}\n<|assistant|>",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ],
         "stream": False,
-        "options": {"temperature": 0.7, "num_predict": 1024},
+        "options": {"temperature": 0.3, "num_predict": 256},
     }).encode("utf-8")
     req = urllib.request.Request(
-        f"{url}/api/generate",
+        f"{url}/api/chat",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -82,18 +85,41 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode())
-            text = data.get("response", "").strip()
-            return text, True
-    except urllib.error.URLError as exc:
-        return f"[Ollama không khả dụng: {exc.reason}]", False
-    except Exception as exc:
-        return f"[Lỗi Ollama: {exc}]", False
+            text = data.get("message", {}).get("content", "").strip()
+            model_used = data.get("model")
+            eval_count = data.get("eval_count")
+            return text, bool(text), model_used, eval_count
+    except Exception:
+        # Fallback to /api/generate
+        try:
+            legacy_payload = json.dumps({
+                "model": model,
+                "prompt": f"<|system|>\n{system_prompt}\n<|user|>\n{user_message}\n<|assistant|>",
+                "stream": False,
+                "options": {"temperature": 0.3, "num_predict": 256},
+            }).encode("utf-8")
+            legacy_req = urllib.request.Request(
+                f"{url}/api/generate",
+                data=legacy_payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(legacy_req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode())
+                text = data.get("response", "").strip()
+                model_used = data.get("model")
+                eval_count = data.get("eval_count")
+                return text, bool(text), model_used, eval_count
+        except urllib.error.URLError as exc:
+            return f"[Ollama không khả dụng: {exc.reason}]", False, None, None
+        except Exception as exc:
+            return f"[Lỗi Ollama: {exc}]", False, None, None
 
 
-def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
-    """Call OpenAI-compatible API. Returns (text, success)."""
+def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
+    """Call OpenAI-compatible API. Returns (text, success, model_used, tokens_generated)."""
     if not OPENAI_API_KEY:
-        return "[Provider OpenAI chưa được cấu hình. Đặt DUSNX_OPENAI_API_KEY.]", False
+        return "[Provider OpenAI chưa được cấu hình. Đặt DUSNX_OPENAI_API_KEY.]", False, None, None
     payload = json.dumps({
         "model": OPENAI_MODEL,
         "messages": [
@@ -115,9 +141,12 @@ def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
     try:
         with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
             data = json.loads(resp.read().decode())
-            return data["choices"][0]["message"]["content"].strip(), True
+            text = data["choices"][0]["message"]["content"].strip()
+            model_used = data.get("model")
+            eval_count = data.get("usage", {}).get("completion_tokens")
+            return text, True, model_used, eval_count
     except Exception as exc:
-        return f"[Lỗi OpenAI: {exc}]", False
+        return f"[Lỗi OpenAI: {exc}]", False, None, None
 
 
 def get_provider_health() -> dict:
@@ -152,10 +181,10 @@ def generate_response(
     intent: str,
     session_history: Optional[list[dict]] = None,
     project_name: Optional[str] = None,
-) -> tuple[str, bool, str]:
+) -> tuple[str, bool, str, Optional[str], Optional[int]]:
     """
     Generate an AI response using the configured provider.
-    Returns: (response_text, success, provider_used)
+    Returns: (response_text, success, provider_used, model_used, tokens_generated)
 
     Memories are included in context; only active memories are passed here.
     """
@@ -175,7 +204,7 @@ def generate_response(
         for msg in (session_history or [])[-6:]:
             role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
             history_lines.append(f"{role}: {msg['content'][:300]}")
-    history_ctx = "\n".join(history_lines) if history_lines else ""
+    history_ctx = f"\nLịch sử hội thoại gần đây:\n" + "\n".join(history_lines) if history_lines else ""
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
@@ -183,23 +212,19 @@ def generate_response(
 Bạn trả lời bằng tiếng Việt, ngắn gọn, chính xác.
 
 {project_line}Trí nhớ cá nhân của người dùng (chỉ các mục đang hiệu lực):
-{memory_ctx}
-
-Lịch sử hội thoại gần đây:
-{history_ctx}
+{memory_ctx}{history_ctx}
 
 Quan trọng:
-- Chỉ sử dụng thông tin trong trí nhớ khi nó thực sự liên quan đến câu hỏi.
-- Nếu không có thông tin liên quan, hãy nói rõ là chưa biết và hỏi lại người dùng.
-- Không tự tạo ra "ký ức" không có trong danh sách.
-- Intent hiện tại được phân loại là: {intent}
+- Trả lời trực tiếp câu hỏi của người dùng dựa trên thông tin trí nhớ đang hiệu lực ở trên.
+- Tuyệt đối không nhắc lại các quyết định đã bị thay thế hoặc thông tin không có trong danh sách.
+- Nếu không có thông tin liên quan, hãy nói rõ là chưa biết.
 """
 
     if p == "ollama":
-        text, ok = _ollama_generate(system_prompt, user_message)
+        text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, user_message)
         provider_used = "ollama"
     elif p == "openai":
-        text, ok = _openai_generate(system_prompt, user_message)
+        text, ok, model_used, tokens_generated = _openai_generate(system_prompt, user_message)
         provider_used = "openai"
     elif p in ("stub", "mock", "test"):
         # For tests and stub evaluation: echo relevant context cleanly
@@ -209,6 +234,8 @@ Quan trọng:
             text += f" Trí nhớ hiện tại: {memories[0]['content']}."
         ok = True
         provider_used = p
+        model_used = None
+        tokens_generated = None
     else:
         text = (
             f"[Provider '{p}' chưa được hỗ trợ. "
@@ -216,5 +243,7 @@ Quan trọng:
         )
         ok = False
         provider_used = "none"
+        model_used = None
+        tokens_generated = None
 
-    return text, ok, provider_used
+    return text, ok, provider_used, model_used, tokens_generated

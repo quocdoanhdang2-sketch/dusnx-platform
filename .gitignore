@@ -16,3 +16,6 @@ gateway-dotnet/data/
 # Runtime databases — never commit user data
 data/*.db
 python/tests/test_runtime/
+**/*.db
+**/*.db-shm
+**/*.db-wal

@@ -190,7 +190,7 @@ async function checkProviderHealth() {
   const statusEl = el("providerStatus");
   const modelEl = el("modelStatus");
   try {
-    const health = await apiFetch("/health");
+    const health = await apiFetch("/v1/health");
     const provider = health.provider || {};
     const modelLoaded = health.model_loaded;
     const providerOk = health.provider_ok;
@@ -1142,5 +1142,6 @@ if (typeof module !== "undefined") {
     appendMessageBubble,
     safeText,
     formatDate,
+    checkProviderHealth,
   };
 }

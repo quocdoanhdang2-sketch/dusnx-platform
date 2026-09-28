@@ -112,6 +112,8 @@ class TestMemoryScopingAndPromptContext:
         }, headers=headers).json()
 
         assert res["provider_ok"] is True
+        assert res["model_used"] is None
+        assert res["tokens_generated"] is None
         used_ids = set(res["memory_ids_used"])
 
         # Check positive inclusion

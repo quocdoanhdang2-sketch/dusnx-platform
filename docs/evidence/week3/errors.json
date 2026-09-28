@@ -1,0 +1,3324 @@
+[
+  {
+    "case_id": "case_01_single_state_recall-01",
+    "sequence_id": "case_01_single_state_recall",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng giao diện màu tối Dark Mode.",
+      "session_id": "sess_01",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng giao diện màu tối Dark Mode.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 13,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_01_single_state_recall-01",
+    "sequence_id": "case_01_single_state_recall",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng giao diện màu tối Dark Mode.",
+      "session_id": "sess_01",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã nhận được thông tin từ bạn. Giao diện màu tối Dark Mode đã được sử dụng.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 22,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_01_single_state_recall-02",
+    "sequence_id": "case_01_single_state_recall",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Giao diện hiện tại của tôi được cấu hình như thế nào?",
+      "session_id": "sess_01",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Giao diện hiện tại được cấu hình là màu tối.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 13,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng giao diện màu tối Dark Mode."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['Dark Mode']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-01",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu.",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng PostgreSQL cho cơ sở dữ liệu.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 12,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-02",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi PostgreSQL sang MongoDB",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đúng, tôi đã biết. Bạn muốn sử dụng PostgreSQL để thay thế MongoDB?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 19,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": true,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-03",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 3,
+    "system": "baseline_a",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã nhớ rằng bạn đã nói rằng bạn muốn sử dụng PostgreSQL để thay thế MongoDB. Bạn muốn tôi giúp bạn thực hiện điều đó?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 30,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-04",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 4,
+    "system": "baseline_a",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Cơ sở dữ liệu của dự án này hiện tại là gì?",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Cơ sở dữ liệu của dự án này hiện tại là PostgreSQL.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 15,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['MongoDB']",
+      "obsolete mentions: ['PostgreSQL']",
+      "forbidden phrases: ['hiện tại là PostgreSQL']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-01",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu.",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng PostgreSQL cho cơ sở dữ liệu.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 12,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-02",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi PostgreSQL sang MongoDB",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi không thể thực hiện thay đổi từ PostgreSQL sang MongoDB. Tuy nhiên, tôi có thể giúp bạn thay đổi từ PostgreSQL sang MongoDB nếu bạn muốn. Bạn cần giúp tôi với điều gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 42,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": true,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-03",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 3,
+    "system": "baseline_b",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã thay đổi từ PostgreSQL sang MongoDB. Bạn cần giúp tôi với điều gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 19,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu.",
+        "Đổi PostgreSQL sang MongoDB"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-04",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 4,
+    "system": "baseline_b",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Cơ sở dữ liệu của dự án này hiện tại là gì?",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Cơ sở dữ liệu của dự án này hiện tại là PostgreSQL.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 15,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng PostgreSQL cho cơ sở dữ liệu.",
+        "Đổi PostgreSQL sang MongoDB"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['MongoDB']",
+      "obsolete mentions: ['PostgreSQL']",
+      "forbidden phrases: ['hiện tại là PostgreSQL']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_02_modify_decision_confirm-04",
+    "sequence_id": "case_02_modify_decision_confirm",
+    "step": 4,
+    "system": "dusnx",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Cơ sở dữ liệu của dự án này hiện tại là gì?",
+      "session_id": "sess_02",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Cơ sở dữ liệu hiện tại của dự án này là MongoDB.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 15,
+      "routing_source": "model",
+      "decision_source": "model",
+      "predicted_intent": "recommendation",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "recommend",
+      "model_prediction": {
+        "intent": "recommendation",
+        "agent": "conversation",
+        "action": "recommend"
+      },
+      "state_version": 4,
+      "error": null,
+      "memories_used": [
+        "quyết định của tôi là sử dụng MongoDB cho cơ sở dữ liệu"
+      ],
+      "active_memories": [
+        "quyết định của tôi là sử dụng MongoDB cho cơ sở dữ liệu"
+      ]
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": true,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": true
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-01",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng Python cho backend.",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Ducks, bạn đã sử dụng Python cho backend. Bạn cần hỗ trợ về các vấn đề khác?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 22,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-02",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi Python sang Golang",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đúng, tôi có thể giúp bạn đổi Python thành Golang. Bạn cần hỗ trợ về các vấn đề khác?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 25,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": true,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-03",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 3,
+    "system": "baseline_a",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Không",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Lỗi chưa biết. Bạn cần hỗ trợ về các vấn đề khác?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 16,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update_cancelled",
+      "agent": "memory",
+      "action": "no_op"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-01",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng Python cho backend.",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng Python cho backend.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 9,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-02",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi Python sang Golang",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi không thể giúp bạn đổi Python sang Golang. Golang là một ngôn ngữ lập trình mạnh mẽ, nhưng Python là một ngôn ngữ lập trình phổ biến và mạnh mẽ hơn. Bạn nên tham khảo ý kiến chuyên gia hoặc tìm các tài liệu hướng dẫn để hiểu rõ hơn về việc chuyển đổi ngôn ngữ lập trình này.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 68,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng Python cho backend."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-03",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 3,
+    "system": "baseline_b",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Không",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã hiểu. Bạn muốn tôi giúp gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 11,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng Python cho backend.",
+        "Đổi Python sang Golang"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update_cancelled",
+      "agent": "memory",
+      "action": "no_op"
+    }
+  },
+  {
+    "case_id": "case_03_modify_decision_reject-04",
+    "sequence_id": "case_03_modify_decision_reject",
+    "step": 4,
+    "system": "dusnx",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Ngôn ngữ backend hiện tại của dự án là gì?",
+      "session_id": "sess_03",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Ngôn ngữ backend hiện tại của dự án là Python.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 13,
+      "routing_source": "model",
+      "decision_source": "model",
+      "predicted_intent": "followup",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "clarify",
+      "model_prediction": {
+        "intent": "followup",
+        "agent": "conversation",
+        "action": "clarify"
+      },
+      "state_version": 4,
+      "error": null,
+      "memories_used": [
+        "quyết định của tôi là sử dụng Python cho backend"
+      ],
+      "active_memories": [
+        "quyết định của tôi là sử dụng Python cho backend"
+      ]
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": true,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": true
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_04_contradictory_info-01",
+    "sequence_id": "case_04_contradictory_info",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng kiến trúc Microservices.",
+      "session_id": "sess_04",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng kiến trúc Microservices.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 10,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_04_contradictory_info-02",
+    "sequence_id": "case_04_contradictory_info",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Tôi nghe nói dự án này dùng kiến trúc Monolith đúng không?",
+      "session_id": "sess_04",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dưới đây là thông tin về dự án mà bạn đã nói:\n\n- Dựa trên kiến trúc Monolith\n- Sử dụng kiến trúc này để quản lý các dịch vụ\n- Dựa trên kiến trúc Monolith để tạo ra một hệ thống toàn cầu\n\nDựa trên thông tin trên, tôi sẽ không thay đổi kiến trúc Monolith mà bạn đã nói.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 76,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['Microservices']",
+      "obsolete mentions: ['Monolith']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_04_contradictory_info-01",
+    "sequence_id": "case_04_contradictory_info",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng kiến trúc Microservices.",
+      "session_id": "sess_04",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng kiến trúc Microservices.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 10,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_04_contradictory_info-02",
+    "sequence_id": "case_04_contradictory_info",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Tôi nghe nói dự án này dùng kiến trúc Monolith đúng không?",
+      "session_id": "sess_04",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã sử dụng kiến trúc Monolith.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 10,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng kiến trúc Microservices."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['Microservices']",
+      "obsolete mentions: ['Monolith']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_04_contradictory_info-02",
+    "sequence_id": "case_04_contradictory_info",
+    "step": 2,
+    "system": "dusnx",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Tôi nghe nói dự án này dùng kiến trúc Monolith đúng không?",
+      "session_id": "sess_04",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dưới đây là thông tin đã được ghi nhớ:\n\n- [decision] quyết định của tôi là sử dụng kiến trúc Microservices\n- [decision] quyết định của tôi là sử dụng kiến trúc Monolith\n\nDựa trên thông tin này, tôi sẽ trả lời:\n\n- [decision] quyết định của tôi là sử dụng kiến trúc Microservices\n- [decision] quyết định của tôi là sử dụng kiến trúc Monolith\n\nTuy nhiên, tôi không thể ghi nhớ lại tất cả các thông tin liên quan đến dự án này, vì vậy tôi sẽ không thể trả lời câu hỏi này.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 125,
+      "routing_source": "model",
+      "decision_source": "model",
+      "predicted_intent": "recommendation",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "recommend",
+      "model_prediction": {
+        "intent": "recommendation",
+        "agent": "conversation",
+        "action": "recommend"
+      },
+      "state_version": 2,
+      "error": null,
+      "memories_used": [
+        "quyết định của tôi là sử dụng kiến trúc Microservices"
+      ],
+      "active_memories": [
+        "quyết định của tôi là sử dụng kiến trúc Microservices"
+      ]
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "obsolete mentions: ['Monolith']",
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_05_missing_context_guard-01",
+    "sequence_id": "case_05_missing_context_guard",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Nhắc lại quyết định triển khai hạ tầng tuần trước của tôi.",
+      "session_id": "sess_05",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tất nhiên, tôi có thể giúp bạn. Tuy nhiên, tôi cần biết rằng bạn đã triển khai hạ tầng trước đó. Nếu không, tôi không thể giúp bạn. Bạn có thể cung cấp thêm thông tin để tôi có thể giúp bạn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 54,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": true,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": true
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "clarify_missing_context",
+      "agent": "conversation",
+      "action": "clarify"
+    }
+  },
+  {
+    "case_id": "case_05_missing_context_guard-01",
+    "sequence_id": "case_05_missing_context_guard",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Nhắc lại quyết định triển khai hạ tầng tuần trước của tôi.",
+      "session_id": "sess_05",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Chúng tôi đã triển khai hạ tầng trước tuần trước.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 14,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "clarify_missing_context",
+      "agent": "conversation",
+      "action": "clarify"
+    }
+  },
+  {
+    "case_id": "case_06_ambiguous_decision_clarify-01",
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm caching cho web.",
+      "session_id": "sess_06",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã hiểu. Bạn muốn tôi giúp bạn sử dụng Redis để làm gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 17,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_06_ambiguous_decision_clarify-02",
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm session store cho mobile app.",
+      "session_id": "sess_06",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Chắc chắn, tôi sẽ giúp bạn sử dụng Redis để làm session store cho ứng dụng di động của bạn. Bạn muốn tôi giúp bạn làm điều gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 33,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_06_ambiguous_decision_clarify-03",
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "step": 3,
+    "system": "baseline_a",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đổi Redis sang Memcached",
+      "session_id": "sess_06",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đúng, bạn muốn tôi giúp bạn chuyển đổi Redis sang Memcached. Bạn muốn tôi giúp bạn làm điều gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 25,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "clarify_ambiguous_decision",
+      "agent": "memory",
+      "action": "clarify"
+    }
+  },
+  {
+    "case_id": "case_06_ambiguous_decision_clarify-01",
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm caching cho web.",
+      "session_id": "sess_06",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Để sử dụng Redis làm caching cho web, tôi cần biết các thông tin sau:\n\n1. **Cấu trúc dữ liệu**: Bạn muốn lưu trữ dữ liệu trong Redis như thế nào?\n2. **Tối ưu hóa**: Bạn muốn sử dụng các tính năng tối ưu của Redis?\n3. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis?\n4. **Tối ưu hóa**: Bạn muốn sử dụng các tính năng tối ưu của Redis?\n5. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis?\n6. **Tối ưu hóa**: Bạn muốn sử dụng các tính năng tối ưu của Redis?\n\nVui lòng cung cấp thông tin để tôi có thể hỗ trợ bạn tốt hơn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 154,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_06_ambiguous_decision_clarify-02",
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm session store cho mobile app.",
+      "session_id": "sess_06",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dữ liệu cần lưu trữ trong Redis:\n1. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis là thông tin cá nhân và các trạng thái của ứng dụng.\n2. **Tối ưu hóa**: Bạn muốn tối ưu hóa khả năng lưu trữ và phân tích dữ liệu của ứng dụng.\n3. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis là thông tin cá nhân và các trạng thái của ứng dụng.\n4. **Tối ưu hóa**: Bạn muốn tối ưu hóa khả năng lưu trữ và phân tích dữ liệu của ứng dụng.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 122,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm caching cho web."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_06_ambiguous_decision_clarify-03",
+    "sequence_id": "case_06_ambiguous_decision_clarify",
+    "step": 3,
+    "system": "baseline_b",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đổi Redis sang Memcached",
+      "session_id": "sess_06",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đúng, tôi sẽ giúp bạn chuyển đổi Redis sang Memcached. Dưới đây là một số bước bạn cần thực hiện:\n\n1. **Tối ưu hóa**: Bạn muốn tối ưu hóa khả năng lưu trữ và phân tích dữ liệu của ứng dụng.\n2. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis là thông tin cá nhân và các trạng thái của ứng dụng.\n3. **Tối ưu hóa**: Bạn muốn tối ưu hóa khả năng lưu trữ và phân tích dữ liệu của ứng dụng.\n4. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis là thông tin cá nhân và các trạng thái của ứng dụng.\n\nDưới đây là một số gợi ý về cách bạn có thể thực hiện:\n\n1. **Tối ưu hóa**: Sử dụng các tính năng tối ưu của Memcached, ví dụ, việc sử dụng các hàm `set`, `get`, `del`, `keys`, `values`, `get` và `set`.\n2. **Cấu trúc dữ liệu**: Dữ liệu cần lưu trữ trong Redis là thông tin cá nhân và các trạng thái của ứng dụng.\n3. **Tối ưu hóa**: Sử dụng các tính năng tối ưu của Memcached, ví dụ",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 256,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm caching cho web.",
+        "Hãy nhớ rằng quyết định của tôi là sử dụng Redis làm session store cho mobile app."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "clarify_ambiguous_decision",
+      "agent": "memory",
+      "action": "clarify"
+    }
+  },
+  {
+    "case_id": "case_07_cross_session_continuity-01",
+    "sequence_id": "case_07_cross_session_continuity",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là dùng Docker để đóng gói ứng dụng.",
+      "session_id": "sess_07_a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dưới đây là thông tin trí nhớ đang hiệu lực:\n\n1. Tuy nhiên, tôi không thể sử dụng Docker để đóng gói ứng dụng hiện tại.\n2. Tôi có thể giúp bạn tìm hiểu thêm về cách sử dụng Docker để đóng gói ứng dụng.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 54,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_07_cross_session_continuity-02",
+    "sequence_id": "case_07_cross_session_continuity",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Công cụ đóng gói ứng dụng của dự án là gì?",
+      "session_id": "sess_07_b",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Công cụ đóng gói ứng dụng của dự án là ứng dụng nào đó để tạo ra ứng dụng mới.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 23,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['Docker']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_07_cross_session_continuity-01",
+    "sequence_id": "case_07_cross_session_continuity",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là dùng Docker để đóng gói ứng dụng.",
+      "session_id": "sess_07_a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dựa trên thông tin trí nhớ đang hiệu lực, tôi đã sử dụng Docker để đóng gói ứng dụng.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 23,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_08_cross_platform_powerpoint_sync-01",
+    "sequence_id": "case_08_cross_platform_powerpoint_sync",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là chọn phong cách thiết kế Minimalist.",
+      "session_id": "sess_08",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi không có trí nhớ nào. Tôi chỉ có thể cung cấp thông tin dựa trên dữ liệu hiện tại.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 25,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_08_cross_platform_powerpoint_sync-01",
+    "sequence_id": "case_08_cross_platform_powerpoint_sync",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là chọn phong cách thiết kế Minimalist.",
+      "session_id": "sess_08",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã hiểu và sẽ duy trì phong cách thiết kế Minimalist.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 16,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_08_cross_platform_powerpoint_sync-02",
+    "sequence_id": "case_08_cross_platform_powerpoint_sync",
+    "step": 2,
+    "system": "dusnx",
+    "input": {
+      "step": 2,
+      "platform": "powerpoint",
+      "user_message": "Trình chiếu slide giới thiệu Minimalist Design System",
+      "session_id": "sess_08_ppt",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "",
+      "provider_ok": true,
+      "provider_used": "none",
+      "model_used": null,
+      "tokens_generated": null,
+      "routing_source": "model",
+      "decision_source": "model",
+      "predicted_intent": "presentation_edit",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "edit_slide",
+      "model_prediction": {
+        "intent": "presentation_edit",
+        "agent": "conversation",
+        "action": "edit_slide"
+      },
+      "state_version": 2,
+      "error": null,
+      "memories_used": [],
+      "active_memories": [
+        "quyết định của tôi là chọn phong cách thiết kế Minimalist"
+      ]
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-01",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS.",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã biết. Tôi sẽ triển khai dựa trên AWS. Bạn có bất kỳ thắc mắc nào khác không?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 26,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-02",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi AWS sang GCP",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "AWS sẽ được chuyển sang GCP. Bạn có bất kỳ thắc mắc nào khác không?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 20,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-03",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 3,
+    "system": "baseline_a",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đồng ý. Bạn đã cho tôi biết.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 11,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-04",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 4,
+    "system": "baseline_a",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Đổi GCP sang Azure",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "AWS sẽ được chuyển sang Azure. Bạn có bất kỳ thắc mắc nào khác không?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 19,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-05",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 5,
+    "system": "baseline_a",
+    "input": {
+      "step": 5,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "AWS sẽ được chuyển sang GCP. Bạn có bất kỳ thắc mắc nào khác không?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 20,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-06",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 6,
+    "system": "baseline_a",
+    "input": {
+      "step": 6,
+      "platform": "web",
+      "user_message": "Nhà cung cấp đám mây hiện tại của dự án là bên nào?",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dự án này đang sử dụng AWS. Dưới đây là thông tin về AWS:\n\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được chuyển sang GCP.\n- AWS sẽ được",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 256,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['Azure']",
+      "obsolete mentions: ['AWS', 'GCP']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-01",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS.",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "AWS là một lựa chọn tốt cho triển khai ứng dụng trên. Bạn cần tham khảo thêm thông tin cụ thể hơn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 27,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-02",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi AWS sang GCP",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "AWS là lựa chọn tốt cho triển khai ứng dụng trên. Bạn cần tham khảo thêm thông tin cụ thể hơn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 26,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-03",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 3,
+    "system": "baseline_b",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đồng ý! Tôi sẽ triển khai ứng dụng trên AWS.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 15,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS.",
+        "Đổi AWS sang GCP"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-04",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 4,
+    "system": "baseline_b",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Đổi GCP sang Azure",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "AWS là lựa chọn tốt cho triển khai ứng dụng trên. Bạn cần tham khảo thêm thông tin cụ thể hơn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 26,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS.",
+        "Đổi AWS sang GCP"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-05",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 5,
+    "system": "baseline_b",
+    "input": {
+      "step": 5,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Đồng ý! Tôi sẽ triển khai ứng dụng trên AWS.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 15,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS.",
+        "Đổi AWS sang GCP",
+        "Đổi GCP sang Azure"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-06",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 6,
+    "system": "baseline_b",
+    "input": {
+      "step": 6,
+      "platform": "web",
+      "user_message": "Nhà cung cấp đám mây hiện tại của dự án là bên nào?",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Trong tình huống này, tôi không có thông tin cụ thể về dự án mà bạn đang triển khai. Tuy nhiên, dự án này thường liên quan đến AWS, GCP hoặc Azure. Bạn có thể tham khảo thêm thông tin cụ thể từ người quản lý dự án hoặc người dùng khác.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 66,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là triển khai trên AWS.",
+        "Đổi AWS sang GCP",
+        "Đổi GCP sang Azure"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "obsolete mentions: ['AWS', 'GCP']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_09_multi_step_override_chain-06",
+    "sequence_id": "case_09_multi_step_override_chain",
+    "step": 6,
+    "system": "dusnx",
+    "input": {
+      "step": 6,
+      "platform": "web",
+      "user_message": "Nhà cung cấp đám mây hiện tại của dự án là bên nào?",
+      "session_id": "sess_09",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Có. Dữ liệu trí nhớ hiện tại cho dự án này là: \n\n- [decision] quyết định của tôi là triển khai trên Azure\n- [decision] quyết định của tôi là triển khai trên GCP",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 48,
+      "routing_source": "model",
+      "decision_source": "model",
+      "predicted_intent": "followup",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "clarify",
+      "model_prediction": {
+        "intent": "followup",
+        "agent": "conversation",
+        "action": "clarify"
+      },
+      "state_version": 6,
+      "error": null,
+      "memories_used": [
+        "quyết định của tôi là triển khai trên Azure"
+      ],
+      "active_memories": [
+        "quyết định của tôi là triển khai trên Azure"
+      ]
+    },
+    "metrics": {
+      "active_recall": true,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "obsolete mentions: ['GCP']",
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_10_project_isolation-01",
+    "sequence_id": "case_10_project_isolation",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là dùng Kafka cho hàng đợi tin nhắn.",
+      "session_id": "sess_10_a",
+      "project_id": "proj_alpha",
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã hiểu. Bạn muốn tôi giúp gì?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 11,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_10_project_isolation-02",
+    "sequence_id": "case_10_project_isolation",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Hàng đợi tin nhắn của dự án này là gì?",
+      "session_id": "sess_10_b",
+      "project_id": "proj_beta",
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Hàng đợi tin nhắn của dự án này là: \"Đã có tin nhắn được gửi đến bạn.\"",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 23,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": true,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "clarify_missing_context",
+      "agent": "conversation",
+      "action": "clarify"
+    }
+  },
+  {
+    "case_id": "case_10_project_isolation-01",
+    "sequence_id": "case_10_project_isolation",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là dùng Kafka cho hàng đợi tin nhắn.",
+      "session_id": "sess_10_a",
+      "project_id": "proj_alpha",
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Dựa trên thông tin bạn đã cung cấp, tôi sẽ sử dụng Kafka cho việc xử lý hàng đợi tin nhắn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 26,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_10_project_isolation-02",
+    "sequence_id": "case_10_project_isolation",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Hàng đợi tin nhắn của dự án này là gì?",
+      "session_id": "sess_10_b",
+      "project_id": "proj_beta",
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Hàng đợi tin nhắn của dự án này là tin nhắn được chờ đợi để được xử lý.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 21,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng quyết định của tôi là dùng Kafka cho hàng đợi tin nhắn."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": true,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": true,
+      "action": false,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "clarify_missing_context",
+      "agent": "conversation",
+      "action": "clarify"
+    }
+  },
+  {
+    "case_id": "case_11_topic_switch-01",
+    "sequence_id": "case_11_topic_switch",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là dùng SQLite cho ứng dụng ghi chú.",
+      "session_id": "s11a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã nhớ rằng bạn đang dùng SQLite cho ứng dụng ghi chú.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 16,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_11_topic_switch-03",
+    "sequence_id": "case_11_topic_switch",
+    "step": 3,
+    "system": "baseline_a",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Quay lại ứng dụng ghi chú, cơ sở dữ liệu đã chọn là gì?",
+      "session_id": "s11b",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Rất tiếc, nhưng tôi không có thông tin liên quan đến ứng dụng ghi chú hoặc cơ sở dữ liệu. Tôi cần thêm thông tin để giúp bạn.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 36,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['SQLite']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_11_topic_switch-01",
+    "sequence_id": "case_11_topic_switch",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng quyết định của tôi là dùng SQLite cho ứng dụng ghi chú.",
+      "session_id": "s11a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã nhớ rằng bạn đang dùng SQLite cho ứng dụng ghi chú.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 16,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-01",
+    "sequence_id": "case_12_preference_change",
+    "step": 1,
+    "system": "baseline_a",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng tôi thích giao diện màu xanh.",
+      "session_id": "s12a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi thích giao diện màu xanh.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 10,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-02",
+    "sequence_id": "case_12_preference_change",
+    "step": 2,
+    "system": "baseline_a",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi màu xanh sang màu tím",
+      "session_id": "s12a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Màu xanh hiện tại đã được đổi thành màu tím.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 16,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-03",
+    "sequence_id": "case_12_preference_change",
+    "step": 3,
+    "system": "baseline_a",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "s12a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đồng ý.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 5,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-04",
+    "sequence_id": "case_12_preference_change",
+    "step": 4,
+    "system": "baseline_a",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Màu giao diện tôi thích hiện tại là màu gì?",
+      "session_id": "s12b",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Màu giao diện tôi thích hiện tại là màu xanh dương.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 17,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['tím']",
+      "obsolete mentions: ['xanh']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-01",
+    "sequence_id": "case_12_preference_change",
+    "step": 1,
+    "system": "baseline_b",
+    "input": {
+      "step": 1,
+      "platform": "web",
+      "user_message": "Hãy nhớ rằng tôi thích giao diện màu xanh.",
+      "session_id": "s12a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã nhớ được. Giao diện màu xanh của bạn rất phù hợp với tôi.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 20,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "memory_create",
+      "agent": "memory",
+      "action": "create_memory"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-02",
+    "sequence_id": "case_12_preference_change",
+    "step": 2,
+    "system": "baseline_b",
+    "input": {
+      "step": 2,
+      "platform": "web",
+      "user_message": "Đổi màu xanh sang màu tím",
+      "session_id": "s12a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi thích giao diện màu xanh. Bạn muốn giao diện màu tím không?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 20,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng tôi thích giao diện màu xanh."
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": false,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "clarification not detected",
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_modify_intent",
+      "agent": "memory",
+      "action": "await_confirm"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-03",
+    "sequence_id": "case_12_preference_change",
+    "step": 3,
+    "system": "baseline_b",
+    "input": {
+      "step": 3,
+      "platform": "web",
+      "user_message": "Đồng ý",
+      "session_id": "s12a",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Tôi đã nhớ được. Giao diện màu xanh của bạn rất phù hợp với tôi. Bạn muốn giao diện màu tím không?",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 30,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng tôi thích giao diện màu xanh.",
+        "Đổi màu xanh sang màu tím"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": null,
+      "obsolete_elimination": null,
+      "missing_context_handling": null,
+      "intent": false,
+      "agent": false,
+      "action": false,
+      "final_answer_success": null
+    },
+    "diagnosis": [
+      "wrong intent",
+      "wrong agent",
+      "wrong action"
+    ],
+    "expected_route": {
+      "intent": "decision_update",
+      "agent": "memory",
+      "action": "update_memory"
+    }
+  },
+  {
+    "case_id": "case_12_preference_change-04",
+    "sequence_id": "case_12_preference_change",
+    "step": 4,
+    "system": "baseline_b",
+    "input": {
+      "step": 4,
+      "platform": "web",
+      "user_message": "Màu giao diện tôi thích hiện tại là màu gì?",
+      "session_id": "s12b",
+      "project_id": null,
+      "event_type": "message",
+      "known_feedback_value": 0.0
+    },
+    "prediction": {
+      "reply": "Màu giao diện tôi thích hiện tại là màu xanh.",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 16,
+      "error": null,
+      "predicted_intent": "chat",
+      "predicted_agent": "conversation",
+      "predicted_next_action": "reply",
+      "routing_source": "baseline_rule",
+      "decision_source": "rule",
+      "memories_used": [
+        "Hãy nhớ rằng tôi thích giao diện màu xanh.",
+        "Đổi màu xanh sang màu tím"
+      ],
+      "model_prediction": null
+    },
+    "metrics": {
+      "active_recall": false,
+      "obsolete_elimination": false,
+      "missing_context_handling": null,
+      "intent": true,
+      "agent": true,
+      "action": true,
+      "final_answer_success": false
+    },
+    "diagnosis": [
+      "missing current facts: ['tím']",
+      "obsolete mentions: ['xanh']"
+    ],
+    "expected_route": {
+      "intent": "chat",
+      "agent": "conversation",
+      "action": "reply"
+    }
+  }
+]
