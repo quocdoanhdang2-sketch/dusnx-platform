@@ -18,10 +18,22 @@ def get_current_provider() -> str:
     raw = os.getenv("DUSNX_PROVIDER", "ollama").strip().lower()
     return "openai" if raw in ("openai", "openai_compatible") else raw
 
+def get_ollama_url() -> str:
+    return os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434").rstrip("/")
+
+
+def get_ollama_model() -> str:
+    return os.getenv("DUSNX_OLLAMA_MODEL", "qwen2.5:0.5b").strip()
+
+
+def get_ollama_timeout() -> float:
+    return float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
+
+
 PROVIDER = get_current_provider()
-OLLAMA_URL = os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("DUSNX_OLLAMA_MODEL", "llama3.2")
-OLLAMA_TIMEOUT = float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
+OLLAMA_URL = get_ollama_url()
+OLLAMA_MODEL = get_ollama_model()
+OLLAMA_TIMEOUT = get_ollama_timeout()
 OPENAI_BASE_URL = os.getenv("DUSNX_OPENAI_BASE_URL", os.getenv("DUSNX_OPENAI_URL", "https://api.openai.com/v1"))
 OPENAI_MODEL = os.getenv("DUSNX_OPENAI_MODEL", "gpt-4o-mini")
 # API key intentionally NOT defaulted — must be set by operator
@@ -31,39 +43,44 @@ OPENAI_API_KEY = os.getenv("DUSNX_OPENAI_API_KEY", os.getenv("DUSNX_OPENAI_KEY",
 
 def check_ollama_health() -> dict:
     """Check if Ollama is reachable and what models are available."""
+    url = get_ollama_url()
+    target_model = get_ollama_model()
     try:
-        req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
+        req = urllib.request.Request(f"{url}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read().decode())
             models = [m["name"] for m in data.get("models", [])]
-            available = OLLAMA_MODEL in models or any(OLLAMA_MODEL.split(":")[0] in m for m in models)
+            available = target_model in models or any(target_model.split(":")[0] in m for m in models)
             return {
                 "reachable": True,
                 "available": available,
                 "models_available": models,
-                "configured_model": OLLAMA_MODEL,
+                "configured_model": target_model,
                 "model_available": available,
             }
     except Exception as exc:
-        return {"reachable": False, "available": False, "error": str(exc), "configured_model": OLLAMA_MODEL}
+        return {"reachable": False, "available": False, "error": str(exc), "configured_model": target_model}
 
 
 def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
     """Call Ollama /api/generate. Returns (text, success)."""
+    url = get_ollama_url()
+    model = get_ollama_model()
+    timeout = get_ollama_timeout()
     payload = json.dumps({
-        "model": OLLAMA_MODEL,
+        "model": model,
         "prompt": f"<|system|>\n{system_prompt}\n<|user|>\n{user_message}\n<|assistant|>",
         "stream": False,
         "options": {"temperature": 0.7, "num_predict": 1024},
     }).encode("utf-8")
     req = urllib.request.Request(
-        f"{OLLAMA_URL}/api/generate",
+        f"{url}/api/generate",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode())
             text = data.get("response", "").strip()
             return text, True

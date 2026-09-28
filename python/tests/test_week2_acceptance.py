@@ -377,7 +377,18 @@ class TestProviderFailureAndRetry:
         assert len(msgs) == 1
         assert msgs[0]["role"] == "user"
 
-        # Retry with is_retry: True must NOT duplicate the user message
+        # Three counts BEFORE retry:
+        # 1. Exactly 1 user message in this session
+        user_msgs_before = [m for m in msgs if m["role"] == "user"]
+        assert len(user_msgs_before) == 1
+        # 2. Exactly 1 recorded event
+        events_before = client.get("/v1/me/events", headers=headers).json()["events"]
+        assert len(events_before) == 1
+        # 3. State version incremented exactly once (from 0 to 1)
+        state_before = client.get("/v1/me/state", headers=headers).json()
+        assert state_before["state_version"] == 1
+
+        # Retry with is_retry: True must NOT duplicate user message, event, or state version increment
         monkeypatch.setenv("DUSNX_PROVIDER", "mock")
         res_retry = client.post("/v1/chat", json={
             "session_id": sid,
@@ -386,9 +397,19 @@ class TestProviderFailureAndRetry:
         }, headers=headers).json()
 
         assert res_retry["provider_ok"] is True
+
+        # Three counts AFTER retry:
+        # 1. User messages in session remains exactly 1 (assistant message added)
         msgs_after = client.get(f"/v1/sessions/{sid}/messages", headers=headers).json()
-        user_msgs = [m for m in msgs_after if m["role"] == "user"]
-        assert len(user_msgs) == 1, "Retry must not duplicate the user message in history"
+        user_msgs_after = [m for m in msgs_after if m["role"] == "user"]
+        assert len(user_msgs_after) == 1, "Retry must not duplicate the user message in history"
+        assert len(msgs_after) == 2, "History must now have 1 user and 1 assistant message"
+        # 2. User events count remains exactly 1 (no duplicate event on retry)
+        events_after = client.get("/v1/me/events", headers=headers).json()["events"]
+        assert len(events_after) == 1, "Retry must not record a duplicate user event"
+        # 3. State version remains 1 (not incremented a second time on retry)
+        state_after = client.get("/v1/me/state", headers=headers).json()
+        assert state_after["state_version"] == 1, "Retry must not advance state version a second time"
 
 
 # ── Test 6: Missing Context Guard ──────────────────────────────────────────────
@@ -455,3 +476,75 @@ class TestEventDeduplicationAndConcurrency:
         # Verify that state ended at version 6
         final_state = client.get("/v1/me/state", headers=headers).json()
         assert final_state["state_version"] == 6
+
+    def test_atomic_state_and_event_rollback_on_event_failure(self, client: TestClient):
+        """Verify that if recording an event fails, the state update is atomically rolled back."""
+        _, token = _register_and_login(client, "alice_rollback")
+        headers = {"Authorization": f"Bearer {token}"}
+        user = client.get("/v1/auth/me", headers=headers).json()
+        uid = user["user_id"]
+        db = mem_mod.get_memory_db()
+
+        # Initial state is version 0 / None
+        st0 = db.get_dusnx_state(uid)
+        assert st0 is None
+
+        # Simulate a DB failure during event insert via a temporary abort trigger
+        with db._lock:
+            db._conn.execute(
+                "CREATE TRIGGER fail_user_events_trigger BEFORE INSERT ON user_events BEGIN SELECT RAISE(ABORT, 'Simulated DB failure on event insert'); END;"
+            )
+            db._conn.commit()
+
+        # Now attempt to advance state and record event atomically
+        with pytest.raises(Exception) as excinfo:
+            db.advance_state_and_record_event_atomic(
+                user_id=uid,
+                state_blob={"global_state": [0.1, 0.2]},
+                state_version=5,
+                platform="web",
+                event_type="chat_message",
+                content="This should roll back",
+            )
+        assert "Simulated DB failure on event insert" in str(excinfo.value)
+
+        # Drop trigger to restore DB
+        with db._lock:
+            db._conn.execute("DROP TRIGGER IF EXISTS fail_user_events_trigger;")
+            db._conn.commit()
+
+        # Crucial assertion: dusnx_state MUST NOT have been updated to version 5!
+        st_after_failure = db.get_dusnx_state(uid)
+        assert st_after_failure is None, "State must roll back atomically if event insert fails!"
+
+        # Events must also be empty
+        events = db.list_user_events(uid)
+        assert len(events) == 0
+
+
+# ── Test 8: Unproxied Static Server Detection ──────────────────────────────────
+
+class TestUnproxiedStaticServer:
+    def test_unproxied_static_server_lacks_v1_proxy(self):
+        """Verify that an unproxied static file server (python -m http.server 3000) cannot proxy /v1 routes."""
+        import http.server
+        import socket
+        import threading
+        import httpx
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+
+        handler = http.server.SimpleHTTPRequestHandler
+        server = http.server.HTTPServer(("127.0.0.1", port), handler)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        try:
+            r = httpx.post(f"http://127.0.0.1:{port}/v1/auth/login", json={"username": "a", "password": "b"}, timeout=3)
+            # Static server returns 404 or 501 for unhandled POST /v1 route
+            assert r.status_code in (404, 501), "Raw http.server must fail to handle /v1 API routes without proxy"
+        finally:
+            server.shutdown()
+            server.server_close()

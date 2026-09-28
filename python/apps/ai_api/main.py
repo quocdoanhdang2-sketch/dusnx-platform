@@ -636,17 +636,16 @@ def _advance_user_state(
             previous_state_blob=prev_blob,
             time_gap_hours=time_gap,
         )
-        if new_blob is not None:
-            db.set_dusnx_state(user_id, new_blob, s_ver or 1)
-        db.record_user_event(
+        db.advance_state_and_record_event_atomic(
             user_id=user_id,
+            state_blob=new_blob,
+            state_version=s_ver or 1,
             platform=platform,
             event_type=event_type,
             content=content,
             project_id=project_id,
             feedback_value=feedback_value,
             event_id=event_id,
-            state_version=s_ver or 1,
             intent=intent,
             selected_agent=agent,
             next_action=action,
@@ -941,15 +940,24 @@ def chat(req: ChatRequest, user: CurrentUser):
             )
 
     # ── Normal chat flow ──────────────────────────────────────────────────────
-    state_version, _, dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source = _advance_user_state(
-        db,
-        user_id=user_id,
-        content=req.message,
-        feedback_value=req.feedback_value,
-        platform="web",
-        event_type="chat_message",
-        project_id=req.project_id,
-    )
+    if req.is_retry:
+        st = db.get_dusnx_state(user_id)
+        state_version = st["state_version"] if st else 1
+        dusnx_intent = "chat"
+        dusnx_agent = "conversation"
+        dusnx_action = "reply"
+        confidence = 0.8
+        routing_source = "retry"
+    else:
+        state_version, _, dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source = _advance_user_state(
+            db,
+            user_id=user_id,
+            content=req.message,
+            feedback_value=req.feedback_value,
+            platform="web",
+            event_type="chat_message",
+            project_id=req.project_id,
+        )
 
     # Generate text response using provider
     reply_text, provider_ok, provider_used = generate_response(

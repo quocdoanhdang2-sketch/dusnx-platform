@@ -39,14 +39,6 @@ if ($owner = Get-DusnxListeningProcess 8080) {
     Write-Host "[START] Gateway -> http://127.0.0.1:8080" -ForegroundColor Green
 }
 
-if ($owner = Get-DusnxListeningProcess 3000) {
-    Write-Host "[CHECK] Port 3000 is already listening (PID $($owner.ProcessId), $($owner.ProcessName)); validating it without stopping it." -ForegroundColor Yellow
-} else {
-    $command = "Set-Location '$ProjectRoot\web-ui'; py -3.12 -m http.server 3000 --bind 127.0.0.1"
-    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-ExecutionPolicy", "Bypass", "-Command", $command
-    Write-Host "[START] Web UI -> http://127.0.0.1:3000" -ForegroundColor Green
-}
-
 Write-Host "Waiting for all required services..." -ForegroundColor Cyan
 $ExpectedCheckpoint = [System.IO.Path]::GetFullPath($Checkpoint)
 $AiHealth = Wait-DusnxHttpService -Name "FastAPI" -Uri "http://127.0.0.1:8000/health" -TimeoutSeconds 60 -Validate {
@@ -63,14 +55,14 @@ $GatewayHealth = Wait-DusnxHttpService -Name "Gateway" -Uri "http://127.0.0.1:80
 }
 Write-Host "[OK] Gateway: $($GatewayHealth.status)" -ForegroundColor Green
 
-$WebResponse = Wait-DusnxHttpService -Name "Web UI" -Uri "http://127.0.0.1:3000" -TimeoutSeconds 30 -Probe {
+$WebResponse = Wait-DusnxHttpService -Name "Web UI (via Gateway)" -Uri "http://127.0.0.1:8080" -TimeoutSeconds 30 -Probe {
     param($uri)
     Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 3
 } -Validate {
     param($response)
-    if ($response.StatusCode -ne 200 -or $response.Content -notlike "*DUSN-X*") { throw "unexpected Web UI response" }
+    if ($response.StatusCode -ne 200 -or $response.Content -notlike "*DUSN-X*") { throw "unexpected Web UI response from Gateway" }
 }
 
 Write-Host "[OK] Web UI: HTTP $($WebResponse.StatusCode)" -ForegroundColor Green
 Write-Host "DUSN-X local startup finished: all required services are healthy." -ForegroundColor Green
-Write-Host "Open: http://127.0.0.1:3000" -ForegroundColor Cyan
+Write-Host "Open Web UI: http://127.0.0.1:8080" -ForegroundColor Cyan

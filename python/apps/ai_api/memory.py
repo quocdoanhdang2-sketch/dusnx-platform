@@ -482,16 +482,94 @@ class MemoryDB:
     def set_dusnx_state(self, user_id: str, state_blob: dict, state_version: int) -> None:
         """Upsert DUSN-X state for a user (INSERT OR REPLACE)."""
         now = _now()
-        self._conn.execute(
-            """INSERT INTO dusnx_state(user_id, state_blob, state_version, updated_at)
-               VALUES(?,?,?,?)
-               ON CONFLICT(user_id) DO UPDATE SET
-                   state_blob=excluded.state_blob,
-                   state_version=excluded.state_version,
-                   updated_at=excluded.updated_at""",
-            (user_id, json.dumps(state_blob), state_version, now),
-        )
-        self._conn.commit()
+        with self._lock:
+            with self._conn:
+                self._conn.execute(
+                    """INSERT INTO dusnx_state(user_id, state_blob, state_version, updated_at)
+                       VALUES(?,?,?,?)
+                       ON CONFLICT(user_id) DO UPDATE SET
+                           state_blob=excluded.state_blob,
+                           state_version=excluded.state_version,
+                           updated_at=excluded.updated_at""",
+                    (user_id, json.dumps(state_blob), state_version, now),
+                )
+
+    def advance_state_and_record_event_atomic(
+        self,
+        user_id: str,
+        state_blob: Optional[dict],
+        state_version: int,
+        platform: str,
+        event_type: str,
+        content: str,
+        project_id: Optional[str] = None,
+        feedback_value: float = 0.0,
+        event_id: Optional[str] = None,
+        event_time_utc: Optional[str] = None,
+        provenance: Optional[str] = None,
+        intent: Optional[str] = None,
+        selected_agent: Optional[str] = None,
+        next_action: Optional[str] = None,
+        confidence: Optional[float] = None,
+    ) -> dict:
+        """
+        Atomically update DUSN-X user state and record the corresponding user event
+        within a single SQLite transaction.
+        If recording the event fails, the state update is automatically rolled back.
+        Enforces user isolation and event_id deduplication.
+        """
+        now = _now()
+        event_time = event_time_utc or now
+        source_prov = provenance or f"client:{platform}"
+        eff_event_id = event_id.strip() if event_id and event_id.strip() else secrets.token_hex(16)
+
+        with self._lock:
+            with self._conn:
+                # 1. Deduplication check
+                existing = self._conn.execute(
+                    "SELECT * FROM user_events WHERE event_id=?", (eff_event_id,)
+                ).fetchone()
+                if existing is not None:
+                    if existing["user_id"] != user_id:
+                        raise PermissionError("Event ID belongs to another user")
+                    res = dict(existing)
+                    res["duplicate"] = True
+                    return res
+
+                # 2. Update state if blob provided
+                if state_blob is not None:
+                    self._conn.execute(
+                        """INSERT INTO dusnx_state(user_id, state_blob, state_version, updated_at)
+                           VALUES(?,?,?,?)
+                           ON CONFLICT(user_id) DO UPDATE SET
+                               state_blob=excluded.state_blob,
+                               state_version=excluded.state_version,
+                               updated_at=excluded.updated_at""",
+                        (user_id, json.dumps(state_blob), state_version, now),
+                    )
+
+                # 3. Record event in the same transaction
+                self._conn.execute(
+                    """INSERT INTO user_events(
+                           event_id, user_id, platform, event_type, content, project_id,
+                           feedback_value, event_time_utc, provenance, state_version,
+                           intent, selected_agent, next_action, confidence, created_at)
+                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        eff_event_id, user_id, platform.lower().strip(), event_type.strip(),
+                        content.strip(), project_id, float(feedback_value),
+                        event_time, source_prov, int(state_version),
+                        intent, selected_agent, next_action,
+                        float(confidence) if confidence is not None else None,
+                        now,
+                    ),
+                )
+            # Transaction committed upon exiting 'with self._conn'
+            saved = self.get_user_event(user_id, eff_event_id)
+            if saved is None:
+                raise RuntimeError("Failed to retrieve saved user event after atomic commit")
+            saved["duplicate"] = False
+            return saved
 
     # ── Pending Decision Modification ──────────────────────────────────────────
 

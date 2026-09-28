@@ -4,13 +4,14 @@
 
 ## Triển khai Hoàn chỉnh Tuần 2 (Week 2 Deliverables)
 
-- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập JWT, quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng.
-- **Điểm gọi API thống nhất qua Gateway YARP:** Toàn bộ request Web UI (`:3000`) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
+- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập với Opaque Bearer Token an toàn (lưu SQLite `auth_tokens`), quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng và kết nối trực tiếp với Ollama LLM thật cục bộ (`qwen2.5:0.5b`).
+- **Điểm gọi API thống nhất qua Gateway YARP:** Toàn bộ request Web UI (`:8080` ở chế độ Native hoặc `:3000` qua Nginx reverse-proxy ở Docker Compose) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
 - **Một danh tính & state có thẩm quyền cho người dùng:** Các endpoint `/v1/me/events`, `/v1/me/state`, `/v1/me/events` trích xuất `user_id` trực tiếp từ token, tính toán `time_gap_hours`, chống giả mạo danh tính trong body.
-- **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
+- **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint (phân biệt rõ với Office Add-in tích hợp thực tế) gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
 - **Trí nhớ có giải thích (Explainable RAG) & Cô lập Project:** Thuật toán chấm điểm theo độ tương quan và độ mới, cách ly nghiêm ngặt theo `project_id`, phản ánh chính xác `memory_ids_used` trong prompt.
 - **Quản lý quyết định & Giải quyết mơ hồ:** Hỗ trợ lưu quyết định từ hội thoại ("Hãy nhớ rằng..."), sửa quyết định với bước xác nhận nguyên tử (đồng ý thì thay 1 lần, từ chối giữ bản cũ). Khi có 2 quyết định tương tự, hệ thống hỏi lại làm rõ thay vì sửa nhầm.
 - **Xử lý lỗi Provider an toàn:** Khi LLM provider mất kết nối, lỗi được hiển thị dưới dạng thẻ lỗi chuyên dụng trên UI kèm nút Thử lại (Retry), tuyệt đối không lưu chuỗi lỗi vào lịch sử DB như câu trả lời AI hợp lệ.
+- **Giao dịch nguyên tử & Idempotent Retry:** Cập nhật state và ghi user event trong một SQLite transaction thực sự; retry chat không nhân đôi tin nhắn/event/state version.
 
 ---
 
@@ -32,7 +33,8 @@ py -3.12 -m venv .venv
 Push-Location .\python
 python -m pip install -e ".[dev]"
 Pop-Location
-python .\python\scripts\generate_synthetic.py --events 30000 --users 1000 --out .\data\synthetic_30k_v2.jsonl
+python .\python\scripts\generate_synthetic.py --events 30000 --users 1000 --out .\data\synthetic_30k_v2.jsonl --seed 42
+$env:PYTHONPATH="python/src;python;."
 python .\python\scripts\train.py --config .\configs\smoke_v2.yaml
 ```
 
@@ -113,23 +115,30 @@ Starter project cho **Cross-Platform Dynamic User State Network for Adaptive Mul
 - Web demo cho event và Presentation Job.
 - PowerPoint Add-in skeleton gọi Presentation Job API.
 - Script tạo dữ liệu synthetic có nhãn rõ ràng.
-- Training hỗ trợ FP16 và gradient accumulation cho RTX 3050 Laptop 4 GB.
+- Training hỗ trợ FP16/mixed precision và gradient accumulation, cấu hình linh hoạt tự động nhận diện phần cứng GPU (CUDA) hoặc CPU fallback (`device: auto`).
 - Docker Compose có profile `infra` và `rag` để tránh ngốn RAM khi chưa cần.
 
 ## Chạy nhanh trên Windows
 
 Yêu cầu: Docker Desktop, Git, Python 3.12 và .NET 8.
 
+### Đường 1: Chạy Native (Windows PowerShell)
+```powershell
+cd D:\Projects\dusnx-platform
+.\start-local.ps1
+```
+Mở:
+- Web UI & Gateway: `http://localhost:8080` (Gateway phục vụ cả static Web lẫn proxy `/v1/*` tới FastAPI)
+- FastAPI: `http://localhost:8000/docs`
+
+### Đường 2: Chạy Docker Compose
 ```powershell
 cd D:\Projects\dusnx-platform
 docker compose up --build
 ```
-
 Mở:
-
-- Web demo: `http://localhost:3000`
-- Gateway health: `http://localhost:8080/health`
-- FastAPI health: `http://localhost:8000/health`
+- Web UI (Nginx reverse proxy): `http://localhost:3000` (Nginx proxy `/v1/*` và `/api/v1/*` tới Gateway)
+- Gateway: `http://localhost:8080/health`
 - FastAPI docs: `http://localhost:8000/docs`
 
 Lần chạy đầu chưa cần checkpoint. API sẽ báo `runtime_mode=bootstrap_rules`.
@@ -140,7 +149,7 @@ Lần chạy đầu chưa cần checkpoint. API sẽ báo `runtime_mode=bootstra
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup.ps1
 .\.venv\Scripts\Activate.ps1
-$env:PYTHONPATH="$PWD\python\src"
+$env:PYTHONPATH="$PWD\python\src;$PWD\python;$PWD"
 python .\python\scripts\train.py --config .\configs\smoke_v2.yaml
 ```
 

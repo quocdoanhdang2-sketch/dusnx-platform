@@ -35,13 +35,28 @@ function formatDate(iso) {
 }
 
 async function apiFetch(path, options = {}) {
-  const base = (window.location?.port === "8080" || window.location?.port === "3000") ? "" : (window.DUSNX_GATEWAY || "http://localhost:8080");
+  // Use explicit DUSNX_GATEWAY if set, otherwise relative "" so requests route through
+  // Gateway (:8080) in native mode or Nginx (:3000) in Docker Compose mode.
+  const base = window.DUSNX_GATEWAY || "";
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
-  const resp = await fetch(`${base}${path}`, { ...options, headers });
+  let resp;
+  try {
+    resp = await fetch(`${base}${path}`, { ...options, headers });
+  } catch (err) {
+    throw new Error(`Không thể kết nối Gateway (${err.message}). Vui lòng đảm bảo Gateway đang chạy tại http://localhost:8080.`);
+  }
   if (!resp.ok) {
     let msg = `HTTP ${resp.status}`;
-    try { const body = await resp.json(); msg = body.detail || body.message || msg; } catch {}
+    try {
+      const ct = resp.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const body = await resp.json();
+        msg = body.detail || body.message || msg;
+      } else if (resp.status === 404) {
+        msg = `HTTP 404: Đường dẫn '${path}' không tồn tại trên máy chủ này. Nếu bạn đang chạy 'python -m http.server 3000' mà không có proxy, vui lòng mở Web qua Gateway: http://localhost:8080 (Native) hoặc http://localhost:3000 (Docker Compose).`;
+      }
+    } catch {}
     throw new Error(msg);
   }
   if (resp.status === 204) return null;
