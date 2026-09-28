@@ -448,6 +448,131 @@ class MemoryDB:
         ).fetchone()
         return dict(row) if row else None
 
+    def resolve_pending_decision_atomic(
+        self,
+        user_id: str,
+        pending_id: str,
+        accepted: bool,
+        source_session: Optional[str] = None,
+    ) -> dict:
+        """
+        Atomically confirm or reject a pending decision update in a single transaction.
+        If accepted:
+          - Verifies pending record exists for user_id and status is 'awaiting_confirm'.
+          - Verifies old memory exists, belongs to user_id, and is active (is_active=1).
+          - If old memory is inactive, marks pending status as 'stale' and aborts without modification.
+          - Updates pending record to 'confirmed'.
+          - Inserts new memory version with incremented version number.
+          - Deactivates old memory (is_active=0, superseded_by=new_id).
+          - All DB updates are executed in a single atomic transaction; any failure triggers rollback.
+        If rejected:
+          - Marks pending record as 'rejected'.
+          - Old memory is left completely untouched.
+        Returns:
+          dict with success boolean, status, pending, and new_memory (if confirmed).
+        """
+        now = _now()
+        if not accepted:
+            with self._conn:
+                row = self._conn.execute(
+                    "SELECT * FROM pending_decision_updates WHERE pending_id=? AND user_id=?",
+                    (pending_id, user_id),
+                ).fetchone()
+                if row is None:
+                    return {"success": False, "error": "not_found", "detail": "Pending decision not found"}
+                if row["status"] != "awaiting_confirm":
+                    return {
+                        "success": False,
+                        "error": f"already_{row['status']}",
+                        "detail": f"Pending decision is already {row['status']}",
+                        "pending": dict(row),
+                    }
+                cur = self._conn.execute(
+                    """UPDATE pending_decision_updates SET status='rejected', updated_at=?
+                       WHERE pending_id=? AND user_id=? AND status='awaiting_confirm'""",
+                    (now, pending_id, user_id),
+                )
+                if cur.rowcount == 0:
+                    return {"success": False, "error": "conflict", "detail": "Concurrent conflict"}
+                updated_pending = self.get_pending_decision(user_id, pending_id)
+                return {"success": True, "status": "rejected", "pending": updated_pending}
+
+        # accepted is True: single atomic transaction
+        with self._conn:
+            row = self._conn.execute(
+                "SELECT * FROM pending_decision_updates WHERE pending_id=? AND user_id=?",
+                (pending_id, user_id),
+            ).fetchone()
+            if row is None:
+                return {"success": False, "error": "not_found", "detail": "Pending decision not found"}
+            if row["status"] != "awaiting_confirm":
+                return {
+                    "success": False,
+                    "error": f"already_{row['status']}",
+                    "detail": f"Pending decision is already {row['status']}",
+                    "pending": dict(row),
+                }
+
+            # Verify old memory is still active and belongs to user
+            old_mem = self._conn.execute(
+                "SELECT * FROM memories WHERE memory_id=? AND user_id=?",
+                (row["old_memory_id"], user_id),
+            ).fetchone()
+            if old_mem is None or not old_mem["is_active"]:
+                self._conn.execute(
+                    """UPDATE pending_decision_updates SET status='stale', updated_at=?
+                       WHERE pending_id=? AND user_id=?""",
+                    (now, pending_id, user_id),
+                )
+                return {
+                    "success": False,
+                    "error": "stale_memory",
+                    "detail": "Quyết định cũ không còn hiệu lực hoặc đã bị thay đổi trước đó",
+                    "pending": self.get_pending_decision(user_id, pending_id),
+                }
+
+            # Update pending status to confirmed
+            cur_p = self._conn.execute(
+                """UPDATE pending_decision_updates SET status='confirmed', updated_at=?
+                   WHERE pending_id=? AND user_id=? AND status='awaiting_confirm'""",
+                (now, pending_id, user_id),
+            )
+            if cur_p.rowcount == 0:
+                return {"success": False, "error": "conflict", "detail": "Concurrent conflict"}
+
+            # Insert new memory version
+            new_id = secrets.token_hex(16)
+            new_type = old_mem["info_type"]
+            new_content = row["proposed_content"]
+            eff_session = source_session or row["session_id"] or old_mem["source_session"]
+            self._conn.execute(
+                """INSERT INTO memories(memory_id, user_id, info_type, content,
+                   source_event, source_session, project_id, created_at, updated_at,
+                   version, is_active) VALUES(?,?,?,?,?,?,?,?,?,?,1)""",
+                (new_id, user_id, new_type, new_content,
+                 old_mem["source_event"], eff_session,
+                 old_mem["project_id"], old_mem["created_at"], now, old_mem["version"] + 1),
+            )
+
+            # Deactivate old memory
+            cur_m = self._conn.execute(
+                """UPDATE memories SET is_active=0, superseded_by=?, updated_at=?
+                   WHERE memory_id=? AND user_id=? AND is_active=1""",
+                (new_id, now, row["old_memory_id"], user_id),
+            )
+            if cur_m.rowcount == 0:
+                raise sqlite3.OperationalError("Failed to deactivate old active memory atomically")
+
+            new_mem = self.get_memory(user_id, new_id)
+            updated_pending = self.get_pending_decision(user_id, pending_id)
+            return {
+                "success": True,
+                "status": "confirmed",
+                "pending": updated_pending,
+                "new_memory": new_mem,
+                "old_memory_id": row["old_memory_id"],
+            }
+
     def resolve_pending_decision(
         self,
         user_id: str,
@@ -455,17 +580,8 @@ class MemoryDB:
         accepted: bool,
     ) -> Optional[dict]:
         """Mark pending decision as confirmed or rejected. Returns updated record."""
-        now = _now()
-        status = "confirmed" if accepted else "rejected"
-        cur = self._conn.execute(
-            """UPDATE pending_decision_updates SET status=?, updated_at=?
-               WHERE pending_id=? AND user_id=? AND status='awaiting_confirm'""",
-            (status, now, pending_id, user_id),
-        )
-        self._conn.commit()
-        if cur.rowcount == 0:
-            return None
-        return self.get_pending_decision(user_id, pending_id)
+        res = self.resolve_pending_decision_atomic(user_id, pending_id, accepted)
+        return res.get("pending") if res["success"] else None
 
 
 # Singleton

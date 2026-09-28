@@ -330,9 +330,36 @@ _DECISION_MODIFY_PATTERNS = [
     r"(?:instead of|no longer use|switch from)",
 ]
 
-# Patterns indicating confirmation (yes) or rejection (no)
-_CONFIRM_YES_PATTERNS = ["có", "đồng ý", "xác nhận", "ok", "yes", "sure", "đúng", "được", "ừ"]
-_CONFIRM_NO_PATTERNS = ["không", "bỏ qua", "huỷ", "hủy", "no", "cancel", "thôi", "đừng"]
+# Phrases that signal uncertainty or hesitation => return None immediately (ask again)
+_CONFIRM_UNCERTAIN_PATTERNS = [
+    r"\b(?:không chắc|chưa chắc|không biết|chưa biết|không rõ|chưa rõ|phân vân|đang nghĩ|suy nghĩ lại)\b",
+    r"\b(?:khoan|khoan đã|chờ|chờ đã|chờ tí|từ từ|để xem|tùy|tùy vào)\b",
+    r"\b(?:hmm|hmmm|maybe|not sure|uncertain|unsure|idk)\b",
+]
+
+# Phrases where confirmation words are explicitly negated or cancelled
+_CONFIRM_NEGATED_CONFIRMS = [
+    r"\b(?:không|chưa|đừng|chẳng)\s+(?:đồng ý|xác nhận|đúng|được|ok|okay|yes|thay|đổi|sửa)\b",
+    r"\b(?:không|chưa)\s+có\b",
+    r"\bgiữ nguyên(?:\s+như cũ)?\b",
+    r"\bthôi\s+đừng(?:\s+thay)?\b",
+    r"\bkhông\s+muốn\s+thay\b",
+    r"\bkhông\s+cần\s+(?:thay|đổi)\b",
+]
+
+# Unambiguous rejection / cancellation patterns
+_CONFIRM_REJECT_PATTERNS = [
+    r"\b(?:không đồng ý|chưa đồng ý|không xác nhận|chưa xác nhận|không đúng|không được|không ok)\b",
+    r"\b(?:đừng thay|đừng đổi|đừng sửa|giữ nguyên|thôi đừng thay|thôi đừng)\b",
+    r"\b(?:không muốn thay|không cần thay|không cần đổi)\b",
+    r"\b(?:từ chối|bỏ qua|huỷ|hủy|cancel|thôi|đừng|no|nope|không)\b",
+]
+
+# Unambiguous confirmation patterns
+_CONFIRM_ACCEPT_PATTERNS = [
+    r"\b(?:đồng ý|xác nhận|chính xác|chuẩn|tiến hành|làm đi)\b",
+    r"\b(?:được|ừ|ok|okay|yes|yep|sure|đúng|có)\b",
+]
 
 
 def _detect_decision_modify_intent(text: str) -> bool:
@@ -345,29 +372,51 @@ def _detect_decision_modify_intent(text: str) -> bool:
     return False
 
 
-def _detect_confirm(text: str) -> Optional[bool]:
-    """Return True=confirm, False=reject, None=unclear.
+def _normalize_confirm_text(text: str) -> str:
+    """Normalize Unicode (NFC), lowercase, replace punctuation with spaces, collapse spaces."""
+    import unicodedata
+    import re as _re
+    text = unicodedata.normalize("NFC", text)
+    text = text.lower()
+    text = _re.sub(r"[^\w\s]", " ", text, flags=_re.UNICODE)
+    return _re.sub(r"\s+", " ", text).strip()
 
-    Handles ambiguous phrases by checking uncertainty qualifiers
-    before treating words like 'kh\u00f4ng' as a rejection.
+
+def _detect_confirm(text: str) -> Optional[bool]:
+    """Return True=confirm, False=reject, None=unclear/contradictory.
+
+    Uses word/phrase-boundary matching after Unicode NFC normalization.
+    Negations like 'không đồng ý', 'không đúng', 'đừng thay' are strictly REJECT (False).
+    Contradictory signals (e.g. 'có nhưng mà không') or uncertainty ('không chắc') return None.
+    Substrings inside words (e.g. 'nói' != 'no', 'cố' != 'có', 'smoke' != 'ok') are ignored.
     """
-    lower = text.strip().lower()
-    # Phrases that signal genuine uncertainty => return None immediately
-    _UNCERTAIN_PHRASES = (
-        "kh\u00f4ng ch\u1eafc", "ch\u01b0a ch\u1eafc",
-        "kh\u00f4ng bi\u1ebft", "ch\u01b0a bi\u1ebft",
-        "hmm", "kh\u00f4ng r\u00f5",
-    )
-    if any(p in lower for p in _UNCERTAIN_PHRASES):
+    import re as _re
+    t = _normalize_confirm_text(text)
+    if not t:
         return None
-    # Check yes patterns first
-    for w in _CONFIRM_YES_PATTERNS:
-        if w in lower:
-            return True
-    # Check no patterns
-    for w in _CONFIRM_NO_PATTERNS:
-        if w in lower:
-            return False
+
+    # 1. Uncertainty signals => ask again immediately
+    for p in _CONFIRM_UNCERTAIN_PATTERNS:
+        if _re.search(p, t):
+            return None
+
+    # 2. Mask out negated confirmations before checking accept patterns
+    clean_for_confirm = t
+    for neg in _CONFIRM_NEGATED_CONFIRMS:
+        clean_for_confirm = _re.sub(neg, " ", clean_for_confirm)
+    clean_for_confirm = _re.sub(r"\s+", " ", clean_for_confirm).strip()
+
+    has_confirm = any(_re.search(p, clean_for_confirm) for p in _CONFIRM_ACCEPT_PATTERNS)
+    has_reject = any(_re.search(p, t) for p in _CONFIRM_REJECT_PATTERNS)
+
+    # 3. Contradictory signals (both confirm and reject cues present) => ask again
+    if has_confirm and has_reject:
+        return None
+
+    if has_confirm:
+        return True
+    if has_reject:
+        return False
     return None
 def _find_best_matching_decision(
     memories: list[dict], message: str
@@ -385,6 +434,30 @@ def _find_best_matching_decision(
             best_score = overlap
             best = mem
     return best  # may be None if no overlap — caller handles
+
+
+def _advance_user_state(
+    db,
+    user_id: str,
+    content: str,
+    feedback_value: float = 0.0,
+) -> tuple[int, Optional[dict]]:
+    """Advance DUSN-X state vector for a user turn and persist to DB."""
+    global_user_id = _compute_global_user_id(user_id)
+    stored = db.get_dusnx_state(user_id)
+    prev_blob = stored["state_blob"] if stored else None
+    active_cfg = CFG or ModelConfig()
+    _, _, _, _, _, s_ver, new_blob = _run_dusnx(
+        global_user_id=global_user_id,
+        platform="web",
+        content=content,
+        feedback_value=feedback_value,
+        active_cfg=active_cfg,
+        previous_state_blob=prev_blob,
+    )
+    if new_blob is not None:
+        db.set_dusnx_state(user_id, new_blob, s_ver or 1)
+    return s_ver or 1, new_blob
 
 
 class ChatRequest(BaseModel):
@@ -444,40 +517,57 @@ def chat(req: ChatRequest, user: CurrentUser):
     if pending is not None:
         confirmed = _detect_confirm(req.message)
         if confirmed is True:
-            # Apply the supersede
-            db.resolve_pending_decision(user_id, pending["pending_id"], accepted=True)
-            updated = db.update_memory(
+            # Apply supersede atomically in one DB transaction
+            res = db.resolve_pending_decision_atomic(
                 user_id=user_id,
-                memory_id=pending["old_memory_id"],
-                new_content=pending["proposed_content"],
+                pending_id=pending["pending_id"],
+                accepted=True,
                 source_session=req.session_id,
             )
-            reply_text = (
-                f"✅ Đã cập nhật quyết định.\n"
-                f"**Cũ:** {pending['old_content']}\n"
-                f"**Mới:** {pending['proposed_content']}"
-            )
-            if updated:
-                memory_ids = [updated["memory_id"]]
+            s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
+            if res["success"]:
+                reply_text = (
+                    f"✅ Đã cập nhật quyết định.\n"
+                    f"**Cũ:** {pending['old_content']}\n"
+                    f"**Mới:** {pending['proposed_content']}"
+                )
+                memory_ids = [res["new_memory"]["memory_id"]]
+                intent = "decision_update"
+                next_action = "update_memory"
+            else:
+                reply_text = f"⚠️ Không thể cập nhật quyết định: {res['detail']}."
+                memory_ids = []
+                intent = "decision_update_failed"
+                next_action = "clarify"
+
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=memory_ids, state_version=None,
+                memory_ids_used=memory_ids, state_version=s_ver,
             )
             return ChatResponse(
                 message_id=msg["message_id"], reply=reply_text,
-                intent="decision_update", selected_agent="memory",
-                next_action="update_memory", confidence=1.0,
+                intent=intent, selected_agent="memory",
+                next_action=next_action, confidence=1.0,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
                 provider_used="none", provider_ok=True,
-                state_version=None, memory_ids_used=memory_ids,
+                state_version=s_ver, memory_ids_used=memory_ids,
                 session_id=req.session_id,
             )
         elif confirmed is False:
-            db.resolve_pending_decision(user_id, pending["pending_id"], accepted=False)
-            reply_text = "Đã huỷ yêu cầu sửa đổi quyết định."
+            db.resolve_pending_decision_atomic(
+                user_id=user_id,
+                pending_id=pending["pending_id"],
+                accepted=False,
+                source_session=req.session_id,
+            )
+            s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
+            reply_text = (
+                f"Đã huỷ yêu cầu sửa đổi quyết định. Giữ nguyên quyết định hiện tại:\n"
+                f"**Hiện tại:** {pending['old_content']}"
+            )
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=[], state_version=None,
+                memory_ids_used=[], state_version=s_ver,
             )
             return ChatResponse(
                 message_id=msg["message_id"], reply=reply_text,
@@ -485,20 +575,21 @@ def chat(req: ChatRequest, user: CurrentUser):
                 next_action="no_op", confidence=1.0,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
                 provider_used="none", provider_ok=True,
-                state_version=None, memory_ids_used=[],
+                state_version=s_ver, memory_ids_used=[],
                 session_id=req.session_id,
             )
         else:
-            # Ambiguous — ask again
+            # Ambiguous / uncertain / contradictory — ask again without modifying
+            s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
             reply_text = (
-                f"Bạn có muốn thay đổi quyết định sau không?\n"
+                f"Tôi chưa rõ ý bạn. Bạn có muốn thay đổi quyết định sau không?\n"
                 f"**Hiện tại:** {pending['old_content']}\n"
                 f"**Đề xuất:** {pending['proposed_content']}\n\n"
                 "Trả lời **Có** để xác nhận hoặc **Không** để huỷ."
             )
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=[], state_version=None,
+                memory_ids_used=[], state_version=s_ver,
             )
             return ChatResponse(
                 message_id=msg["message_id"], reply=reply_text,
@@ -506,13 +597,14 @@ def chat(req: ChatRequest, user: CurrentUser):
                 next_action="clarify", confidence=0.9,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
                 provider_used="none", provider_ok=True,
-                state_version=None, memory_ids_used=[],
+                state_version=s_ver, memory_ids_used=[],
                 session_id=req.session_id,
             )
 
     # Second check: does the new message request a decision modification?
     if _detect_decision_modify_intent(req.message):
         matched = _find_best_matching_decision(memories, req.message)
+        s_ver, _ = _advance_user_state(db, user_id, req.message, req.feedback_value)
         if matched is not None:
             # Extract proposed new content: text after keywords like "thành", "sang", "bằng", "to"
             import re as _re
@@ -522,7 +614,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.message,
                 flags=_re.IGNORECASE,
             ).strip() or req.message
-            pending_rec = db.create_pending_decision(
+            db.create_pending_decision(
                 user_id=user_id,
                 session_id=req.session_id,
                 old_memory_id=matched["memory_id"],
@@ -537,7 +629,7 @@ def chat(req: ChatRequest, user: CurrentUser):
             )
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=[matched["memory_id"]], state_version=None,
+                memory_ids_used=[matched["memory_id"]], state_version=s_ver,
             )
             return ChatResponse(
                 message_id=msg["message_id"], reply=reply_text,
@@ -545,7 +637,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                 next_action="await_confirm", confidence=0.88,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
                 provider_used="none", provider_ok=True,
-                state_version=None, memory_ids_used=[matched["memory_id"]],
+                state_version=s_ver, memory_ids_used=[matched["memory_id"]],
                 session_id=req.session_id,
             )
         else:
@@ -556,7 +648,7 @@ def chat(req: ChatRequest, user: CurrentUser):
             )
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=[], state_version=None,
+                memory_ids_used=[], state_version=s_ver,
             )
             return ChatResponse(
                 message_id=msg["message_id"], reply=reply_text,
@@ -564,7 +656,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                 next_action="clarify", confidence=0.7,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
                 provider_used="none", provider_ok=True,
-                state_version=None, memory_ids_used=[],
+                state_version=s_ver, memory_ids_used=[],
                 session_id=req.session_id,
             )
 
@@ -732,18 +824,22 @@ class ResolvePendingRequest(BaseModel):
 def resolve_pending_decision(pending_id: str, req: ResolvePendingRequest, user: CurrentUser):
     """Explicitly confirm or reject a pending decision update via API."""
     db = get_memory_db()
-    resolved = db.resolve_pending_decision(user["user_id"], pending_id, accepted=req.accepted)
-    if resolved is None:
-        raise HTTPException(status_code=404, detail="Pending decision not found or already resolved")
+    result = db.resolve_pending_decision_atomic(
+        user_id=user["user_id"],
+        pending_id=pending_id,
+        accepted=req.accepted,
+    )
+    if not result["success"]:
+        if result["error"] in ("not_found", "already_confirmed", "already_rejected", "already_stale"):
+            raise HTTPException(status_code=404, detail=result["detail"])
+        elif result["error"] == "stale_memory":
+            raise HTTPException(status_code=409, detail=result["detail"])
+        else:
+            raise HTTPException(status_code=400, detail=result["detail"])
+
     if req.accepted:
-        pending = resolved
-        updated = db.update_memory(
-            user_id=user["user_id"],
-            memory_id=pending["old_memory_id"],
-            new_content=pending["proposed_content"],
-        )
-        return {"resolved": resolved, "updated_memory": updated}
-    return {"resolved": resolved}
+        return {"resolved": result["pending"], "updated_memory": result["new_memory"]}
+    return {"resolved": result["pending"]}
 
 
 # ── Legacy /v1/process endpoint (kept for Gateway compatibility) ────────────────

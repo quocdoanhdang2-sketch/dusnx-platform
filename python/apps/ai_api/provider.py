@@ -14,13 +14,15 @@ import urllib.request
 import urllib.error
 
 
-PROVIDER = os.getenv("DUSNX_PROVIDER", "ollama")
+_raw_provider = os.getenv("DUSNX_PROVIDER", "ollama").strip().lower()
+PROVIDER = "openai" if _raw_provider in ("openai", "openai_compatible") else _raw_provider
 OLLAMA_URL = os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("DUSNX_OLLAMA_MODEL", "llama3.2")
-OPENAI_BASE_URL = os.getenv("DUSNX_OPENAI_BASE_URL", "https://api.openai.com/v1")
+OLLAMA_TIMEOUT = float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
+OPENAI_BASE_URL = os.getenv("DUSNX_OPENAI_BASE_URL", os.getenv("DUSNX_OPENAI_URL", "https://api.openai.com/v1"))
 OPENAI_MODEL = os.getenv("DUSNX_OPENAI_MODEL", "gpt-4o-mini")
 # API key intentionally NOT defaulted — must be set by operator
-OPENAI_API_KEY = os.getenv("DUSNX_OPENAI_API_KEY", "")
+OPENAI_API_KEY = os.getenv("DUSNX_OPENAI_API_KEY", os.getenv("DUSNX_OPENAI_KEY", ""))
 
 
 def check_ollama_health() -> dict:
@@ -56,7 +58,7 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
             data = json.loads(resp.read().decode())
             return data.get("response", ""), True
     except urllib.error.URLError as exc:
@@ -88,7 +90,7 @@ def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
             data = json.loads(resp.read().decode())
             return data["choices"][0]["message"]["content"], True
     except Exception as exc:
