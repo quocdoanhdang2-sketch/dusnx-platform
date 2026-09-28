@@ -250,3 +250,183 @@ class TestUserIsolationHttp:
         # User B tries to delete User A's memory -> 404
         bad_del = client.delete(f"/v1/memories/{m_a['memory_id']}", headers=headers_b)
         assert bad_del.status_code == 404
+
+
+class TestChatStatePersistence:
+    """Verify DUSN-X state is persisted per user across turns, sessions, and after DB reset (restart simulation)."""
+
+    def _chat(self, client: TestClient, headers: dict, sid: str, msg: str) -> dict:
+        r = client.post("/v1/chat", json={"message": msg, "session_id": sid}, headers=headers)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    def test_state_version_increases_across_turns(self, client: TestClient):
+        """Two consecutive turns in the same session: state_version must increase."""
+        _, token = _register_and_login(client, username="state_turns")
+        h = {"Authorization": f"Bearer {token}"}
+        sid = client.post("/v1/sessions", json={"title": "turns"}, headers=h).json()["session_id"]
+
+        r1 = self._chat(client, h, sid, "Xin chào DUSN-X")
+        r2 = self._chat(client, h, sid, "Tiếp tục nào")
+
+        v1 = r1.get("state_version")
+        v2 = r2.get("state_version")
+        # In bootstrap mode version increments; in trained mode also increments
+        if v1 is not None and v2 is not None:
+            assert v2 > v1, f"state_version must increase: {v1} -> {v2}"
+
+    def test_state_persists_across_sessions(self, client: TestClient):
+        """Same user, two separate sessions: state_version in session2 should be > session1 turn1."""
+        _, token = _register_and_login(client, username="state_sessions")
+        h = {"Authorization": f"Bearer {token}"}
+
+        sid1 = client.post("/v1/sessions", json={"title": "s1"}, headers=h).json()["session_id"]
+        sid2 = client.post("/v1/sessions", json={"title": "s2"}, headers=h).json()["session_id"]
+
+        r1 = self._chat(client, h, sid1, "Phiên một")
+        r2 = self._chat(client, h, sid2, "Phiên hai")
+
+        v1 = r1.get("state_version")
+        v2 = r2.get("state_version")
+        if v1 is not None and v2 is not None:
+            assert v2 > v1, f"Second session state_version {v2} should be > first session {v1}"
+
+    def test_state_survives_restart(self, client: TestClient, tmp_path, monkeypatch):
+        """Simulate restart: close DB singleton and reopen from same tmp_path — state_version continues."""
+        import apps.ai_api.memory as mem_mod
+
+        _, token = _register_and_login(client, username="state_restart")
+        h = {"Authorization": f"Bearer {token}"}
+        sid = client.post("/v1/sessions", json={"title": "restart"}, headers=h).json()["session_id"]
+
+        r1 = self._chat(client, h, sid, "Trước khi restart")
+        v1 = r1.get("state_version")
+
+        # Simulate restart: close and reset the singleton
+        if mem_mod._memory_db is not None:
+            mem_mod._memory_db.close()
+            mem_mod._memory_db = None
+
+        # Second chat — DB is re-opened from same tmp_path, state should persist
+        sid2 = client.post("/v1/sessions", json={"title": "after"}, headers=h).json()["session_id"]
+        r2 = self._chat(client, h, sid2, "Sau khi restart")
+        v2 = r2.get("state_version")
+
+        if v1 is not None and v2 is not None:
+            assert v2 > v1, f"After restart, state_version {v2} should be > pre-restart {v1}"
+
+    def test_state_not_shared_between_users(self, client: TestClient):
+        """Two different users must have independent state_versions."""
+        _, token_a = _register_and_login(client, username="state_user_a", password="passA_state123")
+        _, token_b = _register_and_login(client, username="state_user_b", password="passB_state123")
+        ha = {"Authorization": f"Bearer {token_a}"}
+        hb = {"Authorization": f"Bearer {token_b}"}
+
+        sid_a = client.post("/v1/sessions", json={"title": "a"}, headers=ha).json()["session_id"]
+        sid_b = client.post("/v1/sessions", json={"title": "b"}, headers=hb).json()["session_id"]
+
+        # User A chats three times to build state
+        for i in range(3):
+            self._chat(client, ha, sid_a, f"User A tin nhắn {i}")
+
+        # User B chats once
+        rb = self._chat(client, hb, sid_b, "User B lần đầu")
+        vb = rb.get("state_version")
+
+        # User B's state_version should be low (not contaminated by User A's)
+        if vb is not None:
+            assert vb <= 2, f"User B state_version {vb} should not be contaminated by User A"
+
+
+class TestDecisionModificationFlow:
+    """Verify the conversational decision-modification flow (detect -> confirm -> apply/reject)."""
+
+    def _chat(self, client: TestClient, headers: dict, sid: str, msg: str) -> dict:
+        r = client.post("/v1/chat", json={"message": msg, "session_id": sid}, headers=headers)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    def _setup(self, client: TestClient, username: str, decision_content: str):
+        _, token = _register_and_login(client, username=username)
+        h = {"Authorization": f"Bearer {token}"}
+        sid = client.post("/v1/sessions", json={"title": "dm"}, headers=h).json()["session_id"]
+        mem = client.post("/v1/memories", json={
+            "info_type": "decision",
+            "content": decision_content,
+        }, headers=h).json()
+        return h, sid, mem["memory_id"]
+
+    def test_detect_modify_intent_and_ask_confirm(self, client: TestClient):
+        """Sending a decision-modify message triggers a confirmation request."""
+        h, sid, _ = self._setup(
+            client, "dm_detect", "Dùng PostgreSQL làm DB chính"
+        )
+        r = self._chat(client, h, sid,
+                       "Tôi muốn thay đổi quyết định sang dùng SQLite thay vì PostgreSQL")
+        assert r["routing_source"] == "decision_flow"
+        assert "decision_modify" in r["intent"] or "awaiting" in r["intent"]
+        assert "Có" in r["reply"] or "Không" in r["reply"] or "xác nhận" in r["reply"].lower()
+
+    def test_confirm_yes_applies_supersede(self, client: TestClient):
+        """After detection, replying 'Có' must apply the supersede and deactivate old memory."""
+        h, sid, old_mid = self._setup(
+            client, "dm_confirm", "Dùng PostgreSQL làm DB chính"
+        )
+        # Trigger detection
+        self._chat(client, h, sid,
+                   "Thay đổi quyết định sang dùng SQLite với WAL mode")
+        # Confirm
+        r = self._chat(client, h, sid, "Có")
+        assert r["intent"] == "decision_update"
+        assert "✅" in r["reply"] or "cập nhật" in r["reply"].lower()
+
+        # Old memory should be deactivated
+        old_mem = client.get(f"/v1/memories/{old_mid}", headers=h).json()
+        assert old_mem["is_active"] is False
+        assert old_mem["superseded_by"] is not None
+
+        # Active memories should contain the new decision
+        active = client.get("/v1/memories?active_only=true", headers=h).json()
+        contents = [m["content"] for m in active]
+        assert any("SQLite" in c for c in contents)
+
+    def test_confirm_no_cancels_and_keeps_old(self, client: TestClient):
+        """Replying 'Không' cancels the pending decision and keeps old memory active."""
+        h, sid, old_mid = self._setup(
+            client, "dm_cancel", "Dùng PostgreSQL làm DB chính"
+        )
+        self._chat(client, h, sid,
+                   "Thay đổi quyết định sang dùng MySQL")
+        r = self._chat(client, h, sid, "Không")
+        assert "cancel" in r["intent"] or "huỷ" in r["reply"].lower() or "hủy" in r["reply"].lower()
+
+        # Old memory must still be active
+        old_mem = client.get(f"/v1/memories/{old_mid}", headers=h).json()
+        assert old_mem["is_active"] is True
+        assert old_mem["superseded_by"] is None
+
+    def test_ambiguous_reply_re_asks(self, client: TestClient):
+        """An ambiguous reply after detection re-asks for confirmation without applying changes."""
+        h, sid, old_mid = self._setup(
+            client, "dm_ambig", "Dùng PostgreSQL làm DB chính"
+        )
+        self._chat(client, h, sid,
+                   "Thay đổi quyết định sang dùng MongoDB")
+        r = self._chat(client, h, sid, "Hmm, không chắc lắm")
+        # Should re-ask (awaiting_confirm or clarify)
+        assert r["intent"] in ("awaiting_confirm", "decision_modify_intent")
+        # Old memory must STILL be active
+        old_mem = client.get(f"/v1/memories/{old_mid}", headers=h).json()
+        assert old_mem["is_active"] is True
+
+    def test_no_matching_decision_asks_clarify(self, client: TestClient):
+        """If no active decision matches, the bot asks for clarification instead of hallucinating."""
+        _, token = _register_and_login(client, username="dm_no_match")
+        h = {"Authorization": f"Bearer {token}"}
+        sid = client.post("/v1/sessions", json={"title": "nm"}, headers=h).json()["session_id"]
+        # No decision memories at all
+        r = self._chat(client, h, sid,
+                       "Tôi muốn thay đổi quyết định sang dùng Redis")
+        assert r["routing_source"] == "decision_flow"
+        assert r["next_action"] == "clarify"
+

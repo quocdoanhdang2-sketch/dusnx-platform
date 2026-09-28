@@ -321,6 +321,72 @@ def delete_session(session_id: str, user: CurrentUser):
 
 # ── Chat endpoint (main interaction) ──────────────────────────────────────────
 
+# Patterns that indicate the user wants to modify a decision memory (Vietnamese + English)
+_DECISION_MODIFY_PATTERNS = [
+    r"(?:tôi muốn|hãy|xin hãy)\s+(?:sửa|thay|cập nhật|đổi|thay đổi|chỉnh)\s+(?:quyết định|lựa chọn|kế hoạch)",
+    r"(?:sửa|thay đổi|cập nhật|đổi)\s+(?:quyết định|lựa chọn|kế hoạch)",
+    r"(?:không dùng|bỏ|huỷ|hủy)\s+.+(?:nữa|thay vào đó)",
+    r"(?:replace|change|update|modify)\s+(?:the\s+)?(?:decision|choice|plan)",
+    r"(?:instead of|no longer use|switch from)",
+]
+
+# Patterns indicating confirmation (yes) or rejection (no)
+_CONFIRM_YES_PATTERNS = ["có", "đồng ý", "xác nhận", "ok", "yes", "sure", "đúng", "được", "ừ"]
+_CONFIRM_NO_PATTERNS = ["không", "bỏ qua", "huỷ", "hủy", "no", "cancel", "thôi", "đừng"]
+
+
+def _detect_decision_modify_intent(text: str) -> bool:
+    """Return True if the message expresses intent to modify an existing decision."""
+    import re as _re
+    lower = text.lower()
+    for pat in _DECISION_MODIFY_PATTERNS:
+        if _re.search(pat, lower):
+            return True
+    return False
+
+
+def _detect_confirm(text: str) -> Optional[bool]:
+    """Return True=confirm, False=reject, None=unclear.
+
+    Handles ambiguous phrases by checking uncertainty qualifiers
+    before treating words like 'kh\u00f4ng' as a rejection.
+    """
+    lower = text.strip().lower()
+    # Phrases that signal genuine uncertainty => return None immediately
+    _UNCERTAIN_PHRASES = (
+        "kh\u00f4ng ch\u1eafc", "ch\u01b0a ch\u1eafc",
+        "kh\u00f4ng bi\u1ebft", "ch\u01b0a bi\u1ebft",
+        "hmm", "kh\u00f4ng r\u00f5",
+    )
+    if any(p in lower for p in _UNCERTAIN_PHRASES):
+        return None
+    # Check yes patterns first
+    for w in _CONFIRM_YES_PATTERNS:
+        if w in lower:
+            return True
+    # Check no patterns
+    for w in _CONFIRM_NO_PATTERNS:
+        if w in lower:
+            return False
+    return None
+def _find_best_matching_decision(
+    memories: list[dict], message: str
+) -> Optional[dict]:
+    """Best-effort: pick the active decision memory most relevant to the message."""
+    decisions = [m for m in memories if m["info_type"] in ("decision", "preference", "goal")]
+    if not decisions:
+        return None
+    # Simple keyword overlap score
+    words = set(message.lower().split())
+    best, best_score = None, 0
+    for mem in decisions:
+        overlap = len(words & set(mem["content"].lower().split()))
+        if overlap > best_score:
+            best_score = overlap
+            best = mem
+    return best  # may be None if no overlap — caller handles
+
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -372,20 +438,157 @@ def chat(req: ChatRequest, user: CurrentUser):
         proj = db.get_project(user_id, req.project_id)
         project_name = proj["name"] if proj else None
 
-    # Get previous state from gateway store (global_user_id based lookup)
+    # ── Decision modification flow ────────────────────────────────────────────
+    # First check: is there a pending confirmation waiting?
+    pending = db.get_session_pending_decision(user_id, req.session_id)
+    if pending is not None:
+        confirmed = _detect_confirm(req.message)
+        if confirmed is True:
+            # Apply the supersede
+            db.resolve_pending_decision(user_id, pending["pending_id"], accepted=True)
+            updated = db.update_memory(
+                user_id=user_id,
+                memory_id=pending["old_memory_id"],
+                new_content=pending["proposed_content"],
+                source_session=req.session_id,
+            )
+            reply_text = (
+                f"✅ Đã cập nhật quyết định.\n"
+                f"**Cũ:** {pending['old_content']}\n"
+                f"**Mới:** {pending['proposed_content']}"
+            )
+            if updated:
+                memory_ids = [updated["memory_id"]]
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=memory_ids, state_version=None,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="decision_update", selected_agent="memory",
+                next_action="update_memory", confidence=1.0,
+                runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
+                provider_used="none", provider_ok=True,
+                state_version=None, memory_ids_used=memory_ids,
+                session_id=req.session_id,
+            )
+        elif confirmed is False:
+            db.resolve_pending_decision(user_id, pending["pending_id"], accepted=False)
+            reply_text = "Đã huỷ yêu cầu sửa đổi quyết định."
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=[], state_version=None,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="decision_update_cancelled", selected_agent="memory",
+                next_action="no_op", confidence=1.0,
+                runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
+                provider_used="none", provider_ok=True,
+                state_version=None, memory_ids_used=[],
+                session_id=req.session_id,
+            )
+        else:
+            # Ambiguous — ask again
+            reply_text = (
+                f"Bạn có muốn thay đổi quyết định sau không?\n"
+                f"**Hiện tại:** {pending['old_content']}\n"
+                f"**Đề xuất:** {pending['proposed_content']}\n\n"
+                "Trả lời **Có** để xác nhận hoặc **Không** để huỷ."
+            )
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=[], state_version=None,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="awaiting_confirm", selected_agent="memory",
+                next_action="clarify", confidence=0.9,
+                runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
+                provider_used="none", provider_ok=True,
+                state_version=None, memory_ids_used=[],
+                session_id=req.session_id,
+            )
+
+    # Second check: does the new message request a decision modification?
+    if _detect_decision_modify_intent(req.message):
+        matched = _find_best_matching_decision(memories, req.message)
+        if matched is not None:
+            # Extract proposed new content: text after keywords like "thành", "sang", "bằng", "to"
+            import re as _re
+            proposed = _re.sub(
+                r"^.+?(?:thành|sang|bằng|to|with|use|dùng)\s+",
+                "",
+                req.message,
+                flags=_re.IGNORECASE,
+            ).strip() or req.message
+            pending_rec = db.create_pending_decision(
+                user_id=user_id,
+                session_id=req.session_id,
+                old_memory_id=matched["memory_id"],
+                old_content=matched["content"],
+                proposed_content=proposed,
+            )
+            reply_text = (
+                f"Tôi thấy bạn muốn thay đổi quyết định. Bạn có muốn:\n"
+                f"**Cũ:** {matched['content']}\n"
+                f"**Mới:** {proposed}\n\n"
+                "Trả lời **Có** để xác nhận hoặc **Không** để huỷ."
+            )
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=[matched["memory_id"]], state_version=None,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="decision_modify_intent", selected_agent="memory",
+                next_action="await_confirm", confidence=0.88,
+                runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
+                provider_used="none", provider_ok=True,
+                state_version=None, memory_ids_used=[matched["memory_id"]],
+                session_id=req.session_id,
+            )
+        else:
+            # No matching decision found — ask clarifying question
+            reply_text = (
+                "Tôi chưa tìm thấy quyết định nào phù hợp để sửa. "
+                "Bạn có thể mô tả rõ hơn quyết định nào cần thay đổi không?"
+            )
+            msg = db.append_message(
+                req.session_id, user_id, "assistant", reply_text,
+                memory_ids_used=[], state_version=None,
+            )
+            return ChatResponse(
+                message_id=msg["message_id"], reply=reply_text,
+                intent="decision_modify_intent", selected_agent="memory",
+                next_action="clarify", confidence=0.7,
+                runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
+                provider_used="none", provider_ok=True,
+                state_version=None, memory_ids_used=[],
+                session_id=req.session_id,
+            )
+
+    # ── Normal chat flow ──────────────────────────────────────────────────────
     global_user_id = _compute_global_user_id(user_id)
 
-    # Run DUSN-X routing/state update
+    # Load previous persistent state from DB
+    stored = db.get_dusnx_state(user_id)
+    previous_state_blob = stored["state_blob"] if stored else None
+
+    # Run DUSN-X routing/state update with persistent previous_state
     active_cfg = CFG or ModelConfig()
-    # For chat, we use a simplified previous_state lookup (state stored in files by gateway)
-    # Here we use bootstrap since FastAPI doesn't hold state between calls (gateway does)
-    dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source, state_version = _run_dusnx(
+    dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source, state_version, new_state_blob = _run_dusnx(
         global_user_id=global_user_id,
         platform="web",
         content=req.message,
         feedback_value=req.feedback_value,
         active_cfg=active_cfg,
+        previous_state_blob=previous_state_blob,
     )
+
+    # Persist the updated state back to DB
+    if new_state_blob is not None:
+        db.set_dusnx_state(user_id, new_state_blob, state_version or 1)
 
     # Generate text response using provider
     reply_text, provider_ok, provider_used = generate_response(
@@ -444,16 +647,23 @@ def _run_dusnx(
     content: str,
     feedback_value: float,
     active_cfg: ModelConfig,
-) -> tuple[str, str, str, float, str, Optional[int]]:
-    """Run DUSN-X model or bootstrap rules. Returns (intent, agent, action, confidence, routing_source, state_version)."""
-    reset_reason = state_reset_reason(None, active_cfg, MODEL_VERSION)
+    previous_state_blob: Optional[dict] = None,
+) -> tuple[str, str, str, float, str, Optional[int], Optional[dict]]:
+    """Run DUSN-X model or bootstrap rules.
+    Returns (intent, agent, action, confidence, routing_source, state_version, new_state_blob).
+    new_state_blob is a JSON-serializable dict for DB storage.
+    """
+    from dusnx_core.schema import StateSnapshot as _SS
+
+    def _snapshot_from_blob(blob: dict) -> Optional[_SS]:
+        try:
+            return _SS(**blob)
+        except Exception:
+            return None
 
     if MODEL is None:
-        intent, agent, action, conf = detect_route(content)
-        return intent, agent, action, conf, "bootstrap_rules", None
-    else:
-        import torch as _torch
-        from dusnx_core.inference import process_one as _process_one
+        # Bootstrap rules path
+        previous_snapshot = _snapshot_from_blob(previous_state_blob) if previous_state_blob else None
         from dusnx_core.schema import ProcessRequest as _PR
         req = _PR(
             global_user_id=global_user_id,
@@ -462,13 +672,78 @@ def _run_dusnx(
             event_type="message",
             time_gap_hours=0.0,
             feedback_value=feedback_value,
-            previous_state=None,
+            previous_state=previous_snapshot,
+        )
+        intent, agent, action, conf = detect_route(content)
+        new_snapshot = bootstrap_state_update(req, intent)
+        new_blob = new_snapshot.model_dump()
+        return intent, agent, action, conf, "bootstrap_rules", new_snapshot.state_version, new_blob
+    else:
+        import torch as _torch
+        from dusnx_core.inference import process_one as _process_one
+        from dusnx_core.schema import ProcessRequest as _PR
+        previous_snapshot = _snapshot_from_blob(previous_state_blob) if previous_state_blob else None
+        reset_reason = state_reset_reason(previous_snapshot, active_cfg, MODEL_VERSION)
+        if reset_reason:
+            previous_snapshot = None
+        req = _PR(
+            global_user_id=global_user_id,
+            platform=platform,
+            content=content,
+            event_type="message",
+            time_gap_hours=0.0,
+            feedback_value=feedback_value,
+            previous_state=previous_snapshot,
         )
         result = _process_one(MODEL, CFG, req, MODEL_VERSION, DEVICE)
+        version = (previous_snapshot.state_version if previous_snapshot else 0) + 1
+        new_snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version, STATE_SCHEMA_VERSION, MODEL_VERSION))
+        new_blob = new_snapshot.model_dump()
         explicit = match_explicit_route(platform, content)
         if explicit is not None:
-            return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence, "business_rule_override", None
-        return result["intent"], result["selected_agent"], result["next_action"], result["confidence"], "model", None
+            return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence, "business_rule_override", version, new_blob
+        return result["intent"], result["selected_agent"], result["next_action"], result["confidence"], "model", version, new_blob
+
+
+# ── Pending Decision API endpoints ─────────────────────────────────────────────
+
+@app.get("/v1/pending-decisions")
+def list_pending_decisions(user: CurrentUser, session_id: Optional[str] = None):
+    """List all awaiting_confirm pending decision updates for the current user."""
+    db = get_memory_db()
+    if session_id:
+        pending = db.get_session_pending_decision(user["user_id"], session_id)
+        return [pending] if pending else []
+    # General: query all awaiting
+    rows = db._conn.execute(
+        """SELECT * FROM pending_decision_updates
+           WHERE user_id=? AND status='awaiting_confirm'
+           ORDER BY created_at DESC""",
+        (user["user_id"],),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+class ResolvePendingRequest(BaseModel):
+    accepted: bool
+
+
+@app.post("/v1/pending-decisions/{pending_id}/resolve")
+def resolve_pending_decision(pending_id: str, req: ResolvePendingRequest, user: CurrentUser):
+    """Explicitly confirm or reject a pending decision update via API."""
+    db = get_memory_db()
+    resolved = db.resolve_pending_decision(user["user_id"], pending_id, accepted=req.accepted)
+    if resolved is None:
+        raise HTTPException(status_code=404, detail="Pending decision not found or already resolved")
+    if req.accepted:
+        pending = resolved
+        updated = db.update_memory(
+            user_id=user["user_id"],
+            memory_id=pending["old_memory_id"],
+            new_content=pending["proposed_content"],
+        )
+        return {"resolved": resolved, "updated_memory": updated}
+    return {"resolved": resolved}
 
 
 # ── Legacy /v1/process endpoint (kept for Gateway compatibility) ────────────────

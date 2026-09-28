@@ -75,12 +75,32 @@ def _init_db(conn: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             FOREIGN KEY(session_id) REFERENCES chat_sessions(session_id)
         );
+        -- Persistent DUSN-X vector state per user (survives restarts, cross-session)
+        CREATE TABLE IF NOT EXISTS dusnx_state (
+            user_id TEXT PRIMARY KEY,
+            state_blob TEXT NOT NULL,
+            state_version INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        );
+        -- Pending decision modification requests (awaiting user confirmation)
+        CREATE TABLE IF NOT EXISTS pending_decision_updates (
+            pending_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            session_id TEXT NOT NULL,
+            old_memory_id TEXT NOT NULL,
+            old_content TEXT NOT NULL,
+            proposed_content TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'awaiting_confirm',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         CREATE INDEX IF NOT EXISTS idx_memories_user ON memories(user_id);
         CREATE INDEX IF NOT EXISTS idx_memories_user_active ON memories(user_id, is_active);
         CREATE INDEX IF NOT EXISTS idx_memories_project ON memories(project_id);
         CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_user ON chat_sessions(user_id);
         CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages(session_id);
+        CREATE INDEX IF NOT EXISTS idx_pending_user ON pending_decision_updates(user_id);
     """)
     conn.commit()
 
@@ -355,6 +375,97 @@ class MemoryDB:
                 d["memory_ids_used"] = []
             result.append(d)
         return result
+
+
+    # ── DUSN-X Persistent State ────────────────────────────────────────────────
+
+    def get_dusnx_state(self, user_id: str) -> Optional[dict]:
+        """Return stored state blob for a user, or None if first time."""
+        row = self._conn.execute(
+            "SELECT state_blob, state_version, updated_at FROM dusnx_state WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "state_blob": json.loads(row["state_blob"]),
+            "state_version": row["state_version"],
+            "updated_at": row["updated_at"],
+        }
+
+    def set_dusnx_state(self, user_id: str, state_blob: dict, state_version: int) -> None:
+        """Upsert DUSN-X state for a user (INSERT OR REPLACE)."""
+        now = _now()
+        self._conn.execute(
+            """INSERT INTO dusnx_state(user_id, state_blob, state_version, updated_at)
+               VALUES(?,?,?,?)
+               ON CONFLICT(user_id) DO UPDATE SET
+                   state_blob=excluded.state_blob,
+                   state_version=excluded.state_version,
+                   updated_at=excluded.updated_at""",
+            (user_id, json.dumps(state_blob), state_version, now),
+        )
+        self._conn.commit()
+
+    # ── Pending Decision Modification ──────────────────────────────────────────
+
+    def create_pending_decision(
+        self,
+        user_id: str,
+        session_id: str,
+        old_memory_id: str,
+        old_content: str,
+        proposed_content: str,
+    ) -> dict:
+        """Create a pending decision update request awaiting user confirmation."""
+        pending_id = secrets.token_hex(12)
+        now = _now()
+        self._conn.execute(
+            """INSERT INTO pending_decision_updates(
+                   pending_id, user_id, session_id, old_memory_id, old_content,
+                   proposed_content, status, created_at, updated_at)
+               VALUES(?,?,?,?,?,?,?,?,?)""",
+            (pending_id, user_id, session_id, old_memory_id, old_content,
+             proposed_content, "awaiting_confirm", now, now),
+        )
+        self._conn.commit()
+        return self.get_pending_decision(user_id, pending_id)  # type: ignore[return-value]
+
+    def get_pending_decision(self, user_id: str, pending_id: str) -> Optional[dict]:
+        row = self._conn.execute(
+            "SELECT * FROM pending_decision_updates WHERE pending_id=? AND user_id=?",
+            (pending_id, user_id),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def get_session_pending_decision(self, user_id: str, session_id: str) -> Optional[dict]:
+        """Return the most recent awaiting_confirm pending decision for a session."""
+        row = self._conn.execute(
+            """SELECT * FROM pending_decision_updates
+               WHERE user_id=? AND session_id=? AND status='awaiting_confirm'
+               ORDER BY created_at DESC LIMIT 1""",
+            (user_id, session_id),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def resolve_pending_decision(
+        self,
+        user_id: str,
+        pending_id: str,
+        accepted: bool,
+    ) -> Optional[dict]:
+        """Mark pending decision as confirmed or rejected. Returns updated record."""
+        now = _now()
+        status = "confirmed" if accepted else "rejected"
+        cur = self._conn.execute(
+            """UPDATE pending_decision_updates SET status=?, updated_at=?
+               WHERE pending_id=? AND user_id=? AND status='awaiting_confirm'""",
+            (status, now, pending_id, user_id),
+        )
+        self._conn.commit()
+        if cur.rowcount == 0:
+            return None
+        return self.get_pending_decision(user_id, pending_id)
 
 
 # Singleton
