@@ -1,0 +1,27 @@
+{
+  "csconda": {
+    "repository": "ura-hcmut/Vietnamese-Customer-Support-QA",
+    "revision": "4656fb2ebd5e2ea0953a6752f1dcb21d0d49966d",
+    "license": "apache-2.0",
+    "access": "manual_gate",
+    "files": ["data/train-00000-of-00001.parquet", "data/test-00000-of-00001.parquet"]
+  },
+  "massive": {
+    "repository": "AmazonScience/massive",
+    "revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+    "license": "cc-by-4.0",
+    "access": "public",
+    "locale": "vi-VN",
+    "archive_url": "https://amazon-massive-nlu-dataset.s3.amazonaws.com/amazon-massive-dataset-1.1.tar.gz",
+    "archive_sha256": "4cba5faa11c71437928e17cb1b9b3d8b8e727e7ea363a3a9a8045e19c0491577"
+  },
+  "sgd": {
+    "repository": "google-research-datasets/schema_guided_dstc8",
+    "revision": "bf400d9a91201a3438b552cf95f0c20dd884b1bf",
+    "license": "cc-by-sa-4.0",
+    "access": "public_structure_reference_only",
+    "upstream": "https://github.com/google-research-datasets/dstc8-schema-guided-dialogue",
+    "upstream_revision": "e852981ae34990f4358979625854259302feaa78",
+    "files": ["train/schema.json", "train/dialogues_001.json"]
+  }
+}

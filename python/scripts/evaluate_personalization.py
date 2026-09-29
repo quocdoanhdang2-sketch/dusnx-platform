@@ -119,7 +119,7 @@ def request_json(client, method, path, **kwargs):
     return response.json()
 
 
-def run_dusnx(turns, client, main_mod):
+def run_dusnx(turns, client, main_mod, *, no_state=False):
     from dusnx_core import inference
     credentials = {"username": f"pilot_{secrets.token_hex(8)}", "password": secrets.token_urlsafe(24)}
     request_json(client, "POST", "/v1/auth/register", json=credentials)
@@ -129,6 +129,9 @@ def run_dusnx(turns, client, main_mod):
     original, raw_predictions = inference.process_one, []
 
     def observe(*args, **kwargs):
+        if no_state:
+            args=list(args)
+            args[2]=args[2].model_copy(update={"previous_state":None})
         raw = original(*args, **kwargs)
         raw_predictions.append({"intent": raw["intent"], "agent": raw["selected_agent"],
                                 "action": raw["next_action"]})
@@ -163,7 +166,9 @@ def run_dusnx(turns, client, main_mod):
                             decision_source=attribution(source), predicted_intent=res.get("intent"),
                             predicted_agent=res.get("selected_agent"), predicted_next_action=res.get("next_action"),
                             model_prediction=raw_predictions[-1] if raw_predictions else None,
-                            state_version=res.get("state_version"), error=None)
+                            state_version=res.get("state_version"), error=None,
+                            answer_source=res.get("answer_source","application_rule"),
+                            recurrent_state_disabled=no_state)
                 memories = request_json(client, "GET", "/v1/memories", headers=headers)
                 used_ids = set(res.get("memory_ids_used", []))
                 pred["memories_used"] = [m["content"] for m in memories if m["memory_id"] in used_ids]
@@ -185,7 +190,7 @@ def run_dusnx(turns, client, main_mod):
 def aggregate(records):
     from dusnx_core.constants import INTENTS
     result = {}
-    for system in SYSTEMS:
+    for system in dict.fromkeys(r["system"] for r in records):
         selected = [r for r in records if r["system"] == system]
         metrics = {}
         for key in ("active_recall", "obsolete_elimination", "missing_context_handling",
@@ -202,6 +207,23 @@ def aggregate(records):
             if raw is not None and gold.get("intent") in INTENTS:
                 raw_scores.append(raw == gold)
         result[system]["raw_checkpoint_route"] = {"passed": sum(raw_scores), "scored": len(raw_scores)}
+        from sklearn.metrics import f1_score
+        result[system]["macro_f1"]={}
+        for head,pred_key in (("intent","predicted_intent"),("agent","predicted_agent"),("action","predicted_next_action")):
+            labelled=[r for r in selected if r.get("expected_route",{}).get(head) is not None]
+            gold=[r["expected_route"][head] for r in labelled]
+            pred=[r["prediction"].get(pred_key) or "prediction_failed" for r in labelled]
+            result[system]["macro_f1"][head]=float(f1_score(gold,pred,labels=sorted(set(gold)),average="macro",zero_division=0)) if gold else None
+        result[system]["answer_sources"]=dict(Counter(r["prediction"].get("answer_source","provider") for r in selected))
+        from dusnx_core.constants import AGENTS,NEXT_ACTIONS
+        result[system]["raw_checkpoint_macro_f1"]={}
+        for head,vocabulary in (("intent",INTENTS),("agent",AGENTS),("action",NEXT_ACTIONS)):
+            labelled=[r for r in selected if r["prediction"].get("model_prediction") is not None
+                      and r.get("expected_route",{}).get(head) in vocabulary]
+            gold=[r["expected_route"][head] for r in labelled]
+            pred=[r["prediction"]["model_prediction"][head] for r in labelled]
+            result[system]["raw_checkpoint_macro_f1"][head]={"scored":len(gold),
+                "macro_f1":float(f1_score(gold,pred,labels=vocabulary,average="macro",zero_division=0)) if gold else None}
     return result
 
 
@@ -212,14 +234,28 @@ def main():
     ap.add_argument("--provider", default="ollama", choices=["mock", "ollama"])
     ap.add_argument("--device", default="cpu", choices=["auto", "cpu", "cuda"])
     ap.add_argument("--validate-only", action="store_true")
+    ap.add_argument("--checkpoint")
+    ap.add_argument("--holdout-manifest")
+    ap.add_argument("--include-no-state",action="store_true")
     args = ap.parse_args()
+    import torch
+    torch.set_num_threads(2)
     rows = read_pilot(args.benchmark)
+    if any(r.partition=="holdout" for r in rows):
+        if not args.holdout_manifest:raise ValueError("holdout requires locked manifest")
+        from dusnx_core.data_pipeline import verify_lock
+        verify_lock(args.benchmark,args.holdout_manifest)
     if args.validate_only:
         print(f"Valid: {len(rows)} steps / {len({r.sequence_id for r in rows})} sequences")
         return
     os.environ["DUSNX_PROVIDER"], os.environ["DUSNX_DEVICE"] = args.provider, args.device
+    if args.checkpoint:
+        if not Path(args.checkpoint).is_file():raise ValueError("checkpoint unavailable")
+        os.environ["DUSNX_CHECKPOINT"]=args.checkpoint
+    systems=(*SYSTEMS,"dusnx_no_state") if args.include_no_state else SYSTEMS
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if (out_dir/"predictions.jsonl").exists():raise ValueError("choose a new output directory; preserve earlier evidence")
     # Unique scratch directory; never delete earlier runs or user databases.
     scratch = REPO_ROOT / "runtime/week3-scratch" / secrets.token_hex(8)
     scratch.mkdir(parents=True)
@@ -234,9 +270,9 @@ def main():
     with TestClient(main_mod.app) as client, (out_dir / "predictions.jsonl").open("w", encoding="utf-8") as fh:
         for seq, steps in sequences.items():
             inputs = [s.prediction_input() for s in steps]
-            for system in SYSTEMS:
+            for system in systems:
                 try:
-                    predictions = (run_dusnx(inputs, client, main_mod) if system == "dusnx" else
+                    predictions = (run_dusnx(inputs, client, main_mod,no_state=system=="dusnx_no_state") if system.startswith("dusnx") else
                                    run_baseline(inputs, generate_response, static_memory=system == "baseline_b"))
                 except Exception as exc:
                     predictions = [dict(reply="", provider_ok=False, error=type(exc).__name__,
@@ -260,7 +296,7 @@ def main():
         systems=aggregate(records))
     cases = []
     for seq in sequences:
-        for system in SYSTEMS:
+        for system in systems:
             selected = [r for r in records if r["sequence_id"] == seq and r["system"] == system]
             scored = [v for r in selected for v in r["metrics"].values() if v is not None]
             cases.append(dict(sequence_id=seq, system=system, passed=all(scored),
@@ -268,10 +304,10 @@ def main():
     errors = [r for r in records if False in r["metrics"].values() or r["prediction"].get("error")]
     for filename, data in (("summary.json", summary), ("cases.json", cases), ("errors.json", errors)):
         (out_dir / filename).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    lines = ["| Metric | No memory | Static | DUSN-X |", "|---|---:|---:|---:|"]
+    lines = ["| Metric | "+" | ".join(systems)+" |", "|---|"+"---:|"*len(systems)]
     for key in summary["systems"]["dusnx"]["metrics"]:
         cells = []
-        for system in SYSTEMS:
+        for system in systems:
             m = summary["systems"][system]["metrics"][key]
             cells.append(f"{m['passed']}/{m['scored']}" if m["scored"] else "unlabelled")
         lines.append("| " + " | ".join([key, *cells]) + " |")
@@ -280,6 +316,8 @@ def main():
     print(f"Output: {out_dir}; labels not independently reviewed; mock is pipeline-only.")
     if any(s["provider_failures"] for s in summary["systems"].values()):
         raise SystemExit(1)
+    if args.holdout_manifest:
+        verify_lock(args.benchmark,args.holdout_manifest)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,26 @@
+seed: 20260929
+data: runtime/prepared/train.jsonl
+validation_data: runtime/prepared/validation.jsonl
+checkpoint: artifacts/router_colab.pt
+device: auto
+require_gpu: true
+cpu_threads: 2
+sequence_len: 8
+stride: 1
+batch_size: 32
+gradient_accumulation_steps: 2
+mixed_precision: true
+epochs: 8
+early_stopping_patience: 3
+learning_rate: 0.0002
+model:
+  vocab_size: 16384
+  max_tokens: 32
+  token_dim: 96
+  platform_dim: 24
+  event_type_dim: 8
+  event_hidden: 160
+  global_state_dim: 160
+  platform_state_dim: 112
+  task_state_dim: 112
+  dropout: 0.15

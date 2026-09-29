@@ -1,0 +1,15 @@
+{
+  "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+  "review_status": "pending_human_review",
+  "reviewer": null,
+  "agent_action_policy": "unlabelled_masked_loss",
+  "mappings": {
+    "general_greet": {"intent": "chat", "reason": "Lời chào, không yêu cầu công cụ hay tiếp tục tác vụ."},
+    "general_joke": {"intent": "chat", "reason": "Yêu cầu trò chuyện/đùa, không có thao tác ngoài hệ thống."},
+    "qa_definition": {"intent": "chat", "reason": "Hỏi định nghĩa trực tiếp; nguồn không yêu cầu tìm kiếm có nguồn dẫn."},
+    "recommendation_movies": {"intent": "recommendation", "reason": "Yêu cầu gợi ý phim."},
+    "recommendation_events": {"intent": "recommendation", "reason": "Yêu cầu gợi ý hoạt động/sự kiện."},
+    "recommendation_locations": {"intent": "recommendation", "reason": "Yêu cầu gợi ý địa điểm."}
+  },
+  "excluded": "Các intent khác chưa có ánh xạ đủ rõ; general_quirky quá rộng. Không suy diễn agent, action hoặc state."
+}

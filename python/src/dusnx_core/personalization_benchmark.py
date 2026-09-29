@@ -30,7 +30,11 @@ class PilotStep(BaseModel):
     prior_event_ids: list[str]
     known_feedback_value: float = Field(ge=-1, le=1)
     category: str = Field(min_length=1)
-    label_source: Literal["ai_authored_takeover", "human_authored", "test_fixture"]
+    label_source: Literal["ai_authored_takeover", "human_authored", "test_fixture", "synthetic_designed"]
+    global_user_id: str | None = None
+    template_family: str | None = None
+    partition: Literal["development", "holdout"] = "development"
+    source: str | None = None
     review_status: Literal["not_independently_reviewed", "independently_reviewed"]
     reviewer: str | None
     expected_intent: str | None

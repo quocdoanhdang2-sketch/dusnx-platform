@@ -1,0 +1,3 @@
+benchmarks/*.jsonl text eol=lf
+benchmarks/*.json text eol=lf
+*.ipynb text eol=lf

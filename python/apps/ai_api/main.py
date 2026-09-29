@@ -23,6 +23,7 @@ from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessRespo
 from .auth import get_auth_db
 from .memory import get_memory_db
 from .provider import generate_response, get_provider_health
+from .grounding import memory_answer
 
 # ── Model loading (unchanged from Phase 1) ─────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
@@ -706,6 +707,7 @@ class ChatResponse(BaseModel):
     session_id: str
     model_used: Optional[str] = None
     tokens_generated: Optional[int] = None
+    answer_source: str = "application_rule"
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
@@ -1006,6 +1008,10 @@ def chat(req: ChatRequest, user: CurrentUser):
         project_name=project_name,
     )
 
+    grounded_answer = memory_answer(req.message, memories) if provider_ok else None
+    if grounded_answer is not None:
+        reply_text = grounded_answer
+
     if provider_ok:
         # Save assistant message only on success
         msg = db.append_message(
@@ -1046,6 +1052,7 @@ def chat(req: ChatRequest, user: CurrentUser):
         session_id=req.session_id,
         model_used=model_used if provider_ok else None,
         tokens_generated=tokens_generated if provider_ok else None,
+        answer_source="active_memory_extract" if grounded_answer is not None else "provider",
     )
 
 

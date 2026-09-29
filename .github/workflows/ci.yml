@@ -24,6 +24,10 @@ jobs:
         run: pytest python/tests -q --tb=short
       - name: Compile Python files
         run: python -m compileall -q python
+      - name: Offline CPU training pipeline and resume smoke
+        env:
+          PYTHONPATH: "python/src:python:."
+        run: python python/scripts/pipeline_smoke.py --output runtime/ci-training
       - name: Validate and replay personalization pilot (mock, pipeline only)
         env:
           PYTHONPATH: "python/src:python:."

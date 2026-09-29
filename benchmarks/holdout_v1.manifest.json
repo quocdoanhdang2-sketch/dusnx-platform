@@ -1,0 +1,43 @@
+{
+  "status": "labels_locked_not_independently_reviewed",
+  "seed": 914207,
+  "locked_at_utc": "2026-09-29T05:47:10.141470+00:00",
+  "sha256": "e97d740ab00236efd4ae231381a45c76dbcc73e8dc46df6f32ec967572f2e597",
+  "file": "holdout_v1.jsonl",
+  "events": 29,
+  "sequence_ids": [
+    "holdout-914207-review_claim_vs_commitment",
+    "holdout-914207-review_detour_to_goal",
+    "holdout-914207-review_goal_revision",
+    "holdout-914207-review_preference_reversal",
+    "holdout-914207-review_rejection_new_session",
+    "holdout-914207-review_successive_storage",
+    "holdout-914207-review_theme_roundtrip",
+    "holdout-914207-review_unknown_then_recall"
+  ],
+  "users": [
+    "holdout-914207-review_claim_vs_commitment",
+    "holdout-914207-review_detour_to_goal",
+    "holdout-914207-review_goal_revision",
+    "holdout-914207-review_preference_reversal",
+    "holdout-914207-review_rejection_new_session",
+    "holdout-914207-review_successive_storage",
+    "holdout-914207-review_theme_roundtrip",
+    "holdout-914207-review_unknown_then_recall"
+  ],
+  "template_families": [
+    "review_claim_vs_commitment",
+    "review_detour_to_goal",
+    "review_goal_revision",
+    "review_preference_reversal",
+    "review_rejection_new_session",
+    "review_successive_storage",
+    "review_theme_roundtrip",
+    "review_unknown_then_recall"
+  ],
+  "excluded": {
+    "train.jsonl": "dfaa3b1c04cad100cc1dab770484508ce67950ce9d425822f264ce1d93312dd5",
+    "validation.jsonl": "06916b8cb42d066624777ffa2c2bed786a765864426ecbb8a054b23c201a969d",
+    "week3_personalization_pilot.jsonl": "2137961651d36f0831013c0b2b749f41fcb252ffd96acb12c29d5c6336e179e1"
+  }
+}

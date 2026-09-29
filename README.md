@@ -237,6 +237,26 @@ git push -u origin main
 
 Thay `TEN_REPOSITORY` bằng tên mày chọn. Không commit `.env`, dataset thật, checkpoint hoặc secret.
 
+## Dữ liệu và train state/router trên local hoặc Colab
+
+Notebook [train_dusnx_colab.ipynb](notebooks/train_dusnx_colab.ipynb) và [hướng dẫn từng cú nhấp chuột](docs/TRAIN_COLAB_TUNG_BUOC.md) huấn luyện recurrent state và các đầu intent/agent/action, **không fine-tune LLM**. Helper đã kiểm tra local; chưa chạy Colab. Không yêu cầu một loại GPU cụ thể; CPU chạy smoke được.
+
+```powershell
+$env:PYTHONPATH='python/src;python;.;scripts'
+python python/scripts/fetch_sources.py --source all
+python python/scripts/import_data.py --source massive --input runtime/external-data/massive/vi-VN.jsonl --output-dir runtime/imported/massive
+python python/scripts/prepare_data.py --legacy data/synthetic_30k_v2.jsonl --external runtime/imported/massive/candidates.jsonl
+python python/scripts/pipeline_smoke.py --output runtime/new-smoke-run
+python python/scripts/train.py --config configs/router_colab.yaml --checkpoint artifacts/new-router.pt
+python python/scripts/evaluate_personalization.py --benchmark benchmarks/holdout_v1.jsonl --holdout-manifest benchmarks/holdout_v1.manifest.json --include-no-state --provider ollama --checkpoint artifacts/new-router.pt --output-dir runtime/new-holdout-run
+```
+
+Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ. Pipeline dữ liệu xuất `runtime/prepared/{train,validation}.jsonl` và `manifest.json`; train xuất best `.pt`, `.last.pt`, config, metric/epoch; đánh giá xuất `predictions.jsonl`, `cases.json`, `summary.json/.md`, `errors.json`. Với bản clone thiếu 30k cũ, bỏ `--legacy`; khi đó chỉ dùng bank thiết kế nhỏ, phải báo số thực tế. Xem [nguồn/license/revision](docs/DATA_SOURCES.md).
+
+Pilot 12 chuỗi cũ là **development set**; holdout v1 mới 8 chuỗi/29 bước đã khóa hash trước train. Cả hai còn nhỏ và chưa duyệt độc lập. MASSIVE đã tải nhưng mapping chờ reviewer nên không được dùng train; CSConDa chưa có quyền và được bỏ qua. Cần người thực [duyệt nhãn/mapping](docs/ANNOTATION_GUIDE.md). Không tăng lên hàng chục nghìn event bằng cách thay tên trong template.
+
+`answer_source=active_memory_extract` là trích memory bằng luật, không phải khả năng sinh của checkpoint. `model_used/tokens_generated` mô tả cuộc gọi provider thực tế trước bước trích; `routing_source` và `model_prediction` trong benchmark tách nhánh luật khỏi checkpoint. Ablation chỉ reset recurrent state; giữ SQL memory và luật. `--provider mock` chỉ kiểm tra pipeline, không chứng minh chất lượng câu trả lời.
+
 ## Đọc tiếp
 
 - `docs/START_HERE_PHASE1.md`: thứ tự làm từng bước.

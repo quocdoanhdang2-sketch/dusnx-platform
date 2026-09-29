@@ -19,3 +19,9 @@ python/tests/test_runtime/
 **/*.db
 **/*.db-shm
 **/*.db-wal
+data/imported/
+data/raw/
+data/prepared/
+**/*.parquet
+artifacts/**/*.pt
+artifacts/**/*.jsonl

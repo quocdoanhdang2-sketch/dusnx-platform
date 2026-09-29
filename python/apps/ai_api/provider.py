@@ -12,6 +12,7 @@ import os
 from typing import Optional
 import urllib.request
 import urllib.error
+from .grounding import is_memory_question
 
 
 def get_current_provider() -> str:
@@ -200,11 +201,11 @@ def generate_response(
 
     # Build conversation history context (last 6 turns)
     history_lines = []
-    if session_history:
+    if session_history and not (memories and is_memory_question(user_message)):
         for msg in (session_history or [])[-6:]:
             role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
             history_lines.append(f"{role}: {msg['content'][:300]}")
-    history_ctx = f"\nLịch sử hội thoại gần đây:\n" + "\n".join(history_lines) if history_lines else ""
+    history_ctx = "\nHội thoại tham khảo, KHÔNG phải quyết định đã xác nhận:\n" + "\n".join(history_lines) if history_lines else ""
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
@@ -218,6 +219,8 @@ Quan trọng:
 - Trả lời trực tiếp câu hỏi của người dùng dựa trên thông tin trí nhớ đang hiệu lực ở trên.
 - Tuyệt đối không nhắc lại các quyết định đã bị thay thế hoặc thông tin không có trong danh sách.
 - Nếu không có thông tin liên quan, hãy nói rõ là chưa biết.
+- Câu hỏi, giả định và tin đồn của người dùng không phải sự kiện đã được lưu.
+- Danh sách trí nhớ hiệu lực có thẩm quyền cao hơn lịch sử; không hợp nhất hai nguồn.
 """
 
     if p == "ollama":

@@ -20,7 +20,7 @@ def read_jsonl(path: str | Path) -> list[dict]:
         for line in f:
             if line.strip():
                 row = json.loads(line)
-                if "case_id" in row or "expected_intent" in row or "label_source" in row:
+                if "case_id" in row or "expected_intent" in row or "label_source" in row or row.get("partition") in ("test", "holdout"):
                     raise ValueError("Evaluation benchmark records must not be used as training data")
                 rows.append(row)
     return rows
@@ -53,9 +53,15 @@ class SequenceWindowDataset(Dataset):
         # event.  feedback_value in JSONL is produced *after* an event, so it
         # must only be supplied to the following event for the same user.
         self.samples: list[tuple[list[dict], float]] = []
-        grouped = group_sorted(rows)
-        for uid, events in grouped.items():
+        grouped = defaultdict(list)
+        for row in rows:
+            grouped[(row["global_user_id"], row.get("sequence_id", row["global_user_id"]))].append(row)
+        for (uid, _), events in grouped.items():
+            events.sort(key=lambda row: row["event_time_utc"])
             if allowed_users is not None and uid not in allowed_users:
+                continue
+            if len(events) == 1 and events[0].get("layout") == "single_turn":
+                self.samples.append((events, 0.0))
                 continue
             if len(events) < 2:
                 continue
@@ -117,7 +123,7 @@ class SequenceWindowDataset(Dataset):
             "time_gap": time_gap,
             "feedback": feedback,
             "valid_mask": valid_mask,
-            "intent": torch.tensor(INTENT_TO_ID[target["intent_label"]], dtype=torch.long),
-            "agent": torch.tensor(AGENT_TO_ID[target["selected_agent"]], dtype=torch.long),
-            "next_action": torch.tensor(NEXT_ACTION_TO_ID[target["next_action_label"]], dtype=torch.long),
+            "intent": torch.tensor(INTENT_TO_ID[target["intent_label"]] if target.get("intent_label") is not None else -100, dtype=torch.long),
+            "agent": torch.tensor(AGENT_TO_ID[target["selected_agent"]] if target.get("selected_agent") is not None else -100, dtype=torch.long),
+            "next_action": torch.tensor(NEXT_ACTION_TO_ID[target["next_action_label"]] if target.get("next_action_label") is not None else -100, dtype=torch.long),
         }
