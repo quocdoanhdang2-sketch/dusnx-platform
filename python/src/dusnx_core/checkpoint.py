@@ -4,7 +4,83 @@ import json
 import torch
 
 from .config import ModelConfig
+from .constants import INTENTS, AGENTS, NEXT_ACTIONS
 from .model import DUSNXModel
+
+
+class CheckpointIncompatibleError(ValueError):
+    """Raised when a checkpoint is corrupt or incompatible with model architecture/vocab."""
+    pass
+
+
+def validate_checkpoint_compatibility(path_or_dict, expected_cfg: ModelConfig | None = None) -> dict:
+    """Verify that a checkpoint conforms to current vocabularies, heads, and dimensions."""
+    if isinstance(path_or_dict, (str, Path)):
+        p = Path(path_or_dict)
+        if not p.is_file():
+            raise CheckpointIncompatibleError(f"Checkpoint file not found: {p}")
+        ckpt = torch.load(p, map_location="cpu", weights_only=False)
+    elif isinstance(path_or_dict, dict):
+        ckpt = path_or_dict
+    else:
+        raise CheckpointIncompatibleError(f"Invalid checkpoint input type: {type(path_or_dict)}")
+
+    if "model_state" not in ckpt or "model_config" not in ckpt:
+        raise CheckpointIncompatibleError("Checkpoint missing 'model_state' or 'model_config' keys")
+
+    cfg_dict = ckpt["model_config"]
+    cfg = ModelConfig.from_dict(cfg_dict)
+    state = ckpt["model_state"]
+
+    # Verify head dimensions against current label space
+    if "intent_head.weight" in state:
+        num_intents = state["intent_head.weight"].shape[0]
+        if num_intents != len(INTENTS):
+            raise CheckpointIncompatibleError(
+                f"Checkpoint intent head has {num_intents} classes, but INTENTS vocabulary has {len(INTENTS)}: {INTENTS}"
+            )
+    else:
+        raise CheckpointIncompatibleError("Missing 'intent_head.weight' in model_state")
+
+    if "router_head.weight" in state:
+        num_agents = state["router_head.weight"].shape[0]
+        if num_agents != len(AGENTS):
+            raise CheckpointIncompatibleError(
+                f"Checkpoint router head has {num_agents} classes, but AGENTS vocabulary has {len(AGENTS)}: {AGENTS}"
+            )
+    else:
+        raise CheckpointIncompatibleError("Missing 'router_head.weight' in model_state")
+
+    if "next_action_head.weight" in state:
+        num_actions = state["next_action_head.weight"].shape[0]
+        if num_actions != len(NEXT_ACTIONS):
+            raise CheckpointIncompatibleError(
+                f"Checkpoint action head has {num_actions} classes, but NEXT_ACTIONS vocabulary has {len(NEXT_ACTIONS)}: {NEXT_ACTIONS}"
+            )
+    else:
+        raise CheckpointIncompatibleError("Missing 'next_action_head.weight' in model_state")
+
+    # Verify state dimensions
+    combined = cfg.global_state_dim + cfg.platform_state_dim + cfg.task_state_dim
+    if "shared.0.weight" in state and state["shared.0.weight"].shape[1] != combined:
+        raise CheckpointIncompatibleError(
+            f"State dimensions mismatch: shared layer expects {combined} inputs, but got {state['shared.0.weight'].shape[1]}"
+        )
+
+    if expected_cfg is not None:
+        if cfg.to_dict() != expected_cfg.to_dict():
+            raise CheckpointIncompatibleError("Checkpoint config does not match expected ModelConfig")
+
+    metadata = ckpt.get("metadata", {})
+    return {
+        "compatible": True,
+        "vocab_size": cfg.vocab_size,
+        "num_intents": len(INTENTS),
+        "num_agents": len(AGENTS),
+        "num_actions": len(NEXT_ACTIONS),
+        "combined_state_dim": combined,
+        "metadata": metadata,
+    }
 
 
 def save_checkpoint(path, model, cfg, metadata=None):
@@ -16,8 +92,10 @@ def save_checkpoint(path, model, cfg, metadata=None):
     }, path)
 
 
-def load_checkpoint(path, device="cpu"):
-    ckpt = torch.load(path, map_location=device)
+def load_checkpoint(path, device="cpu", validate=True):
+    ckpt = torch.load(path, map_location=device, weights_only=False)
+    if validate:
+        validate_checkpoint_compatibility(ckpt)
     cfg = ModelConfig.from_dict(ckpt["model_config"])
     model = DUSNXModel(cfg)
     model.load_state_dict(ckpt["model_state"])

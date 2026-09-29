@@ -9,11 +9,11 @@ for path in (REPO_ROOT / "python/src", REPO_ROOT / "python", REPO_ROOT):
         sys.path.insert(0, str(path))
 
 from dusnx_core.data_pipeline import write_rows, lock_holdout, assert_disjoint, read_rows
-from dusnx_core.designed_data import make_holdout, make_holdout_v2
+from dusnx_core.designed_data import make_holdout, make_holdout_v2, make_holdout_v3
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lock holdout benchmark")
-    parser.add_argument("--version", choices=["v1", "v2"], default="v2", help="Holdout version to lock")
+    parser.add_argument("--version", choices=["v1", "v2", "v3"], default="v3", help="Holdout version to lock")
     parser.add_argument("--output", help="Optional explicit output path")
     args = parser.parse_args()
 
@@ -21,10 +21,14 @@ if __name__ == "__main__":
         path = Path(args.output) if args.output else Path("benchmarks/holdout_v1.jsonl")
         seed = 914207
         generator = make_holdout
-    else:
+    elif args.version == "v2":
         path = Path(args.output) if args.output else Path("benchmarks/holdout_v2.jsonl")
         seed = 20261001
         generator = make_holdout_v2
+    else:
+        path = Path(args.output) if args.output else Path("benchmarks/holdout_v3.jsonl")
+        seed = 20261002
+        generator = make_holdout_v3
 
     manifest = path.with_suffix(".manifest.json")
     if path.exists() or manifest.exists():
@@ -37,6 +41,7 @@ if __name__ == "__main__":
             Path("runtime/prepared/validation.jsonl"),
             Path("benchmarks/week3_personalization_pilot.jsonl"),
             Path("benchmarks/holdout_v1.jsonl") if args.version != "v1" else None,
+            Path("benchmarks/holdout_v2.jsonl") if args.version == "v3" else None,
         ) if p and p.exists()
     ]
     check_partitions = {"holdout": rows}

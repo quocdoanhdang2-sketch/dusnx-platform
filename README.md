@@ -248,17 +248,18 @@ python python/scripts/import_data.py --source massive --input runtime/external-d
 python python/scripts/prepare_data.py --legacy data/synthetic_30k_v2.jsonl
 python python/scripts/pipeline_smoke.py --output runtime/new-smoke-run
 python python/scripts/train.py --config configs/router_colab.yaml --checkpoint artifacts/new-router.pt
-# Đánh giá 5 nhánh độc lập trên tập khóa holdout v2:
+# Đánh giá 5 nhánh độc lập trên tập chẩn đoán holdout v2:
 python python/scripts/evaluate_personalization.py --benchmark benchmarks/holdout_v2.jsonl --holdout-manifest benchmarks/holdout_v2.manifest.json --all-systems --include-model-only --provider mock --checkpoint artifacts/new-router.pt --output-dir runtime/eval_holdout_v2
 ```
 
-Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ. Pipeline dữ liệu xuất `runtime/prepared/{train,validation}.jsonl` và `manifest.json`; train xuất best `.pt`, `.last.pt`, config, metric/epoch; đánh giá xuất `predictions.jsonl`, `cases.json`, `summary.json/.md`, `errors.json`. Với bản clone thiếu 30k cũ, bỏ `--legacy`; khi đó dùng bank thiết kế 18 họ tình huống (843 event train / 141 event val). Xem [nguồn/license/revision](docs/DATA_SOURCES.md).
+Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ. Pipeline dữ liệu xuất `runtime/prepared/{train,validation}.jsonl` và `manifest.json`; train xuất best `.pt`, `.last.pt`, config, metric/epoch; đánh giá xuất `predictions.jsonl`, `cases.json`, `summary.json/.md`, `errors.json`. Với dữ liệu chuẩn bị mới nhất: 4,185 sự kiện train (371 chuỗi, 73 họ template, 596 mẫu `clarify`) và 203 sự kiện validation (46 chuỗi). Xem [nguồn/license/revision](docs/DATA_SOURCES.md).
 
-- **Holdout v1 (8 chuỗi/29 bước):** Đã bị xem xét và dùng để chẩn đoán hệ thống, nên không dùng để chọn model/rule.
-- **Holdout v2 (10 chuỗi/38 bước, SHA-256 `1dfd8f1b...`):** Đã khóa độc lập làm benchmark mới chưa bị nhìn trước, bao quát unconfirmed claims, successive architecture, cache/theme rejections, ambiguity, cross-platform Web/PowerPoint.
+- **Holdout v1 (8 chuỗi/29 bước):** Đã bị xem xét và dùng để chẩn đoán hệ thống, nên không dùng để chọn model/rule (Development Set).
+- **Holdout v2 (10 chuỗi/38 bước, SHA-256 `1dfd8f1b...`):** Đã chạy đánh giá chẩn đoán (Diagnostic Set), phục vụ chẩn đoán căn nguyên của model-only và clarification.
+- **Holdout v3 (20 chuỗi/311 bước, SHA-256 `094268aa...`):** Tập đánh giá độc lập hoàn toàn mới, khóa manifest và mã băm toàn vẹn. Bao gồm chuỗi dài 15–30 lượt, đổi phiên, chuyển đổi Web ↔ PowerPoint, hai trí nhớ cùng loại, câu thiếu chủ ngữ, và không lặp từ khóa. **TUYỆT ĐỐI KHÔNG CHẠY BẤT KỲ MODEL NÀO TRÊN V3** cho đến khi hoàn tất thẩm định nhãn độc lập.
 - **MASSIVE vi-VN:** Đã tải nhưng toàn bộ mapping chờ reviewer duyệt nên bị loại hoàn toàn khỏi tập train; CSConDa chưa có quyền và được bỏ qua an toàn.
-- **Đánh giá 5 nhánh:** Tách riêng `baseline_a` (no-memory), `baseline_b` (static-memory), `model_only` (pure checkpoint không qua rule), `dusnx_no_state` (ablation xóa recurrent state mỗi bước), và `dusnx` (full system). Kết quả cho thấy năng lực hiện tại của hệ thống đến chủ yếu từ SQLite CRUD và rules; giả thuyết recurrent state tốt hơn ablation chưa được chứng minh trên chuỗi ngắn (3-7 lượt).
-- **Thẩm định nhãn độc lập:** File mẫu blind CSV tại `runtime/reviewer_package/holdout_v2_blind_template.csv` để gửi reviewer thứ hai độc lập gán nhãn mà không bị lộ dự đoán của model hay gold AI (xem [hướng dẫn duyệt](docs/ANNOTATION_GUIDE.md)).
+- **Đánh giá 5 nhánh:** Tách riêng `baseline_a` (no-memory), `baseline_b` (static-memory), `model_only` (pure checkpoint không qua rule), `dusnx_no_state` (ablation xóa recurrent state mỗi bước), và `dusnx` (full system). Kết quả cho thấy năng lực hiện tại của hệ thống đến chủ yếu từ SQLite CRUD và rules; giả thuyết recurrent state tốt hơn ablation cần kiểm chứng trên chuỗi dài độc lập (Holdout v3).
+- **Thẩm định nhãn độc lập:** File mẫu blind CSV tại `runtime/reviewer_package/holdout_v2_blind_template.csv` và `holdout_v3_blind_template.csv` để gửi reviewer độc lập gán nhãn mà không bị lộ đáp án hay dự đoán của model (xem [hướng dẫn duyệt](docs/ANNOTATION_GUIDE.md)).
 
 ## Đọc tiếp
 

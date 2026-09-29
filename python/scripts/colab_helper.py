@@ -24,6 +24,11 @@ def drive_config(project, output, *, smoke=False):
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     cfg = yaml.safe_load((project / "configs/router_colab.yaml").read_text(encoding="utf-8"))
+    try:
+        commit_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project, text=True).strip()
+    except Exception:
+        commit_sha = "unknown"
+    cfg["metadata"] = {"commit_sha": commit_sha}
     cfg.update(
         data=str(project / "runtime/prepared/train.jsonl"),
         validation_data=str(project / "runtime/prepared/validation.jsonl"),

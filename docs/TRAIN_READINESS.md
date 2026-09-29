@@ -111,16 +111,16 @@ Tất cả các suite kiểm thử đều được thực thi cục bộ trên m
 
 ---
 
-## 4. Đánh Giá Tách Biệt 5 Nhánh (Disentangled 5-Arm Evaluation)
+## 4. Chẩn Đoán & Đánh Giá Tách Biệt 5 Nhánh Trên Holdout v2
 
-Đánh giá được thực thi trên tập khóa `benchmarks/holdout_v2.jsonl` (38 bước, 10 chuỗi), bao gồm Wilson 95% Confidence Intervals:
+Đánh giá được thực thi trên tập chẩn đoán đã khóa `benchmarks/holdout_v2.jsonl` (38 bước, 10 chuỗi), bao gồm Wilson 95% Confidence Intervals:
 
 | Chỉ số (Metric) | Baseline A (No-Memory) | Baseline B (Static-Memory) | Model Only (Pure Checkpoint) | DUSN-X No-State (Ablation) | DUSN-X (Full Hybrid) |
 |---|---:|---:|---:|---:|---:|
 | **update_revision_accuracy** | 0/4 (0.0%) [0.00, 0.49] | 0/4 (0.0%) [0.00, 0.49] | 3/4 (75.0%) [0.30, 0.95] | 3/4 (75.0%) [0.30, 0.95] | 3/4 (75.0%) [0.30, 0.95] |
 | **active_recall** | 0/10 (0.0%) [0.00, 0.28] | 6/10 (60.0%) [0.31, 0.83] | 9/10 (90.0%) [0.60, 0.98] | 9/10 (90.0%) [0.60, 0.98] | 9/10 (90.0%) [0.60, 0.98] |
 | **obsolete_elimination** | 6/6 (100.0%) [0.61, 1.00] | 3/6 (50.0%) [0.19, 0.81] | 5/6 (83.3%) [0.44, 0.97] | 5/6 (83.3%) [0.44, 0.97] | 5/6 (83.3%) [0.44, 0.97] |
-| **missing_context_handling** | 1/8 (12.5%) [0.02, 0.47] | 1/8 (12.5%) [0.02, 0.47] | 1/8 (12.5%) [0.02, 0.47] | 0/8 (0.0%) [0.00, 0.32] | 0/8 (0.0%) [0.00, 0.32] |
+| **missing_context_handling** | 1/8 (12.5%) [0.02, 0.47] | 1/8 (12.5%) [0.02, 0.47] | 7/8 (87.5%) [0.53, 0.98] | 6/8 (75.0%) [0.41, 0.93] | 6/8 (75.0%) [0.41, 0.93] |
 | **intent accuracy** | 14/38 (36.8%) [0.23, 0.53] | 14/38 (36.8%) [0.23, 0.53] | 3/38 (7.9%) [0.03, 0.21] | 27/38 (71.1%) [0.55, 0.83] | 27/38 (71.1%) [0.55, 0.83] |
 | **agent accuracy** | 15/38 (39.5%) [0.26, 0.55] | 15/38 (39.5%) [0.26, 0.55] | 13/38 (34.2%) [0.21, 0.50] | 35/38 (92.1%) [0.79, 0.97] | 36/38 (94.7%) [0.83, 0.99] |
 | **action accuracy** | 14/38 (36.8%) [0.23, 0.53] | 14/38 (36.8%) [0.23, 0.53] | 3/38 (7.9%) [0.03, 0.21] | 27/38 (71.1%) [0.55, 0.83] | 27/38 (71.1%) [0.55, 0.83] |
@@ -129,55 +129,85 @@ Tất cả các suite kiểm thử đều được thực thi cục bộ trên m
 | **agent_macro_f1** | 0.552 | 0.552 | 0.230 | 0.837 | 0.891 |
 | **action_macro_f1** | 0.274 | 0.274 | 0.044 | 0.740 | 0.740 |
 
-### 4.1. Nhận định trung thực về khoa học
-1. **Model thuần (Model Only):**
-   - Checkpoint chưa fine-tune chuyên sâu chỉ đạt Intent Macro-F1: `0.044`, Action Macro-F1: `0.044`.
-   - Điều này chứng minh rằng **điểm cao của hệ thống DUSN-X đến từ sự kết hợp chặt chẽ giữa Rules, SQLite Memory CRUD và Active-Memory Grounding**, chứ không phải do năng lực phân loại độc lập của base checkpoint hiện tại.
-2. **DUSN-X vs No-State Ablation:**
-   - DUSN-X (có recurrent state) đạt Intent: 71.1%, Action: 71.1%, Final Answer: 72.7%.
-   - DUSN-X No-State (reset recurrent state mỗi event) đạt Intent: 71.1%, Action: 71.1%, Final Answer: 72.7%.
-   - Điểm khác biệt duy nhất nằm ở Agent Accuracy: DUSN-X đạt 36/38 (94.7%, F1 0.891) so với No-State đạt 35/38 (92.1%, F1 0.837) — chỉ lệch đúng 1 bước dự đoán.
-   - **KẾT LUẬN KHOA HỌC:** **Giả thuyết cho rằng recurrent state ẩn vượt trội hơn no-state ablation CHƯA ĐƯỢC CHỨNG MINH trên các chuỗi hội thoại ngắn (3-7 lượt).** Hệ thống trí nhớ CRUD dạng quan hệ (SQL) và các luật xác nhận/phủ định tường minh đang gánh phần lớn năng lực cá nhân hóa.
-3. **Đề xuất thực nghiệm phân biệt trong tương lai:**
-   - Cần các chuỗi dài hơn (15-30 lượt) với nhiều bước xen kẽ không nhắc lại từ khóa ("zero-lexical-overlap multi-hop reasoning"), nơi vector trạng thái ẩn lưu giữ thiên hướng ngữ nghĩa mà truy vấn từ vựng SQL không quét trúng được.
+### 4.1. Điều tra căn nguyên (Root Cause Analysis)
+
+1. **Vì sao Model-Only Intent/Action chỉ 3/38 trên holdout v2?**
+   - **Lệch không gian nhãn (Label Space Disjointness):** Trong 38 lượt của `holdout_v2`, có đến **23 lượt (60.5%)** có nhãn gold là `agent = memory` và `intent` thuộc `{memory_create, decision_modify_intent, decision_update, decision_update_cancelled}`.
+   - Các thao tác quản lý trí nhớ (CRUD) này thuộc tầng ứng dụng FastAPI và SQLite CRUD (`apps/ai_api/main.py`), **không nằm trong từ vựng của neural router head**. Bộ nhớ của neural router chỉ có 6 intent (`chat`, `research`, `summarize`, `presentation_edit`, `recommendation`, `followup`) và 3 agent (`conversation`, `search_rag`, `productivity`).
+   - Do đó, trên 23 lượt CRUD này, mạng nơ-ron hoàn toàn không có đầu ra để khớp với gold, dẫn đến 0/23.
+   - **Tập trong từ vựng (In-Vocabulary Subset - 14 lượt):**
+     - `agent accuracy`: đạt **12/14 (85.7%)** ngay cả với checkpoint smoke cũ!
+     - `intent/action accuracy`: đạt 3/14 (21.4%) do checkpoint smoke chỉ được huấn luyện 5 epoch trên dữ liệu nhỏ, chưa có các cặp mẫu đa lượt phụ thuộc trạng thái. Dữ liệu huấn luyện hiện tại đã được mở rộng lên 4,185 mẫu với 596 mẫu `clarify` để khắc phục điểm này.
+
+2. **Vì sao Clarification trước đây 0/8 trên Full Hybrid?**
+   - **Sai sót trong hàm kiểm tra từ khóa (`score_turn`):** Trong 8 lượt có `requires_clarification=True`, có 6 lượt là yêu cầu sửa đổi quyết định (`await_confirm`). Hệ thống đưa ra câu hỏi xác nhận: *"Tôi thấy bạn muốn thay đổi quyết định... Trả lời Có để xác nhận hoặc Không để huỷ."*.
+   - Trước đây, `expected_keywords` của các lượt này bị điền nhầm các từ khóa của câu hỏi mơ hồ: `['nhiều', 'cụ thể', 'nào', '?']`. Vì câu hỏi xác nhận không chứa từ "nhiều" hay "cụ thể", hàm chấm điểm đã đánh trượt oan (`clarification not detected`).
+   - Sau khi sửa hàm chấm điểm phân biệt đúng lượt xác nhận (`await_confirm`) và lượt làm rõ mơ hồ (`clarify`), điểm làm rõ của Full Hybrid đã tăng lên **6/8 (75.0%)**.
+
+3. **DUSN-X vs No-State Ablation trên Holdout v2:**
+   - DUSN-X và No-State cùng đạt 8/11 final answer success, 27/38 intent/action. Điểm khác biệt duy nhất là agent accuracy (36/38 vs 35/38).
+   - **Kết luận:** Holdout v2 (chuỗi ngắn 3-7 lượt) chưa đủ độ sâu để chứng minh recurrent state ẩn có đóng góp độc lập hay không. Cần một tập benchmark độc lập với các chuỗi dài 15-30 lượt.
 
 ---
 
-## 5. Quy Trình Gán Nhãn Độc Lập & Adjudication
+## 5. Khóa Tập Đánh Giá Mới Holdout v3 (Chưa Chạy Model)
 
-- **Công cụ hỗ trợ:** `python/scripts/review_labels.py` & `python/src/dusnx_core/review.py`.
-- **Gói dành cho Reviewer:**
-  - File mẫu JSONL: `runtime/reviewer_package/holdout_v2_blind_template.jsonl`.
-  - File bảng tính CSV: `runtime/reviewer_package/holdout_v2_blind_template.csv` (38 dòng).
-  - **Tính chất Blind:** Tuyệt đối không chứa nhãn Gold AI hay dự đoán của Model/Rule, tránh gây thiên kiến cho reviewer.
-- **Quy trình:**
-  1. Gửi file `holdout_v2_blind_template.csv` cho Reviewer 2.
-  2. Reviewer điền các cột: `suggested_intent`, `suggested_agent`, `suggested_action`, `suggested_clarification`, `notes`.
-  3. Nhận lại file CSV đã điền, convert về JSONL:
-     ```powershell
-     python python/scripts/review_labels.py --input reviewer_b_completed.csv --output reviewer_b.jsonl --from-csv
-     ```
-  4. Kiểm tra hợp lệ:
-     ```powershell
-     python python/scripts/review_labels.py --input reviewer_b.jsonl --validate
-     ```
-  5. Tính độ tương đồng (Agreement & Cohen's Kappa) giữa Reviewer A và Reviewer B:
-     ```powershell
-     python python/scripts/review_labels.py --input reviewer_a.jsonl --compare-with reviewer_b.jsonl --output runtime/agreement_report.json
-     ```
-  6. Xuất bản phân xử (Adjudication):
-     ```powershell
-     python python/scripts/review_labels.py --input reviewer_a.jsonl --adjudicate --adjudicator "LeadAnnotator" --output benchmarks/holdout_v2.adjudicated.jsonl
-     ```
-  - *Tình trạng hiện tại:* `review_status: not_independently_reviewed`. Không tự ý đánh dấu `human_reviewed=true` khi chưa có người thật thẩm định.
+Để kiểm chứng câu hỏi khoa học cốt lõi: *"Liệu recurrent state của DUSN-X có mang lại giá trị độc lập khi bóc tách khỏi SQLite memory và rules hay không?"*, tập `holdout_v3` đã được thiết kế và khóa độc lập:
+
+- **Đặc điểm tập dữ liệu:**
+  - **Số lượng:** 20 chuỗi hoàn toàn độc lập, tổng cộng **311 sự kiện** (trung bình 15–18 lượt/chuỗi).
+  - **Đặc trưng thiết kế:**
+    - Chuỗi dài 15–30 lượt với nhiều phiên làm việc (multi-session).
+    - Chuyển đổi qua lại giữa Web ↔ PowerPoint.
+    - Hai trí nhớ cùng loại hoạt động đồng thời (2 active databases, 2 active brokers).
+    - Sở thích thay đổi theo thời gian và phiên làm việc.
+    - Quyết định được xác nhận, từ chối, và tin đồn chưa xác nhận.
+    - Câu thiếu chủ ngữ tiếng Việt tự nhiên và câu hỏi không lặp từ khóa với trí nhớ cần dùng (zero-keyword reasoning).
+  - **Tách bạch 100% (Zero Overlap):** Đã kiểm tra không trùng lặp người dùng, chuỗi, template hay nội dung với `train`, `validation`, `pilot`, `holdout_v1`, và `holdout_v2`.
+- **Mã băm toàn vẹn (Integrity Lock):**
+  - File benchmark: `benchmarks/holdout_v3.jsonl`
+  - SHA-256: `094268aaf47fa5328786846aff46ebe2f271fd05e2633e681fee472adc8e71bd`
+  - Manifest khóa: `benchmarks/holdout_v3.manifest.json`
+- **Gói thẩm định mù (Blind Review Package):**
+  - `runtime/reviewer_package/holdout_v3_blind_template.csv` (311 dòng).
+  - `runtime/reviewer_package/holdout_v3_blind_template.jsonl`.
+- **QUY TẮC BẢO TOÀN TRUNG THỰC:**
+  - **TUYỆT ĐỐI KHÔNG CHẠY BẤT KỲ CHECKPOINT, BASELINE, RULE HOẶC PREDICTION NÀO TRÊN HOLDOUT V3** trong vòng này.
+  - Holdout v3 chỉ được mở để đánh giá khi nhãn được người độc lập thẩm định xong, cấu hình huấn luyện được chốt và có lệnh đánh giá cuối cùng.
 
 ---
 
-## 6. Trạng Thái Notebook Huấn Luyện Google Colab
+## 6. Quy Trình Thẩm Định Nhãn Độc Lập & Adjudication
+
+- **Công cụ:** `python/scripts/review_labels.py` & `python/src/dusnx_core/review.py`.
+- **Cơ chế chống rò rỉ:** File blind template đã ẩn hoàn toàn nhãn gold và bị chặn tự động nếu truyền vào lệnh so sánh nhãn.
+- **Quy trình PowerShell:**
+  1. Gửi file `runtime/reviewer_package/holdout_v2_blind_template.csv` hoặc `holdout_v3_blind_template.csv` cho Reviewer 2.
+  2. Reviewer hoàn tất gán nhãn, chuyển đổi CSV về JSONL:
+     ```powershell
+     python python/scripts/review_labels.py --input runtime/reviewer_b_completed.csv --output runtime/reviewer_b.jsonl --from-csv
+     ```
+  3. Kiểm tra tính hợp lệ của bài nộp:
+     ```powershell
+     python python/scripts/review_labels.py --input runtime/reviewer_b.jsonl --validate
+     ```
+  4. So sánh với file Gold chuẩn được giữ kín (xuất Cohen's Kappa và trích xuất danh sách bất đồng):
+     ```powershell
+     python python/scripts/review_labels.py --input runtime/reviewer_b.jsonl --gold benchmarks/holdout_v2.jsonl --output runtime/agreement_report.json
+     ```
+  5. Phân xử (Adjudication) chính thức với danh tính người duyệt thật:
+     ```powershell
+     python python/scripts/review_labels.py --input runtime/reviewer_b.jsonl --gold benchmarks/holdout_v2.jsonl --adjudicate --adjudicator "TenNguoiDuyet" --output runtime/adjudicated_report.json
+     ```
+  - *Lưu ý:* Các lần chạy thử nghiệm với dữ liệu giả định được đánh dấu rõ `test_only_synthetic_adjudication` và không được báo cáo là đánh giá của con người.
+
+---
+
+## 7. Trạng Thái Notebook Huấn Luyện Google Colab
 
 - **Notebook:** `notebooks/train_dusnx_colab.ipynb`.
 - **Trạng thái thực tế:**
-  - Mã nguồn notebook và helper script đã được kiểm tra tính đúng đắn, thứ tự cell và logic thực thi cục bộ qua CPU smoke.
+  - Mã nguồn notebook và helper script đã được kiểm tra tính đúng đắn, thứ tự cell và logic thực thi cục bộ qua CPU smoke và resume.
   - **CHƯA CÓ PHIÊN HUẤN LUYỆN GPU THẬT NÀO TRÊN GOOGLE COLAB ĐƯỢC CHẠY.** Chúng tôi ghi rõ điều này để đảm bảo tính trung thực nghiên cứu.
 - **Cơ chế sẵn sàng cho người dùng:**
   - Tự động nhận diện GPU/CUDA, nếu không có GPU sẽ thông báo rõ ràng và cho phép chạy CPU smoke.

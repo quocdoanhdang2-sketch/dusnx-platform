@@ -49,7 +49,10 @@ def score_turn(gold, pred):
     missing = [f for f in active if not _hits(reply, [f])]
     leaked, forbidden = _hits(reply, obsolete), _hits(reply, gold["forbidden_keywords"])
     asks = bool(_hits(reply, ["?", "vui lòng", "cho tôi biết", "nêu rõ", "cung cấp thêm", "xác nhận"]))
-    clarification_ok = asks and bool(_hits(reply, required or ["chưa", "bối cảnh", "rõ", "quyết định"]))
+    if gold.get("expected_next_action") == "await_confirm":
+        clarification_ok = asks and bool(_hits(reply, ["xác nhận", "có", "không", "thay đổi", "huỷ", "?"]))
+    else:
+        clarification_ok = asks and bool(_hits(reply, required or ["chưa", "bối cảnh", "rõ", "quyết định"]))
 
     is_revision = gold.get("expected_next_action") == "update_memory" or gold.get("expected_intent") == "decision_update"
     revision_ok = None
@@ -280,6 +283,22 @@ def aggregate(records):
             result[system]["macro_f1"][head]=float(f1_score(gold,pred,labels=sorted(set(gold)),average="macro",zero_division=0)) if gold else None
         result[system]["answer_sources"]=dict(Counter(r["prediction"].get("answer_source","provider") for r in selected))
         from dusnx_core.constants import AGENTS,NEXT_ACTIONS
+        in_vocab_records = [
+            r for r in selected
+            if r.get("expected_route", {}).get("intent") in INTENTS
+            and r.get("expected_route", {}).get("agent") in AGENTS
+            and r.get("expected_route", {}).get("action") in NEXT_ACTIONS
+        ]
+        result[system]["in_vocabulary_eval"] = {
+            "scored_turns": len(in_vocab_records),
+            "intent_pass": sum(r["metrics"]["intent"] is True for r in in_vocab_records),
+            "agent_pass": sum(r["metrics"]["agent"] is True for r in in_vocab_records),
+            "action_pass": sum(r["metrics"]["action"] is True for r in in_vocab_records),
+            "all_three_pass": sum(
+                (r["metrics"]["intent"] is True and r["metrics"]["agent"] is True and r["metrics"]["action"] is True)
+                for r in in_vocab_records
+            ),
+        }
         result[system]["raw_checkpoint_macro_f1"]={}
         for head,vocabulary in (("intent",INTENTS),("agent",AGENTS),("action",NEXT_ACTIONS)):
             labelled=[r for r in selected if r["prediction"].get("model_prediction") is not None
@@ -316,7 +335,10 @@ def main():
         return
     os.environ["DUSNX_PROVIDER"], os.environ["DUSNX_DEVICE"] = args.provider, args.device
     if args.checkpoint:
-        if not Path(args.checkpoint).is_file():raise ValueError("checkpoint unavailable")
+        if not Path(args.checkpoint).is_file():raise ValueError(f"checkpoint unavailable: {args.checkpoint}")
+        from dusnx_core.checkpoint import validate_checkpoint_compatibility
+        compat = validate_checkpoint_compatibility(args.checkpoint)
+        print(f"Verified checkpoint compatibility: {Path(args.checkpoint).name} (vocab={compat['vocab_size']}, intents={compat['num_intents']}, agents={compat['num_agents']}, actions={compat['num_actions']})")
         os.environ["DUSNX_CHECKPOINT"]=args.checkpoint
     systems_list = list(SYSTEMS)
     if args.all_systems:

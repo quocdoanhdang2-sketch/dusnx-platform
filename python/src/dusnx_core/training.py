@@ -30,10 +30,13 @@ def set_seed(seed):
     if torch.cuda.is_available():torch.cuda.manual_seed_all(seed)
 
 
-def build_training_metadata(data_path,config_path,seed):
-    return dict(seed=seed,data=str(data_path),dataset_sha256=sha256(data_path),config=str(config_path),
-                feedback_contract=FEEDBACK_CONTRACT_VERSION,
-                trained_at_utc=datetime.now(timezone.utc).isoformat().replace("+00:00","Z"))
+def build_training_metadata(data_path,config_path,seed,extra_meta=None):
+    m = dict(seed=seed,data=str(data_path),dataset_sha256=sha256(data_path),config=str(config_path),
+             feedback_contract=FEEDBACK_CONTRACT_VERSION,
+             trained_at_utc=datetime.now(timezone.utc).isoformat().replace("+00:00","Z"))
+    if extra_meta:
+        m.update(extra_meta)
+    return m
 
 
 def masked_loss(logits,target):
@@ -124,7 +127,7 @@ def train(config_path,*,data=None,resume=None,init_from=None,epochs=None,checkpo
     torch.set_num_threads(int(cfg.get("cpu_threads",2)))
     seed=int(cfg.get("seed",42));set_seed(seed)
     rows=read_jsonl(cfg["data"])
-    meta=build_training_metadata(cfg["data"],config_path,seed)
+    meta=build_training_metadata(cfg["data"],config_path,seed,extra_meta=cfg.get("metadata"))
     if cfg.get("validation_data"):
         val_rows=read_jsonl(cfg["validation_data"])
         validate_training(rows);validate_training(val_rows)

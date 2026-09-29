@@ -152,6 +152,12 @@ TRAJECTORIES = {
     "presentation_iteration": ["remember", "slides", "slides", "recall"],
     "deep_research_cycle": ["research", "summarize", "research", "summarize", "recommendation"],
     "decision_with_discussion": ["remember", "chat", "chat", "recall"],
+    "clarify_ambiguous_request": ["missing", "missing", "remember", "recall"],
+    "clarify_before_action": ["missing", "remember", "slides", "recall"],
+    "repeated_clarification": ["missing", "missing", "remember", "research", "recall"],
+    "state_pivot_correction": ["remember", "modify", "confirm", "modify", "reject", "recall"],
+    "cross_tool_workflow": ["research", "summarize", "slides", "modify", "confirm", "recall"],
+    "ambiguity_resolution": ["missing", "remember", "chat", "modify", "confirm", "recall"],
 }
 
 TOPICS = [
@@ -448,3 +454,6 @@ def make_holdout_v2(seed=20261001):
             ))
             prior.append(cid)
     return rows
+
+
+from .designed_data_v3 import make_holdout_v3

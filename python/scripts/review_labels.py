@@ -1,4 +1,4 @@
-"""CLI for prediction-blind review exports, validation, agreement reports, CSV conversion, and adjudication."""
+"""CLI for prediction-blind review exports, validation, gold comparison, agreement reports, CSV conversion, and adjudication."""
 import argparse
 import csv
 import json
@@ -11,7 +11,10 @@ for path in (REPO_ROOT / "python/src", REPO_ROOT / "python", REPO_ROOT):
         sys.path.insert(0, str(path))
 
 from dusnx_core.data_pipeline import read_rows, write_rows
-from dusnx_core.review import review_sample, validate_review, agreement, adjudicate
+from dusnx_core.review import (
+    review_sample, validate_review, agreement, adjudicate,
+    normalize_gold_benchmark, is_blind_template, FIELDS
+)
 
 
 def export_csv(rows, output_path):
@@ -27,6 +30,8 @@ def export_csv(rows, output_path):
             labels = r.get("labels", {})
             active = labels.get("active")
             obsolete = labels.get("obsolete")
+            clarify = labels.get("requires_clarification")
+            clarify_str = "true" if clarify is True else ("false" if clarify is False else "")
             writer.writerow({
                 "record_id": r.get("record_id"),
                 "sequence_id": r.get("sequence_id"),
@@ -36,12 +41,12 @@ def export_csv(rows, output_path):
                 "user_message": r.get("user_message"),
                 "reviewer": r.get("reviewer") or "",
                 "review_date": r.get("review_date") or "",
-                "label_active": ", ".join(active) if isinstance(active, list) else (active or ""),
-                "label_obsolete": ", ".join(obsolete) if isinstance(obsolete, list) else (obsolete or ""),
+                "label_active": ", ".join(active) if isinstance(active, (list, set, tuple)) else (active or ""),
+                "label_obsolete": ", ".join(obsolete) if isinstance(obsolete, (list, set, tuple)) else (obsolete or ""),
                 "label_intent": labels.get("intent") or "",
                 "label_agent": labels.get("agent") or "",
                 "label_action": labels.get("action") or "",
-                "label_requires_clarification": labels.get("requires_clarification") if labels.get("requires_clarification") is not None else "",
+                "label_requires_clarification": clarify_str,
                 "notes": r.get("notes") or "",
             })
 
@@ -77,26 +82,42 @@ def import_csv(input_path):
     return rows
 
 
+def load_reviewed_records(path: Path):
+    if str(path).endswith(".csv"):
+        return import_csv(path)
+    raw = read_rows(path)
+    # Check if this is a gold benchmark file with expected_* fields rather than labels
+    if raw and ("expected_intent" in raw[0] or "expected_agent" in raw[0]):
+        return normalize_gold_benchmark(raw)
+    return raw
+
+
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Label review, agreement and adjudication CLI")
+    ap = argparse.ArgumentParser(description="Label review, agreement, gold comparison, and adjudication CLI")
     ap.add_argument("--input", required=True, help="Input benchmark/data file or reviewer A file")
-    ap.add_argument("--output", required=True, help="Output destination for template, report or adjudication")
+    ap.add_argument("--output", help="Output destination for template, report, or adjudication")
     ap.add_argument("--compare-with", help="Path to reviewer B file for agreement comparison")
+    ap.add_argument("--gold", help="Path to private gold benchmark file to compare reviewer against")
     ap.add_argument("--sequences", type=int, default=None, help="Number of sequences to sample (default all)")
     ap.add_argument("--seed", type=int, default=42, help="Random seed for sampling")
-    ap.add_argument("--validate", action="store_true", help="Validate reviewer formatting")
+    ap.add_argument("--validate", action="store_true", help="Validate reviewer formatting and schema")
     ap.add_argument("--to-csv", action="store_true", help="Convert JSONL review template to CSV for Excel/Sheets")
     ap.add_argument("--from-csv", action="store_true", help="Convert completed CSV review back to JSONL")
-    ap.add_argument("--adjudicate", action="store_true", help="Produce adjudication file from two reviews")
+    ap.add_argument("--adjudicate", action="store_true", help="Produce adjudication file from two reviews or reviewer vs gold")
     ap.add_argument("--adjudicator", help="Name of independent adjudicator")
+    ap.add_argument("--resolutions", help="Optional JSON file with resolved labels for disagreements")
+    ap.add_argument("--blind", action="store_true", help="Export an unlabelled blind review package")
     args = ap.parse_args()
 
     input_path = Path(args.input)
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if not args.validate and not args.output:
+        raise ValueError("--output is required for this action")
+    output_path = Path(args.output) if args.output else None
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if args.to_csv:
-        rows = read_rows(input_path)
+        rows = load_reviewed_records(input_path)
         export_csv(rows, output_path)
         print(f"Exported CSV review sheet with {len(rows)} rows to {output_path}")
     elif args.from_csv:
@@ -104,25 +125,41 @@ if __name__ == "__main__":
         write_rows(output_path, rows)
         print(f"Converted CSV review to JSONL with {len(rows)} records at {output_path}")
     elif args.validate:
-        rows = import_csv(input_path) if str(input_path).endswith(".csv") else read_rows(input_path)
+        rows = load_reviewed_records(input_path)
         count = validate_review(rows)
-        print(f"Valid review file: {count} records reviewed in {input_path}")
-    elif args.compare_with and not args.adjudicate:
-        left = import_csv(input_path) if str(input_path).endswith(".csv") else read_rows(input_path)
-        right = import_csv(args.compare_with) if str(args.compare_with).endswith(".csv") else read_rows(args.compare_with)
-        rep = agreement(left, right)
-        output_path.write_text(json.dumps(rep, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"Agreement calculated for {rep['records']} records. Disagreements: {len(rep['disagreements'])}. Written to {output_path}")
+        print(f"Valid review file: {count} records verified in {input_path}")
     elif args.adjudicate:
-        if not args.compare_with:
-            raise ValueError("--compare-with is required for adjudication")
         if not args.adjudicator:
             raise ValueError("--adjudicator name is required for adjudication")
-        left = import_csv(input_path) if str(input_path).endswith(".csv") else read_rows(input_path)
-        right = import_csv(args.compare_with) if str(args.compare_with).endswith(".csv") else read_rows(args.compare_with)
-        adj = adjudicate(left, right, adjudicator=args.adjudicator)
+        target_second = Path(args.gold) if args.gold else (Path(args.compare_with) if args.compare_with else None)
+        if not target_second:
+            raise ValueError("Either --gold or --compare-with is required for adjudication")
+        left = load_reviewed_records(input_path)
+        right = load_reviewed_records(target_second)
+        if is_blind_template(left) or is_blind_template(right):
+            raise ValueError("Cannot adjudicate an unlabelled blind template.")
+        resolutions = json.loads(Path(args.resolutions).read_text(encoding="utf-8")) if args.resolutions else None
+        adj = adjudicate(left, right, adjudicator=args.adjudicator, resolved_labels=resolutions)
         output_path.write_text(json.dumps(adj, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"Adjudication record written to {output_path}. Status: {adj['status']}. Total records: {adj['total_records']}")
+        print(f"Adjudication record written to {output_path}. Status: {adj['status']}. Total records: {adj['total_records']}, Disagreements: {adj['disagreements_count']}")
+    elif args.gold or args.compare_with:
+        reviewer_file = input_path
+        if args.gold:
+            gold_rows = load_reviewed_records(Path(args.gold))
+            rev_rows = load_reviewed_records(reviewer_file)
+            if is_blind_template(rev_rows):
+                raise ValueError("The reviewer file is an unfilled blind template! Cannot compare unlabelled data against gold.")
+            rep = agreement(rev_rows, gold_rows)
+            print(f"Comparison with gold benchmark ({Path(args.gold).name}): {rep['records']} records. Disagreements: {len(rep['disagreements'])}.")
+        else:
+            left = load_reviewed_records(input_path)
+            right = load_reviewed_records(Path(args.compare_with))
+            if is_blind_template(left) or is_blind_template(right):
+                raise ValueError("Cannot compare against an unlabelled blind template. Both files must have completed labels.")
+            rep = agreement(left, right)
+            print(f"Inter-reviewer agreement: {rep['records']} records. Disagreements: {len(rep['disagreements'])}.")
+        output_path.write_text(json.dumps(rep, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"Agreement report written to {output_path}")
     else:
         # Default: export blind review template
         rows = read_rows(input_path)
