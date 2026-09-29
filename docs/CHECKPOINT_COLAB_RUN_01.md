@@ -53,12 +53,18 @@ $env:DUSNX_DEVICE = "auto"
 powershell -ExecutionPolicy Bypass -File .\start-local.ps1
 ```
 
-Script sẽ tự động:
-1. Nhận diện checkpoint tốt nhất từ `training-results` hoặc `artifacts/`.
-2. Khởi chạy FastAPI AI API trên cổng `8000`.
-3. Khởi chạy .NET 8 Gateway trên cổng `8080`.
-4. Kiểm tra sức khỏe `/health` đảm bảo `runtime_mode = "trained_dusnx"` và `checkpoint_loaded = true`.
-5. Mở Web UI tại `http://127.0.0.1:8080`.
+Script thực hiện các bước kiểm tra và khởi động chuẩn hóa:
+1. **Chuẩn hóa đường dẫn checkpoint:** Chuẩn hóa biến `$env:DUSNX_CHECKPOINT` thành đường dẫn tuyệt đối (`[System.IO.Path]::GetFullPath`) trước khi nạp vào tiến trình FastAPI từ thư mục `python/`.
+2. **Kiểm tra tiến trình cổng 8000 tức thời (`Assert-DusnxFastApiCheckpoint`):**
+   - Nếu cổng 8000 đã có tiến trình FastAPI lắng nghe, script probe ngay `/health` trong 3 giây.
+   - Nếu checkpoint đang nạp khác với checkpoint được yêu cầu, script **dừng ngay lập tức** và thông báo chi tiết:
+     - PID và tên tiến trình đang chạy (ví dụ: `PID 24716, python`).
+     - Đường dẫn checkpoint đang nạp (`Loaded checkpoint`) vs đường dẫn được yêu cầu (`Requested checkpoint`).
+     - Câu lệnh PowerShell cụ thể để tắt tiến trình cũ: `Stop-Process -Id <PID> -Force`.
+   - **Tuyệt đối không chờ 60 giây** rồi báo lỗi chung, và **không tự ý dừng các tiến trình** chưa xác minh thuộc DUSN-X.
+3. **Khởi chạy .NET 8 Gateway** trên cổng `8080` (nếu chưa chạy).
+4. **Kiểm tra sức khỏe toàn hệ thống (`Wait-DusnxHttpService`)** đảm bảo `runtime_mode = "trained_dusnx"` và `checkpoint_loaded = true`.
+5. **Mở Web UI tại `http://127.0.0.1:8080`.**
 
 ---
 
@@ -74,6 +80,7 @@ Script sẽ tự động:
   "checkpoint_loaded": true,
   "checkpoint_path": "D:\\Projects\\dusnx-platform\\training-results\\colab-run-01\\extracted\\dusnx-router-full-01\\router.pt",
   "model_loaded": true,
+  "provider_ok": true,
   "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
   "metadata": {
     "epoch": 6,
@@ -81,25 +88,55 @@ Script sẽ tự động:
     "commit_sha": "50e1042aa45ca99d17c989817a08a0896f7a7935",
     "train_samples": 3814,
     "validation_samples": 157
+  },
+  "provider": {
+    "provider": "ollama",
+    "model": "qwen2.5:0.5b",
+    "available": true,
+    "base_url": "http://localhost:11434"
   }
 }
 ```
 
-### B. Luồng tương tác người dùng thực tế qua Gateway (Port 8080)
-1. **Đăng ký & Đăng nhập:** Tạo user `eval_user_2026`, nhận Bearer token và xác thực qua Gateway `/v1/auth/login`.
+### B. Luồng tương tác người dùng qua Gateway (Port 8080)
+1. **Đăng ký tài khoản thử nghiệm mới:** Tạo user mới `user_real_1790710227` (`ea01af6681ad3ec2b947f40857f78fa7`), nhận Bearer token và xác thực qua Gateway `/v1/auth/login`.
 2. **Lưu quyết định trong Phiên 1:**
    - Người dùng: *"Ghi nhớ quyết định: Chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026."*
-   - Router & State: Ghi nhận sự kiện `memory_create`, lưu bản ghi quyết định với trạng thái `active`.
+   - Router & State: Ghi nhận sự kiện `memory_create`, lưu bản ghi quyết định với trạng thái `active` (`is_active = 1`).
 3. **Sửa quyết định có xác nhận (Confirmation Guard):**
    - Người dùng: *"Đổi quyết định hạ tầng đám mây sang AWS nhé."*
    - Router & State: Nhận diện `decision_modify_intent` -> tạo `pending_decision` và sinh phản hồi xác nhận:
      > *"Tôi thấy bạn muốn thay đổi quyết định. Bạn có muốn: Cũ: GCP... Mới: AWS... Trả lời Có để xác nhận hoặc Không để huỷ."*
    - Người dùng: *"Có, tôi xác nhận đổi."*
    - Router & State: Nhận diện xác nhận, cập nhật quyết định nguyên tử trong SQLite (thay thế GCP bằng AWS).
-4. **Mở phiên mới (Phiên 2) & Hỏi lại:**
-   - Mở Session 2 hoàn toàn mới.
-   - Người dùng: *"Nhắc lại quyết định hạ tầng đám mây năm 2026 của tôi là gì?"*
-   - Neural Router: Nhận diện intent `chat`, action `reply`, nguồn định tuyến `model`.
+4. **Mở phiên mới (Phiên 2) & Hỏi lại quyết định hiện hành:**
+   - Mở Session 2 hoàn toàn mới (`25ce105f64b8a245d8b76c8c4a1b0c03`).
+   - Người dùng: *"Quyết định hạ tầng đám mây năm 2026 hiện hành của tôi là gì?"*
+
+### C. Kết quả chạy thực tế với Ollama thật (`qwen2.5:0.5b`) & Kiểm chứng Database
+
+**1. Phản hồi nguyên văn từ Gateway (Phiên mới):**
+> *"Theo trí nhớ đang hiệu lực: AWS nhé.."*
+
+**2. Chi tiết trường dữ liệu trả về từ API:**
+- **`provider_used`:** `ollama` (Không dùng mock)
+- **`model_used`:** `qwen2.5:0.5b`
+- **`provider_ok`:** `true`
+- **`routing_source`:** `model` (được định tuyến bởi checkpoint Colab T4 `router.pt`)
+- **`runtime_mode`:** `trained_dusnx`
+- **`memory_ids_used`:** `["ba73a5ad07889fb02b3182e033ef55ba"]`
+
+**3. Trạng thái cơ sở dữ liệu SQLite (`python/data/memory.db`):**
+
+| ID | Content | info_type | is_active | superseded_by | version | Trạng thái |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `70ff685933fe9a071dbd7561f3014a60` | Chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026 | `decision` | **`0`** | `ba73a5ad07889fb02b3182e033ef55ba` | 1 | **Superseded (Không hiệu lực)** |
+| `ba73a5ad07889fb02b3182e033ef55ba` | AWS nhé. | `decision` | **`1`** | `NULL` | 2 | **Active (Đang hiệu lực)** |
+
+**4. Xác nhận kết quả:**
+- **AWS là quyết định hiện hành duy nhất.**
+- **GCP đã bị thay thế hoàn toàn (`is_active = 0`, `superseded_by = ...`) và không bị trình bày như quyết định hiện hành.**
+- **Ollama thật (`qwen2.5:0.5b`) hoàn thành câu trả lời dựa trên context được ground từ active memory.**
 
 ---
 

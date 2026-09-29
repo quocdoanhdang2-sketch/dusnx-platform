@@ -19,11 +19,17 @@ if (-not (Test-Path $PythonExe)) { throw "Python was not found: $PythonExe" }
 if (-not (Test-Path $Checkpoint)) {
     throw "DUSN-X checkpoint was not found: $Checkpoint."
 }
+$Checkpoint = [System.IO.Path]::GetFullPath($Checkpoint)
+$ExpectedCheckpoint = $Checkpoint
 
 Write-Host "Starting DUSN-X local services..." -ForegroundColor Cyan
 
 if ($owner = Get-DusnxListeningProcess 8000) {
-    Write-Host "[CHECK] Port 8000 is already listening (PID $($owner.ProcessId), $($owner.ProcessName)); validating it without stopping it." -ForegroundColor Yellow
+    Write-Host "[CHECK] Port 8000 is already listening (PID $($owner.ProcessId), $($owner.ProcessName)); validating checkpoint..." -ForegroundColor Yellow
+    $existingHealth = Assert-DusnxFastApiCheckpoint -Owner $owner -ExpectedCheckpoint $ExpectedCheckpoint
+    if ($existingHealth) {
+        Write-Host "[OK] Existing FastAPI process (PID $($owner.ProcessId)) matches requested checkpoint." -ForegroundColor Green
+    }
 } else {
     $command = "Set-Location '$ProjectRoot\python'; `$env:PYTHONPATH='$ProjectRoot\python;$ProjectRoot\python\src'; `$env:DUSNX_CHECKPOINT='$Checkpoint'; `$env:DUSNX_DEVICE='$Device'; & '$PythonExe' -m uvicorn apps.ai_api.main:app --host 127.0.0.1 --port 8000"
     Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-ExecutionPolicy", "Bypass", "-Command", $command
@@ -42,12 +48,15 @@ if ($owner = Get-DusnxListeningProcess 8080) {
 }
 
 Write-Host "Waiting for all required services..." -ForegroundColor Cyan
-$ExpectedCheckpoint = [System.IO.Path]::GetFullPath($Checkpoint)
 $AiHealth = Wait-DusnxHttpService -Name "FastAPI" -Uri "http://127.0.0.1:8000/health" -TimeoutSeconds 60 -Validate {
     param($health)
     if ($health.runtime_mode -ne "trained_dusnx") { throw "runtime_mode=$($health.runtime_mode); $($health.metadata.warning)" }
-    $isLoaded = ($health.checkpoint_loaded -eq $true) -or ($health.checkpoint_loaded -eq $ExpectedCheckpoint) -or ($health.checkpoint_path -eq $ExpectedCheckpoint)
-    if (-not $isLoaded) { throw "checkpoint_loaded=$($health.checkpoint_loaded), expected=$ExpectedCheckpoint" }
+    $loadedPath = if ($health.checkpoint_path) {
+        try { [System.IO.Path]::GetFullPath($health.checkpoint_path) } catch { [string]$health.checkpoint_path }
+    } else { "" }
+    if ($health.checkpoint_loaded -ne $true -or ($loadedPath -ine $ExpectedCheckpoint)) {
+        throw "checkpoint mismatch: loaded=$loadedPath, expected=$ExpectedCheckpoint"
+    }
     if ([string]::IsNullOrWhiteSpace($health.model_version)) { throw "model_version is empty" }
 }
 Write-Host "[OK] FastAPI: loaded=$($AiHealth.checkpoint_loaded), path=$($AiHealth.checkpoint_path) ($($AiHealth.model_version))" -ForegroundColor Green
