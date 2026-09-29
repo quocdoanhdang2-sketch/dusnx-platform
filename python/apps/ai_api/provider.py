@@ -48,7 +48,7 @@ def check_ollama_health() -> dict:
     target_model = get_ollama_model()
     try:
         req = urllib.request.Request(f"{url}/api/tags", method="GET")
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=1.0) as resp:
             data = json.loads(resp.read().decode())
             models = [m["name"] for m in data.get("models", [])]
             available = target_model in models

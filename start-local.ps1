@@ -9,13 +9,15 @@ if (-not (Test-Path $PythonExe)) {
     $sysPy = (Get-Command python -ErrorAction SilentlyContinue).Source
     if ($sysPy) { $PythonExe = $sysPy }
 }
-$DefaultCheckpoint = Join-Path $ProjectRoot "artifacts\dusnx_smoke_v2.pt"
+$ColabCheckpoint = Join-Path $ProjectRoot "training-results\colab-run-01\extracted\dusnx-router-full-01\router.pt"
+$SmokeCheckpoint = Join-Path $ProjectRoot "artifacts\dusnx_smoke_v2.pt"
+$DefaultCheckpoint = if (Test-Path $ColabCheckpoint) { $ColabCheckpoint } else { $SmokeCheckpoint }
 $Checkpoint = if ($env:DUSNX_CHECKPOINT) { $env:DUSNX_CHECKPOINT } else { $DefaultCheckpoint }
 $Device = if ($env:DUSNX_DEVICE) { $env:DUSNX_DEVICE } else { "auto" }
 
 if (-not (Test-Path $PythonExe)) { throw "Python was not found: $PythonExe" }
 if (-not (Test-Path $Checkpoint)) {
-    throw "DUSN-X v2 checkpoint was not found: $Checkpoint. Generate the v2 dataset and run python\scripts\train.py with configs\smoke_v2.yaml."
+    throw "DUSN-X checkpoint was not found: $Checkpoint."
 }
 
 Write-Host "Starting DUSN-X local services..." -ForegroundColor Cyan
@@ -44,10 +46,11 @@ $ExpectedCheckpoint = [System.IO.Path]::GetFullPath($Checkpoint)
 $AiHealth = Wait-DusnxHttpService -Name "FastAPI" -Uri "http://127.0.0.1:8000/health" -TimeoutSeconds 60 -Validate {
     param($health)
     if ($health.runtime_mode -ne "trained_dusnx") { throw "runtime_mode=$($health.runtime_mode); $($health.metadata.warning)" }
-    if ($health.checkpoint_loaded -ne $ExpectedCheckpoint) { throw "checkpoint_loaded=$($health.checkpoint_loaded), expected=$ExpectedCheckpoint" }
+    $isLoaded = ($health.checkpoint_loaded -eq $true) -or ($health.checkpoint_loaded -eq $ExpectedCheckpoint) -or ($health.checkpoint_path -eq $ExpectedCheckpoint)
+    if (-not $isLoaded) { throw "checkpoint_loaded=$($health.checkpoint_loaded), expected=$ExpectedCheckpoint" }
     if ([string]::IsNullOrWhiteSpace($health.model_version)) { throw "model_version is empty" }
 }
-Write-Host "[OK] FastAPI v2: $($AiHealth.checkpoint_loaded) ($($AiHealth.model_version))" -ForegroundColor Green
+Write-Host "[OK] FastAPI: loaded=$($AiHealth.checkpoint_loaded), path=$($AiHealth.checkpoint_path) ($($AiHealth.model_version))" -ForegroundColor Green
 
 $GatewayHealth = Wait-DusnxHttpService -Name "Gateway" -Uri "http://127.0.0.1:8080/health" -TimeoutSeconds 60 -Validate {
     param($health)

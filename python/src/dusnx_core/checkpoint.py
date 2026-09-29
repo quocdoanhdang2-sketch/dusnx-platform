@@ -62,10 +62,27 @@ def validate_checkpoint_compatibility(path_or_dict, expected_cfg: ModelConfig | 
 
     # Verify state dimensions
     combined = cfg.global_state_dim + cfg.platform_state_dim + cfg.task_state_dim
-    if "shared.0.weight" in state and state["shared.0.weight"].shape[1] != combined:
-        raise CheckpointIncompatibleError(
-            f"State dimensions mismatch: shared layer expects {combined} inputs, but got {state['shared.0.weight'].shape[1]}"
-        )
+    if "shared.0.weight" in state:
+        if state["shared.0.weight"].shape[1] != combined:
+            raise CheckpointIncompatibleError(
+                f"State dimensions mismatch: shared layer expects {combined} inputs, but got {state['shared.0.weight'].shape[1]}"
+            )
+    else:
+        raise CheckpointIncompatibleError("Missing 'shared.0.weight' in model_state")
+
+    # Verify token embedding dimensions
+    if "encoder.token_emb.weight" in state:
+        emb_shape = state["encoder.token_emb.weight"].shape
+        if emb_shape[0] != cfg.vocab_size:
+            raise CheckpointIncompatibleError(
+                f"Embedding vocab size {emb_shape[0]} does not match config vocab_size {cfg.vocab_size}"
+            )
+        if emb_shape[1] != cfg.token_dim:
+            raise CheckpointIncompatibleError(
+                f"Embedding token_dim {emb_shape[1]} does not match config token_dim {cfg.token_dim}"
+            )
+    else:
+        raise CheckpointIncompatibleError("Missing 'encoder.token_emb.weight' in model_state")
 
     if expected_cfg is not None:
         if cfg.to_dict() != expected_cfg.to_dict():

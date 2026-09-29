@@ -25,11 +25,25 @@ from .memory import get_memory_db
 from .provider import generate_response, get_provider_health
 from .grounding import memory_answer
 
-# ── Model loading (unchanged from Phase 1) ─────────────────────────────────────
+# ── Model loading ─────────────────────────────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
-DEFAULT_CHECKPOINT = str(ARTIFACT_ROOT / "artifacts" / "dusnx_smoke_v2.pt")
-CHECKPOINT = os.getenv("DUSNX_CHECKPOINT", DEFAULT_CHECKPOINT)
+
+def resolve_default_checkpoint() -> str:
+    env_ckpt = os.getenv("DUSNX_CHECKPOINT")
+    if env_ckpt:
+        return env_ckpt
+    candidates = [
+        ARTIFACT_ROOT / "training-results" / "colab-run-01" / "extracted" / "dusnx-router-full-01" / "router.pt",
+        ARTIFACT_ROOT / "artifacts" / "dusnx_smoke_v2.pt",
+        ARTIFACT_ROOT / "artifacts" / "router_local_v1.pt",
+    ]
+    for cand in candidates:
+        if cand.is_file():
+            return str(cand)
+    return str(ARTIFACT_ROOT / "artifacts" / "dusnx_smoke_v2.pt")
+
+CHECKPOINT = resolve_default_checkpoint()
 DEVICE = "cuda" if torch.cuda.is_available() and os.getenv("DUSNX_DEVICE", "auto") != "cpu" else "cpu"
 MODEL = None
 CFG: ModelConfig | None = None
@@ -39,31 +53,53 @@ MODEL_VERSION = model_identifier(CHECKPOINT, ModelConfig(), RUNTIME_MODE)
 LOADED_CHECKPOINT: str | None = None
 
 
-def load_model_once() -> None:
-    global MODEL, CFG, META, RUNTIME_MODE, MODEL_VERSION, LOADED_CHECKPOINT
-    if MODEL is not None:
-        return
+def load_model(checkpoint_path: str | Path | None = None) -> None:
+    """Load model checkpoint with validation. Falls back to bootstrap_rules if missing or incompatible."""
+    global MODEL, CFG, META, RUNTIME_MODE, MODEL_VERSION, LOADED_CHECKPOINT, CHECKPOINT
+    if checkpoint_path is not None:
+        CHECKPOINT = str(checkpoint_path)
+    else:
+        CHECKPOINT = resolve_default_checkpoint()
+
     path = Path(CHECKPOINT)
-    if not path.exists():
+    if not path.is_file():
         missing_path = path.resolve()
+        MODEL = None
         CFG = ModelConfig()
         META = {
             "mode": "bootstrap_rules",
             "warning": (
-                f"Checkpoint not found: {missing_path}. From the repository root, run: "
-                "python python/scripts/generate_synthetic.py --events 30000 --users 1000 "
-                "--out data/synthetic_30k_v2.jsonl; then "
-                "python python/scripts/train.py --config configs/smoke_v2.yaml"
+                f"Checkpoint not found: {missing_path}. Specify DUSNX_CHECKPOINT or train a model."
             ),
         }
         RUNTIME_MODE = "bootstrap_rules"
         MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
         LOADED_CHECKPOINT = None
         return
-    MODEL, CFG, META = load_checkpoint(path, DEVICE)
-    RUNTIME_MODE = "trained_dusnx"
-    MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
-    LOADED_CHECKPOINT = str(path.resolve())
+
+    try:
+        loaded_model, loaded_cfg, loaded_meta = load_checkpoint(path, DEVICE, validate=True)
+        MODEL = loaded_model
+        CFG = loaded_cfg
+        META = loaded_meta
+        RUNTIME_MODE = "trained_dusnx"
+        MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
+        LOADED_CHECKPOINT = str(path.resolve())
+    except Exception as e:
+        MODEL = None
+        CFG = ModelConfig()
+        META = {
+            "mode": "bootstrap_rules",
+            "warning": f"Checkpoint loading failed ({type(e).__name__}): {e}",
+        }
+        RUNTIME_MODE = "bootstrap_rules"
+        MODEL_VERSION = model_identifier(CHECKPOINT, CFG, RUNTIME_MODE)
+        LOADED_CHECKPOINT = None
+
+
+def load_model_once() -> None:
+    if MODEL is None and LOADED_CHECKPOINT is None:
+        load_model()
 
 
 def startup() -> None:
@@ -119,7 +155,8 @@ def health():
         "device": DEVICE,
         "runtime_mode": RUNTIME_MODE,
         "checkpoint": CHECKPOINT,
-        "checkpoint_loaded": LOADED_CHECKPOINT,
+        "checkpoint_loaded": bool(LOADED_CHECKPOINT),
+        "checkpoint_path": LOADED_CHECKPOINT,
         "model_loaded": model_loaded,
         "provider_ok": provider_ok,
         "metadata": META,

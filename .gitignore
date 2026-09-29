@@ -25,3 +25,10 @@ data/prepared/
 **/*.parquet
 artifacts/**/*.pt
 artifacts/**/*.jsonl
+
+# Training results, Colab runs and local model checkpoints
+training-results/
+**/*.zip
+**/*.epochs.jsonl
+**/*.metrics.json
+**/*.pt

@@ -10,7 +10,7 @@ function Wait-DusnxHttpService {
     $lastError = "No response received."
     do {
         try {
-            $response = if ($Probe) { & $Probe $Uri } else { Invoke-RestMethod -Uri $Uri -TimeoutSec 3 }
+            $response = if ($Probe) { & $Probe $Uri } else { Invoke-RestMethod -Uri $Uri -TimeoutSec 10 }
             if ($Validate) { & $Validate $response }
             return $response
         }
