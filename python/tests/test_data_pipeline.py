@@ -75,7 +75,8 @@ def test_blind_review_and_disagreement():
 
 def test_notebook_code_cells_parse_without_outputs():
     import ast
-    notebook=json.loads(Path("notebooks/train_dusnx_colab.ipynb").read_text(encoding="utf-8"))
+    repo_root = Path(__file__).resolve().parents[2]
+    notebook=json.loads((repo_root / "notebooks/train_dusnx_colab.ipynb").read_text(encoding="utf-8"))
     for cell in notebook["cells"]:
         if cell["cell_type"]=="code":
             ast.parse("".join(cell["source"]))

@@ -34,5 +34,6 @@ def test_colab_helpers_cpu_and_config(tmp_path,monkeypatch):
     import python.scripts.colab_helper as helper
     monkeypatch.setattr(helper,"environment",lambda:{"cuda_available":False})
     with pytest.raises(RuntimeError,match="No GPU"):check_environment(large=True)
-    path=drive_config(Path.cwd(),tmp_path,smoke=True)
+    repo_root = Path(__file__).resolve().parents[2]
+    path=drive_config(repo_root,tmp_path,smoke=True)
     assert path.is_file()

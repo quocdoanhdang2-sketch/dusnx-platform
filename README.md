@@ -239,26 +239,31 @@ Thay `TEN_REPOSITORY` bằng tên mày chọn. Không commit `.env`, dataset th�
 
 ## Dữ liệu và train state/router trên local hoặc Colab
 
-Notebook [train_dusnx_colab.ipynb](notebooks/train_dusnx_colab.ipynb) và [hướng dẫn từng cú nhấp chuột](docs/TRAIN_COLAB_TUNG_BUOC.md) huấn luyện recurrent state và các đầu intent/agent/action, **không fine-tune LLM**. Helper đã kiểm tra local; chưa chạy Colab. Không yêu cầu một loại GPU cụ thể; CPU chạy smoke được.
+Notebook [train_dusnx_colab.ipynb](notebooks/train_dusnx_colab.ipynb), [hướng dẫn từng cú nhấp chuột](docs/TRAIN_COLAB_TUNG_BUOC.md) và [báo cáo sẵn sàng huấn luyện](docs/TRAIN_READINESS.md) phục vụ huấn luyện recurrent state và các đầu intent/agent/action, **không fine-tune LLM**. Toàn bộ mã nguồn, helper và CPU smoke đã được kiểm tra trên máy local; **chưa có phiên GPU nào được chạy trên Colab**. Không yêu cầu một loại GPU cụ thể; CPU chạy smoke 2-3 phút được.
 
 ```powershell
 $env:PYTHONPATH='python/src;python;.;scripts'
 python python/scripts/fetch_sources.py --source all
 python python/scripts/import_data.py --source massive --input runtime/external-data/massive/vi-VN.jsonl --output-dir runtime/imported/massive
-python python/scripts/prepare_data.py --legacy data/synthetic_30k_v2.jsonl --external runtime/imported/massive/candidates.jsonl
+python python/scripts/prepare_data.py --legacy data/synthetic_30k_v2.jsonl
 python python/scripts/pipeline_smoke.py --output runtime/new-smoke-run
 python python/scripts/train.py --config configs/router_colab.yaml --checkpoint artifacts/new-router.pt
-python python/scripts/evaluate_personalization.py --benchmark benchmarks/holdout_v1.jsonl --holdout-manifest benchmarks/holdout_v1.manifest.json --include-no-state --provider ollama --checkpoint artifacts/new-router.pt --output-dir runtime/new-holdout-run
+# Đánh giá 5 nhánh độc lập trên tập khóa holdout v2:
+python python/scripts/evaluate_personalization.py --benchmark benchmarks/holdout_v2.jsonl --holdout-manifest benchmarks/holdout_v2.manifest.json --all-systems --include-model-only --provider mock --checkpoint artifacts/new-router.pt --output-dir runtime/eval_holdout_v2
 ```
 
-Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ. Pipeline dữ liệu xuất `runtime/prepared/{train,validation}.jsonl` và `manifest.json`; train xuất best `.pt`, `.last.pt`, config, metric/epoch; đánh giá xuất `predictions.jsonl`, `cases.json`, `summary.json/.md`, `errors.json`. Với bản clone thiếu 30k cũ, bỏ `--legacy`; khi đó chỉ dùng bank thiết kế nhỏ, phải báo số thực tế. Xem [nguồn/license/revision](docs/DATA_SOURCES.md).
+Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ. Pipeline dữ liệu xuất `runtime/prepared/{train,validation}.jsonl` và `manifest.json`; train xuất best `.pt`, `.last.pt`, config, metric/epoch; đánh giá xuất `predictions.jsonl`, `cases.json`, `summary.json/.md`, `errors.json`. Với bản clone thiếu 30k cũ, bỏ `--legacy`; khi đó dùng bank thiết kế 18 họ tình huống (843 event train / 141 event val). Xem [nguồn/license/revision](docs/DATA_SOURCES.md).
 
-Pilot 12 chuỗi cũ là **development set**; holdout v1 mới 8 chuỗi/29 bước đã khóa hash trước train. Cả hai còn nhỏ và chưa duyệt độc lập. MASSIVE đã tải nhưng mapping chờ reviewer nên không được dùng train; CSConDa chưa có quyền và được bỏ qua. Cần người thực [duyệt nhãn/mapping](docs/ANNOTATION_GUIDE.md). Không tăng lên hàng chục nghìn event bằng cách thay tên trong template.
-
-`answer_source=active_memory_extract` là trích memory bằng luật, không phải khả năng sinh của checkpoint. `model_used/tokens_generated` mô tả cuộc gọi provider thực tế trước bước trích; `routing_source` và `model_prediction` trong benchmark tách nhánh luật khỏi checkpoint. Ablation chỉ reset recurrent state; giữ SQL memory và luật. `--provider mock` chỉ kiểm tra pipeline, không chứng minh chất lượng câu trả lời.
+- **Holdout v1 (8 chuỗi/29 bước):** Đã bị xem xét và dùng để chẩn đoán hệ thống, nên không dùng để chọn model/rule.
+- **Holdout v2 (10 chuỗi/38 bước, SHA-256 `1dfd8f1b...`):** Đã khóa độc lập làm benchmark mới chưa bị nhìn trước, bao quát unconfirmed claims, successive architecture, cache/theme rejections, ambiguity, cross-platform Web/PowerPoint.
+- **MASSIVE vi-VN:** Đã tải nhưng toàn bộ mapping chờ reviewer duyệt nên bị loại hoàn toàn khỏi tập train; CSConDa chưa có quyền và được bỏ qua an toàn.
+- **Đánh giá 5 nhánh:** Tách riêng `baseline_a` (no-memory), `baseline_b` (static-memory), `model_only` (pure checkpoint không qua rule), `dusnx_no_state` (ablation xóa recurrent state mỗi bước), và `dusnx` (full system). Kết quả cho thấy năng lực hiện tại của hệ thống đến chủ yếu từ SQLite CRUD và rules; giả thuyết recurrent state tốt hơn ablation chưa được chứng minh trên chuỗi ngắn (3-7 lượt).
+- **Thẩm định nhãn độc lập:** File mẫu blind CSV tại `runtime/reviewer_package/holdout_v2_blind_template.csv` để gửi reviewer thứ hai độc lập gán nhãn mà không bị lộ dự đoán của model hay gold AI (xem [hướng dẫn duyệt](docs/ANNOTATION_GUIDE.md)).
 
 ## Đọc tiếp
 
+- `docs/TRAIN_READINESS.md`: Báo cáo chi tiết về dữ liệu, leakage, 5 nhánh đánh giá và tình trạng sẵn sàng huấn luyện.
+- `docs/TRAIN_COLAB_TUNG_BUOC.md`: Hướng dẫn 5 bước thao tác trên Google Colab lưu kết quả vào Google Drive.
 - `docs/START_HERE_PHASE1.md`: thứ tự làm từng bước.
 - `docs/INDEPENDENT_BENCHMARK_GUIDE.md`: schema và quy trình hai người để soạn benchmark độc lập.
 - `docs/GITHUB_VA_MO_RONG.md`: cách đặt tên GitHub và thêm tính năng/connector.

@@ -50,7 +50,15 @@ def score_turn(gold, pred):
     leaked, forbidden = _hits(reply, obsolete), _hits(reply, gold["forbidden_keywords"])
     asks = bool(_hits(reply, ["?", "vui lòng", "cho tôi biết", "nêu rõ", "cung cấp thêm", "xác nhận"]))
     clarification_ok = asks and bool(_hits(reply, required or ["chưa", "bối cảnh", "rõ", "quyết định"]))
+
+    is_revision = gold.get("expected_next_action") == "update_memory" or gold.get("expected_intent") == "decision_update"
+    revision_ok = None
+    if is_revision and active:
+        pred_active = pred.get("active_memories", [])
+        revision_ok = all(any(_hits(m, [a]) for m in pred_active) for a in active)
+
     metrics = {
+        "update_revision_accuracy": revision_ok,
         "active_recall": ok and not missing if target and active else None,
         "obsolete_elimination": ok and not leaked if target and obsolete else None,
         "missing_context_handling": ok and clarification_ok if clarify else None,
@@ -80,6 +88,7 @@ def score_turn(gold, pred):
     if metrics["final_answer_success"] is False and not diagnosis:
         diagnosis.append("required answer keywords absent")
     return metrics, diagnosis
+
 
 
 def run_baseline(turns, generate, *, static_memory):
@@ -119,7 +128,7 @@ def request_json(client, method, path, **kwargs):
     return response.json()
 
 
-def run_dusnx(turns, client, main_mod, *, no_state=False):
+def run_dusnx(turns, client, main_mod, *, no_state=False, model_only=False):
     from dusnx_core import inference
     credentials = {"username": f"pilot_{secrets.token_hex(8)}", "password": secrets.token_urlsafe(24)}
     request_json(client, "POST", "/v1/auth/register", json=credentials)
@@ -130,8 +139,8 @@ def run_dusnx(turns, client, main_mod, *, no_state=False):
 
     def observe(*args, **kwargs):
         if no_state:
-            args=list(args)
-            args[2]=args[2].model_copy(update={"previous_state":None})
+            args = list(args)
+            args[2] = args[2].model_copy(update={"previous_state": None})
         raw = original(*args, **kwargs)
         raw_predictions.append({"intent": raw["intent"], "agent": raw["selected_agent"],
                                 "action": raw["next_action"]})
@@ -149,26 +158,64 @@ def run_dusnx(turns, client, main_mod, *, no_state=False):
                     sessions[sid] = request_json(client, "POST", "/v1/sessions", headers=headers,
                                                 json={"title": "Pilot session"})["session_id"]
                 with patch.object(inference, "process_one", observe):
-                    if turn["platform"] == "web":
-                        res = request_json(client, "POST", "/v1/chat", headers=headers, json={
-                            "session_id": sessions[sid], "message": turn["user_message"],
-                            "project_id": projects.get(pid), "feedback_value": turn["known_feedback_value"]})
+                    if model_only:
+                        with patch.object(main_mod, "memory_answer", lambda *a, **k: None):
+                            if turn["platform"] == "web":
+                                res = request_json(client, "POST", "/v1/chat", headers=headers, json={
+                                    "session_id": sessions[sid], "message": turn["user_message"],
+                                    "project_id": projects.get(pid), "feedback_value": turn["known_feedback_value"]})
+                            else:
+                                res = request_json(client, "POST", "/v1/me/events", headers=headers, json={
+                                    "platform": turn["platform"], "content": turn["user_message"],
+                                    "project_id": projects.get(pid), "event_type": turn["event_type"],
+                                    "feedback_value": turn["known_feedback_value"]})
+                                res.update(reply="", provider_ok=True, provider_used="none")
                     else:
-                        res = request_json(client, "POST", "/v1/me/events", headers=headers, json={
-                            "platform": turn["platform"], "content": turn["user_message"],
-                            "project_id": projects.get(pid), "event_type": turn["event_type"],
-                            "feedback_value": turn["known_feedback_value"]})
-                        res.update(reply="", provider_ok=True, provider_used="none")
-                source = res.get("routing_source", "unknown")
-                pred = dict(reply=res.get("reply", ""), provider_ok=res.get("provider_ok"),
-                            provider_used=res.get("provider_used"), model_used=res.get("model_used"),
-                            tokens_generated=res.get("tokens_generated"), routing_source=source,
-                            decision_source=attribution(source), predicted_intent=res.get("intent"),
-                            predicted_agent=res.get("selected_agent"), predicted_next_action=res.get("next_action"),
-                            model_prediction=raw_predictions[-1] if raw_predictions else None,
-                            state_version=res.get("state_version"), error=None,
-                            answer_source=res.get("answer_source","application_rule"),
-                            recurrent_state_disabled=no_state)
+                        if turn["platform"] == "web":
+                            res = request_json(client, "POST", "/v1/chat", headers=headers, json={
+                                "session_id": sessions[sid], "message": turn["user_message"],
+                                "project_id": projects.get(pid), "feedback_value": turn["known_feedback_value"]})
+                        else:
+                            res = request_json(client, "POST", "/v1/me/events", headers=headers, json={
+                                "platform": turn["platform"], "content": turn["user_message"],
+                                "project_id": projects.get(pid), "event_type": turn["event_type"],
+                                "feedback_value": turn["known_feedback_value"]})
+                            res.update(reply="", provider_ok=True, provider_used="none")
+
+                raw_model = raw_predictions[-1] if raw_predictions else None
+                if model_only and raw_model:
+                    pred_intent = raw_model["intent"]
+                    pred_agent = raw_model["agent"]
+                    pred_action = raw_model["action"]
+                    source = "pure_checkpoint"
+                    decision_src = "model"
+                    ans_src = "provider_llm"
+                else:
+                    pred_intent = res.get("intent")
+                    pred_agent = res.get("selected_agent")
+                    pred_action = res.get("next_action")
+                    source = res.get("routing_source", "unknown")
+                    decision_src = attribution(source)
+                    ans_src = res.get("answer_source", "application_rule")
+
+                pred = dict(
+                    reply=res.get("reply", ""),
+                    provider_ok=res.get("provider_ok"),
+                    provider_used=res.get("provider_used"),
+                    model_used=res.get("model_used"),
+                    tokens_generated=res.get("tokens_generated"),
+                    routing_source=source,
+                    decision_source=decision_src,
+                    predicted_intent=pred_intent,
+                    predicted_agent=pred_agent,
+                    predicted_next_action=pred_action,
+                    model_prediction=raw_model,
+                    state_version=res.get("state_version"),
+                    error=None,
+                    answer_source=ans_src,
+                    recurrent_state_disabled=no_state,
+                    model_only_mode=model_only,
+                )
                 memories = request_json(client, "GET", "/v1/memories", headers=headers)
                 used_ids = set(res.get("memory_ids_used", []))
                 pred["memories_used"] = [m["content"] for m in memories if m["memory_id"] in used_ids]
@@ -187,17 +234,34 @@ def run_dusnx(turns, client, main_mod, *, no_state=False):
     return out
 
 
+
+def wilson_ci(passed, scored, z=1.96):
+
+    if not scored:
+        return None
+    import math
+    center = (passed + (z**2) / 2) / (scored + z**2)
+    half = (z / (scored + z**2)) * math.sqrt((passed * (scored - passed) / scored) + (z**2) / 4)
+    return [round(max(0.0, center - half), 4), round(min(1.0, center + half), 4)]
+
+
 def aggregate(records):
     from dusnx_core.constants import INTENTS
     result = {}
     for system in dict.fromkeys(r["system"] for r in records):
         selected = [r for r in records if r["system"] == system]
         metrics = {}
-        for key in ("active_recall", "obsolete_elimination", "missing_context_handling",
+        for key in ("update_revision_accuracy", "active_recall", "obsolete_elimination", "missing_context_handling",
                     "intent", "agent", "action", "final_answer_success"):
             values = [r["metrics"][key] for r in selected if r["metrics"][key] is not None]
-            metrics[key] = {"passed": sum(values), "scored": len(values),
-                            "rate": sum(values) / len(values) if values else None}
+            passed = sum(values)
+            scored = len(values)
+            metrics[key] = {
+                "passed": passed,
+                "scored": scored,
+                "rate": passed / scored if scored else None,
+                "ci_95": wilson_ci(passed, scored) if scored else None,
+            }
         result[system] = {"metrics": metrics,
                           "attribution": dict(Counter(r["prediction"].get("decision_source", "unknown") for r in selected)),
                           "provider_failures": sum(r["prediction"].get("provider_ok") is not True for r in selected)}
@@ -236,7 +300,9 @@ def main():
     ap.add_argument("--validate-only", action="store_true")
     ap.add_argument("--checkpoint")
     ap.add_argument("--holdout-manifest")
-    ap.add_argument("--include-no-state",action="store_true")
+    ap.add_argument("--include-no-state", action="store_true")
+    ap.add_argument("--include-model-only", action="store_true")
+    ap.add_argument("--all-systems", action="store_true")
     args = ap.parse_args()
     import torch
     torch.set_num_threads(2)
@@ -252,7 +318,15 @@ def main():
     if args.checkpoint:
         if not Path(args.checkpoint).is_file():raise ValueError("checkpoint unavailable")
         os.environ["DUSNX_CHECKPOINT"]=args.checkpoint
-    systems=(*SYSTEMS,"dusnx_no_state") if args.include_no_state else SYSTEMS
+    systems_list = list(SYSTEMS)
+    if args.all_systems:
+        systems = ("baseline_a", "baseline_b", "model_only", "dusnx_no_state", "dusnx")
+    else:
+        if args.include_model_only:
+            systems_list.append("model_only")
+        if args.include_no_state:
+            systems_list.append("dusnx_no_state")
+        systems = tuple(systems_list)
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if (out_dir/"predictions.jsonl").exists():raise ValueError("choose a new output directory; preserve earlier evidence")
@@ -272,11 +346,18 @@ def main():
             inputs = [s.prediction_input() for s in steps]
             for system in systems:
                 try:
-                    predictions = (run_dusnx(inputs, client, main_mod,no_state=system=="dusnx_no_state") if system.startswith("dusnx") else
-                                   run_baseline(inputs, generate_response, static_memory=system == "baseline_b"))
+                    if system == "model_only":
+                        predictions = run_dusnx(inputs, client, main_mod, no_state=False, model_only=True)
+                    elif system == "dusnx_no_state":
+                        predictions = run_dusnx(inputs, client, main_mod, no_state=True, model_only=False)
+                    elif system == "dusnx":
+                        predictions = run_dusnx(inputs, client, main_mod, no_state=False, model_only=False)
+                    else:
+                        predictions = run_baseline(inputs, generate_response, static_memory=system == "baseline_b")
                 except Exception as exc:
                     predictions = [dict(reply="", provider_ok=False, error=type(exc).__name__,
                                         decision_source="unknown") for _ in inputs]
+
                 for step, pred in zip(steps, predictions, strict=True):
                     metrics, diagnosis = score_turn(step.model_dump(), pred)
                     record = dict(case_id=step.case_id, sequence_id=seq, step=step.step, system=system,
@@ -304,14 +385,26 @@ def main():
     errors = [r for r in records if False in r["metrics"].values() or r["prediction"].get("error")]
     for filename, data in (("summary.json", summary), ("cases.json", cases), ("errors.json", errors)):
         (out_dir / filename).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    lines = ["| Metric | "+" | ".join(systems)+" |", "|---|"+"---:|"*len(systems)]
-    for key in summary["systems"]["dusnx"]["metrics"]:
+    lines = ["| Metric | " + " | ".join(systems) + " |", "|---|" + "---:|" * len(systems)]
+    sample_sys = "dusnx" if "dusnx" in summary["systems"] else next(iter(summary["systems"]))
+    for key in summary["systems"][sample_sys]["metrics"]:
         cells = []
         for system in systems:
             m = summary["systems"][system]["metrics"][key]
-            cells.append(f"{m['passed']}/{m['scored']}" if m["scored"] else "unlabelled")
+            if m["scored"]:
+                ci_str = f" [{m['ci_95'][0]:.2f}, {m['ci_95'][1]:.2f}]" if m.get("ci_95") else ""
+                cells.append(f"{m['passed']}/{m['scored']} ({m['rate']:.1%}){ci_str}")
+            else:
+                cells.append("unlabelled")
         lines.append("| " + " | ".join([key, *cells]) + " |")
+    for head in ("intent", "agent", "action"):
+        cells = []
+        for system in systems:
+            val = summary["systems"][system]["macro_f1"].get(head)
+            cells.append(f"{val:.3f}" if val is not None else "N/A")
+        lines.append("| " + " | ".join([f"{head}_macro_f1", *cells]) + " |")
     (out_dir / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
     print("\n".join(lines))
     print(f"Output: {out_dir}; labels not independently reviewed; mock is pipeline-only.")
     if any(s["provider_failures"] for s in summary["systems"].values()):

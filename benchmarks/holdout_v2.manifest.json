@@ -1,0 +1,50 @@
+{
+  "status": "labels_locked_not_independently_reviewed",
+  "seed": 20261001,
+  "locked_at_utc": "2026-09-29T11:20:07.898779+00:00",
+  "sha256": "1dfd8f1b95abec18af3656c37017e2a46df77420dbfa64ad113f787b46a1c16e",
+  "file": "holdout_v2.jsonl",
+  "events": 38,
+  "sequence_ids": [
+    "holdout2-20261001-v2_ambiguous_two_queues",
+    "holdout2-20261001-v2_cache_rejection_cross_session",
+    "holdout2-20261001-v2_cloud_unconfirmed_distraction",
+    "holdout2-20261001-v2_cross_platform_powerpoint",
+    "holdout2-20261001-v2_database_migration",
+    "holdout2-20261001-v2_logging_framework_revision",
+    "holdout2-20261001-v2_missing_context_recovery",
+    "holdout2-20261001-v2_successive_architecture_monolith",
+    "holdout2-20261001-v2_topic_detour_research_recall",
+    "holdout2-20261001-v2_ui_theme_rejection"
+  ],
+  "users": [
+    "holdout2-20261001-v2_ambiguous_two_queues",
+    "holdout2-20261001-v2_cache_rejection_cross_session",
+    "holdout2-20261001-v2_cloud_unconfirmed_distraction",
+    "holdout2-20261001-v2_cross_platform_powerpoint",
+    "holdout2-20261001-v2_database_migration",
+    "holdout2-20261001-v2_logging_framework_revision",
+    "holdout2-20261001-v2_missing_context_recovery",
+    "holdout2-20261001-v2_successive_architecture_monolith",
+    "holdout2-20261001-v2_topic_detour_research_recall",
+    "holdout2-20261001-v2_ui_theme_rejection"
+  ],
+  "template_families": [
+    "v2_ambiguous_two_queues",
+    "v2_cache_rejection_cross_session",
+    "v2_cloud_unconfirmed_distraction",
+    "v2_cross_platform_powerpoint",
+    "v2_database_migration",
+    "v2_logging_framework_revision",
+    "v2_missing_context_recovery",
+    "v2_successive_architecture_monolith",
+    "v2_topic_detour_research_recall",
+    "v2_ui_theme_rejection"
+  ],
+  "excluded": {
+    "train.jsonl": "dfaa3b1c04cad100cc1dab770484508ce67950ce9d425822f264ce1d93312dd5",
+    "validation.jsonl": "06916b8cb42d066624777ffa2c2bed786a765864426ecbb8a054b23c201a969d",
+    "week3_personalization_pilot.jsonl": "2137961651d36f0831013c0b2b749f41fcb252ffd96acb12c29d5c6336e179e1",
+    "holdout_v1.jsonl": "e97d740ab00236efd4ae231381a45c76dbcc73e8dc46df6f32ec967572f2e597"
+  }
+}

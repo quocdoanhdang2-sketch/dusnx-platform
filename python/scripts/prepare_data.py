@@ -48,11 +48,12 @@ def prepare(output, legacy=None, external=None, seed=20260929, legacy_sequences=
     assert_disjoint(parts)
     # Audit identities/whole conversations only; gold labels never enter training.
     exclusions={}
-    for filename in ("benchmarks/week3_personalization_pilot.jsonl","benchmarks/holdout_v1.jsonl"):
+    for filename in ("benchmarks/week3_personalization_pilot.jsonl", "benchmarks/holdout_v1.jsonl", "benchmarks/holdout_v2.jsonl"):
         if Path(filename).exists():
             exclusions[filename]=[dict(global_user_id=r.get("global_user_id") or "benchmark-"+r["sequence_id"],
                 sequence_id=r["sequence_id"],template_family=r.get("template_family") or "benchmark-"+r["sequence_id"],
                 user_message=r["user_message"]) for r in read_rows(filename)]
+
     assert_disjoint({**parts,**exclusions})
     report["benchmark_exclusions"]={name:sha256(name) for name in exclusions}
     for split,rows in parts.items():
