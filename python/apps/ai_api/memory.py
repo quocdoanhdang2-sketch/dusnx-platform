@@ -92,6 +92,9 @@ def _init_db(conn: sqlite3.Connection) -> None:
             old_memory_id TEXT NOT NULL,
             old_content TEXT NOT NULL,
             proposed_content TEXT NOT NULL,
+            topic TEXT,
+            new_value TEXT,
+            statement_source TEXT,
             status TEXT NOT NULL DEFAULT 'awaiting_confirm',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
@@ -123,6 +126,16 @@ def _init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_pending_user ON pending_decision_updates(user_id);
         CREATE INDEX IF NOT EXISTS idx_user_events_user_time ON user_events(user_id, event_time_utc DESC);
     """)
+    # Schema migration: ensure existing databases get the new columns if created earlier
+    existing_pending_cols = {
+        row["name"] for row in conn.execute("PRAGMA table_info(pending_decision_updates)").fetchall()
+    }
+    if "topic" not in existing_pending_cols:
+        conn.execute("ALTER TABLE pending_decision_updates ADD COLUMN topic TEXT")
+    if "new_value" not in existing_pending_cols:
+        conn.execute("ALTER TABLE pending_decision_updates ADD COLUMN new_value TEXT")
+    if "statement_source" not in existing_pending_cols:
+        conn.execute("ALTER TABLE pending_decision_updates ADD COLUMN statement_source TEXT")
     conn.commit()
 
 
@@ -580,6 +593,9 @@ class MemoryDB:
         old_memory_id: str,
         old_content: str,
         proposed_content: str,
+        topic: Optional[str] = None,
+        new_value: Optional[str] = None,
+        statement_source: Optional[str] = None,
     ) -> dict:
         """Create a pending decision update request awaiting user confirmation."""
         pending_id = secrets.token_hex(12)
@@ -587,10 +603,12 @@ class MemoryDB:
         self._conn.execute(
             """INSERT INTO pending_decision_updates(
                    pending_id, user_id, session_id, old_memory_id, old_content,
-                   proposed_content, status, created_at, updated_at)
-               VALUES(?,?,?,?,?,?,?,?,?)""",
+                   proposed_content, topic, new_value, statement_source,
+                   status, created_at, updated_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
             (pending_id, user_id, session_id, old_memory_id, old_content,
-             proposed_content, "awaiting_confirm", now, now),
+             proposed_content, topic, new_value, statement_source,
+             "awaiting_confirm", now, now),
         )
         self._conn.commit()
         return self.get_pending_decision(user_id, pending_id)  # type: ignore[return-value]
@@ -612,17 +630,29 @@ class MemoryDB:
         ).fetchone()
         return dict(row) if row else None
 
+    def get_last_pending_decision_in_session(self, user_id: str, session_id: str) -> Optional[dict]:
+        """Return the most recent pending decision for a session regardless of status."""
+        row = self._conn.execute(
+            """SELECT * FROM pending_decision_updates
+               WHERE user_id=? AND session_id=?
+               ORDER BY created_at DESC LIMIT 1""",
+            (user_id, session_id),
+        ).fetchone()
+        return dict(row) if row else None
+
     def resolve_pending_decision_atomic(
         self,
         user_id: str,
         pending_id: str,
         accepted: bool,
         source_session: Optional[str] = None,
+        allow_idempotent_retry: bool = False,
     ) -> dict:
         """
         Atomically confirm or reject a pending decision update in a single transaction.
         If accepted:
           - Verifies pending record exists for user_id and status is 'awaiting_confirm'.
+          - Supports idempotent retry: if already 'confirmed', returns existing superseded memory.
           - Verifies old memory exists, belongs to user_id, and is active (is_active=1).
           - If old memory is inactive, marks pending status as 'stale' and aborts without modification.
           - Updates pending record to 'confirmed'.
@@ -670,6 +700,21 @@ class MemoryDB:
             if row is None:
                 return {"success": False, "error": "not_found", "detail": "Pending decision not found"}
             if row["status"] != "awaiting_confirm":
+                if row["status"] == "confirmed" and allow_idempotent_retry:
+                    # Idempotent retry: find the memory that superseded old_memory_id
+                    existing_new = self._conn.execute(
+                        "SELECT * FROM memories WHERE memory_id = (SELECT superseded_by FROM memories WHERE memory_id=?)",
+                        (row["old_memory_id"],)
+                    ).fetchone()
+                    if existing_new:
+                        return {
+                            "success": True,
+                            "status": "already_confirmed",
+                            "pending": dict(row),
+                            "new_memory": _row_to_memory(existing_new),
+                            "old_memory_id": row["old_memory_id"],
+                            "is_retry": True,
+                        }
                 return {
                     "success": False,
                     "error": f"already_{row['status']}",

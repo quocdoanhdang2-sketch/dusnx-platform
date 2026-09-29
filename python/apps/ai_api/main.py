@@ -23,7 +23,12 @@ from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessRespo
 from .auth import get_auth_db
 from .memory import get_memory_db
 from .provider import generate_response, get_provider_health
-from .grounding import memory_answer
+from .grounding import memory_answer, memory_answer_with_match
+from .decision_updater import (
+    find_best_matching_decision,
+    synthesize_full_decision,
+    extract_modify_components,
+)
 
 # ── Model loading ─────────────────────────────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
@@ -469,37 +474,10 @@ def _find_best_matching_decision(
     memories: list[dict], message: str
 ) -> tuple[Optional[dict], bool, list[dict]]:
     """
-    Pick the active decision memory most relevant to the message.
+    Pick the active decision memory most relevant to the message using decision_updater.
     Returns (best_match, is_ambiguous, candidate_list).
-    If there are multiple active decisions with close high overlap, is_ambiguous=True.
     """
-    import re as _re
-    decisions = [m for m in memories if m["info_type"] in ("decision", "preference", "goal")]
-    if not decisions:
-        return None, False, []
-
-    words = set(_re.findall(r"\w+", message.lower(), flags=_re.UNICODE))
-    scored = []
-    for mem in decisions:
-        mem_words = set(_re.findall(r"\w+", mem["content"].lower(), flags=_re.UNICODE))
-        overlap = len(words & mem_words)
-        if overlap > 0:
-            scored.append((overlap, mem))
-
-    if not scored:
-        return None, False, []
-
-    scored.sort(key=lambda x: x[0], reverse=True)
-    best_score, best_mem = scored[0]
-
-    # Check for ambiguity: multiple decisions with high, nearly identical scores
-    top_candidates = [m for s, m in scored if s == best_score or (s >= 2 and best_score - s <= 1)]
-    if len(top_candidates) > 1 and best_score >= 1:
-        unique_contents = {m["content"].strip().lower() for m in top_candidates}
-        if len(unique_contents) > 1:
-            return None, True, top_candidates[:3]
-
-    return best_mem, False, [best_mem]
+    return find_best_matching_decision(memories, message)
 
 
 _REMEMBER_EXPLICIT_PATTERNS = [
@@ -834,6 +812,12 @@ def chat(req: ChatRequest, user: CurrentUser):
     # ── Decision modification flow ────────────────────────────────────────────
     # First check: is there a pending confirmation waiting?
     pending = db.get_session_pending_decision(user_id, req.session_id)
+    if pending is None and req.is_retry:
+        last_p = db.get_last_pending_decision_in_session(user_id, req.session_id)
+        if last_p and last_p.get("status") == "confirmed":
+            if _detect_confirm(req.message) is True:
+                pending = last_p
+
     if pending is not None:
         confirmed = _detect_confirm(req.message)
         if confirmed is True:
@@ -843,6 +827,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                 pending_id=pending["pending_id"],
                 accepted=True,
                 source_session=req.session_id,
+                allow_idempotent_retry=bool(req.is_retry),
             )
             s_ver, _, _, _, _, _, _ = _advance_user_state(
                 db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_confirm", project_id=req.project_id
@@ -954,21 +939,13 @@ def chat(req: ChatRequest, user: CurrentUser):
                 session_id=req.session_id,
             )
         elif matched is not None:
-            # Extract proposed new content: text after keywords like "thành", "sang", "bằng", "to"
-            import re as _re
-            proposed = _re.sub(
-                r"^.+?(?:thành|sang|bằng|to|with|use|dùng)\s+",
-                "",
-                req.message,
-                flags=_re.IGNORECASE,
-            ).strip() or req.message
-
-            # If user specified "Đổi X sang Y" and X is in old content, perform contextual substitution
-            sub_m = _re.search(r"(?:đổi|thay|chuyển)\s+(.+?)\s+(?:thành|sang|bằng|to|with)\s+(.+)", req.message, _re.IGNORECASE)
-            if sub_m:
-                target_word, repl_word = sub_m.group(1).strip(), sub_m.group(2).strip()
-                if target_word.lower() in matched["content"].lower():
-                    proposed = _re.sub(_re.escape(target_word), repl_word, matched["content"], flags=_re.IGNORECASE)
+            comps = extract_modify_components(req.message)
+            proposed = synthesize_full_decision(
+                old_content=matched["content"],
+                message=req.message,
+                topic=comps["topic"],
+                new_value=comps["new_value"],
+            )
 
             db.create_pending_decision(
                 user_id=user_id,
@@ -976,6 +953,9 @@ def chat(req: ChatRequest, user: CurrentUser):
                 old_memory_id=matched["memory_id"],
                 old_content=matched["content"],
                 proposed_content=proposed,
+                topic=comps["topic"],
+                new_value=comps["new_value"],
+                statement_source=req.message,
             )
             reply_text = (
                 f"Tôi thấy bạn muốn thay đổi quyết định. Bạn có muốn:\n"
@@ -1045,9 +1025,11 @@ def chat(req: ChatRequest, user: CurrentUser):
         project_name=project_name,
     )
 
-    grounded_answer = memory_answer(req.message, memories) if provider_ok else None
+    grounded_answer, grounded_mem = memory_answer_with_match(req.message, memories) if provider_ok else (None, None)
     if grounded_answer is not None:
         reply_text = grounded_answer
+        if grounded_mem and grounded_mem["memory_id"] not in memory_ids:
+            memory_ids = [grounded_mem["memory_id"]] + memory_ids
 
     if provider_ok:
         # Save assistant message only on success

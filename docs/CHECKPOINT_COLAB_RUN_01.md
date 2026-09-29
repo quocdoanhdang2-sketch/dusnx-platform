@@ -98,45 +98,71 @@ Script thực hiện các bước kiểm tra và khởi động chuẩn hóa:
 }
 ```
 
-### B. Luồng tương tác người dùng qua Gateway (Port 8080)
-1. **Đăng ký tài khoản thử nghiệm mới:** Tạo user mới `user_real_1790710227` (`ea01af6681ad3ec2b947f40857f78fa7`), nhận Bearer token và xác thực qua Gateway `/v1/auth/login`.
-2. **Lưu quyết định trong Phiên 1:**
-   - Người dùng: *"Ghi nhớ quyết định: Chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026."*
-   - Router & State: Ghi nhận sự kiện `memory_create`, lưu bản ghi quyết định với trạng thái `active` (`is_active = 1`).
-3. **Sửa quyết định có xác nhận (Confirmation Guard):**
-   - Người dùng: *"Đổi quyết định hạ tầng đám mây sang AWS nhé."*
-   - Router & State: Nhận diện `decision_modify_intent` -> tạo `pending_decision` và sinh phản hồi xác nhận:
-     > *"Tôi thấy bạn muốn thay đổi quyết định. Bạn có muốn: Cũ: GCP... Mới: AWS... Trả lời Có để xác nhận hoặc Không để huỷ."*
-   - Người dùng: *"Có, tôi xác nhận đổi."*
-   - Router & State: Nhận diện xác nhận, cập nhật quyết định nguyên tử trong SQLite (thay thế GCP bằng AWS).
-4. **Mở phiên mới (Phiên 2) & Hỏi lại quyết định hiện hành:**
-   - Mở Session 2 hoàn toàn mới (`25ce105f64b8a245d8b76c8c4a1b0c03`).
-   - Người dùng: *"Quyết định hạ tầng đám mây năm 2026 hiện hành của tôi là gì?"*
+### B. Phân tích nguyên nhân & Thiết kế sửa chất lượng trí nhớ (Memory Quality Redesign)
 
-### C. Kết quả chạy thực tế với Ollama thật (`qwen2.5:0.5b`) & Kiểm chứng Database
+#### 1. Nguyên nhân gốc rễ của lỗi lưu "AWS nhé." và "AWS nhé..":
+1. **Bóc tách đề xuất thô bạo bằng Regex:** Đoạn mã cũ sử dụng `re.sub(r"^.+?(?:thành|sang|bằng|to|with|use|dùng)\s+", "", req.message)` để lấy nội dung mới. Khi người dùng nói *"Đổi quyết định hạ tầng đám mây sang AWS nhé"*, regex này cắt bỏ toàn bộ phần trước `sang `, chỉ giữ lại đúng mẩu vụn `"AWS nhé."`.
+2. **Khớp chuỗi thay thế bị trượt (Mismatched Substring):** Logic cũ cố gắng tìm `target_word` (ở đây là `"quyết định hạ tầng đám mây"`) trong nội dung bản ghi cũ. Tuy nhiên, bản ghi cũ lưu *"chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026"* (không chứa nguyên văn cụm từ *"quyết định hạ tầng đám mây"*). Do đó, phép thay thế chuỗi không thực hiện được và hệ thống fallback lưu mẩu câu vụn `"AWS nhé."`.
+3. **Lặp dấu câu (`..`) do nối chuỗi thiếu kiểm tra:** `grounding.py` luôn nối thêm dấu chấm `.` vào cuối câu trả lời. Khi mẩu câu `"AWS nhé."` đã có sẵn dấu chấm ở cuối, kết quả trở thành `"AWS nhé.."`.
 
-**1. Phản hồi nguyên văn từ Gateway (Phiên mới):**
-> *"Theo trí nhớ đang hiệu lực: AWS nhé.."*
+#### 2. Thiết kế sửa tổng quát (Không hardcode thực thể hay câu mẫu):
+- **Bóc tách đa thành phần (`decision_updater.py`):**
+  - Tách bạch: `topic` (chủ đề/phạm vi, ví dụ: `"hạ tầng đám mây"`), `new_value` (giá trị mới sau khi dọn sạch trợ từ tiếng Việt như *nhé, nha, ạ, đi, nhá*: `"AWS"`), `raw_target` và `statement_source`.
+  - Mở rộng bảng `pending_decision_updates` với các cột `topic`, `new_value`, `statement_source` (kèm migration tự động).
+- **Tổng hợp câu quyết định hoàn chỉnh (`synthesize_full_decision`):**
+  - Tự động nhận diện cấu trúc vị ngữ/thực thể của câu cũ (ví dụ: `chúng tôi chọn [GCP] cho [dự án hạ tầng đám mây năm 2026]`) để thay thế thực thể cũ bằng thực thể mới, bảo toàn đầy đủ chủ ngữ, bổ ngữ, phạm vi và mốc thời gian:
+    *Cũ:* `chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026`
+    *Mới:* `chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026`
+- **Xử lý mơ hồ khi có nhiều bản ghi phù hợp (`find_best_matching_decision`):**
+  - So khớp theo từ khóa chủ đề (bỏ qua từ dừng và từ lệnh).
+  - Nếu có 2 hoặc nhiều quyết định cùng loại và câu nói không đủ thông tin phân biệt, hệ thống hỏi lại để làm rõ chứ **không tự ý chọn bừa** một bản ghi.
+- **Supersede nguyên tử & Idempotent Retry (`memory.py`):**
+  - Chỉ supersede khi người dùng xác nhận rõ ràng. Nếu từ chối hoặc trả lời mơ hồ, bản ghi cũ được giữ nguyên vẹn 100%.
+  - Cập nhật bản ghi cũ (`is_active = 0`, `superseded_by = new_id`) và tạo bản ghi mới (`version = old.version + 1`, `is_active = 1`) trong cùng một SQLite transaction duy nhất dưới lock bảo vệ.
+  - Hỗ trợ retry idempotent: tránh tạo version trùng lặp khi người dùng gửi lại request xác nhận.
+- **Chuẩn hóa sinh câu trả lời (`grounding.py`):**
+  - `format_memory_answer`: dọn sạch dấu câu thừa ở cuối (`re.sub(r"[.?!,;:]+$", "", c)`) trước khi thêm dấu chấm duy nhất, triệt tiêu hoàn toàn lỗi dấu `..`.
+  - `is_memory_question`: bao quát các động từ lựa chọn/quyết định (`chọn`, `quyết định`, `lựa chọn`, `dùng`, `sử dụng`, `hiện tại`, v.v.).
 
-**2. Chi tiết trường dữ liệu trả về từ API:**
-- **`provider_used`:** `ollama` (Không dùng mock)
-- **`model_used`:** `qwen2.5:0.5b`
-- **`provider_ok`:** `true`
-- **`routing_source`:** `model` (được định tuyến bởi checkpoint Colab T4 `router.pt`)
-- **`runtime_mode`:** `trained_dusnx`
-- **`memory_ids_used`:** `["ba73a5ad07889fb02b3182e033ef55ba"]`
+---
 
-**3. Trạng thái cơ sở dữ liệu SQLite (`python/data/memory.db`):**
+### C. Kết quả nghiệm thu thực tế qua Gateway với Checkpoint Colab & Ollama thật
+
+Kịch bản nghiệm thu thực tế qua Gateway (cổng `8080`) với người dùng mới (`user_quality_53052feaaf46`):
+1. **Lưu 2 quyết định độc lập khác chủ đề trong Phiên 1:**
+   - Quyết định 1 (Hạ tầng): *"chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026"*
+   - Quyết định 2 (Cơ sở dữ liệu): *"chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính"*
+2. **Yêu cầu sửa 1 quyết định:**
+   - Người dùng: *"Đổi quyết định hạ tầng đám mây sang AWS nhé"*
+   - Pending record tạo ra:
+     - `topic`: `"hạ tầng đám mây"`
+     - `new_value`: `"AWS"`
+     - `old_content`: `"chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026"`
+     - `proposed_content`: `"chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026"` (Câu đầy đủ, chuẩn ngữ pháp, không còn là `"AWS nhé."`)
+   - Trợ lý phản hồi:
+     > *"Tôi thấy bạn muốn thay đổi quyết định. Bạn có muốn:*
+     > ***Cũ:*** *chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026*
+     > ***Mới:*** *chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026*
+     > *Trả lời **Có** để xác nhận hoặc **Không** để huỷ."*
+3. **Xác nhận cập nhật:**
+   - Người dùng: *"Đồng ý"*
+   - Bản ghi cũ (GCP) được supersede nguyên tử sang `is_active = false`, `superseded_by = f263182549f0eec2c20568c89da15f0b`.
+   - Bản ghi mới (AWS) được kích hoạt `is_active = true`, `version = 2`.
+   - Bản ghi cơ sở dữ liệu (PostgreSQL) giữ nguyên `is_active = true`, `version = 1`.
+4. **Mở phiên mới (Phiên 2) & Hỏi riêng từng quyết định:**
+
+| Câu hỏi | Câu trả lời nguyên văn | `provider_used` | `model_used` | `routing_source` | `memory_ids_used` | Trạng thái kiểm chứng |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **"Hạ tầng đám mây được chọn cho dự án là gì?"** | *"Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026."* | `ollama` | `qwen2.5:0.5b` | `model` | `["f263182549f0...", "d6cd8284d3b2..."]` | **AWS là quyết định hiện hành, không nhắc GCP, không có dấu `..`** |
+| **"Cơ sở dữ liệu được chọn là gì?"** | *"Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính."* | `ollama` | `qwen2.5:0.5b` | `model` | `["d6cd8284d3b2...", "f263182549f0..."]` | **PostgreSQL là quyết định hiện hành, không bị nhầm với hạ tầng đám mây** |
+
+5. **Trạng thái Database SQLite (`python/data/memory.db`):**
 
 | ID | Content | info_type | is_active | superseded_by | version | Trạng thái |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `70ff685933fe9a071dbd7561f3014a60` | Chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026 | `decision` | **`0`** | `ba73a5ad07889fb02b3182e033ef55ba` | 1 | **Superseded (Không hiệu lực)** |
-| `ba73a5ad07889fb02b3182e033ef55ba` | AWS nhé. | `decision` | **`1`** | `NULL` | 2 | **Active (Đang hiệu lực)** |
-
-**4. Xác nhận kết quả:**
-- **AWS là quyết định hiện hành duy nhất.**
-- **GCP đã bị thay thế hoàn toàn (`is_active = 0`, `superseded_by = ...`) và không bị trình bày như quyết định hiện hành.**
-- **Ollama thật (`qwen2.5:0.5b`) hoàn thành câu trả lời dựa trên context được ground từ active memory.**
+| `c0c7abb2b541...` | chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026 | `decision` | **`0`** | `f263182549f0...` | 1 | **Superseded (Không còn hiệu lực)** |
+| `f263182549f0...` | chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026 | `decision` | **`1`** | `NULL` | 2 | **Active (Đang hiệu lực - Đầy đủ nội dung)** |
+| `d6cd8284d3b2...` | chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính | `decision` | **`1`** | `NULL` | 1 | **Active (Đang hiệu lực - Độc lập)** |
 
 ---
 
