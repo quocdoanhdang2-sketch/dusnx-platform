@@ -7,6 +7,8 @@
 Bằng chứng thực chạy ngày 28/09/2026: [nghiệm thu HTTP và Web Tuần 2](docs/WEEK2_ACCEPTANCE.md),
 [kết quả và giới hạn pilot Tuần 3](docs/WEEK3_PILOT.md). Nhãn pilot **chưa được duyệt độc lập**.
 Gateway dùng HttpClient proxy; auth dùng opaque token trong bảng SQLite `tokens`.
+Từ bản sửa provenance, recall là template không gọi LLM; script HTTP/UI kiểm tra
+thêm một câu generation riêng. Bằng chứng cũ là lịch sử, không gán metadata cũ cho code hiện tại.
 
 ```powershell
 # Từ thư mục gốc, sau khi activate virtualenv đã cài ./python[dev]
@@ -31,7 +33,7 @@ git diff --check
 
 HTTP/UI cần dịch vụ chạy bằng `start-local.ps1`; benchmark dùng app FastAPI trong
 process, DB riêng tại `runtime/week3-scratch/<run-id>`, Ollama thật ở `:11434`,
-checkpoint local tại `artifacts/dusnx_smoke_v2.pt`. Không có checkpoint thì ghi
+checkpoint local theo `DUSNX_CHECKPOINT` hoặc thứ tự tự nhận diện bên dưới. Không có checkpoint thì ghi
 `bootstrap_rules`, không báo là kết quả model đã train. Script mặc định dùng CPU;
 GPU là tùy chọn. Máy kiểm chứng dùng virtualenv có sẵn `python/.venv`, không cần
 tạo lại nếu đã cài dependencies.
@@ -51,7 +53,7 @@ phủ định và việc phân biệt nhớ đúng với đoán đúng. Chi ti�
 - **Điểm gọi API thống nhất qua Gateway ASP.NET Core:** Toàn bộ request Web UI (`:8080` ở chế độ Native hoặc `:3000` qua Nginx reverse-proxy ở Docker Compose) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
 - **Một danh tính & state có thẩm quyền cho người dùng:** Các endpoint `/v1/me/events`, `/v1/me/state`, `/v1/me/events` trích xuất `user_id` trực tiếp từ token, tính toán `time_gap_hours`, chống giả mạo danh tính trong body.
 - **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint (phân biệt rõ với Office Add-in tích hợp thực tế) gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
-- **Trí nhớ có giải thích (Explainable RAG) & Cô lập Project:** Thuật toán chấm điểm theo độ tương quan và độ mới, cách ly nghiêm ngặt theo `project_id`, phản ánh chính xác `memory_ids_used` trong prompt.
+- **Trí nhớ có giải thích & Cô lập Project:** Lọc theo owner/project/active rồi chọn theo chủ đề; `candidate_memory_ids` là retrieval, `prompt_memory_ids` là prompt, `memory_ids_used` là bằng chứng được trích. Không đồng nhất ba danh sách.
 - **Quản lý quyết định & Giải quyết mơ hồ:** Hỗ trợ lưu quyết định từ hội thoại ("Hãy nhớ rằng..."), sửa quyết định với bước xác nhận nguyên tử (đồng ý thì thay 1 lần, từ chối giữ bản cũ). Khi có 2 quyết định tương tự, hệ thống hỏi lại làm rõ thay vì sửa nhầm.
 - **Xử lý lỗi Provider an toàn:** Khi LLM provider mất kết nối, lỗi được hiển thị dưới dạng thẻ lỗi chuyên dụng trên UI kèm nút Thử lại (Retry), tuyệt đối không lưu chuỗi lỗi vào lịch sử DB như câu trả lời AI hợp lệ.
 - **Giao dịch nguyên tử & Idempotent Retry:** Cập nhật state và ghi user event trong một SQLite transaction thực sự; retry chat không nhân đôi tin nhắn/event/state version.
@@ -60,7 +62,7 @@ phủ định và việc phân biệt nhớ đúng với đoán đúng. Chi ti�
 
 ## Checkpoint v2 (default runtime)
 
-The default checkpoint is `artifacts/dusnx_smoke_v2.pt`. It is local-only: do not commit checkpoints, datasets, `.env`, or secrets.
+Checkpoint resolution prefers `DUSNX_CHECKPOINT`, then the local Colab Run 01 artifact when present, then the legacy smoke/local artifacts. Checkpoints remain local-only: do not commit them, datasets, `.env`, or secrets. See [verified Colab artifact and response provenance](docs/CHECKPOINT_COLAB_RUN_01.md).
 
 Windows native and Docker use different paths for the same mounted artifact:
 
@@ -89,7 +91,7 @@ cd D:\Projects\dusnx-platform
 Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
 ```
 
-`/health` must show `runtime_mode` as `trained_dusnx`, a non-empty `checkpoint_loaded` pointing to the host v2 checkpoint, and a non-empty `model_version`. The same `model_version` is written to each `state_snapshot`.
+`/health` must show `runtime_mode=trained_dusnx`, `checkpoint_loaded=true`, the correct `checkpoint_path`, and a non-empty `model_version`. The same `model_version` is written to each `state_snapshot`.
 
 ### Timeline local và smoke test xuyên nền tảng
 
@@ -140,7 +142,7 @@ docker compose up --build
 Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
 ```
 
-For Docker, `.env` uses `/app/artifacts/dusnx_smoke_v2.pt`; `checkpoint_loaded` must report that container path. If the checkpoint is absent, FastAPI correctly reports `bootstrap_rules` and returns an exact v2 generation/training command in `metadata.warning`.
+For Docker, `.env` uses `/app/artifacts/dusnx_smoke_v2.pt`; `checkpoint_path` reports the container path. If the checkpoint is absent, FastAPI reports `bootstrap_rules` and a diagnostic in `metadata.warning`.
 
 Starter project cho **Cross-Platform Dynamic User State Network for Adaptive Multi-Agent Systems**.
 
@@ -239,7 +241,7 @@ Thay `TEN_REPOSITORY` bằng tên mày chọn. Không commit `.env`, dataset th�
 
 ## Dữ liệu và train state/router trên local hoặc Colab
 
-Notebook [train_dusnx_colab.ipynb](notebooks/train_dusnx_colab.ipynb), [hướng dẫn từng cú nhấp chuột](docs/TRAIN_COLAB_TUNG_BUOC.md) và [báo cáo sẵn sàng huấn luyện](docs/TRAIN_READINESS.md) phục vụ huấn luyện recurrent state và các đầu intent/agent/action, **không fine-tune LLM**. Toàn bộ mã nguồn, helper và CPU smoke đã được kiểm tra trên máy local; **chưa có phiên GPU nào được chạy trên Colab**. Không yêu cầu một loại GPU cụ thể; CPU chạy smoke 2-3 phút được.
+Notebook [train_dusnx_colab.ipynb](notebooks/train_dusnx_colab.ipynb), [hướng dẫn từng cú nhấp chuột](docs/TRAIN_COLAB_TUNG_BUOC.md) và [báo cáo sẵn sàng huấn luyện](docs/TRAIN_READINESS.md) phục vụ huấn luyện recurrent state và các đầu intent/agent/action, **không fine-tune LLM**. Artifact Colab Run 01 do người dùng cung cấp đã được xác minh SHA, nạp và kiểm tra local; không train lại trong nhiệm vụ sửa metadata. Xem [báo cáo checkpoint](docs/CHECKPOINT_COLAB_RUN_01.md). Không yêu cầu một loại GPU cụ thể.
 
 ```powershell
 $env:PYTHONPATH='python/src;python;.;scripts'
@@ -256,10 +258,16 @@ Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ.
 
 - **Holdout v1 (8 chuỗi/29 bước):** Đã bị xem xét và dùng để chẩn đoán hệ thống, nên không dùng để chọn model/rule (Development Set).
 - **Holdout v2 (10 chuỗi/38 bước, SHA-256 `1dfd8f1b...`):** Đã chạy đánh giá chẩn đoán (Diagnostic Set), phục vụ chẩn đoán căn nguyên của model-only và clarification.
-- **Holdout v3 (20 chuỗi/311 bước, SHA-256 `094268aa...`):** Tập đánh giá độc lập hoàn toàn mới, khóa manifest và mã băm toàn vẹn. Bao gồm chuỗi dài 15–30 lượt, đổi phiên, chuyển đổi Web ↔ PowerPoint, hai trí nhớ cùng loại, câu thiếu chủ ngữ, và không lặp từ khóa. **TUYỆT ĐỐI KHÔNG CHẠY BẤT KỲ MODEL NÀO TRÊN V3** cho đến khi hoàn tất thẩm định nhãn độc lập.
+- **Holdout v3 (20 chuỗi/311 bước, SHA-256 `094268aa...`):** Tập dự kiến dùng đánh giá độc lập, đã khóa manifest/hash nhưng **chưa có reviewer thật duyệt**. Chỉ kiểm tra toàn vẹn và package blind trong nhiệm vụ này. **KHÔNG CHẠY MODEL, RULE, BASELINE HOẶC SCORER TRÊN V3** trước khi hoàn tất thẩm định.
 - **MASSIVE vi-VN:** Đã tải nhưng toàn bộ mapping chờ reviewer duyệt nên bị loại hoàn toàn khỏi tập train; CSConDa chưa có quyền và được bỏ qua an toàn.
 - **Đánh giá 5 nhánh:** Tách riêng `baseline_a` (no-memory), `baseline_b` (static-memory), `model_only` (pure checkpoint không qua rule), `dusnx_no_state` (ablation xóa recurrent state mỗi bước), và `dusnx` (full system). Kết quả cho thấy năng lực hiện tại của hệ thống đến chủ yếu từ SQLite CRUD và rules; giả thuyết recurrent state tốt hơn ablation cần kiểm chứng trên chuỗi dài độc lập (Holdout v3).
-- **Thẩm định nhãn độc lập:** File mẫu blind CSV tại `runtime/reviewer_package/holdout_v2_blind_template.csv` và `holdout_v3_blind_template.csv` để gửi reviewer độc lập gán nhãn mà không bị lộ đáp án hay dự đoán của model (xem [hướng dẫn duyệt](docs/ANNOTATION_GUIDE.md)).
+- **Thẩm định nhãn độc lập:** Gói v3 chưa được người thật duyệt. Làm theo [hướng dẫn PowerShell](docs/HOLDOUT_V3_REVIEW_GUIDE.md): chỉ gửi blind CSV và hướng dẫn, validate bài nộp với `--template`, rồi agreement/phân xử/khóa sau review thật. Không mở đánh giá v3 lúc này.
+
+## Kiểm chứng memory và nguồn câu trả lời
+
+`python scripts/verify_chat_provenance.py --output runtime/chat-provenance.json` chạy qua Gateway với user thử mới, bốn câu hỏi memory và một câu Ollama generation thật. [Bằng chứng đã chạy](docs/evidence/chat-provenance/gateway.json) và [hợp đồng API](docs/CHAT_RESPONSE_CONTRACT.md) phân biệt `candidate_memory_ids`, `prompt_memory_ids`, `memory_ids_used`, `provider_called`, `response_source`.
+
+Template trích memory không gọi Ollama: provider/model=null; Web hiển thị “Trích trí nhớ đã lưu”. LLM thành công có response_source=llm và model thực trả về. `provider_ok` giữ nghĩa tương thích là lượt thành công, không chứng minh đã gọi LLM. Không dùng health hoặc routing_source=model làm bằng chứng nguồn sinh văn bản.
 
 ## Đọc tiếp
 

@@ -118,7 +118,8 @@ class TestMemoryScopingAndPromptContext:
 
         # Check positive inclusion
         assert m_new_db["memory_id"] in used_ids, "Active PostgreSQL decision must be in context"
-        assert m_alpha["memory_id"] in used_ids, "Project Alpha fact must be in context"
+        assert m_alpha["memory_id"] in res["candidate_memory_ids"], "Scoped Alpha fact must be a candidate"
+        assert m_alpha["memory_id"] not in used_ids, "An unselected candidate is not an answer citation"
 
         # Check strict negative exclusion
         assert m_old_db["memory_id"] not in used_ids, "Superseded MySQL decision must NEVER be in context"

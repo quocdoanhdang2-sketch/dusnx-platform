@@ -1,189 +1,74 @@
-# Báo Cáo Tích Hợp Checkpoint Colab Run 01 (DUSN-X Router)
+# Checkpoint Colab Run 01 và kiểm chứng nguồn câu trả lời
 
-## 1. Thông Tin Checkpoint & Môi Trường Huấn Luyện
+Cập nhật 2026-09-30. HEAD trước nhiệm vụ: `2a7b159db2a6aac549a863258dcee33f76173517`. Không train lại checkpoint và không chạy model/rule/baseline/scorer trên v3 trong nhiệm vụ này.
 
-| Thuộc tính | Giá trị thực tế |
-| :--- | :--- |
-| **Commit mã nguồn huấn luyện** | `50e1042aa45ca99d17c989817a08a0896f7a7935` |
-| **Phần cứng huấn luyện** | Google Colab Tesla T4 GPU (CUDA 12.8, PyTorch 2.11.0, Python 3.13.15) |
-| **Đường dẫn checkpoint cục bộ** | `training-results/colab-run-01/extracted/dusnx-router-full-01/router.pt` |
-| **SHA-256 Checkpoint** | `56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1` |
-| **Tổng số epoch** | 8 epochs (dừng sớm với patience=3 tại epoch 8) |
-| **Best Epoch** | **Epoch 6** |
-| **Điểm Validation tốt nhất** | **0.8062** (Macro-F1 trung bình cả 3 đầu phân loại) |
-| **Validation Intent Macro-F1** | 0.7453 |
-| **Validation Router Macro-F1** | 0.8746 |
-| **Validation Next Action Macro-F1** | 0.7987 |
-| **Tập dữ liệu Train** | 371 chuỗi, 4.185 sự kiện (trong đó 3.000 event legacy lặp nhiều từ template tổng hợp cũ + 1.185 event thiết kế mới đa lượt) |
-| **Tập dữ liệu Validation** | 46 chuỗi, 203 sự kiện (24 template families, 0% overlap với train và các tập holdout) |
+## Checkpoint đã xác minh
 
----
+- File local: `training-results/colab-run-01/extracted/dusnx-router-full-01/router.pt`.
+- SHA-256 thực đo: `56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1`.
+- Metadata checkpoint được /health trả về: source commit `50e1042aa45ca99d17c989817a08a0896f7a7935`, best epoch 6, best validation mean macro-F1 `0.8061977767812536`, 3814 train windows / 157 validation windows. Số window khác số event.
+- Metadata lưu Python 3.13.15, PyTorch 2.11.0+cu128, Tesla T4. Đây là thông tin artifact Colab được người dùng cung cấp; không phải một phiên train mới do agent chạy trong nhiệm vụ này.
+- Train được báo cáo: 371 chuỗi / 4185 event, gồm 3000 event synthetic legacy lặp cao; validation 46 chuỗi / 203 event. Không suy ra độ đa dạng cao từ tổng số dòng.
+- API hiện chạy CPU, `checkpoint_loaded=true`, `runtime_mode=trained_dusnx`; `model_version=checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98`.
 
-## 2. Hợp Đồng Kiến Trúc & Kiểm Tra Tương Thích (Schema Verification)
+Mô hình có recurrent global/platform/task state (160/112/112) và ba đầu intent/agent/action. Memory CRUD, pending confirmation và supersede là code ứng dụng + SQLite, **không phải chức năng học được của checkpoint**. Checkpoint không sinh văn bản, không hiểu ảnh, không chứng minh hiểu lịch sinh hoạt hoặc tính cách toàn diện.
 
-Checkpoint đã được kiểm tra bằng hàm `validate_checkpoint_compatibility()` tại [`python/src/dusnx_core/checkpoint.py`](file:///d:/Projects/dusnx-platform/python/src/dusnx_core/checkpoint.py):
-- **Kích thước từ vựng (Vocab size):** 16.384 token
-- **Chiều vector token (Token dim):** 96
-- **Chiều không gian nền tảng (Platform dim):** 24 (Web, PowerPoint, VS Code)
-- **Chiều sự kiện (Event type dim):** 8
-- **Kích thước Recurrent State:**
-  - `global_state_dim`: 160
-  - `platform_state_dim`: 112
-  - `task_state_dim`: 112
-  - **Combined State Dimension:** 384 (160 + 112 + 112)
-- **Từ vựng nhãn phân loại:**
-  - `INTENTS` (6): `chat`, `research`, `summarize`, `presentation_edit`, `recommendation`, `followup`
-  - `AGENTS` (3): `conversation`, `search_rag`, `productivity`
-  - `NEXT_ACTIONS` (6): `reply`, `search`, `summarize`, `edit_slide`, `recommend`, `clarify`
+## Nguyên nhân metadata sai ở mốc 2a7b159
 
----
+`main.chat` lấy `get_active_memories_for_context(..., limit=15)` rồi gán mọi ID vào memory_ids_used. SQL trong memory.py đã lọc đúng owner, project/global và active; scoring chỉ xếp hạng, không loại mọi ứng viên không liên quan. Vì vậy AWS và PostgreSQL đều nằm trong candidates.
 
-## 3. Cách Cấu Hình & Khởi Động Native Stack Trên Máy Cục Bộ
+Sau đó main gọi generate_response; grounding.memory_answer_with_match chọn một bản ghi và dựng `Theo trí nhớ đang hiệu lực: ...`. Code thay văn bản provider bằng template nhưng giữ provider/model và phần lớn ID cũ. Điều kiện thêm ID nếu chưa có không thể loại ID không dùng. **Câu này là template ứng dụng**, dù đường code cũ có gọi provider trước đó; chỉ provider_used=ollama trong log không tự chứng minh nguồn văn bản.
 
-### Cấu hình biến môi trường qua PowerShell
-Đường dẫn checkpoint được cấu hình linh hoạt qua biến môi trường hoặc tự động nhận diện từ thư mục `training-results`:
+Luồng mới: xác thực → lấy active scoped candidates → chọn chủ đề → template/clarification không gọi provider, hoặc prompt được chọn → HTTP LLM → response qua HttpClient Gateway. [Hợp đồng API đầy đủ](CHAT_RESPONSE_CONTRACT.md) tách candidate_memory_ids, prompt_memory_ids, memory_ids_used, provider_called và response_source. Web giữ memory_ids_used và thêm nhãn nguồn; không hiển thị template là Ollama.
+
+Không hardcode AWS/GCP/PostgreSQL trong logic chọn. Test dùng công cụ thiết kế và đồ uống; test retry xác nhận sửa đã bắt thêm lỗi tăng state version dù transaction memory đã idempotent. Bản sửa giữ state/event khi retry; không thay SQL transaction nguyên tử.
+
+## Bằng chứng thật qua Gateway
+
+Lệnh đã chạy:
+
 ```powershell
-# Tuỳ chọn: chỉ định rõ đường dẫn checkpoint (tương đối hoặc tuyệt đối)
-$env:DUSNX_CHECKPOINT = "training-results\colab-run-01\extracted\dusnx-router-full-01\router.pt"
-$env:DUSNX_DEVICE = "auto"
+python/.venv/Scripts/python.exe scripts/verify_chat_provenance.py --output runtime/chat-provenance-final.json
 ```
 
-### Lệnh khởi động tự động toàn bộ dịch vụ (Runbook)
+[JSON thực chạy đã lược credentials](evidence/chat-provenance/gateway.json), UTC `2026-09-29T20:47:39.083259+00:00` (03:47 ngày 30/09 giờ Việt Nam), status passed. User thử mới: lưu GCP và PostgreSQL → đề nghị AWS → xác nhận → mở phiên mới. GCP được supersede; hai quyết định còn lại active.
+
+Đặt A = `ff4b518617505285d0772c0afd2f5dd3` (AWS), D = `fbcb59a27ead947387eb409bdfb77d59` (PostgreSQL). Đây là alias đọc báo cáo; file JSON giữ ID thật của dữ liệu thử.
+
+| Câu hỏi | Câu trả lời thực tế | IDs dùng | Source / provider_called |
+|---|---|---|---|
+| Hạ tầng đám mây được chọn cho dự án là gì? | Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026. | [A] | grounded_template / false |
+| Cơ sở dữ liệu được chọn là gì? | Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính. | [D] | grounded_template / false |
+| Hạ tầng đám mây và cơ sở dữ liệu được chọn là gì? | Hai câu nguyên văn trên, mỗi câu một dòng. | [A,D] | grounded_template / false |
+| Quyết định hiện tại của tôi là gì? | Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào? | [] | clarification / false |
+
+Cả bốn có candidate IDs [A,D] (thứ tự theo score), prompt IDs [], provider_used/model_used/tokens_generated=null. provider_ok=true nghĩa lượt thành công theo trường tương thích cũ, **không nói Ollama đã được gọi**. Không có GCP hoặc dấu '..' trong câu trả lời.
+
+Câu riêng `Viết hai câu về lợi ích của việc đọc sách.` có response_source=llm, provider_called=true, provider_used=ollama, model_used=qwen2.5:0.5b, provider_ok=true, tokens_generated=24, prompt_memory_ids=[], memory_ids_used=[]. Văn bản thực tế:
+
+> 1. Reading can improve your vocabulary and comprehension skills.
+> 2. Reading can enhance your critical thinking and analytical abilities.
+
+Đây là bằng chứng gọi generation thật, không chỉ health; model đã trả **tiếng Anh dù yêu cầu hệ thống tiếng Việt**. Không sửa output để làm đẹp báo cáo. Các test transport kiểm tra provider lỗi trả provider_ok=false, thiếu cấu hình không báo called, template không được gọi provider.
+
+## Holdout và review
+
+v1/v2 đã xem để chẩn đoán. V2 mock không đo chất lượng LLM; 23/38 lượt mang nhãn nghiệp vụ bộ nhớ ngoài từ vựng neural router. Điểm hybrid chịu ảnh hưởng lớn từ rules/SQLite; chưa chứng minh recurrent state tốt hơn no-state. Không lấy điểm đã xem làm đánh giá độc lập.
+
+V3 SHA thực đo: `094268aaf47fa5328786846aff46ebe2f271fd05e2633e681fee472adc8e71bd`. [Báo cáo integrity-only](evidence/chat-provenance/v3-integrity.json) xác nhận 311 lượt/20 chuỗi, status labels_locked_not_independently_reviewed, CSV/JSONL blind không có nhãn/notes đã điền. Không parse gold labels, không chạy inference/score. [Hướng dẫn reviewer PowerShell](HOLDOUT_V3_REVIEW_GUIDE.md) có thao tác gửi, nhận, kiểm tra đủ dòng, agreement, phân xử và khóa sau khi con người duyệt thật. Chưa có người thật duyệt và agent chưa gửi file cho ai.
+
+## Giới hạn và vận hành
+
+Chọn memory vẫn là heuristic từ khóa, giới hạn 15 candidates; paraphrase/đồng nghĩa hoặc thông tin thiếu có thể cần hỏi lại. LLM citations chưa được xác minh nên memory_ids_used của LLM để trống; prompt_memory_ids báo inclusion riêng. Không diễn giải demo này thành dự án đã hoàn thiện toàn diện.
+
+Khởi động đúng checkpoint:
+
 ```powershell
+$env:DUSNX_CHECKPOINT = 'D:\Projects\dusnx-platform\training-results\colab-run-01\extracted\dusnx-router-full-01\router.pt'
+$env:DUSNX_DEVICE = 'cpu'
 powershell -ExecutionPolicy Bypass -File .\start-local.ps1
 ```
 
-Script thực hiện các bước kiểm tra và khởi động chuẩn hóa:
-1. **Chuẩn hóa đường dẫn checkpoint:** Chuẩn hóa biến `$env:DUSNX_CHECKPOINT` thành đường dẫn tuyệt đối (`[System.IO.Path]::GetFullPath`) trước khi nạp vào tiến trình FastAPI từ thư mục `python/`.
-2. **Kiểm tra tiến trình cổng 8000 tức thời (`Assert-DusnxFastApiCheckpoint`):**
-   - Nếu cổng 8000 đã có tiến trình FastAPI lắng nghe, script probe ngay `/health` trong 3 giây.
-   - Nếu checkpoint đang nạp khác với checkpoint được yêu cầu, script **dừng ngay lập tức** và thông báo chi tiết:
-     - PID và tên tiến trình đang chạy (ví dụ: `PID 24716, python`).
-     - Đường dẫn checkpoint đang nạp (`Loaded checkpoint`) vs đường dẫn được yêu cầu (`Requested checkpoint`).
-     - Câu lệnh PowerShell cụ thể để tắt tiến trình cũ: `Stop-Process -Id <PID> -Force`.
-   - **Tuyệt đối không chờ 60 giây** rồi báo lỗi chung, và **không tự ý dừng các tiến trình** chưa xác minh thuộc DUSN-X.
-3. **Khởi chạy .NET 8 Gateway** trên cổng `8080` (nếu chưa chạy).
-4. **Kiểm tra sức khỏe toàn hệ thống (`Wait-DusnxHttpService`)** đảm bảo `runtime_mode = "trained_dusnx"` và `checkpoint_loaded = true`.
-5. **Mở Web UI tại `http://127.0.0.1:8080`.**
+Kiểm tra toàn repo gồm pytest, Node, Gateway tests/build, local-health, compileall source folders và git diff --check. Tiny training fixtures của test suite không phải train lại checkpoint Colab. Không commit training-results, checkpoint, DB, credential hoặc bài reviewer.
 
----
-
-## 4. Bằng Chứng Thực Tế (Health & Web Flow)
-
-### A. Phản hồi thực tế từ `/health` (FastAPI & Gateway)
-```json
-{
-  "status": "ok",
-  "device": "cpu",
-  "runtime_mode": "trained_dusnx",
-  "checkpoint": "D:\\Projects\\dusnx-platform\\training-results\\colab-run-01\\extracted\\dusnx-router-full-01\\router.pt",
-  "checkpoint_loaded": true,
-  "checkpoint_path": "D:\\Projects\\dusnx-platform\\training-results\\colab-run-01\\extracted\\dusnx-router-full-01\\router.pt",
-  "model_loaded": true,
-  "provider_ok": true,
-  "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
-  "metadata": {
-    "epoch": 6,
-    "best_val_score": 0.8061977767812536,
-    "commit_sha": "50e1042aa45ca99d17c989817a08a0896f7a7935",
-    "train_samples": 3814,
-    "validation_samples": 157
-  },
-  "provider": {
-    "provider": "ollama",
-    "model": "qwen2.5:0.5b",
-    "available": true,
-    "base_url": "http://localhost:11434"
-  }
-}
-```
-
-### B. Phân tích nguyên nhân & Thiết kế sửa chất lượng trí nhớ (Memory Quality Redesign)
-
-#### 1. Nguyên nhân gốc rễ của lỗi lưu "AWS nhé." và "AWS nhé..":
-1. **Bóc tách đề xuất thô bạo bằng Regex:** Đoạn mã cũ sử dụng `re.sub(r"^.+?(?:thành|sang|bằng|to|with|use|dùng)\s+", "", req.message)` để lấy nội dung mới. Khi người dùng nói *"Đổi quyết định hạ tầng đám mây sang AWS nhé"*, regex này cắt bỏ toàn bộ phần trước `sang `, chỉ giữ lại đúng mẩu vụn `"AWS nhé."`.
-2. **Khớp chuỗi thay thế bị trượt (Mismatched Substring):** Logic cũ cố gắng tìm `target_word` (ở đây là `"quyết định hạ tầng đám mây"`) trong nội dung bản ghi cũ. Tuy nhiên, bản ghi cũ lưu *"chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026"* (không chứa nguyên văn cụm từ *"quyết định hạ tầng đám mây"*). Do đó, phép thay thế chuỗi không thực hiện được và hệ thống fallback lưu mẩu câu vụn `"AWS nhé."`.
-3. **Lặp dấu câu (`..`) do nối chuỗi thiếu kiểm tra:** `grounding.py` luôn nối thêm dấu chấm `.` vào cuối câu trả lời. Khi mẩu câu `"AWS nhé."` đã có sẵn dấu chấm ở cuối, kết quả trở thành `"AWS nhé.."`.
-
-#### 2. Thiết kế sửa tổng quát (Không hardcode thực thể hay câu mẫu):
-- **Bóc tách đa thành phần (`decision_updater.py`):**
-  - Tách bạch: `topic` (chủ đề/phạm vi, ví dụ: `"hạ tầng đám mây"`), `new_value` (giá trị mới sau khi dọn sạch trợ từ tiếng Việt như *nhé, nha, ạ, đi, nhá*: `"AWS"`), `raw_target` và `statement_source`.
-  - Mở rộng bảng `pending_decision_updates` với các cột `topic`, `new_value`, `statement_source` (kèm migration tự động).
-- **Tổng hợp câu quyết định hoàn chỉnh (`synthesize_full_decision`):**
-  - Tự động nhận diện cấu trúc vị ngữ/thực thể của câu cũ (ví dụ: `chúng tôi chọn [GCP] cho [dự án hạ tầng đám mây năm 2026]`) để thay thế thực thể cũ bằng thực thể mới, bảo toàn đầy đủ chủ ngữ, bổ ngữ, phạm vi và mốc thời gian:
-    *Cũ:* `chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026`
-    *Mới:* `chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026`
-- **Xử lý mơ hồ khi có nhiều bản ghi phù hợp (`find_best_matching_decision`):**
-  - So khớp theo từ khóa chủ đề (bỏ qua từ dừng và từ lệnh).
-  - Nếu có 2 hoặc nhiều quyết định cùng loại và câu nói không đủ thông tin phân biệt, hệ thống hỏi lại để làm rõ chứ **không tự ý chọn bừa** một bản ghi.
-- **Supersede nguyên tử & Idempotent Retry (`memory.py`):**
-  - Chỉ supersede khi người dùng xác nhận rõ ràng. Nếu từ chối hoặc trả lời mơ hồ, bản ghi cũ được giữ nguyên vẹn 100%.
-  - Cập nhật bản ghi cũ (`is_active = 0`, `superseded_by = new_id`) và tạo bản ghi mới (`version = old.version + 1`, `is_active = 1`) trong cùng một SQLite transaction duy nhất dưới lock bảo vệ.
-  - Hỗ trợ retry idempotent: tránh tạo version trùng lặp khi người dùng gửi lại request xác nhận.
-- **Chuẩn hóa sinh câu trả lời (`grounding.py`):**
-  - `format_memory_answer`: dọn sạch dấu câu thừa ở cuối (`re.sub(r"[.?!,;:]+$", "", c)`) trước khi thêm dấu chấm duy nhất, triệt tiêu hoàn toàn lỗi dấu `..`.
-  - `is_memory_question`: bao quát các động từ lựa chọn/quyết định (`chọn`, `quyết định`, `lựa chọn`, `dùng`, `sử dụng`, `hiện tại`, v.v.).
-
----
-
-### C. Kết quả nghiệm thu thực tế qua Gateway với Checkpoint Colab & Ollama thật
-
-Kịch bản nghiệm thu thực tế qua Gateway (cổng `8080`) với người dùng mới (`user_quality_53052feaaf46`):
-1. **Lưu 2 quyết định độc lập khác chủ đề trong Phiên 1:**
-   - Quyết định 1 (Hạ tầng): *"chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026"*
-   - Quyết định 2 (Cơ sở dữ liệu): *"chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính"*
-2. **Yêu cầu sửa 1 quyết định:**
-   - Người dùng: *"Đổi quyết định hạ tầng đám mây sang AWS nhé"*
-   - Pending record tạo ra:
-     - `topic`: `"hạ tầng đám mây"`
-     - `new_value`: `"AWS"`
-     - `old_content`: `"chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026"`
-     - `proposed_content`: `"chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026"` (Câu đầy đủ, chuẩn ngữ pháp, không còn là `"AWS nhé."`)
-   - Trợ lý phản hồi:
-     > *"Tôi thấy bạn muốn thay đổi quyết định. Bạn có muốn:*
-     > ***Cũ:*** *chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026*
-     > ***Mới:*** *chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026*
-     > *Trả lời **Có** để xác nhận hoặc **Không** để huỷ."*
-3. **Xác nhận cập nhật:**
-   - Người dùng: *"Đồng ý"*
-   - Bản ghi cũ (GCP) được supersede nguyên tử sang `is_active = false`, `superseded_by = f263182549f0eec2c20568c89da15f0b`.
-   - Bản ghi mới (AWS) được kích hoạt `is_active = true`, `version = 2`.
-   - Bản ghi cơ sở dữ liệu (PostgreSQL) giữ nguyên `is_active = true`, `version = 1`.
-4. **Mở phiên mới (Phiên 2) & Hỏi riêng từng quyết định:**
-
-| Câu hỏi | Câu trả lời nguyên văn | `provider_used` | `model_used` | `routing_source` | `memory_ids_used` | Trạng thái kiểm chứng |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **"Hạ tầng đám mây được chọn cho dự án là gì?"** | *"Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026."* | `ollama` | `qwen2.5:0.5b` | `model` | `["f263182549f0...", "d6cd8284d3b2..."]` | **AWS là quyết định hiện hành, không nhắc GCP, không có dấu `..`** |
-| **"Cơ sở dữ liệu được chọn là gì?"** | *"Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính."* | `ollama` | `qwen2.5:0.5b` | `model` | `["d6cd8284d3b2...", "f263182549f0..."]` | **PostgreSQL là quyết định hiện hành, không bị nhầm với hạ tầng đám mây** |
-
-5. **Trạng thái Database SQLite (`python/data/memory.db`):**
-
-| ID | Content | info_type | is_active | superseded_by | version | Trạng thái |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `c0c7abb2b541...` | chúng tôi chọn GCP cho dự án hạ tầng đám mây năm 2026 | `decision` | **`0`** | `f263182549f0...` | 1 | **Superseded (Không còn hiệu lực)** |
-| `f263182549f0...` | chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026 | `decision` | **`1`** | `NULL` | 2 | **Active (Đang hiệu lực - Đầy đủ nội dung)** |
-| `d6cd8284d3b2...` | chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính | `decision` | **`1`** | `NULL` | 1 | **Active (Đang hiệu lực - Độc lập)** |
-
----
-
-## 5. Phân Định Rõ Ràng & Giới Hạn Của Checkpoint
-
-### Phân định giữa DUSN-X Router và LLM Provider:
-- **Phần do DUSN-X Recurrent State & Router đảm nhiệm:**
-  - Duy trì vector trạng thái ẩn đa chiều (`global`, `platform`, `task`).
-  - Định tuyến tác vụ (agent: conversation, search_rag, productivity).
-  - Dự đoán hành động tiếp theo (next action: reply, search, clarify, summarize, edit_slide).
-  - Quản lý trạng thái quyết định chờ duyệt (`await_confirm`) và bảo toàn ngữ cảnh qua nhiều phiên.
-- **Phần do LLM Provider (Ollama / OpenAI) đảm nhiệm:**
-  - Sinh văn bản tự nhiên theo ngữ cảnh.
-  - Khi Ollama ngoại tuyến hoặc không chạy được trên máy: Hệ thống trả về thông báo minh bạch `[Ollama không khả dụng: Connection refused]`. Các tầng state tracking, routing và memory retrieval hoàn toàn không bị gián đoạn hay phụ thuộc vào sự tồn tại của LLM.
-
-### Các giới hạn cần lưu ý:
-1. **Không phải mô hình LLM:** Checkpoint này là mạng nơ-ron hồi quy nhỏ (state updater + router heads) phục vụ định tuyến và cập nhật trạng thái; không dùng để sinh văn bản tự do.
-2. **Không phải mô hình đa phương thức:** Checkpoint không có khả năng hiểu ảnh, không có mô-đun quản lý lịch biểu hay mô phỏng tính cách toàn diện.
-3. **Đánh giá trên Holdout v2 (Chẩn đoán):**
-   - Holdout v2 là tập chẩn đoán đã xem kết quả trước đó. Điểm số với provider=mock trên v2 chỉ mang tính chất kiểm tra kỹ thuật, không được coi là chất lượng trợ lý ngoài thực tế.
-   - Trên v2, 23/38 lượt mang nhãn nghiệp vụ bộ nhớ (`memory_create`, `decision_update`) thuộc tầng ứng dụng bên trên, nằm ngoài từ vựng phân loại của neural router.
-   - Hệ thống Full Hybrid DUSN-X hiện chưa thể hiện ưu thế vượt trội rõ rệt so với baseline không trạng thái (no-state) trên tập v2.
-4. **Cam kết bảo lưu Holdout v3:**
-   - Tập `holdout_v3` (311 events, SHA-256 `094268aa...`) **tuyệt đối chưa được chạy** với bất kỳ checkpoint, mô hình, rule hay baseline nào. Tập này được niêm phong hoàn toàn để phục vụ đánh giá độc lập sau này.
+Nghiệm thu Tuần 2 đã chạy lại với hợp đồng mới: [HTTP passed](evidence/chat-provenance/week2-http.json), [Web UI thật passed](evidence/chat-provenance/week2-ui.json). Cả hai kiểm tra recall template và một lượt Ollama generation riêng. Playwright dùng Chromium local; ảnh vẫn ở runtime, report không lưu token hoặc password.

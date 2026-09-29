@@ -173,6 +173,20 @@ describe("renderMemoryCard — XSS safety", () => {
 });
 
 describe("appendMessageBubble — XSS safety", () => {
+  it("shows template provenance without claiming an Ollama generation", () => {
+    elements["messageList"] = makeEl("div");
+    elements["welcomeState"] = makeEl("div");
+    app.appendMessageBubble("assistant", "Đã lưu.", {
+      response_source: "grounded_template", provider: null, provider_ok: true,
+      memory_ids_used: ["selected"], candidate_memory_ids: ["selected", "unrelated"],
+    });
+    const text = (el) => [el.textContent, ...(el._children || []).map(text)].join(" ");
+    const rendered = text(elements["messageList"]);
+    assert.ok(rendered.includes("Trích trí nhớ đã lưu"));
+    assert.ok(rendered.includes("1 trí nhớ"));
+    assert.ok(!rendered.includes("ollama"));
+    assert.ok(!rendered.includes("2 trí nhớ"));
+  });
   it("renders user content via textContent", () => {
     const xss = '<img src=x onerror=alert(2)>';
     // Pre-create list el

@@ -21,7 +21,9 @@ def check_final(reply, memories, old_id):
     text = reply.get("reply", "").casefold()
     checks = {
         "provider_ok": reply.get("provider_ok") is True,
-        "provider_ollama": reply.get("provider_used") == "ollama",
+        "grounded_source": (reply.get("response_source") == "grounded_template"
+                            and reply.get("provider_called") is False
+                            and reply.get("provider_used") is None and reply.get("model_used") is None),
         "mongodb_active": len(active) == 1 and "mongodb" in active[0]["content"].casefold(),
         "postgresql_superseded": old is not None and not old["is_active"],
         "active_memory_used": len(active) == 1 and active[0]["memory_id"] in reply.get("memory_ids_used", []),
@@ -78,8 +80,14 @@ def run_verification(output=Path("runtime/week2-http.json")):
             memories = call("GET", "/v1/memories?include_inactive=true")
             report["checks"] = check_final(reply, memories, old_id)
             report["final_response"] = {k: reply.get(k) for k in
-                ("reply", "provider_ok", "provider_used", "state_version", "model_used", "tokens_generated")
+                ("reply", "provider_ok", "provider_used", "provider_called", "response_source", "state_version", "model_used", "tokens_generated")
                 if reply.get(k) is not None}
+            generated = chat(call("POST", "/v1/sessions", json={"title": "Provider acceptance"})["session_id"],
+                             "Viết hai câu về việc đọc sách.")
+            report["checks"]["ollama_generation"] = (
+                generated.get("provider_called") is True and generated.get("response_source") == "llm"
+                and generated.get("provider_ok") is True and generated.get("provider_used") == "ollama"
+                and bool(generated.get("model_used")))
             event = call("POST", "/v1/me/events", json={"platform": "powerpoint", "event_type": "slide_overview",
                         "content": "Slide trình bày kiến trúc: Cơ sở dữ liệu MongoDB", "feedback_value": 0.0})
             state = call("GET", "/v1/me/state")

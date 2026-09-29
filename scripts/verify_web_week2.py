@@ -84,6 +84,13 @@ def main():
             report["checks"] = check_final(reply, memories, old_id)
             report["checks"]["ui_rendered_reply_and_memory"] = True
             report["final_response"] = {k: reply[k] for k in ("reply", "provider_ok", "provider_used")}
+            with page.expect_response(lambda r: r.url.endswith("/v1/sessions") and r.request.method == "POST"):
+                page.locator("#newChatBtn").click()
+            generated = chat("Viết hai câu về việc đọc sách.")
+            report["checks"]["ollama_generation"] = (
+                generated.get("provider_called") is True and generated.get("response_source") == "llm"
+                and generated.get("provider_ok") is True and generated.get("provider_used") == "ollama"
+                and bool(generated.get("model_used")))
             report["status"] = "passed" if all(report["checks"].values()) else "unverified"
             page.locator(".logout-btn").click()
         except Exception as exc:

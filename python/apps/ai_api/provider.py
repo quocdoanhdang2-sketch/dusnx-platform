@@ -15,6 +15,14 @@ import urllib.error
 from .grounding import is_memory_question
 
 
+class ProviderResult(tuple):
+    """Backward-compatible five values plus per-invocation transport metadata."""
+    def __new__(cls, text, ok, provider, model, tokens, *, called=False):
+        result=super().__new__(cls,(text,ok,provider,model,tokens))
+        result.provider_called=called
+        return result
+
+
 def get_current_provider() -> str:
     raw = os.getenv("DUSNX_PROVIDER", "ollama").strip().lower()
     return "openai" if raw in ("openai", "openai_compatible") else raw
@@ -191,6 +199,7 @@ def generate_response(
     """
     p = get_current_provider()
     # Build memory context using exactly the provided memories
+    called = False
     memory_lines = []
     for m in memories:
         tag = f"[{m['info_type']}]"
@@ -225,9 +234,11 @@ Quan trọng:
 
     if p == "ollama":
         text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, user_message)
+        called = True  # _ollama_generate attempts the HTTP transport, including failures.
         provider_used = "ollama"
     elif p == "openai":
         text, ok, model_used, tokens_generated = _openai_generate(system_prompt, user_message)
+        called = bool(OPENAI_API_KEY)  # Missing configuration returns before any HTTP attempt.
         provider_used = "openai"
     elif p in ("stub", "mock", "test"):
         # For tests and stub evaluation: echo relevant context cleanly
@@ -249,4 +260,4 @@ Quan trọng:
         model_used = None
         tokens_generated = None
 
-    return text, ok, provider_used, model_used, tokens_generated
+    return ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called)

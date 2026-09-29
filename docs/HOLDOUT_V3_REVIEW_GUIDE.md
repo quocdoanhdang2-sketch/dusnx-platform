@@ -1,128 +1,92 @@
-# Hướng Dẫn Thao Tác Duyệt Độc Lập Cho Tập Đánh Giá Holdout v3
+# Duyệt độc lập holdout v3 trên Windows
 
-Tài liệu này cung cấp hướng dẫn từng bước cho **người duyệt độc lập (Independent Reviewer)** tham gia thẩm định nhãn tập dữ liệu `holdout_v3` của dự án DUSN-X.
+Trạng thái: **chưa có reviewer thật nộp nhãn; chưa đánh giá v3 trong nhiệm vụ này**. Chỉ kiểm tra SHA-256 và manifest, cùng tính mù của package: 311 lượt / 20 chuỗi, hash `094268aaf47fa5328786846aff46ebe2f271fd05e2633e681fee472adc8e71bd`. Không chạy model, rule, baseline hoặc scorer trước review.
 
----
+## 1. Tìm file và chuẩn bị gửi
 
-## 1. Nguyên Tắc Cốt Lõi: Đánh Giá Mù (Blind Evaluation)
-
-1. **Không xem trước Gold Labels hay Predictions:**
-   - Người duyệt chỉ làm việc với file blind template: `runtime/reviewer_package/holdout_v3_blind_template.csv` (gồm 311 dòng / 20 chuỗi hội thoại).
-   - Tuyệt đối **không mở**, **không yêu cầu cung cấp** file `benchmarks/holdout_v3.jsonl` (bản gold đang khóa) hoặc bất kỳ file dự đoán (prediction/error report) nào.
-   - Không chạy bất kỳ model hoặc script nào để tự động sinh nhãn thay thế con người.
-
-2. **Tính Trung Thực Về Tình Trạng Review:**
-   - Trạng thái hiện tại của `holdout_v3` trong `benchmarks/holdout_v3.manifest.json` là:  
-     `"status": "labels_locked_not_independently_reviewed"`
-   - **Tuyệt đối không tự sửa thành `human_reviewed`** khi chưa có người thật duyệt và nộp bài hoàn tất.
-   - Hệ thống không tự gửi dữ liệu cho người khác thay người dùng.
-
----
-
-## 2. Các Bước Thao Tác Dành Cho Reviewer
-
-### Bước 1: Tiếp nhận file Blind Template
-Reviewer nhận file:
-- Đường dẫn: `runtime/reviewer_package/holdout_v3_blind_template.csv`
-- Mở bằng bất kỳ phần mềm bảng tính nào (Microsoft Excel, LibreOffice Calc, Google Sheets) với bảng mã UTF-8.
-
-### Bước 2: Hiểu cấu trúc các cột trong CSV
-Reviewer cần giữ nguyên 100% các cột định danh hệ thống (KHÔNG sửa, KHÔNG xóa, KHÔNG đổi thứ tự dòng):
-- `record_id`: Định danh duy nhất của lượt (ví dụ: `holdout3-20261002-v3_01_cloud_multi_hop_recall-1`).
-- `sequence_id`: Mã chuỗi kịch bản.
-- `step`: Thứ tự lượt trong chuỗi (bắt đầu từ 1 và tăng dần liên tục).
-- `platform`: Nền tảng phát sinh lượt (`web`, `powerpoint`, `zalo`).
-- `session_id`: Mã phiên làm việc.
-- `user_message`: Câu nói nguyên văn của người dùng trong lượt đó.
-
-### Bước 3: Điền nhãn theo Schema chuẩn
-Reviewer điền vào các cột nhãn sau cho từng dòng:
-
-| Cột | Giá trị hợp lệ | Ý nghĩa & Hướng dẫn |
-|---|---|---|
-| `reviewer` | Tên hoặc mã định danh của bạn (ví dụ: `reviewer_a`) | Ghi nhận người thực hiện. |
-| `review_date` | `YYYY-MM-DD` (ví dụ: `2026-10-01`) | Ngày thẩm định. |
-| `label_intent` | `chat`, `research`, `summarize`, `presentation_edit`, `recommendation`, `followup`, `memory_create`, `decision_modify_intent`, `decision_update`, `decision_update_cancelled` | Mục đích của câu nói (xem bảng chi tiết bên dưới). |
-| `label_agent` | `conversation`, `search_rag`, `productivity`, `memory` | Nhóm tác tử phụ trách. |
-| `label_action` | `reply`, `search`, `summarize`, `edit_slide`, `recommend`, `clarify`, `create_memory`, `await_confirm`, `update_memory`, `no_op` | Hành động tiếp theo của hệ thống. |
-| `label_requires_clarification` | `true` hoặc `false` | Điền `true` nếu câu mơ hồ/thiếu ngữ cảnh (ví dụ có 2 quyết định cùng loại mà người dùng nói "đổi quyết định" mà không nói đổi cái nào); điền `false` nếu rõ nghĩa. |
-| `label_active` | Chuỗi văn bản (hoặc để trống) | Quyết định/sự thật đang có hiệu lực sau lượt này (ví dụ: `PostgreSQL, AWS`). |
-| `label_obsolete` | Chuỗi văn bản (hoặc để trống) | Thông tin cũ đã bị thay thế hoặc hủy bỏ sau lượt này (ví dụ: `GCP`). |
-| `notes` | Văn bản tự do (tùy chọn) | Ghi chú lý do nếu câu nói có tính phủ định, đổi ý, từ chối hoặc tin đồn chưa xác nhận. |
-
-#### Bảng tra cứu nhanh `label_intent` & `label_agent` & `label_action`:
-1. `chat` (`conversation` / `reply`): Chào hỏi, hỏi đáp kiến thức chung, hoặc hỏi lại thông tin đã lưu.
-2. `research` (`search_rag` / `search`): Yêu cầu tìm kiếm tài liệu, đối chiếu, kiểm tra nguồn bên ngoài.
-3. `summarize` (`productivity` / `summarize`): Yêu cầu tóm tắt tài liệu, rút gọn văn bản đã có sẵn.
-4. `presentation_edit` (`productivity` / `edit_slide`): Yêu cầu chỉnh sửa slide, tạo bố cục trình chiếu, sửa speaker notes.
-5. `recommendation` (`conversation` / `recommend`): Yêu cầu gợi ý, tư vấn, đưa ra các lựa chọn dựa trên tiêu chí.
-6. `followup` (`conversation` / `clarify`): Câu nói tiếp nối ngữ cảnh câu trước hoặc trả lời làm rõ.
-7. `memory_create` (`memory` / `create_memory`): Người dùng yêu cầu lưu một thông tin/quyết định mới ("Hãy nhớ rằng...").
-8. `decision_modify_intent` (`memory` / `await_confirm`): Người dùng yêu cầu sửa quyết định cũ ("Đổi X sang Y nhé").
-9. `decision_update` (`memory` / `update_memory`): Người dùng xác nhận đồng ý áp dụng quyết định mới ("Đồng ý", "Xác nhận").
-10. `decision_update_cancelled` (`memory` / `no_op`): Người dùng từ chối cập nhật ("Thôi", "Không đổi nữa").
-
----
-
-## 3. Kiểm Tra Bài Nộp & Rà Soát Thiếu Sót (Self-Validation)
-
-Trước khi nộp lại file, reviewer (hoặc người điều phối) chạy script kiểm tra định dạng và tính toàn vẹn:
+Mở PowerShell:
 
 ```powershell
-# 1. Chuyển đổi file CSV đã điền sang JSONL để kiểm tra
-$env:PYTHONPATH="python/src;python"
-python python/scripts/review_labels.py --input runtime/reviewer_package/holdout_v3_blind_template.csv --from-csv --output runtime/reviewer_submission.jsonl
-
-# 2. Kiểm tra tính hợp lệ (schema validation)
-python python/scripts/review_labels.py --input runtime/reviewer_submission.jsonl --validate
+Set-Location D:\Projects\dusnx-platform
+$py = '.\python\.venv\Scripts\python.exe'
+$env:PYTHONPATH='python/src;python;.;scripts'
+Get-Item runtime\reviewer_package\holdout_v3_blind_template.csv
+Get-Item runtime\reviewer_package\holdout_v3_blind_template.jsonl
+& $py python/scripts/audit_review_package.py --benchmark benchmarks/holdout_v3.jsonl --manifest benchmarks/holdout_v3.manifest.json --jsonl runtime/reviewer_package/holdout_v3_blind_template.jsonl --csv runtime/reviewer_package/holdout_v3_blind_template.csv
+$package = Join-Path $PWD 'runtime\reviewer_send_v3'
+New-Item -ItemType Directory -Path $package -ErrorAction Stop
+Copy-Item -LiteralPath runtime\reviewer_package\holdout_v3_blind_template.csv -Destination $package
+Copy-Item -LiteralPath docs\HOLDOUT_V3_REVIEW_GUIDE.md -Destination $package
+explorer.exe $package
 ```
 
-**Các lỗi thường gặp script sẽ bắt:**
-- Bỏ sót dòng (thiếu `label_intent`, `label_agent`, hoặc `label_action`).
-- Sai chính tả giá trị phân loại (ví dụ: gõ `conversation_agent` thay vì `conversation`).
-- Định dạng ngày tháng không đúng chuẩn ISO (`YYYY-MM-DD`).
+Nếu thư mục tồn tại, chọn tên mới; không ghi đè bài nộp. **Chỉ tự gửi CSV blind và hướng dẫn** trong thư mục này. Không gửi repo, gold, predictions, error report, checkpoint hoặc ghi chú đáp án. Agent không gửi file cho ai. JSONL blind dùng làm bản đối chiếu máy. ID gốc chỉ phục vụ ghép lượt; package không có gold/expected/prediction và notes đều trống.
 
-Nếu có lỗi, script sẽ chỉ rõ `record_id` và dòng vi phạm để sửa lại trong CSV.
+## 2. Người duyệt điền và nộp
 
----
+Excel: **Data → From Text/CSV → UTF-8**; hoặc LibreOffice. Đọc toàn bộ từng chuỗi theo step/session/platform. Không xem prediction hoặc dùng model gán nhãn. Giữ nguyên record_id, sequence_id, step, platform, session_id, user_message và thứ tự dòng.
 
-## 4. Quy Trình Nộp Bài & Phân Xử Bất Đồng (Adjudication)
+| Cột điền | Quy tắc |
+|---|---|
+| reviewer | Tên/mã người thật |
+| review_date | Ngày ISO YYYY-MM-DD (timestamp ISO cũng được) |
+| label_active | JSON array sự thật đã xác nhận, còn hiệu lực sau lượt; không có thì **[]**, không để trống |
+| label_obsolete | JSON array sự thật bị thay thế; không có thì **[]** |
+| label_intent | chat, research, summarize, presentation_edit, recommendation, followup, memory_create, decision_modify_intent, decision_update, decision_update_cancelled, clarify_missing_context, clarify_ambiguous_decision |
+| label_agent | conversation, search_rag, productivity, memory |
+| label_action | reply, search, summarize, edit_slide, recommend, clarify, create_memory, await_confirm, update_memory, no_op |
+| label_requires_clarification | true hoặc false |
+| notes | Lý do do reviewer tự viết nếu cần |
 
-1. **Nộp bài:**
-   Reviewer nộp file `holdout_v3_reviewed.csv` cho người phụ trách nghiên cứu.
+Ví dụ định dạng (không phải đáp án v3): `["Một sự thật có dấu phẩy, vẫn là một phần tử"]`. JSON array tránh tách nhầm câu; danh sách đơn giản ngăn bằng dấu phẩy vẫn được hỗ trợ. Ô trống là chưa duyệt, khác [] là xác nhận không có fact.
 
-2. **So sánh với Gold gốc (giữ kín):**
-   Người phụ trách chạy lệnh đối soát nhãn giữa Reviewer và bản Gold:
-   ```powershell
-   python python/scripts/review_labels.py `
-     --input runtime/reviewer_submission.jsonl `
-     --gold benchmarks/holdout_v3.jsonl `
-     --output runtime/holdout_v3_agreement_report.json
-   ```
-   Lệnh này tính toán:
-   - Tỷ lệ đồng thuận thô (Raw Agreement %).
-   - Hệ số Cohen's Kappa cho từng nhiệm vụ (Intent, Agent, Action).
-   - Danh sách các câu có bất đồng nhãn (disagreements).
+Active không đổi khi chỉ hỏi, nghe đồn hoặc đề nghị đổi chưa xác nhận. Chỉ xác nhận mới supersede; từ chối giữ quyết định cũ. Thiếu bối cảnh hoặc nhiều đối tượng phù hợp thì hỏi rõ. Đổi phiên không xóa memory; đổi chủ đề không tự tạo quyết định. Không dùng lượt tương lai để gán nhãn hiện tại.
 
-3. **Họp phân xử bất đồng (Adjudication):**
-   - Với những lượt có bất đồng, Trưởng nhóm thẩm định (Adjudicator) cùng Reviewer xem xét lại ngữ cảnh chuỗi để chốt nhãn đúng theo hợp đồng định nghĩa.
-   - Chạy lệnh phân xử để sinh file benchmark hoàn thiện:
-     ```powershell
-     python python/scripts/review_labels.py `
-       --input runtime/reviewer_submission.jsonl `
-       --gold benchmarks/holdout_v3.jsonl `
-       --adjudicate `
-       --adjudicator "TenNguoiPhanXu" `
-       --output benchmarks/holdout_v3_adjudicated.jsonl
-     ```
-   - Khi đó, trạng thái của benchmark mới được chuyển thành `"human_reviewed": true`.
+Core route: chat→conversation/reply; research→search_rag/search; summarize→productivity/summarize; presentation_edit→productivity/edit_slide; recommendation→conversation/recommend. Followup cần xét ngữ cảnh, không mặc định clarify. Memory CRUD/confirm là **logic ứng dụng**, không phải neural router. Nhãn chưa phù hợp schema thì ghi notes để điều phối, không sửa câu gốc.
 
----
+Lưu riêng `holdout_v3_reviewed_A.csv` bằng **CSV UTF-8** và nộp người điều phối. Không đổi tên blind chưa điền thành gold.
 
-## 5. Tóm Tắt Tình Trạng Hiện Tại Của Holdout v3
+## 3. Kiểm tra bài nộp thật
 
-- **Tập tin:** `benchmarks/holdout_v3.jsonl`
-- **SHA-256:** `094268aaf47fa5328786846aff46ebe2f271fd05e2633e681fee472adc8e71bd`
-- **Số lượt:** 311 lượt (20 kịch bản chuỗi độc lập).
-- **Trạng thái hiện hành:** `labels_locked_not_independently_reviewed` (Chưa qua thẩm định con người độc lập).
-- **Cam kết:** Không chạy model đánh giá trước khi hoàn thành quy trình thẩm định độc lập theo hướng dẫn này.
+Đặt bài nộp trong runtime/reviews/, không commit:
+
+```powershell
+& $py python/scripts/review_labels.py --input runtime/reviews/holdout_v3_reviewed_A.csv --validate --template runtime/reviewer_package/holdout_v3_blind_template.jsonl
+& $py python/scripts/review_labels.py --input runtime/reviews/holdout_v3_reviewed_A.csv --from-csv --output runtime/reviews/reviewer_A.jsonl
+```
+
+Mong đợi `Valid review file: 311 records...`. Bắt buộc dùng **--template** để bắt thiếu/thừa dòng, sai ID/thứ tự và sửa input; --validate đơn lẻ không kiểm tra đủ 311 dòng. Nhãn thiếu/sai, ngày sai và gold dùng nhầm làm submission bị từ chối.
+
+## 4. Agreement và phân xử — chưa chạy trên v3 lúc này
+
+Chỉ sau khi có bài thật hợp lệ, người điều phối có thể so reviewer với gold gốc:
+
+```powershell
+& $py python/scripts/review_labels.py --input runtime/reviews/reviewer_A.jsonl --gold benchmarks/holdout_v3.jsonl --output runtime/reviews/agreement.json
+& $py python/scripts/review_labels.py --input runtime/reviews/reviewer_A.jsonl --gold benchmarks/holdout_v3.jsonl --adjudicate --adjudicator 'TEN_NGUOI_PHAN_XU_THAT' --output runtime/reviews/adjudication-draft.json
+```
+
+Có reviewer B độc lập thì validate tương tự và thay --gold bằng `--compare-with runtime/reviews/reviewer_B.jsonl`. Report chứa agreement, Cohen's kappa cho intent/agent/action/clarification, set agreement active/obsolete và từng bất đồng. Kappa null khi không có biến thiên lớp. So reviewer với nhãn authored gốc không tương đương hai reviewer độc lập.
+
+Người thật đọc context và phân xử, tạo `runtime/reviews/resolutions.json`:
+
+```json
+{"RECORD_ID": {"intent": {"resolved_value": "chat", "reason": "Lý do được người thật thống nhất"}}}
+```
+
+Chạy lại lệnh adjudicate thêm `--resolutions runtime/reviews/resolutions.json`, đổi output thành `runtime/reviews/adjudication-final.json`. Đây là **JSON audit**, không phải JSONL benchmark. Bản nháp luôn là `draft_pending_human_attestation`; nhập tên không tự biến thành human_reviewed. Phải giải quyết hết PENDING_HUMAN_RESOLUTION.
+
+## 5. Khóa sau review và phân xử thật
+
+Chỉ người điều phối đã xác nhận quy trình review thật chạy:
+
+```powershell
+& $py python/scripts/lock_review.py --adjudication runtime/reviews/adjudication-final.json --reviewer-a runtime/reviews/reviewer_A.jsonl --reviewer-b benchmarks/holdout_v3.jsonl --gold-reference --template runtime/reviewer_package/holdout_v3_blind_template.jsonl --output runtime/reviews/holdout_v3_reviewed_labels.jsonl --attest-human-review
+Get-FileHash runtime/reviews/holdout_v3_reviewed_labels.jsonl -Algorithm SHA256
+```
+
+Với hai reviewer thật, bỏ --gold-reference và đặt reviewer-b về reviewer_B.jsonl. Công cụ tạo file nhãn mới và manifest hash/audit, trạng thái `operator_attested_human_review`: lời xác nhận của người vận hành, không phải công cụ tự xác minh danh tính. Không ghi đè gold/manifest gốc, không chạy đánh giá. Giữ bài nộp và bằng chứng review riêng; không commit thông tin reviewer.
+
+## 6. Kế hoạch sau review, chưa thực hiện
+
+Khóa nhãn/hash → cố định checkpoint SHA và commit code → tích hợp nhãn phân xử vào bản benchmark reviewed có audit → kiểm tra schema/hash → **một vòng đánh giá v3** baseline/no-state/full. Báo mọi lỗi, current recall, obsolete, clarification, macro-F1 từng head, final answer; khoảng tin cậy bootstrap theo **sequence**, không coi 311 lượt độc lập. Tách template/application rules khỏi neural router; no-state giữ cùng logic ứng dụng. Sau đó mới quyết định thu thập thêm dữ liệu/train lại. V3 đã mở kết quả sẽ trở thành tập đã xem; không tái dùng như holdout mù cho model sửa theo lỗi v3.

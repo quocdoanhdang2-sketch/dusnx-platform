@@ -46,5 +46,5 @@ def test_api_rejects_hallucinated_claim_and_obsolete_history(client,monkeypatch)
     assert "Linode" in result["reply"] and "DigitalOcean" not in result["reply"]
     # Provider failure stays a failure, even when a memory is available.
     monkeypatch.setattr(main,"generate_response",lambda **kw:("offline",False,"ollama",None,None))
-    result=send("Quyết định hiện tại của tôi là gì?")
+    result=send("Viết một đoạn ngắn về biển.")
     assert result["provider_ok"] is False and result["answer_source"]=="provider"

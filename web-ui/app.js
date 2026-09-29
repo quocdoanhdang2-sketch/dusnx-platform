@@ -480,6 +480,7 @@ async function sendMessage(overrideText = null, { isRetry = false } = {}) {
         runtime: response.runtime_mode,
         provider_ok: response.provider_ok,
         provider: response.provider_used,
+        response_source: response.response_source,
         state_version: response.state_version,
         memory_ids_used: response.memory_ids_used,
         created_at: new Date().toISOString(),
@@ -579,6 +580,14 @@ function appendMessageBubble(role, content, meta = {}) {
       const tag = document.createElement("span");
       tag.className = "meta-tag" + (meta.provider_ok ? "" : " warn");
       tag.textContent = meta.provider_ok ? `✓ ${meta.provider}` : `✕ ${meta.provider}`;
+      metaEl.appendChild(tag);
+    }
+    if (meta.response_source && meta.response_source !== "llm") {
+      const tag = document.createElement("span");
+      tag.className = "meta-tag";
+      tag.textContent = meta.response_source === "grounded_template" ? "Trích trí nhớ đã lưu" :
+        meta.response_source === "clarification" ? "Cần làm rõ" :
+        meta.response_source === "mock" ? "Phản hồi thử nghiệm" : "Thao tác ứng dụng";
       metaEl.appendChild(tag);
     }
     if (meta.memory_ids_used && meta.memory_ids_used.length > 0) {

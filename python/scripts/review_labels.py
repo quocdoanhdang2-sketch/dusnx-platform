@@ -13,7 +13,7 @@ for path in (REPO_ROOT / "python/src", REPO_ROOT / "python", REPO_ROOT):
 from dusnx_core.data_pipeline import read_rows, write_rows
 from dusnx_core.review import (
     review_sample, validate_review, agreement, adjudicate,
-    normalize_gold_benchmark, is_blind_template, FIELDS
+    normalize_gold_benchmark, is_blind_template, FIELDS, validate_submission
 )
 
 
@@ -41,8 +41,8 @@ def export_csv(rows, output_path):
                 "user_message": r.get("user_message"),
                 "reviewer": r.get("reviewer") or "",
                 "review_date": r.get("review_date") or "",
-                "label_active": ", ".join(active) if isinstance(active, (list, set, tuple)) else (active or ""),
-                "label_obsolete": ", ".join(obsolete) if isinstance(obsolete, (list, set, tuple)) else (obsolete or ""),
+                "label_active": json.dumps(list(active),ensure_ascii=False) if isinstance(active, (list, set, tuple)) else (active or ""),
+                "label_obsolete": json.dumps(list(obsolete),ensure_ascii=False) if isinstance(obsolete, (list, set, tuple)) else (obsolete or ""),
                 "label_intent": labels.get("intent") or "",
                 "label_agent": labels.get("agent") or "",
                 "label_action": labels.get("action") or "",
@@ -52,6 +52,13 @@ def export_csv(rows, output_path):
 
 
 def import_csv(input_path):
+    def facts(value):
+        if not value:return None  # blank means not reviewed; explicit [] means no facts.
+        if value.startswith("["):
+            parsed=json.loads(value)
+            if not isinstance(parsed,list) or not all(isinstance(x,str) for x in parsed):raise ValueError("Fact field must be a JSON string array")
+            return parsed
+        return [x.strip() for x in value.split(",") if x.strip()]
     rows = []
     with open(input_path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
@@ -70,8 +77,8 @@ def import_csv(input_path):
                 "reviewer": r.get("reviewer") or None,
                 "review_date": r.get("review_date") or None,
                 "labels": {
-                    "active": [x.strip() for x in active_raw.split(",") if x.strip()] if active_raw else [],
-                    "obsolete": [x.strip() for x in obsolete_raw.split(",") if x.strip()] if obsolete_raw else [],
+                    "active": facts(active_raw),
+                    "obsolete": facts(obsolete_raw),
                     "intent": r.get("label_intent") or None,
                     "agent": r.get("label_agent") or None,
                     "action": r.get("label_action") or None,
@@ -82,12 +89,13 @@ def import_csv(input_path):
     return rows
 
 
-def load_reviewed_records(path: Path):
+def load_reviewed_records(path: Path, *, allow_gold=False):
     if str(path).endswith(".csv"):
         return import_csv(path)
     raw = read_rows(path)
     # Check if this is a gold benchmark file with expected_* fields rather than labels
     if raw and ("expected_intent" in raw[0] or "expected_agent" in raw[0]):
+        if not allow_gold:raise ValueError("Gold benchmark is not a reviewer submission; use explicit --gold only for comparison")
         return normalize_gold_benchmark(raw)
     return raw
 
@@ -101,6 +109,7 @@ if __name__ == "__main__":
     ap.add_argument("--sequences", type=int, default=None, help="Number of sequences to sample (default all)")
     ap.add_argument("--seed", type=int, default=42, help="Random seed for sampling")
     ap.add_argument("--validate", action="store_true", help="Validate reviewer formatting and schema")
+    ap.add_argument("--template", help="Blind reference: validate every row and immutable input fields")
     ap.add_argument("--to-csv", action="store_true", help="Convert JSONL review template to CSV for Excel/Sheets")
     ap.add_argument("--from-csv", action="store_true", help="Convert completed CSV review back to JSONL")
     ap.add_argument("--adjudicate", action="store_true", help="Produce adjudication file from two reviews or reviewer vs gold")
@@ -126,7 +135,7 @@ if __name__ == "__main__":
         print(f"Converted CSV review to JSONL with {len(rows)} records at {output_path}")
     elif args.validate:
         rows = load_reviewed_records(input_path)
-        count = validate_review(rows)
+        count = validate_submission(rows,load_reviewed_records(Path(args.template))) if args.template else validate_review(rows)
         print(f"Valid review file: {count} records verified in {input_path}")
     elif args.adjudicate:
         if not args.adjudicator:
@@ -135,7 +144,7 @@ if __name__ == "__main__":
         if not target_second:
             raise ValueError("Either --gold or --compare-with is required for adjudication")
         left = load_reviewed_records(input_path)
-        right = load_reviewed_records(target_second)
+        right = load_reviewed_records(target_second,allow_gold=bool(args.gold))
         if is_blind_template(left) or is_blind_template(right):
             raise ValueError("Cannot adjudicate an unlabelled blind template.")
         resolutions = json.loads(Path(args.resolutions).read_text(encoding="utf-8")) if args.resolutions else None
@@ -145,7 +154,7 @@ if __name__ == "__main__":
     elif args.gold or args.compare_with:
         reviewer_file = input_path
         if args.gold:
-            gold_rows = load_reviewed_records(Path(args.gold))
+            gold_rows = load_reviewed_records(Path(args.gold),allow_gold=True)
             rev_rows = load_reviewed_records(reviewer_file)
             if is_blind_template(rev_rows):
                 raise ValueError("The reviewer file is an unfilled blind template! Cannot compare unlabelled data against gold.")

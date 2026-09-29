@@ -1,0 +1,209 @@
+{
+  "timestamp_utc": "2026-09-29T20:58:51.031034+00:00",
+  "status": "passed",
+  "transport": "browser_ui",
+  "gateway": "http://127.0.0.1:8080",
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/v1/auth/register",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/logout",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pending-decisions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pending-decisions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pending-decisions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pending-decisions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memories",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pending-decisions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "status": 200
+    }
+  ],
+  "checks": {
+    "provider_ok": true,
+    "grounded_source": true,
+    "mongodb_active": true,
+    "postgresql_superseded": true,
+    "active_memory_used": true,
+    "old_memory_not_used": true,
+    "answer_mongodb_only": true,
+    "ui_rendered_reply_and_memory": true,
+    "ollama_generation": true
+  },
+  "final_response": {
+    "reply": "Theo trí nhớ đang hiệu lực: quyết định của tôi là sử dụng MongoDB cho cơ sở dữ liệu.",
+    "provider_ok": true,
+    "provider_used": null
+  }
+}

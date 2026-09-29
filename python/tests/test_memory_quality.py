@@ -251,6 +251,7 @@ def test_reject_and_ambiguous_confirm_and_retry(client: TestClient):
         "is_retry": True,
     }).json()
     assert r_retry["intent"] == "decision_update"
+    assert r_retry["state_version"] == r_confirm["state_version"]
 
     # Ensure no duplicate version or record was created
     all_m = db.list_memories(user_id, include_inactive=True)

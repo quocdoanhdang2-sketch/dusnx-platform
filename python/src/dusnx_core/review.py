@@ -122,6 +122,12 @@ def validate_review(rows, allow_partial=False):
         seen.add(rid)
         if not r.get("reviewer") or not str(r["reviewer"]).strip():
             raise ValueError(f"Row {idx} ({rid}): reviewer name cannot be empty")
+        review_date=r.get("review_date")
+        if review_date and review_date != "locked_benchmark":
+            try:
+                datetime.fromisoformat(review_date.replace("Z", "+00:00"))
+            except (ValueError,TypeError) as exc:
+                raise ValueError(f"Row {idx} ({rid}): invalid review_date") from exc
         labels = r.get("labels", {})
         for f in FIELDS:
             val = labels.get(f)
@@ -138,6 +144,24 @@ def validate_review(rows, allow_partial=False):
                     raise ValueError(f"Row {idx} ({rid}): requires_clarification must be boolean, got {type(val).__name__}")
                 if f in ("active", "obsolete") and not isinstance(val, (list, set, tuple)):
                     raise ValueError(f"Row {idx} ({rid}): {f} must be a list/set of facts, got {type(val).__name__}")
+                if f in ("active", "obsolete") and isinstance(val,(list,set,tuple)) and not all(isinstance(x,str) and x.strip() for x in val):
+                    raise ValueError(f"Row {idx} ({rid}): {f} must contain nonempty strings")
+    return len(rows)
+
+
+def validate_submission(rows, template):
+    """Validate a real submission against a blind reference, never against gold."""
+    if any(any(k.startswith(("gold_","expected_")) for k in r) for r in rows):
+        raise ValueError("Gold benchmark is not a reviewer submission")
+    validate_review(rows)
+    if not is_blind_template(template):raise ValueError("Reference must be an unfilled blind template")
+    if [r["record_id"] for r in rows] != [r["record_id"] for r in template]:
+        raise ValueError("Submission must contain every reference row in the same order")
+    for row,original in zip(rows,template):
+        for key in ("record_id","sequence_id","step","platform","session_id","user_message"):
+            if row.get(key)!=original.get(key):raise ValueError(f"Changed reference field {key}: {row['record_id']}")
+        if not row.get("review_date") or row["review_date"]=="locked_benchmark":raise ValueError("Human review_date required")
+        if str(row["reviewer"]).startswith("gold_"):raise ValueError("Gold is not a human reviewer")
     return len(rows)
 
 
@@ -230,7 +254,7 @@ def adjudicate(left, right, adjudicator, resolved_labels=None, status=None, note
     # Determine honest status
     if status is None:
         is_test = "test" in adjudicator.lower() or "mock" in adjudicator.lower() or "fake" in adjudicator.lower()
-        status = "test_only_synthetic_adjudication" if is_test else "adjudicated_by_human"
+        status = "test_only_synthetic_adjudication" if is_test else "draft_pending_human_attestation"
 
     resolved_labels = resolved_labels or {}
 

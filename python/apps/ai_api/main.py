@@ -23,7 +23,7 @@ from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessRespo
 from .auth import get_auth_db
 from .memory import get_memory_db
 from .provider import generate_response, get_provider_health
-from .grounding import memory_answer, memory_answer_with_match
+from .grounding import memory_answer_with_selection, select_memories
 from .decision_updater import (
     find_best_matching_decision,
     synthesize_full_decision,
@@ -715,7 +715,7 @@ class ChatResponse(BaseModel):
     confidence: float
     runtime_mode: str
     routing_source: str
-    provider_used: str
+    provider_used: Optional[str] = None
     provider_ok: bool
     state_version: Optional[int]
     memory_ids_used: list[str]
@@ -723,6 +723,10 @@ class ChatResponse(BaseModel):
     model_used: Optional[str] = None
     tokens_generated: Optional[int] = None
     answer_source: str = "application_rule"
+    candidate_memory_ids: list[str] = Field(default_factory=list)
+    prompt_memory_ids: list[str] = Field(default_factory=list)
+    provider_called: bool = False
+    response_source: str = "application_rule"
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
@@ -745,7 +749,20 @@ def chat(req: ChatRequest, user: CurrentUser):
 
     # Get active memories for context (filtered and scored by query/project)
     memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, query=req.message, limit=15)
-    memory_ids = [m["memory_id"] for m in memories]
+    candidate_ids = [m["memory_id"] for m in memories]
+    memory_ids = []
+
+    def chat_response(**kwargs):
+        if kwargs.get("next_action") == "clarify" and "response_source" not in kwargs:
+            kwargs["response_source"] = "clarification"
+        return ChatResponse(candidate_memory_ids=candidate_ids, **kwargs)
+
+    def advance(*args, **kwargs):
+        if req.is_retry:
+            state = db.get_dusnx_state(user_id)
+            if state:
+                return state["state_version"], {}, "chat", "conversation", "reply", 0.8, "retry"
+        return _advance_user_state(*args, **kwargs)
 
     # Get recent session history (for context)
     history = db.get_messages(user_id, req.session_id, limit=12)
@@ -762,7 +779,7 @@ def chat(req: ChatRequest, user: CurrentUser):
     if _detect_missing_context_query(req.message) or _detect_project_scoped_question(req.message, req.project_id):
         has_context = bool(history) or bool(memories)
         if not has_context:
-            s_ver, _, _, _, _, _, _ = _advance_user_state(
+            s_ver, _, _, _, _, _, _ = advance(
                 db, user_id, req.message, req.feedback_value, platform="web", event_type="chat_message", project_id=req.project_id
             )
             reply_text = "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?"
@@ -770,12 +787,12 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.session_id, user_id, "assistant", reply_text,
                 memory_ids_used=[], state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent="clarify_missing_context", selected_agent="conversation",
                 next_action="clarify", confidence=0.9,
                 runtime_mode=RUNTIME_MODE, routing_source="context_guard",
-                provider_used="none", provider_ok=True,
+                provider_used=None, provider_ok=True,
                 state_version=s_ver, memory_ids_used=[],
                 session_id=req.session_id,
             )
@@ -791,7 +808,7 @@ def chat(req: ChatRequest, user: CurrentUser):
             source_session=req.session_id,
             project_id=req.project_id,
         )
-        s_ver, _, _, _, _, _, _ = _advance_user_state(
+        s_ver, _, _, _, _, _, _ = advance(
             db, user_id, req.message, req.feedback_value, platform="web", event_type="memory_create", project_id=req.project_id
         )
         reply_text = f"Đã ghi nhớ {itype}: \"{clean_content}\"."
@@ -799,12 +816,12 @@ def chat(req: ChatRequest, user: CurrentUser):
             req.session_id, user_id, "assistant", reply_text,
             memory_ids_used=[new_mem["memory_id"]], state_version=s_ver,
         )
-        return ChatResponse(
+        return chat_response(
             message_id=msg["message_id"], reply=reply_text,
             intent="memory_create", selected_agent="memory",
             next_action="create_memory", confidence=0.95,
             runtime_mode=RUNTIME_MODE, routing_source="explicit_memory",
-            provider_used="none", provider_ok=True,
+            provider_used=None, provider_ok=True,
             state_version=s_ver, memory_ids_used=[new_mem["memory_id"]],
             session_id=req.session_id,
         )
@@ -829,7 +846,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                 source_session=req.session_id,
                 allow_idempotent_retry=bool(req.is_retry),
             )
-            s_ver, _, _, _, _, _, _ = _advance_user_state(
+            s_ver, _, _, _, _, _, _ = advance(
                 db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_confirm", project_id=req.project_id
             )
             if res["success"]:
@@ -838,7 +855,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                     f"**Cũ:** {pending['old_content']}\n"
                     f"**Mới:** {pending['proposed_content']}"
                 )
-                memory_ids = [res["new_memory"]["memory_id"]]
+                memory_ids = [res["new_memory"]["memory_id"], pending["old_memory_id"]]
                 intent = "decision_update"
                 next_action = "update_memory"
             else:
@@ -851,12 +868,12 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.session_id, user_id, "assistant", reply_text,
                 memory_ids_used=memory_ids, state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent=intent, selected_agent="memory",
                 next_action=next_action, confidence=1.0,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
-                provider_used="none", provider_ok=True,
+                provider_used=None, provider_ok=True,
                 state_version=s_ver, memory_ids_used=memory_ids,
                 session_id=req.session_id,
             )
@@ -867,29 +884,30 @@ def chat(req: ChatRequest, user: CurrentUser):
                 accepted=False,
                 source_session=req.session_id,
             )
-            s_ver, _, _, _, _, _, _ = _advance_user_state(
+            s_ver, _, _, _, _, _, _ = advance(
                 db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_reject", project_id=req.project_id
             )
             reply_text = (
                 f"Đã huỷ yêu cầu sửa đổi quyết định. Giữ nguyên quyết định hiện tại:\n"
                 f"**Hiện tại:** {pending['old_content']}"
             )
+            memory_ids = [pending["old_memory_id"]]
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=[], state_version=s_ver,
+                memory_ids_used=memory_ids, state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent="decision_update_cancelled", selected_agent="memory",
                 next_action="no_op", confidence=1.0,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
-                provider_used="none", provider_ok=True,
-                state_version=s_ver, memory_ids_used=[],
+                provider_used=None, provider_ok=True,
+                state_version=s_ver, memory_ids_used=memory_ids,
                 session_id=req.session_id,
             )
         else:
             # Ambiguous / uncertain / contradictory — ask again without modifying
-            s_ver, _, _, _, _, _, _ = _advance_user_state(
+            s_ver, _, _, _, _, _, _ = advance(
                 db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_unclear", project_id=req.project_id
             )
             reply_text = (
@@ -898,24 +916,25 @@ def chat(req: ChatRequest, user: CurrentUser):
                 f"**Đề xuất:** {pending['proposed_content']}\n\n"
                 "Trả lời **Có** để xác nhận hoặc **Không** để huỷ."
             )
+            memory_ids = [pending["old_memory_id"]]
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
-                memory_ids_used=[], state_version=s_ver,
+                memory_ids_used=memory_ids, state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent="awaiting_confirm", selected_agent="memory",
                 next_action="clarify", confidence=0.9,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
-                provider_used="none", provider_ok=True,
-                state_version=s_ver, memory_ids_used=[],
+                provider_used=None, provider_ok=True,
+                state_version=s_ver, memory_ids_used=memory_ids,
                 session_id=req.session_id,
             )
 
     # Second check: does the new message request a decision modification?
     if _detect_decision_modify_intent(req.message):
         matched, is_ambiguous, candidates = _find_best_matching_decision(memories, req.message)
-        s_ver, _, _, _, _, _, _ = _advance_user_state(
+        s_ver, _, _, _, _, _, _ = advance(
             db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_modify_request", project_id=req.project_id
         )
         if is_ambiguous:
@@ -929,12 +948,12 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.session_id, user_id, "assistant", reply_text,
                 memory_ids_used=[c["memory_id"] for c in candidates], state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent="clarify_ambiguous_decision", selected_agent="memory",
                 next_action="clarify", confidence=0.85,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
-                provider_used="none", provider_ok=True,
+                provider_used=None, provider_ok=True,
                 state_version=s_ver, memory_ids_used=[c["memory_id"] for c in candidates],
                 session_id=req.session_id,
             )
@@ -967,12 +986,12 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.session_id, user_id, "assistant", reply_text,
                 memory_ids_used=[matched["memory_id"]], state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent="decision_modify_intent", selected_agent="memory",
                 next_action="await_confirm", confidence=0.88,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
-                provider_used="none", provider_ok=True,
+                provider_used=None, provider_ok=True,
                 state_version=s_ver, memory_ids_used=[matched["memory_id"]],
                 session_id=req.session_id,
             )
@@ -986,12 +1005,12 @@ def chat(req: ChatRequest, user: CurrentUser):
                 req.session_id, user_id, "assistant", reply_text,
                 memory_ids_used=[], state_version=s_ver,
             )
-            return ChatResponse(
+            return chat_response(
                 message_id=msg["message_id"], reply=reply_text,
                 intent="decision_modify_intent", selected_agent="memory",
                 next_action="clarify", confidence=0.7,
                 runtime_mode=RUNTIME_MODE, routing_source="decision_flow",
-                provider_used="none", provider_ok=True,
+                provider_used=None, provider_ok=True,
                 state_version=s_ver, memory_ids_used=[],
                 session_id=req.session_id,
             )
@@ -1006,7 +1025,7 @@ def chat(req: ChatRequest, user: CurrentUser):
         confidence = 0.8
         routing_source = "retry"
     else:
-        state_version, _, dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source = _advance_user_state(
+        state_version, _, dusnx_intent, dusnx_agent, dusnx_action, confidence, routing_source = advance(
             db,
             user_id=user_id,
             content=req.message,
@@ -1016,20 +1035,34 @@ def chat(req: ChatRequest, user: CurrentUser):
             project_id=req.project_id,
         )
 
-    # Generate text response using provider
-    reply_text, provider_ok, provider_used, model_used, tokens_generated = generate_response(
-        user_message=req.message,
-        memories=memories,
-        intent=dusnx_intent,
-        session_history=history,
-        project_name=project_name,
-    )
-
-    grounded_answer, grounded_mem = memory_answer_with_match(req.message, memories) if provider_ok else (None, None)
+    # A template is selected before any provider call. Never discard generated
+    # text while attributing a deterministic quotation to its model/provider.
+    grounded_answer, selected = memory_answer_with_selection(req.message, memories)
+    prompt_ids = []
+    provider_called = False
     if grounded_answer is not None:
-        reply_text = grounded_answer
-        if grounded_mem and grounded_mem["memory_id"] not in memory_ids:
-            memory_ids = [grounded_mem["memory_id"]] + memory_ids
+        reply_text, provider_ok = grounded_answer, True
+        provider_used = model_used = tokens_generated = None
+        response_source = "grounded_template" if selected else "clarification"
+        memory_ids = [m["memory_id"] for m in selected]
+        if not selected:
+            dusnx_intent, dusnx_agent, dusnx_action = "clarify_missing_context", "conversation", "clarify"
+            routing_source = "context_guard"
+    else:
+        selected = select_memories(req.message, memories)
+        prompt_ids = [m["memory_id"] for m in selected]
+        generated = generate_response(
+            user_message=req.message, memories=selected, intent=dusnx_intent,
+            session_history=history, project_name=project_name,
+        )
+        reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
+        provider_called = getattr(generated, "provider_called", False)
+        response_source = ("llm" if provider_called else "mock") if provider_ok else "provider_error"
+        if not provider_called:
+            provider_used = model_used = tokens_generated = None
+        # LLM citations are not measured. Prompt inclusion is reported separately;
+        # do not invent evidence attribution from lexical overlap with its output.
+        memory_ids = []
 
     if provider_ok:
         # Save assistant message only on success
@@ -1055,7 +1088,7 @@ def chat(req: ChatRequest, user: CurrentUser):
         if title:
             db.update_session_title(user_id, req.session_id, title)
 
-    return ChatResponse(
+    return chat_response(
         message_id=msg_id,
         reply=reply_text,
         intent=dusnx_intent,
@@ -1072,6 +1105,9 @@ def chat(req: ChatRequest, user: CurrentUser):
         model_used=model_used if provider_ok else None,
         tokens_generated=tokens_generated if provider_ok else None,
         answer_source="active_memory_extract" if grounded_answer is not None else "provider",
+        prompt_memory_ids=prompt_ids,
+        provider_called=provider_called,
+        response_source=response_source,
     )
 
 

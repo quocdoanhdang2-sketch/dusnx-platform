@@ -1,0 +1,13 @@
+{
+  "status": "integrity_and_blankness_verified",
+  "sha256": "094268aaf47fa5328786846aff46ebe2f271fd05e2633e681fee472adc8e71bd",
+  "events": 311,
+  "sequences": 20,
+  "review_status": "labels_locked_not_independently_reviewed",
+  "inference_run": false,
+  "gold_labels_parsed": false,
+  "blind_sha256": {
+    "holdout_v3_blind_template.jsonl": "bb08da258e4da45d2f22f2273028f450915e939d9c114872599bbbd047c00a94",
+    "holdout_v3_blind_template.csv": "5599eb2abfae4f9de6bddb82b9327189b6de7e1d2af6f45e6198dbada6927e06"
+  }
+}

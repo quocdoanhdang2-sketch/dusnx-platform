@@ -48,11 +48,12 @@ def test_project_guard_does_not_block_general_questions():
 def test_http_acceptance_requires_real_provider_and_actual_supersession():
     memories = [{"memory_id": "old", "content": "PostgreSQL", "is_active": False},
                 {"memory_id": "new", "content": "MongoDB", "is_active": True}]
-    reply = {"reply": "MongoDB", "provider_ok": True, "provider_used": "ollama", "memory_ids_used": ["new"]}
+    reply = {"reply": "MongoDB", "provider_ok": True, "provider_used": None, "provider_called": False,
+             "response_source": "grounded_template", "model_used": None, "memory_ids_used": ["new"]}
     assert all(check_final(reply, memories, "old").values())
     assert not check_final(reply, memories[1:], "old")["postgresql_superseded"]
     reply["provider_used"] = "mock"
-    assert not check_final(reply, memories, "old")["provider_ollama"]
-    reply["provider_used"] = "ollama"
+    assert not check_final(reply, memories, "old")["grounded_source"]
+    reply["provider_used"] = None
     reply["reply"] = "PostgreSQL, MongoDB"
     assert not check_final(reply, memories, "old")["answer_mongodb_only"]
