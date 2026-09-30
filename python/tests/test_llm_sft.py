@@ -1,13 +1,16 @@
 import ast
+import csv
 import copy
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import sys
 import zipfile
 import pytest
 from dusnx_core.llm_data import audit, completion_rows, digest, read_sft, validate, verify_file_manifest, verify_full_training_gate
 from dusnx_core.llm_artifacts import pack, unpack
+from dusnx_core.llm_review import apply_package, export_package
 
 ROOT=Path(__file__).resolve().parents[2]
 DATA=ROOT/'datasets/llm_sft'
@@ -23,6 +26,14 @@ def test_data_lock_and_split():
     assert verify_file_manifest(DATA,json.loads((DATA/'manifest.json').read_text()))
     assert all(r['review_status']=='needs_human_review' for rows in p.values() for r in rows)
     assert report['quality']['human_review_complete'] is False
+
+
+def test_known_content_regressions_are_grounded():
+    rows={row['id']:row for row in partitions()['train']}
+    assert rows['train-006']['messages'][2]['content']=='Mình sẽ trả lời ngắn, tối đa hai ý.'
+    assert 'state đã xác nhận' in rows['train-017']['messages'][0]['content']
+    assert 'chưa đi qua luồng ghi cơ sở dữ liệu' in rows['train-020']['messages'][0]['content']
+    assert all(fact in rows['train-025']['messages'][0]['content'] for fact in rows['train-025']['quality_contracts'][0]['required_facts'])
 
 
 @pytest.mark.parametrize('field',['id','sequence_id','user_id','scenario_family'])
@@ -113,8 +124,56 @@ def test_lock_command_rejects_same_author_and_reviewer(monkeypatch):
     script=ROOT/'python/scripts/lock_llm_data.py'
     spec=importlib.util.spec_from_file_location('lock_llm_data_for_test',script)
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--human-author','person-a','--reviewer','person-a','--attest-authored-reviewed-before-predictions'])
+    monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--human-author','person-a','--reviewer','person-a','--train-review-receipt','missing-train.json','--test-review-receipt','missing-test.json','--attest-authored-reviewed-before-predictions'])
     with pytest.raises(ValueError,match='different people'):module.main()
+
+
+def _copy_sft(tmp_path):
+    target=tmp_path/'sft';shutil.copytree(DATA,target);return target
+
+
+def _complete_review_csv(path,reviewer='test-only-reviewer',timestamp='2026-09-30T10:00:00+07:00'):
+    with path.open(encoding='utf-8-sig',newline='') as handle:rows=list(csv.DictReader(handle))
+    for row in rows:row.update(decision='approve',reviewer=reviewer,reviewed_at=timestamp)
+    with path.open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+    return rows
+
+
+def test_review_package_round_trip_and_receipt_is_test_only(tmp_path):
+    data=_copy_sft(tmp_path);package=tmp_path/'package'
+    assert export_package(data,package,('train','validation'))==61
+    assert 'train:train-001:1' in (package/'review.md').read_text(encoding='utf-8')
+    _complete_review_csv(package/'review.csv')
+    receipt=apply_package(data,package,allow_test_identities=True)
+    assert receipt['test_only'] is True and receipt['row_count']==61
+    assert all(row['review_status']=='human_reviewed' for split in ('train','validation') for row in read_sft(data/f'{split}.jsonl',split))
+    assert json.loads((data/'manifest.json').read_text())['status']=='partial_human_review_pending'
+
+
+def test_review_package_rejects_missing_duplicate_stale_and_bad_timestamp(tmp_path):
+    data=_copy_sft(tmp_path);package=tmp_path/'package';export_package(data,package,('train','validation'))
+    rows=_complete_review_csv(package/'review.csv')
+    rows.pop()
+    with (package/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+    with pytest.raises(ValueError,match='Missing'):apply_package(data,package,allow_test_identities=True)
+    export2=tmp_path/'package2';export_package(data,export2,('train','validation'));rows=_complete_review_csv(export2/'review.csv')
+    duplicated=rows+[copy.deepcopy(rows[0])]
+    with (export2/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(duplicated)
+    with pytest.raises(ValueError,match='Duplicate'):apply_package(data,export2,allow_test_identities=True)
+    rows[0]['reviewed_at']='2026-09-30'
+    with (export2/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+    with pytest.raises(ValueError,match='timezone'):apply_package(data,export2,allow_test_identities=True)
+    (data/'train.jsonl').write_text((data/'train.jsonl').read_text(encoding='utf-8')+'\n',encoding='utf-8')
+    with pytest.raises(ValueError,match='changed'):apply_package(data,export2,allow_test_identities=True)
+
+
+def test_ai_draft_cannot_be_exported_as_independent_test(tmp_path):
+    data=_copy_sft(tmp_path)
+    with pytest.raises(ValueError,match='human-authored'):export_package(data,tmp_path/'test-package',('test',),'human-author-a','2026-09-30T10:00:00+07:00')
 
 
 def test_artifact_tamper_and_traversal(tmp_path):
@@ -155,12 +214,12 @@ def test_eval_transport_is_real_llm_not_template(monkeypatch):
     monkeypatch.setenv('DUSNX_ENABLE_LLM_EVAL','1')
     def call(req,timeout):
         body=json.loads(req.data)
-        assert body['model']=='dusnx-vi-v1' and body['options']['temperature']==0
-        return io.BytesIO(json.dumps({'model':'dusnx-vi-v1','message':{'content':'Xin chào'},'eval_count':4}).encode())
+        assert body['model']=='dusnx-vi-candidate' and body['options']['temperature']==0
+        return io.BytesIO(json.dumps({'model':'dusnx-vi-candidate','message':{'content':'Xin chào'},'eval_count':4}).encode())
     monkeypatch.setattr('urllib.request.urlopen',call)
-    r=evaluate(EvaluationRequest(model='dusnx-vi-v1',messages=[{'role':'system','content':'Tiếng Việt'},{'role':'user','content':'Chào'}]))
+    r=evaluate(EvaluationRequest(model='dusnx-vi-candidate',messages=[{'role':'system','content':'Tiếng Việt'},{'role':'user','content':'Chào'}]))
     assert r['response_source']=='llm' and r['provider_called'] and r['provider_ok']
-    assert r['model_used']=='dusnx-vi-v1'
+    assert r['model_used']=='dusnx-vi-candidate'
 
 
 def test_promotion_rejects_regression_and_missing_human_test():
@@ -174,6 +233,9 @@ def test_promotion_rejects_regression_and_missing_human_test():
     with pytest.raises(ValueError):mod.promotion(rows,ratings[:1],True)
     timings=[dict(arm='base',provider_ok=True,gateway_roundtrip_ms=20),dict(arm='candidate',provider_ok=False,gateway_roundtrip_ms=1)]
     assert mod.summarize(timings)['candidate']['mean_gateway_roundtrip_ms'] is None
+    case=next(row for row in partitions()['validation'] if row['id']=='validation-004')
+    checks=mod.automatic_checks(case,'Bìa nên dùng màu xanh lá.')
+    assert checks['required_fact_exact'] and checks['forbidden_fact_exact']
 
 
 def test_eval_api_requires_auth(monkeypatch):

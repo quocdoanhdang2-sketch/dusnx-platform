@@ -2,10 +2,10 @@
   "schema_version": 2,
   "status": "development_data_byte_locked; all_records_need_human_review; independent_human_test_missing",
   "seed": 20260930,
-  "source_revision": "llm-authored-v2",
+  "source_revision": "llm-authored-v2.1",
   "files": {
     "test.jsonl": "424507337625b33112009f8cb58f94e9a3cda81cb348e8cb58800ef906c068ae",
-    "train.jsonl": "0e8d43fbfe08d3a1cd70940d6fd81cdcb410699dd2a1568ef83f672612643537",
+    "train.jsonl": "4816a3569d4efe514b3944d0ba6b9b65b9d8362d921890c026dc46149959b813",
     "validation.jsonl": "c8bd9c2793b811b1184ef288552d4703defa910c412b13a4f7535c5c791833a9"
   }
 }

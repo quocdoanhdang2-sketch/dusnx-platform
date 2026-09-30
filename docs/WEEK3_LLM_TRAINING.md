@@ -20,9 +20,9 @@ Base [Qwen model card](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/tree/7a
 | Validation | 12 | 12 | 12 | 0% |
 | Test nháp | 6 | 6 | 6 | 0% |
 
-61 nhóm kịch bản được soạn riêng, nguồn `synthetic_designed`, revision `llm-authored-v2`, nội dung giả CC0-1.0; không phải hội thoại quan sát. Tổng cộng 67 cặp assistant. Exact tokenizer của Qwen revision pin đo train 94–187 token (trung bình 131.59), validation 115–145 (126.58), test nháp 101–142 (123.33), đều dưới `max_length=512`. Trùng prompt chính xác là 0; tương đồng near-duplicate cross-split lớn nhất 0.6731 dưới ngưỡng 0.82. Hai cặp trên ngưỡng trong train là hai prefix liên tiếp của chính cùng chuỗi nhiều lượt, không phải nhân bản case.
+61 nhóm kịch bản được soạn riêng, nguồn `synthetic_designed`, development release `llm-authored-v2.1`, nội dung giả CC0-1.0; không phải hội thoại quan sát. Bốn record sửa ở v2.1 giữ revision chi tiết `llm-authored-v2.1`, các record không đổi giữ provenance v2. Tổng cộng 67 cặp assistant. Exact tokenizer của Qwen revision pin đo train 94–187 token (trung bình 133.02), validation 115–145 (126.58), test nháp 101–142 (123.33), đều dưới `max_length=512`. Trùng prompt chính xác là 0; tương đồng near-duplicate cross-split lớn nhất 0.6731 dưới ngưỡng 0.82. Hai cặp trên ngưỡng trong train là hai prefix liên tiếp của chính cùng chuỗi nhiều lượt, không phải nhân bản case.
 
-Mỗi lượt có `quality_contracts`: required fact phải có trong context trước lượt và completion; obsolete/rejected fact phải có trong context nhưng không được vào completion; future fact chỉ được xuất hiện ở lượt sau; clarification phải thực sự hỏi. Validator còn tách ID/user/sequence/scenario family giữa split và bắt near-duplicate. Đây là kiểm tra có giới hạn: nó không hiểu mọi diễn đạt đồng nghĩa, nên người thật vẫn phải đọc từng dòng. [Audit chính xác](evidence/llm-sft/data-audit-v2.md) và [review thay đổi](evidence/llm-sft/data-quality-review-v2.md) ghi chi tiết.
+Mỗi lượt có `quality_contracts`: required fact phải có trong context trước lượt và completion; obsolete/rejected fact phải có trong context nhưng không được vào completion; future fact chỉ được xuất hiện ở lượt sau; clarification phải thực sự hỏi. Validator còn tách ID/user/sequence/scenario family giữa split và bắt near-duplicate. Đây là kiểm tra có giới hạn: nó không hiểu mọi diễn đạt đồng nghĩa, nên người thật vẫn phải đọc từng dòng. [Audit v2.1](evidence/llm-sft/data-audit-v2.1.md) và [bảng sửa có lý do](evidence/llm-sft/data-quality-review-v2.1.md) ghi chi tiết.
 
 Không tải thêm dataset ngoài cho SFT. CSConDa cần quyền gated, MASSIVE chỉ có intent và mapping còn pending, SGD chỉ tham khảo cấu trúc: **đều không nhập SFT**. Chi tiết nguồn cũ ở [DATA_SOURCES.md](DATA_SOURCES.md). Không đọc holdout v3, gold, blind/reviewer package hoặc output v3 để xây/tune/evaluate pipeline này. V1/v2 cũng không dùng làm dữ liệu SFT hay kiểm định độc lập.
 
@@ -30,14 +30,40 @@ Không tải thêm dataset ngoài cho SFT. CSConDa cần quyền gated, MASSIVE 
 
 ## Duyệt và khóa trước full train
 
-1. Đọc [train.jsonl](../datasets/llm_sft/train.jsonl) và [validation.jsonl](../datasets/llm_sft/validation.jsonl); kiểm tra context, completion và `quality_contracts`. Chỉ người đã đọc mới đổi `review_status` thành `human_reviewed`; giữ `source=synthetic_designed` vì nguồn vẫn là AI.
-2. Người thật viết test mới theo [form/rubric](LLM_TEST_AUTHORING_TEMPLATE.md), tách câu chữ, câu chuyện, user/sequence/family khỏi train/validation. Người thứ hai duyệt khi chưa xem prediction; chỉ test thật mới dùng `source=human_designed`.
-3. Khóa **trước train và prediction**, từ project root:
+1. Xuất gói train/validation. Mở `review.md` để đọc dễ; điền `review.csv`, không sửa các cột nguồn. Mỗi dòng cần `decision=approve` hoặc `revise`, định danh reviewer, thời gian ISO-8601 có múi giờ; revision cần đáp án mới và lý do.
 
 ```powershell
 $env:PYTHONPATH='python/src'
-python python/scripts/lock_llm_data.py --human-author AUTHOR_ID --reviewer REVIEWER_ID --attest-authored-reviewed-before-predictions
-python python/scripts/prepare_llm_data.py --output runtime/llm-audit
+$py='python/.venv/Scripts/python.exe'
+& $py python/scripts/review_llm_data.py export --kind train-validation --output runtime/llm-review-train-validation
+Start-Process runtime/llm-review-train-validation/review.md
+Start-Process runtime/llm-review-train-validation/review.csv
+# Sau khi điền đủ 61 dòng:
+& $py python/scripts/review_llm_data.py apply --package runtime/llm-review-train-validation
+```
+
+2. Một người thật viết **6–12 test mới** theo [form/rubric](LLM_TEST_AUTHORING_TEMPLATE.md), thay `test.jsonl`; không sửa metadata của sáu test AI nháp để giả thành dữ liệu người viết. Xuất gói test với tác giả và thời gian thật. Người thứ hai chưa xem prediction đọc `review.md`, điền CSV rồi apply:
+
+```powershell
+& $py python/scripts/review_llm_data.py export --kind test --output runtime/llm-review-test `
+  --human-author AUTHOR_ID --human-authored-at '2026-10-01T09:00:00+07:00'
+# Người thứ hai điền runtime/llm-review-test/review.csv, sau đó:
+& $py python/scripts/review_llm_data.py apply --package runtime/llm-review-test
+```
+
+Tool từ chối thiếu/trùng dòng, cột nguồn bị sửa, timestamp thiếu múi giờ, reviewer test trùng tác giả, nguồn thay đổi sau lúc export, hoặc nội dung không qua schema/audit. Receipt của test tự động có `test_only=true` và không thể dùng để lock thật. Gói review nằm trong `runtime/`, không commit tên người duyệt hoặc ghi chú riêng tư.
+
+3. Audit exact tokenizer, rồi khóa **trước train và prediction** bằng hai receipt thật:
+
+```powershell
+runtime/llm-venv/Scripts/python.exe python/scripts/prepare_llm_data.py `
+  --tokenizer-model Qwen/Qwen2.5-0.5B-Instruct `
+  --tokenizer-revision 7ae557604adf67be50417f59c2c2f167def9a775 `
+  --max-length 512 --output runtime/llm-audit-reviewed
+& $py python/scripts/lock_llm_data.py --human-author AUTHOR_ID --reviewer REVIEWER_ID `
+  --train-review-receipt runtime/llm-review-train-validation/review_receipt.json `
+  --test-review-receipt runtime/llm-review-test/review_receipt.json `
+  --attest-authored-reviewed-before-predictions
 ```
 
 Lệnh đầu chỉ dành cho người xác nhận thật; kiểm tra schema/split trước khi ghi SHA và attestation. Lưu thay đổi dữ liệu/manifest vào commit riêng để Colab checkout đúng SHA. Không chọn hyperparameter theo test. Nếu sửa dữ liệu sau train thì run cũ không còn được so sánh với bộ mới như test đã khóa.
@@ -74,7 +100,7 @@ $sha=(Get-Content 'D:/Downloads/dusnx-llm-export.zip.sha256' -Raw).Trim()
 ./scripts/import_llm_ollama.ps1 -ArtifactDir runtime/llm-export -Python $py
 ```
 
-Import script kiểm tra SHA, base revision, GGUF magic, base vẫn installed, tên candidate riêng; từ chối ghi đè candidate đã tồn tại. Lấy chat template từ base Qwen đang cài, thay FROM bằng GGUF, `ollama create dusnx-vi-v1 -f Modelfile.local`, chạy một câu tiếng Việt. Đó là smoke, chưa phải bằng chứng tốt hơn. Base vẫn nguyên để rollback.
+Import script kiểm tra SHA, base revision, GGUF magic, base vẫn installed, tên candidate riêng; từ chối ghi đè candidate đã tồn tại. Lấy chat template từ base Qwen đang cài, thay FROM bằng GGUF, `ollama create dusnx-vi-candidate -f Modelfile.local`, chạy một câu tiếng Việt. Đó là smoke, chưa phải bằng chứng tốt hơn. Base vẫn nguyên để rollback.
 
 ## So sánh thật qua Gateway và quyết định chọn model
 
@@ -82,20 +108,20 @@ Khởi động lại **FastAPI và Gateway đã build code mới**, đặt `DUSN
 
 ```powershell
 $env:DUSNX_ENABLE_LLM_EVAL='1'
-$env:DUSNX_LLM_EVAL_MODELS='qwen2.5:0.5b,dusnx-vi-v1'
+$env:DUSNX_LLM_EVAL_MODELS='qwen2.5:0.5b,dusnx-vi-candidate'
 # Restart the existing local services with these env vars, then:
 & $py python/scripts/evaluate_llm_pair.py --output runtime/llm-pair-01
 ```
 
-Token nhập tại prompt ẩn, không truyền qua command line, không ghi output. Cùng context/prompt/seed/temp/num_predict cho cả hai model; thứ tự được tráo theo case. `raw_outputs.json` ghi model thực, LLM provenance, thời gian, lỗi; `summary.json`, `errors.json`, `blind_ratings.csv` không có token. Chỉ đưa CSV cho reviewer, giữ raw arm mapping riêng đến khi chấm xong. Chấm 0/1 cho **đúng tiếng Việt**, **grounded không bịa**, **quyết định hỏi lại thích hợp**, **không dùng obsolete**, **hoàn thành câu trả lời**; chấm 0 khi provider lỗi. `clarification=1` cũng áp dụng khi đủ context và model trả lời thẳng, không hỏi thừa. Ghi reviewer/date/notes, không tự điền là người đã duyệt.
+Token nhập tại prompt ẩn, không truyền qua command line, không ghi output. Cùng context/prompt/seed/temp/num_predict cho cả hai model; thứ tự được tráo theo case. `raw_outputs.json` ghi nguyên câu trả lời, model/provider, thời gian, lỗi và các phép exact-match tự động; `summary.json` tách tỷ lệ tự động và latency, `blind_ratings.csv` dành cho người chấm. Chấm 0/1 cho **đúng tiếng Việt**, **grounded không bịa**, **quyết định hỏi lại thích hợp**, **không dùng obsolete**, **không nhận đã lưu khi persistence chưa xác nhận**, **hoàn thành câu trả lời**; chấm 0 khi provider lỗi. Ghi reviewer/date/notes, không tự điền là người đã duyệt.
 
 ```powershell
-& $py python/scripts/evaluate_llm_pair.py --output runtime/llm-pair-01 --ratings runtime/llm-pair-01/blind_ratings.csv --human-test-attestation datasets/llm_sft/human_test_attestation.json
+& $py python/scripts/evaluate_llm_pair.py --output runtime/llm-pair-01 --ratings runtime/llm-pair-01/blind_ratings.csv
 ```
 
-Gate được chốt trước: đủ hai output LLM thật mỗi case, test có human attestation, không case/tiêu chí nào giảm so với base; tiếng Việt >=95%; grounded, clarification, no-obsolete đạt100%; các trung bình không thấp hơn base. Tập nhỏ nên không khẳng định superiority thống kê. Ghi cả ca giảm trong `promotion_report.json`. Chưa đủ review, thiếu candidate hoặc fail thì **không promote**.
+Gate được chốt trước khi xem kết quả: đủ hai output LLM thật mỗi case, test có human attestation, không case/tiêu chí nào giảm so với base; tiếng Việt >=95%; grounded, clarification, no-obsolete và no-false-save đạt100%; các trung bình không thấp hơn base. Exact-match tự động chỉ là tín hiệu hỗ trợ, điểm người chấm quyết định gate. Tập nhỏ nên không khẳng định superiority thống kê. Chưa đủ review, thiếu candidate hoặc fail thì **không promote**.
 
-Sau gate đạt và các regression test sản phẩm đạt, người vận hành mới đặt `DUSNX_OLLAMA_MODEL=dusnx-vi-v1`, restart FastAPI; router path giữ nguyên. Rollback: đặt lại `qwen2.5:0.5b`, restart và kiểm tra `/v1/health`. Script không tự đổi .env. Chạy `scripts/verify_chat_provenance.py` để kiểm tra memory selection/template/LLM riêng; template recall không được tính vào điểm LLM.
+Sau gate đạt và các regression test sản phẩm đạt, người vận hành mới đặt `DUSNX_OLLAMA_MODEL=dusnx-vi-candidate`, restart FastAPI; router path giữ nguyên. Rollback: đặt lại `qwen2.5:0.5b`, restart và kiểm tra `/v1/health`. Script không tự đổi `.env`.
 
 ## Kiểm tra local / CI
 
@@ -120,7 +146,7 @@ Lỗi thường gặp: checksum khác → tải lại ZIP, không bỏ kiểm tr
 - [ ] `prepare_llm_data.py` với tokenizer pin đạt và `lock_llm_data.py` được chính người có tên trong attestation chạy.
 - [ ] Dữ liệu/manifest/attestation đã commit; SHA commit 40 ký tự được dán vào ô đầu Colab.
 - [ ] T4 được chọn; tải ZIP + SHA sau từng epoch, giữ ngoài `/content`; Drive chỉ tùy chọn.
-- [ ] Chỉ export/import `dusnx-vi-v1` sau `training_complete`; giữ `qwen2.5:0.5b` để rollback.
+- [ ] Chỉ export/import `dusnx-vi-candidate` sau `training_complete`; giữ `qwen2.5:0.5b` để rollback.
 - [ ] So sánh cùng prompt qua Gateway, chấm CSV bằng người thật; chỉ đổi env khi promotion gate đạt.
 
 Nút chặn hiện tại: train/validation chưa được người duyệt, test độc lập do người viết chưa tồn tại, chưa có attestation, chưa chạy GPU Colab, chưa có adapter/GGUF thật và export/import end-to-end chưa thể xác nhận.

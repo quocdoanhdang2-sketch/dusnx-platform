@@ -55,7 +55,7 @@ def run(args):
         tokenizer=PreTrainedTokenizerFast(tokenizer_object=t,pad_token='[PAD]',eos_token='<|im_end|>',unk_token='[UNK]')
         tokenizer.chat_template="{% for m in messages %}{{ '<|im_start|>' + m['role'] + '\\n' + m['content'] + '<|im_end|>\\n' }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\\n' }}{% endif %}"
         model=Qwen2ForCausalLM(Qwen2Config(vocab_size=len(tokenizer),hidden_size=32,intermediate_size=64,num_hidden_layers=1,num_attention_heads=2,num_key_value_heads=1,max_position_embeddings=1024,pad_token_id=0,eos_token_id=3))
-        rows={s:r[:2] for s,r in rows.items()}
+        rows={'train':[rows['train'][0],next(item for item in rows['train'] if len(item['messages'])>3)],'validation':rows['validation'][:2]}
     else:
         tokenizer=AutoTokenizer.from_pretrained(cfg['base_model'],revision=cfg['base_revision'],trust_remote_code=False)
         kwargs=dict(revision=cfg['base_revision'],trust_remote_code=False,torch_dtype=torch.bfloat16 if bf16 else torch.float16)
@@ -94,13 +94,13 @@ def run(args):
         args=SFTConfig(output_dir=str(out),num_train_epochs=2 if args.smoke else cfg['epochs'],per_device_train_batch_size=1 if args.smoke else cfg['batch_size'],per_device_eval_batch_size=1,gradient_accumulation_steps=1 if args.smoke else cfg['gradient_accumulation_steps'],learning_rate=cfg['learning_rate'],seed=cfg['seed'],data_seed=cfg['seed'],max_length=cfg['max_length'],completion_only_loss=True,assistant_only_loss=False,packing=False,bf16=bf16,fp16=not args.smoke and not bf16,use_cpu=args.smoke,gradient_checkpointing=not args.smoke,gradient_checkpointing_kwargs={'use_reentrant':False},eval_strategy='epoch',save_strategy='epoch',logging_strategy='steps',logging_steps=1,save_total_limit=2,load_best_model_at_end=True,metric_for_best_model='eval_loss',greater_is_better=False,report_to='none',dataloader_num_workers=0,save_safetensors=True),
         train_dataset=Dataset.from_list(pairs['train']),eval_dataset=Dataset.from_list(pairs['validation']),
         peft_config=LoraConfig(task_type='CAUSAL_LM',r=cfg['lora_r'],lora_alpha=cfg['lora_alpha'],lora_dropout=cfg['lora_dropout'],target_modules=cfg['target_modules']),callbacks=callbacks)
-    example=trainer.train_dataset[0]
-    mask=example.get('completion_mask')
-    if mask is None or 0 not in mask or 1 not in mask:raise RuntimeError('Missing prompt/completion boundary')
-    batch=trainer.data_collator([example])
-    labels=batch['labels'][0].tolist()
-    if any(labels[i]!=-100 for i,m in enumerate(mask) if m==0):raise RuntimeError('System/user tokens leaked into loss')
-    if not any(labels[i]!=-100 for i,m in enumerate(mask) if m==1):raise RuntimeError('All assistant targets are masked')
+    if not any(any(message['role']=='assistant' for message in pair['prompt']) for pair in pairs['train']):raise RuntimeError('Multi-turn completion masking was not exercised')
+    for example in trainer.train_dataset:
+        mask=example.get('completion_mask')
+        if mask is None or 0 not in mask or 1 not in mask:raise RuntimeError('Missing prompt/completion boundary')
+        batch=trainer.data_collator([example]);labels=batch['labels'][0].tolist()
+        if any(labels[i]!=-100 for i,m in enumerate(mask) if m==0):raise RuntimeError('System/user/earlier-assistant tokens leaked into loss')
+        if not any(labels[i]!=-100 for i,m in enumerate(mask) if m==1):raise RuntimeError('All assistant targets are masked')
     # Restore early-stopping patience as well as optimizer/RNG on staged resume.
     trainer.args.restore_callback_states_from_checkpoint=True
     result=trainer.train(resume_from_checkpoint=args.resume)
@@ -111,7 +111,7 @@ def run(args):
     if not learned:raise RuntimeError('No LoRA update observed')
     active_early_stop=next(c for c in trainer.callback_handler.callbacks if isinstance(c,EarlyStoppingCallback))
     ended_early=active_early_stop.early_stopping_patience_counter>=cfg['early_stopping_patience']
-    manifest.update(status='smoke_complete' if args.smoke else ('stage_complete' if args.stop_after_epoch and trainer.state.epoch<cfg['epochs'] and not ended_early else 'training_complete'),metrics=result.metrics,best_checkpoint=trainer.state.best_model_checkpoint,epoch=trainer.state.epoch,completion_mask_verified=True,lora_update_verified=learned,early_stopped=ended_early)
+    manifest.update(status='smoke_complete' if args.smoke else ('stage_complete' if args.stop_after_epoch and trainer.state.epoch<cfg['epochs'] and not ended_early else 'training_complete'),metrics=result.metrics,best_checkpoint=trainer.state.best_model_checkpoint,epoch=trainer.state.epoch,completion_mask_verified=True,multi_turn_completion_mask_verified=True,lora_update_verified=learned,early_stopped=ended_early,data_manifest_status=lock.get('status'))
     write_json(out/'training_manifest.json',manifest)
     pack(out,out.parent/f'{out.name}.zip')
     print(json.dumps(dict(status=manifest['status'],output=str(out),epoch=trainer.state.epoch)))

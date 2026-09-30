@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 import time
-from dusnx_core.llm_data import digest, read_sft, verify_file_manifest, write_json
+from dusnx_core.llm_data import digest, read_sft, verify_file_manifest, verify_full_training_gate, write_json
 
 
 def main():
@@ -17,6 +17,7 @@ def main():
     if manifest['status']!='training_complete' or manifest['contract']['smoke']:raise ValueError('Completed pretrained SFT required')
     verify_file_manifest(run,json.loads((run/'artifact_manifest.json').read_text(encoding='utf-8')))
     verify_file_manifest(data,{'files':manifest['contract']['data_hashes']})
+    data_manifest=json.loads((data/'manifest.json').read_text(encoding='utf-8'));verify_full_training_gate(data,data_manifest)
     cases=read_sft(data/'test.jsonl','test');cfg=manifest['contract']['config'];results=[]
     tok=AutoTokenizer.from_pretrained(run/'adapter',local_files_only=True)
     for arm in ('base','candidate'):

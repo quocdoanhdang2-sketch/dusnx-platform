@@ -241,6 +241,8 @@ def verify_full_training_gate(root, manifest):
     author = str(attestation.get("human_author", "")).strip()
     reviewer = str(attestation.get("reviewer", "")).strip()
     expected_test_hash = manifest.get("files", {}).get("test.jsonl")
+    train_receipt_hash = str(attestation.get("train_review_receipt_sha256", ""))
+    test_receipt_hash = str(attestation.get("test_review_receipt_sha256", ""))
     if (
         not author
         or not reviewer
@@ -249,6 +251,8 @@ def verify_full_training_gate(root, manifest):
         or attestation.get("locked_before_training") is not True
         or not expected_test_hash
         or attestation.get("test_sha256") != expected_test_hash
+        or not re.fullmatch(r"[0-9a-f]{64}", train_receipt_hash)
+        or not re.fullmatch(r"[0-9a-f]{64}", test_receipt_hash)
     ):
         raise ValueError("Invalid independent human data attestation")
     return True

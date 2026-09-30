@@ -1,7 +1,7 @@
-﻿param(
+param(
     [Parameter(Mandatory=$true)][string]$ArtifactDir,
     [string]$Python = 'python',
-    [string]$Candidate = 'dusnx-vi-v1'
+    [string]$Candidate = 'dusnx-vi-candidate'
 )
 $ErrorActionPreference = 'Stop'
 if ($Candidate -notmatch '^dusnx-vi-[a-z0-9-]+$') { throw 'Use a separate dusnx-vi-* name; never overwrite base.' }
@@ -17,6 +17,11 @@ $tags = Invoke-RestMethod 'http://localhost:11434/api/tags'
 if ($tags.models.name -notcontains 'qwen2.5:0.5b') { throw 'Keep base qwen2.5:0.5b installed for rollback first' }
 if ($tags.models.name -contains "$($Candidate):latest" -or $tags.models.name -contains $Candidate) { throw 'Candidate exists; use a new name to preserve previous model' }
 $gguf = Join-Path $artifactRoot 'dusnx-vi-v1-f16.gguf'
+if (-not (Test-Path -LiteralPath $gguf)) {
+    $ggufs = @(Get-ChildItem -LiteralPath $artifactRoot -Filter '*.gguf' -File)
+    if ($ggufs.Count -eq 1) { $gguf = $ggufs[0].FullName }
+    else { throw "Expected a single GGUF file in $artifactRoot, found $($ggufs.Count)" }
+}
 $stream = [IO.File]::OpenRead($gguf)
 try { $magic = New-Object byte[] 4; [void]$stream.Read($magic,0,4) } finally { $stream.Dispose() }
 if ([Text.Encoding]::ASCII.GetString($magic) -ne 'GGUF') { throw 'Not a GGUF file' }

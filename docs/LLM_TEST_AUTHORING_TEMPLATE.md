@@ -33,6 +33,8 @@ runtime/llm-venv/Scripts/python.exe python/scripts/prepare_llm_data.py `
   --output runtime/llm-audit-reviewed
 python/.venv/Scripts/python.exe python/scripts/lock_llm_data.py `
   --human-author AUTHOR_ID --reviewer REVIEWER_ID `
+  --train-review-receipt runtime/llm-review-train-validation/review_receipt.json `
+  --test-review-receipt runtime/llm-review-test/review_receipt.json `
   --attest-authored-reviewed-before-predictions
 ```
 
