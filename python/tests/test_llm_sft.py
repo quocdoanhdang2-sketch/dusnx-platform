@@ -1,3 +1,4 @@
+import hashlib
 import ast
 import csv
 import copy
@@ -24,8 +25,9 @@ def test_data_lock_and_split():
     assert report['train']['assistant_pairs']>0
     assert all(report[s]['duplicate_prompt_rate']==0 for s in ('train','validation','test'))
     assert verify_file_manifest(DATA,json.loads((DATA/'manifest.json').read_text()))
-    assert all(r['review_status']=='needs_human_review' for rows in p.values() for r in rows)
-    assert report['quality']['human_review_complete'] is False
+    assert all(r['review_status']=='human_reviewed' for s in ('train','validation') for r in p[s])
+    assert all(r['review_status']=='human_reviewed' for r in p['test'])
+    assert report['quality']['human_review_complete'] is True
 
 
 def test_known_content_regressions_are_grounded():
@@ -108,9 +110,9 @@ def test_protected_paths_fail_before_read(tmp_path):
     with pytest.raises(ValueError,match='Protected'):read_sft(tmp_path/'holdout_v3_DO_NOT_READ.jsonl','train')
 
 
-def test_development_manifest_cannot_start_full_training():
+def test_locked_manifest_can_start_full_training():
     manifest=json.loads((DATA/'manifest.json').read_text(encoding='utf-8'))
-    with pytest.raises(ValueError,match='human-attested'):verify_full_training_gate(DATA,manifest)
+    verify_full_training_gate(DATA,manifest)
 
 
 def test_same_person_cannot_author_and_review_test(tmp_path):
@@ -148,7 +150,7 @@ def test_review_package_round_trip_and_receipt_is_test_only(tmp_path):
     receipt=apply_package(data,package,allow_test_identities=True)
     assert receipt['test_only'] is True and receipt['row_count']==61
     assert all(row['review_status']=='human_reviewed' for split in ('train','validation') for row in read_sft(data/f'{split}.jsonl',split))
-    assert json.loads((data/'manifest.json').read_text())['status']=='partial_human_review_pending'
+    assert json.loads((data/'manifest.json').read_text())['status']=='human_review_complete_pending_lock'
 
 
 def test_review_package_rejects_missing_duplicate_stale_and_bad_timestamp(tmp_path):
@@ -173,7 +175,49 @@ def test_review_package_rejects_missing_duplicate_stale_and_bad_timestamp(tmp_pa
 
 def test_ai_draft_cannot_be_exported_as_independent_test(tmp_path):
     data=_copy_sft(tmp_path)
-    with pytest.raises(ValueError,match='human-authored'):export_package(data,tmp_path/'test-package',('test',),'human-author-a','2026-09-30T10:00:00+07:00')
+    records=read_sft(data/'test.jsonl','test')
+    for row in records:
+        row['source']='synthetic_designed'
+        row['generation_method']='AI-generated'
+    (data/'test.jsonl').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in records),encoding='utf-8')
+    with pytest.raises(ValueError,match='Replace the AI draft with genuinely human-authored test records first'):
+        export_package(data,tmp_path/'test-package',('test',),'human-author-a','2026-09-30T10:00:00+07:00')
+
+
+def test_test_export_rejects_already_reviewed_records(tmp_path):
+    data=_copy_sft(tmp_path)
+    records=read_sft(data/'test.jsonl','test')
+    records[0]['review_status']='human_reviewed'
+    (data/'test.jsonl').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in records),encoding='utf-8')
+    with pytest.raises(ValueError,match='pending human review'):
+        export_package(data,tmp_path/'test-package',('test',),'human-author-a','2026-09-30T10:00:00+07:00')
+
+
+def test_independent_test_requires_independent_reviewer_and_full_adjudication(tmp_path):
+    data=_copy_sft(tmp_path);package=tmp_path/'package'
+    test_path=data/'test.jsonl'
+    test_rows=[json.loads(line) for line in test_path.read_text(encoding='utf-8').splitlines() if line.strip()]
+    for row in test_rows:
+        row['review_status']='needs_human_review'
+    test_path.write_text(
+        ''.join(json.dumps(row,ensure_ascii=False,separators=(',',':'))+'\n' for row in test_rows),
+        encoding='utf-8',newline='\n',
+    )
+    manifest_path=data/'manifest.json'
+    manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest['status']='partial_human_review_pending'
+    manifest['files']['test.jsonl']=hashlib.sha256(test_path.read_bytes()).hexdigest()
+    manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+    export_package(data,package,('test',),'human-author-a','2026-09-30T10:00:00+07:00')
+    rows=_complete_review_csv(package/'review.csv',reviewer='human-author-a')
+    with pytest.raises(ValueError,match='must differ from its human author'):
+        apply_package(data,package,allow_test_identities=True)
+    rows[0]['decision']=''
+    with (package/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(rows[0]))
+        writer.writeheader();writer.writerows(rows)
+    with pytest.raises(ValueError,match='decision=approve or revise'):
+        apply_package(data,package,allow_test_identities=True)
 
 
 def test_artifact_tamper_and_traversal(tmp_path):

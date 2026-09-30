@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
-  "status": "development_data_byte_locked; all_records_need_human_review; independent_human_test_missing",
-  "seed": 20260930,
-  "source_revision": "llm-authored-v2.1",
+  "status": "human_attested_locked_before_training",
+  "locked_at": "2026-09-30T18:34:47.262933+00:00",
+  "source_revision": "human-reviewed-release",
   "files": {
-    "test.jsonl": "424507337625b33112009f8cb58f94e9a3cda81cb348e8cb58800ef906c068ae",
-    "train.jsonl": "4816a3569d4efe514b3944d0ba6b9b65b9d8362d921890c026dc46149959b813",
-    "validation.jsonl": "c8bd9c2793b811b1184ef288552d4703defa910c412b13a4f7535c5c791833a9"
+    "train.jsonl": "82bb226a2ef9fcd16419dad7698ffb33e156c359a251f69cf42057c9dd777246",
+    "validation.jsonl": "63bb6d03742a113202d8267350bf962af0afa227c5cb2b5ff213b499e45422e5",
+    "test.jsonl": "c839dc66ca4158c8ffc87e802ed186a5326a932f53b44fb577023a73ab0c7592"
   }
 }

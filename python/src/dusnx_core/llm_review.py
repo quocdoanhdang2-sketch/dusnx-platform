@@ -60,6 +60,8 @@ def export_package(data_root, output, splits, human_author=None, human_authored_
             raise ValueError("Test-only identities cannot create a real review package")
         if any(row["source"] != "human_designed" or row["generation_method"] != "human-authored" for row in records["test"]):
             raise ValueError("Replace the AI draft with genuinely human-authored test records first")
+        if any(row["review_status"] != "needs_human_review" for row in records["test"]):
+            raise ValueError("Independent test records must be pending human review before export")
     rows = [item for split in splits for item in _review_rows(records[split], split)]
     out.mkdir(parents=True, exist_ok=True)
     csv_path = out / "review.csv"
