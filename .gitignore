@@ -32,3 +32,6 @@ training-results/
 **/*.epochs.jsonl
 **/*.metrics.json
 **/*.pt
+**/*.gguf
+**/*.safetensors
+llm-artifacts/

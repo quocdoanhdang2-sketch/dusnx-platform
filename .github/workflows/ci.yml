@@ -7,6 +7,29 @@ on:
     branches: [main, develop]
 
 jobs:
+  llm-offline-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements/llm-sft.txt
+      - name: Install pinned CPU SFT stack
+        run: |
+          pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements/llm-sft.txt
+      - name: Audit, random tiny Qwen LoRA and checkpoint resume (no downloads)
+        env:
+          PYTHONPATH: python/src
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+          WANDB_DISABLED: "true"
+        run: |
+          python python/scripts/prepare_llm_data.py
+          python python/scripts/llm_pipeline_smoke.py --output runtime/ci-llm
+
   python-tests:
     runs-on: ubuntu-latest
     steps:

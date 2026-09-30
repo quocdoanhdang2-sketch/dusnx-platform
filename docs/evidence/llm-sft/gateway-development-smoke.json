@@ -1,0 +1,30 @@
+{
+  "gateway": "http://localhost:8180",
+  "purpose": "development_transport_smoke_not_quality_score",
+  "status": "base_transport_verified",
+  "outputs": [
+    {
+      "requested_model": "qwen2.5:0.5b",
+      "text": "1. Đi bộ là một phương pháp tốt để tăng cường sức khỏe và giảm bớt căng thẳng.\n2. Đi bộ giúp cải thiện sức khỏe tim mạch và giảm nguy cơ mắc bệnh tim mạch.",
+      "provider_ok": true,
+      "provider_called": true,
+      "provider_used": "ollama",
+      "response_source": "llm",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 43,
+      "elapsed_ms": 9420.765999995638
+    },
+    {
+      "requested_model": "dusnx-vi-v1",
+      "text": "",
+      "provider_ok": false,
+      "provider_called": true,
+      "provider_used": "ollama",
+      "response_source": "provider_error",
+      "model_used": null,
+      "error": "HTTPError",
+      "elapsed_ms": 2036.0339999897406
+    }
+  ],
+  "candidate_status": "not_available_no_finetuned_artifact"
+}

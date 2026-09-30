@@ -271,6 +271,10 @@ Template trích memory không gọi Ollama: provider/model=null; Web hiển th�
 
 ## Đọc tiếp
 
+Pipeline **SFT LLM riêng**: [notebook Colab](notebooks/finetune_llm_colab.ipynb) và [hướng dẫn từng bước](docs/WEEK3_LLM_TRAINING.md). LoRA Qwen2.5-0.5B-Instruct, không thay router.pt; mặc định Ollama vẫn `qwen2.5:0.5b`. Dữ liệu thiết kế: train20 chuỗi/24 cặp, validation5, test nháp6; chưa được người duyệt, full train yêu cầu khóa dữ liệu sau review thật. Không dùng holdout v3. Notebook lưu `/content`, ZIP+SHA theo chặng, resume, merge/GGUF, comparison; chưa chạy GPU Colab hoặc có model fine-tuned để công bố chất lượng.
+
+Audit: `python python/scripts/prepare_llm_data.py` (PYTHONPATH=python/src), output `runtime/llm-audit/`. Smoke SFT chạy trong venv riêng với `requirements/llm-sft.txt`: `python python/scripts/finetune_llm.py --smoke --output runtime/llm-smoke`. Run ZIP/checkpoint nằm cạnh/thư mục output; không commit weights. Import Windows dùng `scripts/import_llm_ollama.ps1`; so sánh thực qua Gateway dùng `python/scripts/evaluate_llm_pair.py` và người chấm CSV. Chỉ chọn candidate sau gate không hồi quy; hiện giữ base.
+
 - `docs/TRAIN_READINESS.md`: Báo cáo chi tiết về dữ liệu, leakage, 5 nhánh đánh giá và tình trạng sẵn sàng huấn luyện.
 - `docs/TRAIN_COLAB_TUNG_BUOC.md`: Hướng dẫn 5 bước thao tác trên Google Colab lưu kết quả vào Google Drive.
 - `docs/START_HERE_PHASE1.md`: thứ tự làm từng bước.

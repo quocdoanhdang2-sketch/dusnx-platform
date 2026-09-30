@@ -1,0 +1,93 @@
+{
+  "train": {
+    "sequences": 20,
+    "records": 20,
+    "assistant_pairs": 24,
+    "unique_prompts": 24,
+    "duplicate_prompt_rate": 0.0,
+    "scenario_distribution": {
+      "language_explain": 1,
+      "session_database": 1,
+      "confirmed_layout": 1,
+      "reject_font": 1,
+      "ambiguous_export": 1,
+      "preference_revision": 1,
+      "cross_client_outline": 1,
+      "summary_given": 1,
+      "outline_audience": 1,
+      "proposal_not_fact": 1,
+      "pending_change": 1,
+      "topic_reset": 1,
+      "scope_two_projects": 1,
+      "unavailable_personal": 1,
+      "withdraw_fact": 1,
+      "preserve_constraint": 1,
+      "confirmed_sequence": 1,
+      "unknown_resume": 1,
+      "conflict_ask": 1,
+      "no_fake_execution": 1
+    },
+    "char_length": {
+      "min": 243,
+      "max": 556,
+      "mean": 365.45
+    },
+    "sources": {
+      "synthetic_designed": 20
+    },
+    "review_status": {
+      "ai_authored_pending_human_review": 20
+    }
+  },
+  "validation": {
+    "sequences": 5,
+    "records": 5,
+    "assistant_pairs": 5,
+    "unique_prompts": 5,
+    "duplicate_prompt_rate": 0.0,
+    "scenario_distribution": {
+      "val_trip_replaced": 1,
+      "val_budget_missing": 1,
+      "val_language_analogy": 1,
+      "val_rejected_color": 1,
+      "val_handoff_feedback": 1
+    },
+    "char_length": {
+      "min": 290,
+      "max": 401,
+      "mean": 344.2
+    },
+    "sources": {
+      "synthetic_designed": 5
+    },
+    "review_status": {
+      "ai_authored_pending_human_review": 5
+    }
+  },
+  "test": {
+    "sequences": 6,
+    "records": 6,
+    "assistant_pairs": 6,
+    "unique_prompts": 6,
+    "duplicate_prompt_rate": 0.0,
+    "scenario_distribution": {
+      "test_architecture_unapproved": 1,
+      "test_host_superseded": 1,
+      "test_vi_short": 1,
+      "test_absent_hobby": 1,
+      "test_rejection_format": 1,
+      "test_handoff_members": 1
+    },
+    "char_length": {
+      "min": 281,
+      "max": 421,
+      "mean": 343.3333333333333
+    },
+    "sources": {
+      "synthetic_designed": 6
+    },
+    "review_status": {
+      "ai_authored_pending_human_review": 6
+    }
+  }
+}

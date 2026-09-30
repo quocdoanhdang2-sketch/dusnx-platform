@@ -23,6 +23,7 @@ from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessRespo
 from .auth import get_auth_db
 from .memory import get_memory_db
 from .provider import generate_response, get_provider_health
+from .llm_evaluation import EvaluationRequest, evaluate as evaluate_llm
 from .grounding import memory_answer_with_selection, select_memories
 from .decision_updater import (
     find_best_matching_decision,
@@ -145,6 +146,10 @@ def _get_current_user(authorization: Annotated[Optional[str], Header()] = None) 
 
 
 CurrentUser = Annotated[dict, Depends(_get_current_user)]
+
+@app.post('/v1/llm-evaluation')
+def llm_evaluation(req: EvaluationRequest, user: CurrentUser):
+    return evaluate_llm(req)
 
 
 # ── Health ─────────────────────────────────────────────────────────────────────

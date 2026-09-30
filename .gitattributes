@@ -1,3 +1,5 @@
 benchmarks/*.jsonl text eol=lf
 benchmarks/*.json text eol=lf
 *.ipynb text eol=lf
+datasets/llm_sft/*.jsonl text eol=lf
+datasets/llm_sft/*.json text eol=lf

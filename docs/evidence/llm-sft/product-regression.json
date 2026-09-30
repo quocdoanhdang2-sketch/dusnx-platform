@@ -1,0 +1,95 @@
+{
+  "timestamp_utc": "2026-09-30T07:30:09.224266+00:00",
+  "gateway": "http://localhost:8180",
+  "status": "passed",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "candidate_memory_ids": [
+        "146f41016c2fcb91f2cbf9d4e2adabad",
+        "413601b8893a2530a5301fb2fd9f06c5"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "146f41016c2fcb91f2cbf9d4e2adabad"
+      ],
+      "provider_called": false,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "candidate_memory_ids": [
+        "413601b8893a2530a5301fb2fd9f06c5",
+        "146f41016c2fcb91f2cbf9d4e2adabad"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "413601b8893a2530a5301fb2fd9f06c5"
+      ],
+      "provider_called": false,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "candidate_memory_ids": [
+        "146f41016c2fcb91f2cbf9d4e2adabad",
+        "413601b8893a2530a5301fb2fd9f06c5"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "146f41016c2fcb91f2cbf9d4e2adabad",
+        "413601b8893a2530a5301fb2fd9f06c5"
+      ],
+      "provider_called": false,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "candidate_memory_ids": [
+        "146f41016c2fcb91f2cbf9d4e2adabad",
+        "413601b8893a2530a5301fb2fd9f06c5"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null
+    },
+    "llm": {
+      "reply": "1. Reading can enhance your vocabulary and comprehension skills.\n2. Reading can improve your analytical and critical thinking abilities.",
+      "candidate_memory_ids": [
+        "146f41016c2fcb91f2cbf9d4e2adabad",
+        "413601b8893a2530a5301fb2fd9f06c5"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "response_source": "llm",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:0.5b",
+      "tokens_generated": 24
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  }
+}

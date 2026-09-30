@@ -1,0 +1,15 @@
+base_model: Qwen/Qwen2.5-0.5B-Instruct
+base_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+base_license: Apache-2.0
+seed: 20260930
+epochs: 3
+learning_rate: 0.0001
+batch_size: 1
+gradient_accumulation_steps: 8
+max_length: 512
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: [q_proj, k_proj, v_proj, o_proj]
+early_stopping_patience: 2
+qlora: false
