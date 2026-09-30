@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 import yaml
-from dusnx_core.llm_data import audit, completion_rows, digest, read_sft, verify_file_manifest, write_json
+from dusnx_core.llm_data import audit, completion_rows, digest, read_sft, verify_file_manifest, verify_full_training_gate, write_json
 from dusnx_core.llm_artifacts import pack
 
 
@@ -29,10 +29,7 @@ def run(args):
     # Test is hashed for freeze integrity; its content/labels are NEVER loaded by training.
     verify_file_manifest(data,lock)
     if not args.smoke:
-        att_path=data/'human_test_attestation.json'
-        if not att_path.is_file():raise ValueError('Full SFT requires human-reviewed data and human-authored frozen test; see lock_llm_data.py')
-        att=json.loads(att_path.read_text(encoding='utf-8'))
-        if not (att.get('human_author') and att.get('reviewer') and att.get('training_reviewed') is True and att.get('locked_before_training') is True and att.get('test_sha256')==lock['files']['test.jsonl']):raise ValueError('Invalid human data attestation')
+        verify_full_training_gate(data,lock)
     rows={s:read_sft(data/f'{s}.jsonl',s) for s in ('train','validation')}
     report=audit(rows)
     commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()

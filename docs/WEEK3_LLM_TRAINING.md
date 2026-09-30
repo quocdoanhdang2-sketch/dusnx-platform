@@ -4,7 +4,7 @@
 
 Pipeline này fine-tune **Qwen2.5-0.5B-Instruct bằng LoRA**, không train LLM từ đầu và không thay `router.pt`. GPU Colab, adapter thật, merge/GGUF thật và so sánh candidate vẫn cần người dùng chạy. Smoke dùng Qwen ngẫu nhiên rất nhỏ trên CPU chỉ kiểm chứng API, loss mask, update LoRA, checkpoint và resume. Không có điểm chất lượng candidate để công bố.
 
-[Smoke CPU đã chạy đạt](evidence/llm-sft/cpu-smoke.json) bằng `python python/scripts/llm_pipeline_smoke.py --output runtime/llm-smoke-verified` trong venv riêng: weights sau resume khớp train liền (rtol1e-5/atol1e-7), loss không chứa user/system, LoRA thực sự cập nhật, export smoke bị từ chối. `pip check` không có dependency hỏng. Python166/Web11/Gateway7/local-health6 tests đạt; build .NET không warning/error. Đây là kiểm thử pipeline trên Windows CPU, chưa phải chạy Colab GPU.
+[Smoke CPU](evidence/llm-sft/cpu-smoke-v2.json) dùng dữ liệu v2 và stack pin để kiểm tra weights, loss mask, resume, hash/manifest; đây là kiểm thử Windows CPU, chưa phải chạy Colab GPU hoặc bằng chứng chất lượng model.
 
 Base Ollama vẫn là `qwen2.5:0.5b`. Máy kiểm tra có Ollama **0.34.4**. Router Colab đang dùng giữ nguyên SHA-256 `56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1`. Không đổi checkpoint router khi chọn LLM.
 
@@ -16,20 +16,22 @@ Base [Qwen model card](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/tree/7a
 
 | Split | Chuỗi | Cặp assistant | Prompt duy nhất | Trùng chính xác |
 |---|---:|---:|---:|---:|
-| Train | 20 | 24 | 24 | 0% |
-| Validation | 5 | 5 | 5 | 0% |
+| Train | 43 | 49 | 49 | 0% |
+| Validation | 12 | 12 | 12 | 0% |
 | Test nháp | 6 | 6 | 6 | 0% |
 
-31 nhóm kịch bản được soạn riêng, một nguồn `synthetic_designed`, revision `llm-authored-v1`, nội dung giả dành cho sử dụng CC0-1.0. Không phải hội thoại người dùng thật. Độ dài chuỗi theo ký tự: train 243–556, validation 290–401, test 281–421; token length được kiểm tra bằng tokenizer khi train, quá dài thì báo lỗi thay vì cắt mất đáp án. Số lượng này nhỏ, chỉ phù hợp pilot; không bơm thêm bằng thay tên. Tách ID/sequence/user/family và mọi prefix prompt dùng train; kiểm tra trùng chính xác không chứng minh hết trùng ngữ nghĩa. Cần người duyệt tình huống và cách diễn đạt.
+61 nhóm kịch bản được soạn riêng, nguồn `synthetic_designed`, revision `llm-authored-v2`, nội dung giả CC0-1.0; không phải hội thoại quan sát. Tổng cộng 67 cặp assistant. Exact tokenizer của Qwen revision pin đo train 94–187 token (trung bình 131.59), validation 115–145 (126.58), test nháp 101–142 (123.33), đều dưới `max_length=512`. Trùng prompt chính xác là 0; tương đồng near-duplicate cross-split lớn nhất 0.6731 dưới ngưỡng 0.82. Hai cặp trên ngưỡng trong train là hai prefix liên tiếp của chính cùng chuỗi nhiều lượt, không phải nhân bản case.
+
+Mỗi lượt có `quality_contracts`: required fact phải có trong context trước lượt và completion; obsolete/rejected fact phải có trong context nhưng không được vào completion; future fact chỉ được xuất hiện ở lượt sau; clarification phải thực sự hỏi. Validator còn tách ID/user/sequence/scenario family giữa split và bắt near-duplicate. Đây là kiểm tra có giới hạn: nó không hiểu mọi diễn đạt đồng nghĩa, nên người thật vẫn phải đọc từng dòng. [Audit chính xác](evidence/llm-sft/data-audit-v2.md) và [review thay đổi](evidence/llm-sft/data-quality-review-v2.md) ghi chi tiết.
 
 Không tải thêm dataset ngoài cho SFT. CSConDa cần quyền gated, MASSIVE chỉ có intent và mapping còn pending, SGD chỉ tham khảo cấu trúc: **đều không nhập SFT**. Chi tiết nguồn cũ ở [DATA_SOURCES.md](DATA_SOURCES.md). Không đọc holdout v3, gold, blind/reviewer package hoặc output v3 để xây/tune/evaluate pipeline này. V1/v2 cũng không dùng làm dữ liệu SFT hay kiểm định độc lập.
 
-**Tập test hiện do AI soạn, chưa đáp ứng yêu cầu do người viết.** Nó được khóa byte bằng manifest trước smoke, nhưng chưa được duyệt độc lập. Full train cố ý yêu cầu human attestation thật; agent không ký thay. Người viết cần tạo 6–12 chuỗi mới trong `test.jsonl`, giữ schema, dùng `source=human_designed`, nguồn/revision riêng, thông tin giả và quyền CC0. Một người khác duyệt trước khi xem prediction. Không chỉ đổi metadata của bản AI để giả làm người viết.
+**Tập test hiện do AI soạn, chưa đáp ứng yêu cầu do người viết.** Manifest development chỉ khóa byte để phát hiện thay đổi, không phải attestation. Làm theo [mẫu viết test độc lập](LLM_TEST_AUTHORING_TEMPLATE.md), thay bằng 6–12 chuỗi do người viết, nhờ người thứ hai duyệt trước prediction rồi mới khóa. Full trainer kiểm tra manifest `human_attested_locked_before_training` và attestation; agent không tạo các dấu xác nhận này.
 
 ## Duyệt và khóa trước full train
 
-1. Đọc từng hội thoại train/validation; xác minh assistant chỉ dùng lượt trước, phân biệt hiện hành/đề xuất/đã bị thay thế, không tự nhận đã lưu. Sửa nội dung sai rồi đổi `review_status` thành `human_reviewed` khi thực sự đã duyệt.
-2. Người thật viết test mới tách câu chữ, câu chuyện, sequence/user/family khỏi train/validation; đặt reference trước khi xem output. Reviewer duyệt tính đúng tiếng Việt, grounded, clarification, không dùng obsolete và hoàn thành yêu cầu. Ghi tác giả, reviewer bằng định danh công việc không nhạy cảm.
+1. Đọc [train.jsonl](../datasets/llm_sft/train.jsonl) và [validation.jsonl](../datasets/llm_sft/validation.jsonl); kiểm tra context, completion và `quality_contracts`. Chỉ người đã đọc mới đổi `review_status` thành `human_reviewed`; giữ `source=synthetic_designed` vì nguồn vẫn là AI.
+2. Người thật viết test mới theo [form/rubric](LLM_TEST_AUTHORING_TEMPLATE.md), tách câu chữ, câu chuyện, user/sequence/family khỏi train/validation. Người thứ hai duyệt khi chưa xem prediction; chỉ test thật mới dùng `source=human_designed`.
 3. Khóa **trước train và prediction**, từ project root:
 
 ```powershell
@@ -44,9 +46,9 @@ Lệnh đầu chỉ dành cho người xác nhận thật; kiểm tra schema/spl
 
 1. Mở [notebook](../notebooks/finetune_llm_colab.ipynb), chọn **Open in Colab** qua GitHub hoặc vào Colab → File → Open notebook → GitHub → dán URL repo và chọn `notebooks/finetune_llm_colab.ipynb`.
 2. **File → Save a copy in Drive** chỉ lưu notebook; không cần mount Drive cho train. **Runtime → Change runtime type → T4 GPU → Save**. Không có GPU vẫn chạy smoke CPU được, full train báo lỗi rõ.
-3. Ô đầu: đặt `REPO_REVISION` thành SHA commit đã duyệt dữ liệu. `main` chỉ là mặc định tiện mở, được resolve/in ra SHA; run manifest luôn ghi SHA thực. Không dùng token trong notebook.
+3. Ô đầu cố ý dừng ở `REPLACE_WITH_REVIEWED_DATA_COMMIT`. Dán SHA 40 ký tự của commit chứa dữ liệu đã duyệt và manifest đã khóa; notebook không cho dùng nhánh động như `main`. Không dùng token trong notebook.
 4. Chạy ô cài pinned packages trong venv riêng `/content/dusnx-llm-env`, rồi kiểm tra Python/PyTorch/GPU thật qua interpreter đó. Python 3.11–3.13, torch 2.8.0, Transformers 4.56.2, TRL 0.23.1, PEFT 0.17.1. Kernel Colab giữ thư viện download; môi trường train không dùng torchvision/torchaudio có sẵn. Không khẳng định bộ này đã chạy GPU Colab chỉ vì smoke CPU đạt.
-5. Chạy audit và đọc `/content/llm-audit/audit.json`, `human_review_sample.json`. Smoke CPU không tải HF model; kiểm tra hai epoch qua save/resume. Không gọi loss smoke là chất lượng base.
+5. Chạy audit; notebook dùng đúng tokenizer/revision và chặn sample vượt 512 token. Đọc `/content/llm-audit/audit.json`, `audit.md`, `human_review_sample.json`. Smoke CPU không tải pretrained weights; kiểm tra hai epoch qua save/resume. Không gọi loss smoke là chất lượng base.
 6. Sau duyệt/khóa, bật `RUN_FULL=True`. Chạy chặng epoch 1. Tải **`dusnx-llm-run.zip` và `.zip.sha256`** ngay, kiểm tra trong Downloads.
 7. Chạy ô `NEXT_EPOCH=2`, tải ZIP/SHA. Đổi thành 3 rồi chạy và tải lần nữa. Giữ backup trước đó. Mỗi epoch cũng tạo `*-step-N.zip`; `/content` mất khi runtime ngắt, file chưa tải không được bảo toàn. Drive mount là tùy chọn sau mỗi chặng.
 8. Nếu ngắt: runtime mới checkout **cùng commit**, cài **cùng versions**, upload ZIP + SHA, bật `RESTORE=True`, giải nén vào RUN trống. Bật RUN_FULL rồi chạy ô NEXT_EPOCH còn lại, **không chạy ô train chặng 1**. Resume giữ optimizer/scheduler/RNG và từ chối config/data/base/library/code đổi.
@@ -110,3 +112,15 @@ git diff --check
 SFT dùng **venv riêng**, `pip install -r requirements/llm-sft.txt`, rồi `finetune_llm.py --smoke --output runtime/llm-smoke --stop-after-epoch 1`; resume từ `checkpoint-2` để hoàn tất epoch2. CI đặt HF_HUB_OFFLINE và TRANSFORMERS_OFFLINE; không tải pretrained weights hoặc dataset. Package install cần mạng. File weights/GGUF/ZIP/runtime bị ignore, không commit log riêng tư hoặc token.
 
 Lỗi thường gặp: checksum khác → tải lại ZIP, không bỏ kiểm tra; output tồn tại → resume đúng checkpoint hoặc thư mục mới; HTTP404 → bật env và restart đúng code Gateway/FastAPI; HTTP401 → đăng nhập lại và nhập token kín; provider_error → kiểm tra `ollama list` và candidate import; CUDA OOM → config mới/QLoRA có kiểm tra; gated dataset → không cần cho pipeline này. Full train không được thực hiện cho tới khi người dùng chạy notebook trên GPU và cung cấp artifact.
+
+## Checklist trước khi giao cho Colab
+
+- [ ] Người thật đã đọc đủ 43 train và 12 validation; mọi dòng được duyệt mới mang `human_reviewed`.
+- [ ] Một người viết 6–12 test độc lập; người thứ hai duyệt trước prediction; không tái sử dụng test AI nháp.
+- [ ] `prepare_llm_data.py` với tokenizer pin đạt và `lock_llm_data.py` được chính người có tên trong attestation chạy.
+- [ ] Dữ liệu/manifest/attestation đã commit; SHA commit 40 ký tự được dán vào ô đầu Colab.
+- [ ] T4 được chọn; tải ZIP + SHA sau từng epoch, giữ ngoài `/content`; Drive chỉ tùy chọn.
+- [ ] Chỉ export/import `dusnx-vi-v1` sau `training_complete`; giữ `qwen2.5:0.5b` để rollback.
+- [ ] So sánh cùng prompt qua Gateway, chấm CSV bằng người thật; chỉ đổi env khi promotion gate đạt.
+
+Nút chặn hiện tại: train/validation chưa được người duyệt, test độc lập do người viết chưa tồn tại, chưa có attestation, chưa chạy GPU Colab, chưa có adapter/GGUF thật và export/import end-to-end chưa thể xác nhận.

@@ -1,10 +1,11 @@
 {
-  "schema_version": 1,
-  "status": "byte_locked_before_training; human_authorship_and_review_pending",
+  "schema_version": 2,
+  "status": "development_data_byte_locked; all_records_need_human_review; independent_human_test_missing",
   "seed": 20260930,
+  "source_revision": "llm-authored-v2",
   "files": {
-    "test.jsonl": "75c05fd216dd61d414e6afcffe290f3cdd97fffcd9fb6e81c36b6348a2fff1c6",
-    "train.jsonl": "27729a0ffc06236b3c7e2ebff2f09b15f262a5010c01936a8bc165cbe8d87a30",
-    "validation.jsonl": "98406c3c65e59afe236dc8ecd2e6da59e2aa80de5ab1625302362e7f12fe47f0"
+    "test.jsonl": "424507337625b33112009f8cb58f94e9a3cda81cb348e8cb58800ef906c068ae",
+    "train.jsonl": "0e8d43fbfe08d3a1cd70940d6fd81cdcb410699dd2a1568ef83f672612643537",
+    "validation.jsonl": "c8bd9c2793b811b1184ef288552d4703defa910c412b13a4f7535c5c791833a9"
   }
 }

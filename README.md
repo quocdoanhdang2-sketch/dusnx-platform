@@ -271,7 +271,7 @@ Template trích memory không gọi Ollama: provider/model=null; Web hiển th�
 
 ## Đọc tiếp
 
-Pipeline **SFT LLM riêng**: [notebook Colab](notebooks/finetune_llm_colab.ipynb) và [hướng dẫn từng bước](docs/WEEK3_LLM_TRAINING.md). LoRA Qwen2.5-0.5B-Instruct, không thay router.pt; mặc định Ollama vẫn `qwen2.5:0.5b`. Dữ liệu thiết kế: train20 chuỗi/24 cặp, validation5, test nháp6; chưa được người duyệt, full train yêu cầu khóa dữ liệu sau review thật. Không dùng holdout v3. Notebook lưu `/content`, ZIP+SHA theo chặng, resume, merge/GGUF, comparison; chưa chạy GPU Colab hoặc có model fine-tuned để công bố chất lượng.
+Pipeline **SFT LLM riêng**: [notebook Colab](notebooks/finetune_llm_colab.ipynb), [hướng dẫn](docs/WEEK3_LLM_TRAINING.md) và [mẫu viết test độc lập](docs/LLM_TEST_AUTHORING_TEMPLATE.md). LoRA Qwen2.5-0.5B-Instruct, không thay router.pt; mặc định Ollama vẫn `qwen2.5:0.5b`. Development data có 43 train/49 cặp, 12 validation/12 cặp và 6 test AI nháp; tất cả vẫn `needs_human_review`. Audit dùng exact tokenizer, contract future/obsolete/clarification và near-duplicate split. Full train chỉ mở sau review thật và test độc lập do người viết. Không dùng holdout v3; chưa chạy GPU Colab hoặc có candidate để công bố chất lượng.
 
 Audit: `python python/scripts/prepare_llm_data.py` (PYTHONPATH=python/src), output `runtime/llm-audit/`. Smoke SFT chạy trong venv riêng với `requirements/llm-sft.txt`: `python python/scripts/finetune_llm.py --smoke --output runtime/llm-smoke`. Run ZIP/checkpoint nằm cạnh/thư mục output; không commit weights. Import Windows dùng `scripts/import_llm_ollama.ps1`; so sánh thực qua Gateway dùng `python/scripts/evaluate_llm_pair.py` và người chấm CSV. Chỉ chọn candidate sau gate không hồi quy; hiện giữ base.
 

@@ -1,0 +1,193 @@
+{
+  "train": {
+    "sequences": 43,
+    "records": 43,
+    "assistant_pairs": 49,
+    "unique_prompts": 49,
+    "duplicate_prompt_rate": 0.0,
+    "scenario_distribution": {
+      "ambiguous_export_request": 1,
+      "audience_plain_language": 1,
+      "cancel_confirmed_vendor": 1,
+      "cancelled_trip_no_replacement": 1,
+      "confirmed_channel_change": 1,
+      "confirmed_layout_replacement": 1,
+      "conflicting_print_sizes": 1,
+      "cross_client_water_outline": 1,
+      "cross_session_active_language": 1,
+      "cross_session_database": 1,
+      "declined_language_change": 1,
+      "future_fact_guard": 1,
+      "goal_change_campaign": 1,
+      "language_explain_cache": 1,
+      "multi_turn_reject_correction": 1,
+      "new_session_missing_design": 1,
+      "no_fake_memory_write": 1,
+      "outline_change_audience": 1,
+      "outline_recycling_students": 1,
+      "outline_revision_remove_section": 1,
+      "pending_meeting_change": 1,
+      "ppt_claim_needs_source": 1,
+      "preference_changed_over_time": 1,
+      "preference_length_revision": 1,
+      "pronoun_missing_document": 1,
+      "proposal_task_tool_unconfirmed": 1,
+      "rejected_budget_increase": 1,
+      "rejected_font_change": 1,
+      "release_month_confirmed": 1,
+      "rumor_person_assignment": 1,
+      "rumor_release_date": 1,
+      "summary_distinguish_status": 1,
+      "summary_only_supplied_notes": 1,
+      "summary_project_progress": 1,
+      "temporary_preference_scope": 1,
+      "topic_reset_rainbow": 1,
+      "two_projects_framework_ambiguity": 1,
+      "two_same_type_databases": 1,
+      "two_same_type_deadlines": 1,
+      "unconfirmed_memory_from_assistant": 1,
+      "unknown_morning_drink": 1,
+      "web_ppt_web_revised_outline": 1,
+      "withdrawn_theme_preference": 1
+    },
+    "char_length": {
+      "min": 274,
+      "max": 583,
+      "mean": 408.09
+    },
+    "token_length": {
+      "min": 94,
+      "max": 187,
+      "mean": 131.61
+    },
+    "sources": {
+      "synthetic_designed": 43
+    },
+    "review_status": {
+      "needs_human_review": 43
+    },
+    "response_modes": {
+      "answer": 28,
+      "clarify": 18,
+      "acknowledge": 3
+    }
+  },
+  "validation": {
+    "sequences": 12,
+    "records": 12,
+    "assistant_pairs": 12,
+    "unique_prompts": 12,
+    "duplicate_prompt_rate": 0.0,
+    "scenario_distribution": {
+      "val_budget_missing_context": 1,
+      "val_cancelled_notification": 1,
+      "val_goal_replaced_retention": 1,
+      "val_handoff_traffic_example": 1,
+      "val_language_version_control": 1,
+      "val_new_session_unknown_owner": 1,
+      "val_outline_remove_appendix": 1,
+      "val_preference_tone_changed": 1,
+      "val_rejected_color_red": 1,
+      "val_rumor_vendor": 1,
+      "val_trip_replaced_museum": 1,
+      "val_two_same_type_formats": 1
+    },
+    "char_length": {
+      "min": 357,
+      "max": 471,
+      "mean": 390.25
+    },
+    "token_length": {
+      "min": 115,
+      "max": 145,
+      "mean": 126.58
+    },
+    "sources": {
+      "synthetic_designed": 12
+    },
+    "review_status": {
+      "needs_human_review": 12
+    },
+    "response_modes": {
+      "answer": 7,
+      "clarify": 5
+    }
+  },
+  "test": {
+    "sequences": 6,
+    "records": 6,
+    "assistant_pairs": 6,
+    "unique_prompts": 6,
+    "duplicate_prompt_rate": 0.0,
+    "scenario_distribution": {
+      "test_absent_hobby": 1,
+      "test_architecture_unapproved": 1,
+      "test_handoff_members": 1,
+      "test_host_superseded": 1,
+      "test_rejection_format": 1,
+      "test_vi_short": 1
+    },
+    "char_length": {
+      "min": 312,
+      "max": 464,
+      "mean": 381.17
+    },
+    "token_length": {
+      "min": 101,
+      "max": 142,
+      "mean": 123.33
+    },
+    "sources": {
+      "synthetic_designed": 6
+    },
+    "review_status": {
+      "needs_human_review": 6
+    },
+    "response_modes": {
+      "clarify": 2,
+      "answer": 4
+    }
+  },
+  "quality": {
+    "near_duplicate_threshold": 0.82,
+    "near_duplicate_pairs_within_split": [
+      {
+        "left": {
+          "split": "train",
+          "id": "train-006",
+          "assistant_turn": 1
+        },
+        "right": {
+          "split": "train",
+          "id": "train-006",
+          "assistant_turn": 2
+        },
+        "score": 0.8219,
+        "cross_split": false
+      },
+      {
+        "left": {
+          "split": "train",
+          "id": "train-007",
+          "assistant_turn": 1
+        },
+        "right": {
+          "split": "train",
+          "id": "train-007",
+          "assistant_turn": 2
+        },
+        "score": 0.9019,
+        "cross_split": false
+      }
+    ],
+    "max_cross_split_similarity": 0.6731,
+    "human_review_complete": false
+  },
+  "manifest_sha256": "310116ee463e78fff7f0619c4f382eabeb2a7e9cf3060d05d5ec2b508f4710d2",
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "exact": true,
+    "max_length": 512
+  }
+}

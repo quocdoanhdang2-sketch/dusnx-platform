@@ -3,9 +3,10 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import sys
 import zipfile
 import pytest
-from dusnx_core.llm_data import audit, completion_rows, digest, read_sft, verify_file_manifest
+from dusnx_core.llm_data import audit, completion_rows, digest, read_sft, validate, verify_file_manifest, verify_full_training_gate
 from dusnx_core.llm_artifacts import pack, unpack
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -18,9 +19,10 @@ def partitions():return {s:read_sft(DATA/f'{s}.jsonl',s) for s in ('train','vali
 def test_data_lock_and_split():
     p=partitions();report=audit(p)
     assert report['train']['assistant_pairs']>0
-    assert all(r['duplicate_prompt_rate']==0 for r in report.values())
+    assert all(report[s]['duplicate_prompt_rate']==0 for s in ('train','validation','test'))
     assert verify_file_manifest(DATA,json.loads((DATA/'manifest.json').read_text()))
-    assert all(r['review_status'] in ('ai_authored_pending_human_review','human_reviewed') for rows in p.values() for r in rows)
+    assert all(r['review_status']=='needs_human_review' for rows in p.values() for r in rows)
+    assert report['quality']['human_review_complete'] is False
 
 
 @pytest.mark.parametrize('field',['id','sequence_id','user_id','scenario_family'])
@@ -30,10 +32,19 @@ def test_cross_split_leaks_rejected(field):
 
 
 def test_prefix_duplicate_not_hidden_by_different_final_turn():
-    p=partitions();c=next(r for r in p['train'] if len(r['messages'])>3)
-    p['validation'][0]['messages']=copy.deepcopy(c['messages'][:3])
-    p['validation'][0]['messages'][-1]['content']='Đáp án khác không được che prompt trùng.'
+    p=partitions();c=next(r for r in p['train'] if len(r['messages'])==3)
+    p['validation'][0]['messages']=copy.deepcopy(c['messages'])
+    p['validation'][0]['quality_contracts']=copy.deepcopy(c['quality_contracts'])
     with pytest.raises(ValueError,match='prompt'):audit(p)
+
+
+def test_near_duplicate_across_splits_rejected():
+    p=partitions();source=next(r for r in p['train'] if r['scenario_family']=='ambiguous_export_request')
+    target=p['validation'][0]
+    target['messages']=copy.deepcopy(source['messages'])
+    target['messages'][1]['content'] += ' nhé'
+    target['quality_contracts']=copy.deepcopy(source['quality_contracts'])
+    with pytest.raises(ValueError,match='near duplicate'):audit(p)
 
 
 def test_no_future_in_completion():
@@ -44,19 +55,66 @@ def test_no_future_in_completion():
     assert r['messages'][3] not in pairs[0]['prompt']
 
 
-@pytest.mark.parametrize('fault',['missing','pii','source','future','duplicate'])
+@pytest.mark.parametrize('fault',['missing_source','missing_license','missing_generation','pii','source','future_label','duplicate'])
 def test_invalid_data_rejected(fault):
     p=partitions();r=p['train'][0]
-    if fault=='missing':del r['source_revision']
+    if fault=='missing_source':del r['source']
+    elif fault=='missing_license':del r['license']
+    elif fault=='missing_generation':del r['generation_method']
     elif fault=='pii':r['messages'][1]['content']='Email: fictional@example.com'
     elif fault=='source':r['source']='massive_pending'
-    elif fault=='future':r['expected_future_answer']='leak'
+    elif fault=='future_label':r['expected_future_answer']='leak'
     else:p['train'].append(copy.deepcopy(r))
     with pytest.raises(ValueError):audit(p)
 
 
+def test_obsolete_fact_in_completion_rejected():
+    row=copy.deepcopy(next(r for r in partitions()['train'] if r['scenario_family']=='confirmed_layout_replacement'))
+    row['messages'][-1]['content'] += ' Bố cục một cột cũng được dùng.'
+    with pytest.raises(ValueError,match='obsolete/rejected fact'):validate([row],'train')
+
+
+def test_required_fact_not_in_prior_context_rejected():
+    row=copy.deepcopy(next(r for r in partitions()['train'] if r['scenario_family']=='cross_session_database'))
+    row['quality_contracts'][0]['required_facts']=['Oracle']
+    row['messages'][-1]['content']='Dự án Vườn đang dùng Oracle.'
+    with pytest.raises(ValueError,match='unsupported'):validate([row],'train')
+
+
+def test_future_fact_in_earlier_completion_rejected():
+    row=copy.deepcopy(next(r for r in partitions()['train'] if r['scenario_family']=='future_fact_guard'))
+    row['messages'][2]['content']='Kế hoạch là đi tàu. Bạn muốn bổ sung gì?'
+    with pytest.raises(ValueError,match='future fact leaked'):validate([row],'train')
+
+
+def test_token_length_rejects_completion_truncation():
+    class TooLongTokenizer:
+        def apply_chat_template(self,messages,tokenize=True):return list(range(513))
+    with pytest.raises(ValueError,match='would be truncated'):audit({'train':partitions()['train']},tokenizer=TooLongTokenizer(),max_length=512)
+
+
 def test_protected_paths_fail_before_read(tmp_path):
     with pytest.raises(ValueError,match='Protected'):read_sft(tmp_path/'holdout_v3_DO_NOT_READ.jsonl','train')
+
+
+def test_development_manifest_cannot_start_full_training():
+    manifest=json.loads((DATA/'manifest.json').read_text(encoding='utf-8'))
+    with pytest.raises(ValueError,match='human-attested'):verify_full_training_gate(DATA,manifest)
+
+
+def test_same_person_cannot_author_and_review_test(tmp_path):
+    manifest={'status':'human_attested_locked_before_training','files':{'test.jsonl':'abc'}}
+    attestation={'human_author':'reviewer-a','reviewer':'reviewer-a','training_reviewed':True,'locked_before_training':True,'test_sha256':'abc'}
+    (tmp_path/'human_test_attestation.json').write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='independent'):verify_full_training_gate(tmp_path,manifest)
+
+
+def test_lock_command_rejects_same_author_and_reviewer(monkeypatch):
+    script=ROOT/'python/scripts/lock_llm_data.py'
+    spec=importlib.util.spec_from_file_location('lock_llm_data_for_test',script)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--human-author','person-a','--reviewer','person-a','--attest-authored-reviewed-before-predictions'])
+    with pytest.raises(ValueError,match='different people'):module.main()
 
 
 def test_artifact_tamper_and_traversal(tmp_path):
