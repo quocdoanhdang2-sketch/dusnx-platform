@@ -1,8 +1,8 @@
 # Tuần 4 — nghiệm thu và bàn giao
 
-Ngày nghiệm thu: 2026-10-04 (Asia/Saigon). Trạng thái: native/Web đạt; Git/CI đang chốt.
+Ngày nghiệm thu: 2026-10-04 (Asia/Saigon). Trạng thái: native/Web đạt; implementation đã push, CI 4/4 jobs đạt.
 HEAD trước: `e5dac2c890301b0c6c976f3c169244851df110c6`.
-HEAD sau implementation: sẽ ghi khi commit; SHA cuối của commit bàn giao không thể
+HEAD sau implementation: `f9b82e569ba57846b2de42a5df0ecc4b434372f6`; SHA cuối của commit bàn giao không thể
 nằm trong chính nội dung commit đó, xác định bằng `git rev-parse HEAD` và CI đúng SHA.
 Thay đổi có sẵn `scripts/import_llm_ollama.ps1` được bảo toàn và loại khỏi commit này.
 
@@ -33,7 +33,7 @@ LoRA Qwen là pipeline sinh văn bản riêng; base vẫn `qwen2.5:0.5b`.
 | W4-06 P1 | Web auth/chat/history/cards/UX/XSS | Chromium thật, mobile390px, lost response retry | Đã giữ draft, chặn double submit, label forms | Browser RT-01/13 + pending buttons/history/401 | browser.json; screenshots | đạt |
 | W4-07 P1 | Native stack tái chạy được | Start/stop/restart thật, DB test riêng | Runbook và demo có lệnh thật | Startup + health + browser | WINDOWS_NATIVE_RUNBOOK.md | đạt |
 | W4-08 P2 | LLM evidence, giới hạn nghiên cứu | Inventory export và pair hash khớp | Đã giữ base, ghi review ZIP thiếu | Manifest/output đã loại secret | evidence/llm-sft/evaluation-01 | đạt tài liệu; human review chưa có |
-| W4-09 P2 | Full checks, Git, CI | Local checks đạt | Stage rõ, push FF, CI đúng SHA | Output lệnh + GitHub Actions | mục Git/CI bên dưới | đang chốt CI |
+| W4-09 P2 | Full checks, Git, CI | Local checks và CI implementation đạt | Đã stage rõ, push FF | Output lệnh + GitHub Actions đúng SHA | evidence/week4/ci.json | đạt |
 | W4-10 P2 | Native Office/ứng dụng khác | Skeleton, chưa có bằng chứng Office thật | Ghi ngoài acceptance Web hiện hành | README Add-in/code | powerpoint-addin/ | ngoài phạm vi native integration |
 
 Holdout v3 không chạy; không retrain router/LLM, sửa gold/test hoặc attestation.
@@ -147,6 +147,12 @@ Demo/bảy bước ML: [WEEK4_DEMO_AND_ML_REPORT](WEEK4_DEMO_AND_ML_REPORT.md).
 
 Remote `git@github.com:quocdoanhdang2-sketch/dusnx-platform.git`, branch main.
 Fetch ban đầu: local/origin0/0. Workflow push main có4 jobs, dùng commit SHA cụ thể.
-Commit/push fast-forward và CI sẽ được ghi ở checkpoint bàn giao sau kiểm staged.
+Implementation đã commit/push fast-forward: `f9b82e569ba57846b2de42a5df0ecc4b434372f6`.
+[CI implementation](https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/37187629034)
+completed/success: python-tests, web-tests, dotnet-build, llm-offline-smoke đều success.
+Snapshot không chứa log/credentials: `docs/evidence/week4/ci.json`.
+Commit tài liệu tiếp theo chỉ cập nhật báo cáo và snapshot; SHA cuối lấy bằng
+`git rev-parse HEAD`. Theo dõi CI đúng SHA cuối bằng
+`gh run list --commit (git rev-parse HEAD)`; link/kết quả cuối ghi trong thông báo bàn giao.
 Thay đổi có sẵn import script không stage. Không checkpoint/GGUF/ZIP/DB/runtime
 cá nhân/.env/token/credentials trong commit.
