@@ -1,0 +1,338 @@
+[
+  {
+    "output_id": "790a6b6e035b",
+    "case_id": "human-test-001",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Tốn 95.000 đồng một giờ.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 14,
+    "elapsed_ms": 6338.5648999828845,
+    "gateway_roundtrip_ms": 8589.355299947783
+  },
+  {
+    "output_id": "5d9b16d976a0",
+    "case_id": "human-test-001",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Tốn khoảng 95.000 đồng một giờ.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 15,
+    "elapsed_ms": 4463.478999910876,
+    "gateway_roundtrip_ms": 4474.123899941333
+  },
+  {
+    "output_id": "35919a377667",
+    "case_id": "human-test-002",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Website Trang Sách hiện đang sử dụng Django.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 12,
+    "elapsed_ms": 2274.925300036557,
+    "gateway_roundtrip_ms": 2281.1908000148833
+  },
+  {
+    "output_id": "293deb317ff9",
+    "case_id": "human-test-002",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Website Trang Sách hiện đang được sử dụng framework Django.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 14,
+    "elapsed_ms": 2165.897800005041,
+    "gateway_roundtrip_ms": 2170.5955000361428
+  },
+  {
+    "output_id": "8af4b1ed0846",
+    "case_id": "human-test-003",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": false,
+      "no_false_save_heuristic": null
+    },
+    "text": "Mấy giờ là hạn nộp bài. Bạn cần phải nộp bài vào thời gian cụ thể.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 21,
+    "elapsed_ms": 2432.9022000310943,
+    "gateway_roundtrip_ms": 2438.0448000738397
+  },
+  {
+    "output_id": "99a8372ef317",
+    "case_id": "human-test-003",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": false,
+      "clarification_shape": false,
+      "no_false_save_heuristic": null
+    },
+    "text": "Hạn nộp bài cho cả cuộc thi là từ 20:00 đến 23:00. Bạn cần phải nộp bài sớm để có thể tham gia cuộc thi.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 40,
+    "elapsed_ms": 2634.9578000372276,
+    "gateway_roundtrip_ms": 2640.1459999615327
+  },
+  {
+    "output_id": "24842b6dab7e",
+    "case_id": "human-test-004",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": false,
+      "no_false_save_heuristic": null
+    },
+    "text": "Tôi không có thông tin cụ thể về người phụ trách phần đăng nhập của ứng dụng Đom Đóm.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 23,
+    "elapsed_ms": 2432.72500007879,
+    "gateway_roundtrip_ms": 2459.1018999926746
+  },
+  {
+    "output_id": "855e5d4b0c1b",
+    "case_id": "human-test-004",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": false,
+      "no_false_save_heuristic": null
+    },
+    "text": "Đom Đóm không có thông tin về người phụ trách phần đăng nhập.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 17,
+    "elapsed_ms": 2304.209600086324,
+    "gateway_roundtrip_ms": 2309.4088999787346
+  },
+  {
+    "output_id": "1ff6c4b130be",
+    "case_id": "human-test-005",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Cache là một phần của hệ thống máy tính, thường được thiết kế để lưu trữ dữ liệu mà máy tính đã lưu trữ trong bộ nhớ RAM. Cache giúp máy tính nhanh chóng và hiệu quả hơn trong việc tìm kiếm và xử lý dữ liệu.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 53,
+    "elapsed_ms": 2769.264300004579,
+    "gateway_roundtrip_ms": 2773.1199000263587
+  },
+  {
+    "output_id": "019242fe622d",
+    "case_id": "human-test-005",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": true,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Các ứng dụng di động thường gọi Cache là \"Có thể lưu trữ dữ liệu\". Cache thường được sử dụng để lưu trữ các dữ liệu cần thiết mà không cần phải tải lên máy tính. Dữ liệu này có thể được lưu trữ trên các thiết bị di động, như điện thoại di động, máy tính bảng, hoặc các thiết bị di động khác. Cache thường được sử dụng để tối ưu hóa tốc độ truy cập và giảm thời gian tải dữ liệu.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 99,
+    "elapsed_ms": 2679.521100013517,
+    "gateway_roundtrip_ms": 2704.54010006506
+  },
+  {
+    "output_id": "bcfe0115f1ec",
+    "case_id": "human-test-006",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Tiêu đề slide đầu tiên: Báo cáo Quý Ba.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 13,
+    "elapsed_ms": 2333.6126999929547,
+    "gateway_roundtrip_ms": 2339.7765000117943
+  },
+  {
+    "output_id": "259272eda8e5",
+    "case_id": "human-test-006",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "Bài viết đã dời sang thứ Năm, nên buổi thuyết trình sẽ diễn ra vào ngày hôm sau.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 23,
+    "elapsed_ms": 2334.976500016637,
+    "gateway_roundtrip_ms": 2356.498899986036
+  },
+  {
+    "output_id": "4cac59e4d32e",
+    "case_id": "human-test-007",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": false,
+      "no_false_save_heuristic": null
+    },
+    "text": "Dưới đây là một số gợi ý để ghi chú về màu nền đã được lưu:\n\n1. Màn hình: Ghi chú về màu nền đã được lưu trên màn hình.\n\n2. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n3. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n4. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n5. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n6. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n7. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n8. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n9. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n10. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n11. Tên ứng dụng: Ghi chú về màu nền đã được lưu trong tên ứng dụng.\n\n12. Tên ứng",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 256,
+    "elapsed_ms": 3403.566100052558,
+    "gateway_roundtrip_ms": 3412.1982000069693
+  },
+  {
+    "output_id": "ad4dd4078ed9",
+    "case_id": "human-test-007",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": false,
+      "no_false_save_heuristic": null
+    },
+    "text": "Màu nền đã được lưu thành công.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 11,
+    "elapsed_ms": 2341.693500056863,
+    "gateway_roundtrip_ms": 2361.7938000243157
+  },
+  {
+    "output_id": "a722c8c074e6",
+    "case_id": "human-test-008",
+    "arm": "candidate",
+    "requested_model": "dusnx-vi-candidate",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "The Green Tech workshop will be held in the 3rd floor conference hall.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "dusnx-vi-candidate",
+    "tokens_generated": 17,
+    "elapsed_ms": 2436.7398000322282,
+    "gateway_roundtrip_ms": 2466.3395000388846
+  },
+  {
+    "output_id": "9a2d1b6ae331",
+    "case_id": "human-test-008",
+    "arm": "base",
+    "requested_model": "qwen2.5:0.5b",
+    "automatic": {
+      "required_fact_exact": false,
+      "forbidden_fact_exact": true,
+      "clarification_shape": true,
+      "no_false_save_heuristic": null
+    },
+    "text": "The Green Tech workshop will be held in the 3rd floor of the conference hall.",
+    "provider_ok": true,
+    "provider_called": true,
+    "provider_used": "ollama",
+    "response_source": "llm",
+    "model_used": "qwen2.5:0.5b",
+    "tokens_generated": 19,
+    "elapsed_ms": 2344.1231000469998,
+    "gateway_roundtrip_ms": 2348.6113999970257
+  }
+]

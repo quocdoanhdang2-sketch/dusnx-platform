@@ -11,7 +11,7 @@ def test_provider_preserves_history_and_measures_only_reported_metadata(monkeypa
     captured = []
     def urlopen(request, timeout):
         captured.append(json.loads(request.data))
-        return BytesIO(json.dumps({"message": {"content": "MongoDB"}, "model": "qwen-test", "eval_count": 9}).encode())
+        return BytesIO(json.dumps({"done": True, "message": {"content": "MongoDB"}, "model": "qwen-test", "eval_count": 9}).encode())
     monkeypatch.setattr(provider.urllib.request, "urlopen", urlopen)
     text, ok, source, model, count = provider.generate_response(
         "Câu hỏi", [], "chat", [{"role": "user", "content": "past context"}])

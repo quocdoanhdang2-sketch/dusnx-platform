@@ -1,0 +1,13 @@
+{
+  "test_sha256": "c839dc66ca4158c8ffc87e802ed186a5326a932f53b44fb577023a73ab0c7592",
+  "dev_smoke": false,
+  "base": "qwen2.5:0.5b",
+  "candidate": "dusnx-vi-candidate",
+  "outputs_sha256": "66fd9c2ce759ff74646bc5402cb9769f8b907265e19299c3e32f16004f741c55",
+  "test_review_status": "pending; explicit human attestation required",
+  "sampling": {
+    "temperature": 0,
+    "seed": 20260930,
+    "num_predict": 256
+  }
+}

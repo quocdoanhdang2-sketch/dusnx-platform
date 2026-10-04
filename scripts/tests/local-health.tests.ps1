@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 Import-Module (Join-Path $PSScriptRoot "..\LocalHealth.psm1") -Force
 
 $attempt = 0
@@ -35,6 +35,7 @@ $runningCp = "D:\Projects\dusnx-platform\artifacts\dusnx_smoke_v2.pt"
 try {
     Assert-DusnxFastApiCheckpoint -Owner $mockOwner -ExpectedCheckpoint $expectedCp -Probe {
         [PSCustomObject]@{
+            service = "dusnx-ai-api"
             status = "ok"
             runtime_mode = "trained_dusnx"
             checkpoint_loaded = $true
@@ -53,11 +54,12 @@ if ($mismatchError -notlike "*PID 12345*") { throw "Mismatch error missing PID: 
 if ($mismatchError -notlike "*python*") { throw "Mismatch error missing ProcessName: $mismatchError" }
 if ($mismatchError -notlike "*$runningCp*") { throw "Mismatch error missing loaded checkpoint path: $mismatchError" }
 if ($mismatchError -notlike "*$expectedCp*") { throw "Mismatch error missing requested checkpoint path: $mismatchError" }
-if ($mismatchError -notlike "*Stop-Process -Id 12345 -Force*") { throw "Mismatch error missing restart command: $mismatchError" }
+if ($mismatchError -notlike "*Stop-Process -Id 12345*") { throw "Mismatch error missing restart command: $mismatchError" }
 
 # Test 4: Matching checkpoint passes and returns health
 $matchResult = Assert-DusnxFastApiCheckpoint -Owner $mockOwner -ExpectedCheckpoint $expectedCp -Probe {
     [PSCustomObject]@{
+        service = "dusnx-ai-api"
         status = "ok"
         runtime_mode = "trained_dusnx"
         checkpoint_loaded = $true
@@ -74,6 +76,7 @@ $unloadedThrown = $false
 try {
     Assert-DusnxFastApiCheckpoint -Owner $mockOwner -ExpectedCheckpoint $expectedCp -Probe {
         [PSCustomObject]@{
+            service = "dusnx-ai-api"
             status = "ok"
             runtime_mode = "bootstrap_rules"
             checkpoint_loaded = $false
@@ -83,14 +86,15 @@ try {
     }
 }
 catch {
-    $unloadedThrown = $_.Exception.Message -like "*Stop-Process -Id 12345 -Force*"
+    $unloadedThrown = $_.Exception.Message -like "*Stop-Process -Id 12345*"
 }
 if (-not $unloadedThrown) { throw "Assert-DusnxFastApiCheckpoint should fail if checkpoint_loaded is false." }
 
-# Test 6: Non-FastAPI service or network failure returns $null (does not throw mismatch)
-$probeFailure = Assert-DusnxFastApiCheckpoint -Owner $mockOwner -ExpectedCheckpoint $expectedCp -Probe {
-    throw "connection refused"
+# Test 6: Unverified occupied ports must fail without suggesting a kill command.
+foreach ($probe in @({ throw "connection refused" }, { [PSCustomObject]@{ status = 'ok'; service = 'wordpress' } })) {
+    $failed = $false
+    try { Assert-DusnxFastApiCheckpoint -Owner $mockOwner -ExpectedCheckpoint $expectedCp -Probe $probe }
+    catch { $failed = $_.Exception.Message -like '*No process was stopped*' -and $_.Exception.Message -notlike '*Stop-Process*' }
+    if (-not $failed) { throw 'Unverified port accepted or unsafe stop suggested.' }
 }
-if ($null -ne $probeFailure) { throw "Assert-DusnxFastApiCheckpoint should return null on probe connection error." }
-
 Write-Host "Local startup health tests passed (6/6)."

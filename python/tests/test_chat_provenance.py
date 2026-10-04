@@ -75,14 +75,14 @@ def test_llm_transport_failure_and_retry_preserve_state(client,monkeypatch):
     events_before=client.get("/v1/me/events",headers=h).json()["events"]
     def success(request,timeout):
         calls.append(request.full_url)
-        return BytesIO(json.dumps({"message":{"content":"Buổi sáng yên tĩnh."},"model":"test-llm","eval_count":5}).encode())
+        return BytesIO(json.dumps({"done":True,"message":{"content":"Buổi sáng yên tĩnh."},"model":"test-llm","eval_count":5}).encode())
     monkeypatch.setattr(provider.urllib.request,"urlopen",success)
     result=send(client,h,sid,text,is_retry=True)
     assert result["provider_called"] and result["provider_ok"] and result["response_source"]=="llm"
     assert result["provider_used"]=="ollama" and result["model_used"]=="test-llm"
     assert result["state_version"]==failed["state_version"]
     assert client.get("/v1/me/events",headers=h).json()["events"]==events_before
-    assert len(calls)==3  # failed chat+fallback, then successful chat; health is not involved.
+    assert len(calls)==2  # One failed native request, then one explicit retry; no silent fallback.
 
 
 def test_openai_without_configuration_is_not_called(client,monkeypatch):
@@ -100,7 +100,7 @@ def test_llm_prompt_selection_is_distinct_from_answer_citations(client,monkeypat
     monkeypatch.setenv("DUSNX_PROVIDER","ollama");captured=[]
     def transport(request,timeout):
         captured.append(json.loads(request.data))
-        return BytesIO(b'{"message":{"content":"Generated prose"},"model":"test-model"}')
+        return BytesIO(b'{"done":true,"message":{"content":"Generated prose"},"model":"test-model"}')
     monkeypatch.setattr(provider.urllib.request,"urlopen",transport)
     result=send(client,h,sid,"Viết đoạn giới thiệu công cụ thiết kế.")
     system=captured[0]["messages"][0]["content"]

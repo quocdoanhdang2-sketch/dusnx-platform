@@ -18,7 +18,7 @@ from typing import Optional
 # Support both DUSNX_TOKEN_TTL_HOURS and DUSNX_TOKEN_TTL_SECONDS
 _ttl_sec = os.getenv("DUSNX_TOKEN_TTL_SECONDS")
 if _ttl_sec is not None:
-    TOKEN_TTL_HOURS = max(1, int(_ttl_sec) // 3600)
+    TOKEN_TTL_HOURS = max(1, int(_ttl_sec)) / 3600
 else:
     TOKEN_TTL_HOURS = int(os.getenv("DUSNX_TOKEN_TTL_HOURS", "24"))
 

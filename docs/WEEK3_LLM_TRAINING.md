@@ -1,5 +1,14 @@
 # Tuần 3: SFT LLM tiếng Việt riêng với router
 
+> Cập nhật Tuần4 (2026-10-04): đã đối chiếu artifact export local với toàn bộ hash
+> inventory; manifest `training_complete`, epoch3, checkpoint21, T4, LoRA thật.
+> Ollama hiện có base và `dusnx-vi-candidate:latest`; pair cũ transport8/8 mỗi model.
+> Base không đổi; candidate không được promote. Chưa tìm thấy ZIP AI review complete
+> hoặc báo cáo chấm gốc, không coi điểm AI người dùng cung cấp là human review.
+> [Bằng chứng hiện hành](evidence/llm-sft/evaluation-01/README.md).
+> Các phần “chưa chạy/chưa có artifact” dưới đây là trạng thái bàn giao lịch sử;
+> hướng dẫn training giữ để tham khảo, không phải lệnh phải thực hiện lại Tuần4.
+
 ## Trạng thái bàn giao
 
 Pipeline này fine-tune **Qwen2.5-0.5B-Instruct bằng LoRA**, không train LLM từ đầu và không thay `router.pt`. GPU Colab, adapter thật, merge/GGUF thật và so sánh candidate vẫn cần người dùng chạy. Smoke dùng Qwen ngẫu nhiên rất nhỏ trên CPU chỉ kiểm chứng API, loss mask, update LoRA, checkpoint và resume. Không có điểm chất lượng candidate để công bố.

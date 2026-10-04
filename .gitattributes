@@ -3,3 +3,6 @@ benchmarks/*.json text eol=lf
 *.ipynb text eol=lf
 datasets/llm_sft/*.jsonl text eol=lf
 datasets/llm_sft/*.json text eol=lf
+# Preserve verified evidence bytes and SHA-256 across Windows/Linux checkout.
+docs/evidence/llm-sft/evaluation-01/*.json -text
+docs/evidence/week4/*.json text eol=lf

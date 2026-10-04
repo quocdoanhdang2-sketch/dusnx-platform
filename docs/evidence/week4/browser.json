@@ -1,0 +1,22 @@
+{
+  "timestamp_utc": "2026-10-04T07:58:52.827288+00:00",
+  "transport": "real_chromium_gateway_ollama",
+  "status": "passed",
+  "checks": {
+    "confirmation_and_cancel_buttons": true,
+    "session_selection_and_history": true,
+    "lost_success_response_retry_no_duplicate": true,
+    "later_success_preserves_failed_request_id": true,
+    "RT-13": true,
+    "RT-01": true,
+    "responsive_390px": true,
+    "web_401_clears_token_preserves_draft": true
+  },
+  "generation": {
+    "reply": "\"Đọc sách là cách tốt để tăng trí nhớ và mở rộng kiến thức.\"",
+    "provider_called": true,
+    "provider_used": "ollama",
+    "model_used": "qwen2.5:0.5b",
+    "response_source": "llm"
+  }
+}

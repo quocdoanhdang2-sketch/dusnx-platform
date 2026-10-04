@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 from typing import Optional
 import urllib.request
 import urllib.error
@@ -58,7 +59,9 @@ def check_ollama_health() -> dict:
         req = urllib.request.Request(f"{url}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=1.0) as resp:
             data = json.loads(resp.read().decode())
-            models = [m["name"] for m in data.get("models", [])]
+            if not isinstance(data, dict) or not isinstance(data.get("models"), list):
+                raise ValueError("invalid_schema")
+            models = [m["name"] for m in data["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
             available = target_model in models
             return {
                 "reachable": True,
@@ -68,61 +71,63 @@ def check_ollama_health() -> dict:
                 "model_available": available,
             }
     except Exception as exc:
-        return {"reachable": False, "available": False, "error": str(exc), "configured_model": target_model}
+        return {"reachable": False, "available": False, "error": ollama_error(exc), "model_available": False, "configured_model": target_model}
+
+
+def validate_ollama_response(data: object) -> tuple[str, str, Optional[int]]:
+    """Require a completed native chat response; reject partial or malformed output."""
+    if not isinstance(data, dict) or data.get("done") is not True:
+        raise ValueError("invalid_schema")
+    message = data.get("message")
+    model = data.get("model")
+    if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+        raise ValueError("invalid_schema")
+    text = message["content"].strip()
+    if not text or not isinstance(model, str) or not model.strip():
+        raise ValueError("invalid_schema")
+    tokens = data.get("eval_count")
+    if tokens is not None and (type(tokens) is not int or tokens < 0):
+        raise ValueError("invalid_schema")
+    return text, model, tokens
+
+
+def ollama_error(exc: Exception) -> str:
+    # Stable categories only: never return URL, payload, headers or exception text.
+    if isinstance(exc, urllib.error.HTTPError):
+        return "model_missing" if exc.code == 404 else f"http_{exc.code}"
+    if isinstance(exc, json.JSONDecodeError):
+        return "invalid_json"
+    if isinstance(exc, ValueError):
+        return "invalid_schema"
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return "timeout"
+    if isinstance(exc, urllib.error.URLError):
+        return "unreachable"
+    return "transport_error"
 
 
 def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
-    """Call Ollama /api/chat (using model native chat template) with fallback to /api/generate. Returns (text, success, model_used, tokens_generated)."""
-    url = get_ollama_url()
-    model = get_ollama_model()
-    timeout = get_ollama_timeout()
+    """One native chat attempt. Transport failure must never become a successful reply."""
     payload = json.dumps({
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        "stream": False,
-        "options": {"temperature": 0.3, "num_predict": 256},
+        "model": get_ollama_model(),
+        "messages": [{"role": "system", "content": system_prompt},
+                     {"role": "user", "content": user_message}],
+        "stream": False, "options": {"temperature": 0.3, "num_predict": 256},
     }).encode("utf-8")
-    req = urllib.request.Request(
-        f"{url}/api/chat",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+    request = urllib.request.Request(get_ollama_url() + "/api/chat", data=payload,
+                                     headers={"Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode())
-            text = data.get("message", {}).get("content", "").strip()
-            model_used = data.get("model")
-            eval_count = data.get("eval_count")
-            return text, bool(text), model_used, eval_count
-    except Exception:
-        # Fallback to /api/generate
-        try:
-            legacy_payload = json.dumps({
-                "model": model,
-                "prompt": f"<|system|>\n{system_prompt}\n<|user|>\n{user_message}\n<|assistant|>",
-                "stream": False,
-                "options": {"temperature": 0.3, "num_predict": 256},
-            }).encode("utf-8")
-            legacy_req = urllib.request.Request(
-                f"{url}/api/generate",
-                data=legacy_payload,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(legacy_req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode())
-                text = data.get("response", "").strip()
-                model_used = data.get("model")
-                eval_count = data.get("eval_count")
-                return text, bool(text), model_used, eval_count
-        except urllib.error.URLError as exc:
-            return f"[Ollama không khả dụng: {exc.reason}]", False, None, None
-        except Exception as exc:
-            return f"[Lỗi Ollama: {exc}]", False, None, None
+        with urllib.request.urlopen(request, timeout=get_ollama_timeout()) as response:
+            data = json.load(response)
+        text, model, tokens = validate_ollama_response(data)
+        return text, True, model, tokens
+    except Exception as exc:
+        category = ollama_error(exc)
+        descriptions = {"model_missing": "Model cấu hình không tồn tại trong Ollama",
+                        "unreachable": "Không kết nối được Ollama", "timeout": "Ollama quá thời gian chờ",
+                        "invalid_json": "Ollama trả dữ liệu không phải JSON",
+                        "invalid_schema": "Ollama trả JSON không đúng hợp đồng"}
+        return f"[{descriptions.get(category, 'Lỗi dịch vụ Ollama')} ({category})]", False, None, None
 
 
 def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
@@ -155,7 +160,7 @@ def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
             eval_count = data.get("usage", {}).get("completion_tokens")
             return text, True, model_used, eval_count
     except Exception as exc:
-        return f"[Lỗi OpenAI: {exc}]", False, None, None
+        return f"[Lỗi OpenAI ({ollama_error(exc)})]", False, None, None
 
 
 def get_provider_health() -> dict:
@@ -167,13 +172,29 @@ def get_provider_health() -> dict:
         return info
     elif p == "openai":
         has_key = bool(OPENAI_API_KEY)
-        return {
+        info = {
             "provider": "openai",
-            "available": has_key,
+            "available": False,
             "configured_model": OPENAI_MODEL,
             "api_key_set": has_key,
-            "reachable": "configured" if has_key else "missing_api_key",
+            "reachable": False,
+            "model_available": False,
         }
+        if not has_key:
+            info["error"] = "missing_api_key"
+            return info
+        try:
+            request = urllib.request.Request(OPENAI_BASE_URL.rstrip("/") + "/models",
+                                             headers={"Authorization": "Bearer " + OPENAI_API_KEY})
+            with urllib.request.urlopen(request, timeout=1.0) as response:
+                data = json.load(response)
+            if not isinstance(data, dict) or not isinstance(data.get("data"), list):
+                raise ValueError("invalid_schema")
+            models = [m.get("id") for m in data["data"] if isinstance(m, dict)]
+            info.update(reachable=True, available=OPENAI_MODEL in models, model_available=OPENAI_MODEL in models)
+        except Exception as exc:
+            info["error"] = ollama_error(exc)
+        return info
     elif p in ("stub", "mock", "test"):
         return {
             "provider": p,

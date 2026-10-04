@@ -7,7 +7,7 @@ import urllib.error
 from typing import Literal
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
-from .provider import get_ollama_url, get_ollama_timeout
+from .provider import get_ollama_url, get_ollama_timeout, validate_ollama_response, ollama_error
 
 
 class Message(BaseModel):
@@ -22,7 +22,7 @@ class EvaluationRequest(BaseModel):
 
 def evaluate(req):
     if os.getenv('DUSNX_ENABLE_LLM_EVAL')!='1':raise HTTPException(404,'LLM evaluation is disabled')
-    allowed=set(os.getenv('DUSNX_LLM_EVAL_MODELS','qwen2.5:0.5b,dusnx-vi-candidate').split(','))
+    allowed={m.strip() for m in os.getenv('DUSNX_LLM_EVAL_MODELS','qwen2.5:0.5b,dusnx-vi-candidate').split(',') if m.strip()}
     if req.model not in allowed:raise HTTPException(400,'Model is not in evaluation allowlist')
     if req.messages[0].role!='system' or req.messages[-1].role!='user':raise HTTPException(400,'Expected system context and final user prompt')
     payload={'model':req.model,'messages':[m.model_dump() for m in req.messages],'stream':False,'options':{'temperature':0,'seed':20260930,'num_predict':256}}
@@ -30,8 +30,8 @@ def evaluate(req):
     start=time.perf_counter()
     try:
         with urllib.request.urlopen(request,timeout=get_ollama_timeout()) as response:result=json.load(response)
-        text=result.get('message',{}).get('content','').strip()
-        return dict(text=text,provider_ok=bool(text),provider_called=True,provider_used='ollama',response_source='llm',model_used=result.get('model'),tokens_generated=result.get('eval_count'),elapsed_ms=(time.perf_counter()-start)*1000)
+        text, model, tokens = validate_ollama_response(result)
+        return dict(text=text,provider_ok=bool(text),provider_called=True,provider_used='ollama',response_source='llm',model_used=model,tokens_generated=tokens,elapsed_ms=(time.perf_counter()-start)*1000)
     except Exception as exc:
         # Never echo payload, auth header, URL query or arbitrary exception details.
-        return dict(text='',provider_ok=False,provider_called=True,provider_used='ollama',response_source='provider_error',model_used=None,error=type(exc).__name__,http_status=exc.code if isinstance(exc,urllib.error.HTTPError) else None,elapsed_ms=(time.perf_counter()-start)*1000)
+        return dict(text='',provider_ok=False,provider_called=True,provider_used='ollama',response_source='provider_error',model_used=None,error=ollama_error(exc),http_status=exc.code if isinstance(exc,urllib.error.HTTPError) else None,elapsed_ms=(time.perf_counter()-start)*1000)

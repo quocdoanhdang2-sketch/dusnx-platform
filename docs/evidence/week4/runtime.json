@@ -1,0 +1,149 @@
+{
+  "timestamp_utc": "2026-10-04T07:58:50.261175+00:00",
+  "transport": "real_native_http_gateway",
+  "gateway": "http://127.0.0.1:8080",
+  "checks": {
+    "RT-02": "passed: save + durable replay + read-only SQLite",
+    "RT-03": "passed: pending + atomic supersede API/SQLite + complete topic",
+    "RT-08": "passed: no added memory/message/state/version on confirmation replay",
+    "RT-04": "passed: rejected proposal preserves active record",
+    "RT-05": "passed: two decision records selected by topic, separate evidence/candidates",
+    "RT-07": "passed: new session recalls current facts only",
+    "RT-06": "passed: ambiguous question asks clarification",
+    "RT-09": "passed: foreign memory/session/pending denied and state isolated",
+    "RT-14": "passed: new binary route reaches disabled authenticated FastAPI endpoint",
+    "RT-12": "passed: invalid and revoked tokens denied; expiry tested below; real 1-second expiry denied",
+    "memory_delete": "passed: deleted information excluded from retrieval and answer evidence",
+    "direct_update": "passed: inactive original cannot fork a second active version",
+    "llm_replay": "passed: cached generated text preserves original evidence but does not claim another Ollama call",
+    "RT-10": "passed: isolated native Gateway error, no successful assistant record",
+    "RT-11": "passed: isolated native Gateway error, no successful assistant record",
+    "RT-15": "passed: missing and invalid isolated checkpoints never claim trained runtime",
+    "state_schema": "passed: invalid isolated stored state is visible and rejected without silent reuse",
+    "RT-16": "passed: unrelated port owner rejected and remains running",
+    "restoration": "passed: main stack healthy, base default, original checkpoint unchanged"
+  },
+  "responses": {
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn MongoDB cho cơ sở dữ liệu.",
+      "intent": "chat",
+      "next_action": "reply",
+      "provider_ok": true,
+      "provider_called": false,
+      "provider_used": null,
+      "model_used": null,
+      "response_source": "grounded_template",
+      "state_version": 7,
+      "candidate_memory_ids": [
+        "5132517303fb27bded312eaf323d5f94",
+        "483969bad0e6913b0b5435088be32f59"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "5132517303fb27bded312eaf323d5f94"
+      ]
+    },
+    "cloud": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho hạ tầng đám mây.",
+      "intent": "chat",
+      "next_action": "reply",
+      "provider_ok": true,
+      "provider_called": false,
+      "provider_used": null,
+      "model_used": null,
+      "response_source": "grounded_template",
+      "state_version": 8,
+      "candidate_memory_ids": [
+        "483969bad0e6913b0b5435088be32f59",
+        "5132517303fb27bded312eaf323d5f94"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "483969bad0e6913b0b5435088be32f59"
+      ]
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "intent": "clarify_missing_context",
+      "next_action": "clarify",
+      "provider_ok": true,
+      "provider_called": false,
+      "provider_used": null,
+      "model_used": null,
+      "response_source": "clarification",
+      "state_version": 9,
+      "candidate_memory_ids": [
+        "5132517303fb27bded312eaf323d5f94",
+        "483969bad0e6913b0b5435088be32f59"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": []
+    },
+    "offline": {
+      "reply": "[Không kết nối được Ollama (unreachable)]",
+      "intent": "chat",
+      "next_action": "reply",
+      "provider_ok": false,
+      "provider_called": true,
+      "provider_used": "ollama",
+      "model_used": null,
+      "response_source": "provider_error",
+      "state_version": 1,
+      "candidate_memory_ids": [],
+      "prompt_memory_ids": [],
+      "memory_ids_used": []
+    },
+    "missing-model": {
+      "reply": "[Model cấu hình không tồn tại trong Ollama (model_missing)]",
+      "intent": "chat",
+      "next_action": "reply",
+      "provider_ok": false,
+      "provider_called": true,
+      "provider_used": "ollama",
+      "model_used": null,
+      "response_source": "provider_error",
+      "state_version": 1,
+      "candidate_memory_ids": [],
+      "prompt_memory_ids": [],
+      "memory_ids_used": []
+    }
+  },
+  "failure_processes": "isolated_new_databases",
+  "health": {
+    "service": "dusnx-ai-api",
+    "api_contract": "week4-v1",
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_loaded": true,
+    "checkpoint_path": "D:\\Projects\\dusnx-platform\\training-results\\colab-run-01\\extracted\\dusnx-router-full-01\\router.pt",
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true,
+    "provider": {
+      "reachable": true,
+      "available": true,
+      "models_available": [
+        "dusnx-vi-candidate:latest",
+        "qwen2.5:0.5b"
+      ],
+      "configured_model": "qwen2.5:0.5b",
+      "model_available": true,
+      "provider": "ollama"
+    }
+  },
+  "checkpoint_sha256": "56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1",
+  "checkpoint_failures": {
+    "checkpoint-missing": {
+      "runtime_mode": "bootstrap_rules",
+      "checkpoint_loaded": false,
+      "model_loaded": false,
+      "model_version": "bootstrap_rules:config-420d17deeb79"
+    },
+    "checkpoint-invalid": {
+      "runtime_mode": "bootstrap_rules",
+      "checkpoint_loaded": false,
+      "model_loaded": false,
+      "model_version": "bootstrap_rules:config-420d17deeb79"
+    }
+  },
+  "status": "passed"
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import os
 import re
@@ -34,11 +35,14 @@ from .decision_updater import (
 # ── Model loading ─────────────────────────────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
+SOURCE_HASHES = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+                 for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py")}
 
 def resolve_default_checkpoint() -> str:
     env_ckpt = os.getenv("DUSNX_CHECKPOINT")
     if env_ckpt:
-        return env_ckpt
+        path = Path(env_ckpt).expanduser()
+        return str((path if path.is_absolute() else ARTIFACT_ROOT / path).resolve())
     candidates = [
         ARTIFACT_ROOT / "training-results" / "colab-run-01" / "extracted" / "dusnx-router-full-01" / "router.pt",
         ARTIFACT_ROOT / "artifacts" / "dusnx_smoke_v2.pt",
@@ -63,7 +67,8 @@ def load_model(checkpoint_path: str | Path | None = None) -> None:
     """Load model checkpoint with validation. Falls back to bootstrap_rules if missing or incompatible."""
     global MODEL, CFG, META, RUNTIME_MODE, MODEL_VERSION, LOADED_CHECKPOINT, CHECKPOINT
     if checkpoint_path is not None:
-        CHECKPOINT = str(checkpoint_path)
+        path = Path(checkpoint_path).expanduser()
+        CHECKPOINT = str((path if path.is_absolute() else ARTIFACT_ROOT / path).resolve())
     else:
         CHECKPOINT = resolve_default_checkpoint()
 
@@ -162,6 +167,16 @@ def health():
     provider_ok = bool(p_health.get("available", False))
     return {
         "status": "ok",
+        "service": "dusnx-ai-api",
+        "api_version": app.version,
+        "api_contract": "week4-v1",
+        "source_hashes": SOURCE_HASHES,
+        "configuration": {
+            "data_dir": str(Path(os.getenv("DUSNX_DATA_DIR", "data")).resolve()),
+            "device_requested": os.getenv("DUSNX_DEVICE", "auto"),
+            "ollama_url": os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434").rstrip("/"),
+            "evaluation_enabled": os.getenv("DUSNX_ENABLE_LLM_EVAL") == "1",
+        },
         "device": DEVICE,
         "runtime_mode": RUNTIME_MODE,
         "checkpoint": CHECKPOINT,
@@ -600,7 +615,7 @@ def _run_dusnx(
         try:
             return _SS(**blob)
         except Exception:
-            return None
+            raise HTTPException(409, "State lưu không hợp lệ. Cần kiểm tra/khôi phục bản sao trước khi tiếp tục.")
 
     if MODEL is None:
         # Bootstrap rules path
@@ -639,6 +654,8 @@ def _run_dusnx(
         version = (previous_snapshot.state_version if previous_snapshot else 0) + 1
         new_snapshot = StateSnapshot(**state_to_snapshot(result["new_state"], version, STATE_SCHEMA_VERSION, MODEL_VERSION))
         new_blob = new_snapshot.model_dump()
+        new_blob["state_reset"] = bool(reset_reason)
+        new_blob["reset_reason"] = reset_reason
         explicit = match_explicit_route(platform, content)
         if explicit is not None:
             return explicit.intent, explicit.agent, explicit.next_action, explicit.confidence, "business_rule_override", version, new_blob
@@ -709,6 +726,7 @@ class ChatRequest(BaseModel):
     project_id: Optional[str] = None
     feedback_value: float = Field(default=0.0)
     is_retry: bool = Field(default=False)
+    request_id: Optional[str] = Field(default=None, min_length=8, max_length=120)
 
 
 class ChatResponse(BaseModel):
@@ -732,10 +750,56 @@ class ChatResponse(BaseModel):
     prompt_memory_ids: list[str] = Field(default_factory=list)
     provider_called: bool = False
     response_source: str = "application_rule"
+    state_reset: bool = False
+    reset_reason: Optional[str] = None
+    replayed: bool = False
+    original_provenance: Optional[dict] = None
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, user: CurrentUser):
+    db = get_memory_db()
+    # Serialize this SQLite connection; a durable reservation prevents a mutation
+    # from being repeated after an ambiguous network/process failure.
+    with db._lock:
+        if req.request_id is None:
+            return _chat_impl(req, user)
+        fingerprint = hashlib.sha256(json.dumps(
+            [req.session_id, req.message, req.project_id, req.feedback_value],
+            ensure_ascii=False, separators=(",", ":")
+        ).encode()).hexdigest()
+        row = db._conn.execute(
+            "SELECT * FROM chat_receipts WHERE user_id=? AND request_id=?",
+            (user["user_id"], req.request_id),
+        ).fetchone()
+        if row:
+            if row["fingerprint"] != fingerprint:
+                raise HTTPException(409, "Request ID đã dùng cho nội dung khác")
+            previous = json.loads(row["response"])
+            if previous.get("status") == "in_progress":
+                raise HTTPException(409, "Kết quả thao tác chưa xác định. Kiểm tra lịch sử và trí nhớ trước khi gửi yêu cầu mới.")
+            if previous.get("provider_ok") or not req.is_retry:
+                if db.get_session(user["user_id"], req.session_id) is None:
+                    raise HTTPException(404, "Session not found")
+                return ChatResponse(**{**previous, "replayed": True,
+                    "original_provenance": {k: previous.get(k) for k in
+                        ("response_source", "provider_called", "provider_used", "model_used", "tokens_generated")},
+                    "response_source": "replay", "provider_called": False,
+                    "provider_used": None, "model_used": None, "tokens_generated": None})
+        else:
+            if db.get_session(user["user_id"], req.session_id) is None:
+                raise HTTPException(404, "Session not found")
+            db._conn.execute("INSERT INTO chat_receipts VALUES(?,?,?,?)",
+                             (user["user_id"], req.request_id, fingerprint, '{"status":"in_progress"}'))
+            db._conn.commit()
+        result = _chat_impl(req, user)
+        db._conn.execute("UPDATE chat_receipts SET response=? WHERE user_id=? AND request_id=?",
+                         (result.model_dump_json(), user["user_id"], req.request_id))
+        db._conn.commit()
+        return result
+
+
+def _chat_impl(req: ChatRequest, user: dict):
     db = get_memory_db()
     user_id = user["user_id"]
 
@@ -760,7 +824,10 @@ def chat(req: ChatRequest, user: CurrentUser):
     def chat_response(**kwargs):
         if kwargs.get("next_action") == "clarify" and "response_source" not in kwargs:
             kwargs["response_source"] = "clarification"
-        return ChatResponse(candidate_memory_ids=candidate_ids, **kwargs)
+        stored = db.get_dusnx_state(user_id)
+        blob = stored["state_blob"] if stored else {}
+        return ChatResponse(candidate_memory_ids=candidate_ids,
+                            state_reset=bool(blob.get("state_reset")), reset_reason=blob.get("reset_reason"), **kwargs)
 
     def advance(*args, **kwargs):
         if req.is_retry:
@@ -1195,11 +1262,19 @@ def get_my_state(user: CurrentUser):
             "state_blob": None,
             "updated_at": None,
         }
+    blob = st["state_blob"]
+    try:
+        reason = state_reset_reason(StateSnapshot(**blob), CFG or ModelConfig(), MODEL_VERSION)
+    except Exception:
+        reason = "invalid_state_schema"
     return {
         "user_id": user["user_id"],
         "state_version": st["state_version"],
-        "state_schema_version": STATE_SCHEMA_VERSION,
-        "model_version": MODEL_VERSION,
+        "state_schema_version": blob.get("state_schema_version"),
+        "model_version": blob.get("model_version"),
+        "state_compatible": reason is None,
+        "reset_reason": reason or blob.get("reset_reason"),
+        "state_reset": bool(blob.get("state_reset")),
         "state_blob": st["state_blob"],
         "updated_at": st["updated_at"],
     }

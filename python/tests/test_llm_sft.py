@@ -259,7 +259,7 @@ def test_eval_transport_is_real_llm_not_template(monkeypatch):
     def call(req,timeout):
         body=json.loads(req.data)
         assert body['model']=='dusnx-vi-candidate' and body['options']['temperature']==0
-        return io.BytesIO(json.dumps({'model':'dusnx-vi-candidate','message':{'content':'Xin chào'},'eval_count':4}).encode())
+        return io.BytesIO(json.dumps({'done':True,'model':'dusnx-vi-candidate','message':{'content':'Xin chào'},'eval_count':4}).encode())
     monkeypatch.setattr('urllib.request.urlopen',call)
     r=evaluate(EvaluationRequest(model='dusnx-vi-candidate',messages=[{'role':'system','content':'Tiếng Việt'},{'role':'user','content':'Chào'}]))
     assert r['response_source']=='llm' and r['provider_called'] and r['provider_ok']

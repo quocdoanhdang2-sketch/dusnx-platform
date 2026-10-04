@@ -1,4 +1,18 @@
-# DUSN-X Platform — Phase 1 & Week 2 Implementation
+# DUSN-X Platform — Tuần 4 native integration
+
+Trạng thái hiện hành và acceptance: [báo cáo Tuần 4](docs/WEEK4_COMPLETION_REPORT.md).
+Chạy/stop/restart Windows: [runbook](docs/WINDOWS_NATIVE_RUNBOOK.md).
+Demo 6 phút và bảy bước học máy: [kịch bản bàn giao](docs/WEEK4_DEMO_AND_ML_REPORT.md).
+Web → Gateway HttpClient → FastAPI → router/state/memory → Ollama đã được nghiệm thu
+native và Chromium thật; xem bằng chứng trong báo cáo, không dùng mock làm runtime.
+Base giữ `qwen2.5:0.5b`, evaluation mặc định tắt. Router Colab hash `56f56e6d…`
+được nạp; LoRA artifact đã training_complete epoch3/checkpoint21, candidate đã có
+trong Ollama nhưng **không được promote**. Pair 01 thành công transport8/8 mỗi model;
+chưa có independent human content review. [Bằng chứng LLM](docs/evidence/llm-sft/evaluation-01/README.md).
+
+Các mục Phase1/Tuần2/Tuần3 bên dưới giữ bối cảnh lịch sử. Những câu “chưa có
+candidate/chưa chạy Colab” mô tả thời điểm bàn giao cũ; dùng báo cáo Tuần4 để biết
+trạng thái hiện tại. Không chạy lệnh train/benchmark cũ để mở demo Tuần4.
 
 **DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng**
 

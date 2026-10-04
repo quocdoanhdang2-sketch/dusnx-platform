@@ -17,6 +17,9 @@ let allMemories = [];
 let allProjects = [];
 let nextTimelineCursor = null;
 let isSending = false;
+let isResolving = false;
+let isCreatingSession = false;
+let failedRequest = null;
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +50,15 @@ async function apiFetch(path, options = {}) {
     throw new Error(`Không thể kết nối Gateway (${err.message}). Vui lòng đảm bảo Gateway đang chạy tại http://localhost:8080.`);
   }
   if (!resp.ok) {
+    if (resp.status === 401 && authToken) {
+      authToken = null;
+      currentUser = null;
+      sessionStorage.removeItem("dusnx_token");
+      showScreen("authScreen");
+      el("loginError").textContent = "Phiên đăng nhập đã hết hạn. Đăng nhập lại để tiếp tục; nội dung chưa gửi vẫn được giữ.";
+      el("loginError").hidden = false;
+      throw new Error("Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
+    }
     let msg = `HTTP ${resp.status}`;
     try {
       const ct = resp.headers.get("content-type") || "";
@@ -230,7 +242,7 @@ async function loadSessions() {
     const sessions = await apiFetch("/v1/sessions");
     renderSessionList(sessions);
   } catch (err) {
-    console.error("Load sessions failed:", err);
+    showError(`Không tải được danh sách phiên: ${err.message}`);
   }
 }
 
@@ -254,6 +266,8 @@ function renderSessionList(sessions) {
 }
 
 async function startNewSession() {
+  if (isSending || isResolving || isCreatingSession) return;
+  isCreatingSession = true;
   try {
     const sess = await apiFetch("/v1/sessions", {
       method: "POST",
@@ -271,10 +285,13 @@ async function startNewSession() {
     el("messageInput").focus();
   } catch (err) {
     showError(`Không tạo được phiên mới: ${err.message}`);
+  } finally {
+    isCreatingSession = false;
   }
 }
 
 async function openSession(sessionId, title) {
+  if (isSending || isResolving) return;
   currentSessionId = sessionId;
   el("chatTitle").textContent = title || "Phiên chat";
   el("mobileTitle").textContent = title || "DUSN-X";
@@ -301,7 +318,7 @@ async function openSession(sessionId, title) {
     scrollToBottom();
     await checkPendingDecisions();
   } catch (err) {
-    console.error("Load messages failed:", err);
+    showError(`Không tải được lịch sử: ${err.message}`);
   }
 }
 
@@ -403,6 +420,10 @@ function renderPendingBanner(pending) {
 }
 
 async function resolvePending(pendingId, accepted) {
+  if (isResolving || isSending) return;
+  isResolving = true;
+  const buttons = el("pendingDecisionBanner")?.querySelectorAll("button") || [];
+  buttons.forEach(b => { b.disabled = true; });
   try {
     showStatus("Đang xử lý quyết định…");
     const res = await apiFetch(`/v1/pending-decisions/${encodeURIComponent(pendingId)}/resolve`, {
@@ -426,25 +447,42 @@ async function resolvePending(pendingId, accepted) {
     scrollToBottom();
   } catch (err) {
     hideStatus();
-    showError(`Lỗi xử lý quyết định: ${err.message}`);
+    showError(`Lỗi xử lý quyết định: ${err.message}. Kiểm tra trí nhớ trước khi thử lại.`);
+    await checkPendingDecisions();
+  } finally {
+    isResolving = false;
+    buttons.forEach(b => { b.disabled = false; });
   }
 }
 
-async function sendMessage(overrideText = null, { isRetry = false } = {}) {
-  if (isSending) return;
+async function sendMessage(overrideText = null, { isRetry = false, retryRequest = null } = {}) {
+  if (isSending || isResolving) return;
   const input = el("messageInput");
   const text = (overrideText !== null ? overrideText : input.value).trim();
   if (!text) return;
+  if (retryRequest && (retryRequest.sessionId !== currentSessionId || retryRequest.projectId !== (el("projectSelect").value || null))) {
+    showError("Mở lại phiên và dự án của tin nhắn bị lỗi trước khi thử lại.");
+    return;
+  }
   if (!currentSessionId) {
     await startNewSession();
   }
 
+  if (!currentSessionId) return;
+  const previous = retryRequest || (failedRequest && failedRequest.text === text && failedRequest.sessionId === currentSessionId && failedRequest.projectId === (el("projectSelect").value || null) ? failedRequest : null);
+  isRetry = isRetry || !!previous;
+  const requestId = previous?.requestId || (window.crypto?.randomUUID?.() || `web-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const sessionId = currentSessionId;
+  const projectId = previous?.projectId || el("projectSelect").value || null;
+  const submission = { text, sessionId, projectId, requestId };
+  failedRequest = submission;
   isSending = true;
   if (overrideText === null) {
     input.value = "";
     input.style.height = "auto";
   }
   el("sendBtn").disabled = true;
+  el("projectSelect").disabled = true;
   hideError();
 
   // Show user message immediately only if not retry
@@ -458,11 +496,11 @@ async function sendMessage(overrideText = null, { isRetry = false } = {}) {
   showStatus("Đang xử lý…");
 
   try {
-    const projectId = el("projectSelect").value || undefined;
     const response = await apiFetch("/v1/chat", {
       method: "POST",
       body: JSON.stringify({
-        session_id: currentSessionId,
+        session_id: sessionId,
+        request_id: requestId,
         message: text,
         project_id: projectId || null,
         feedback_value: 0,
@@ -473,6 +511,8 @@ async function sendMessage(overrideText = null, { isRetry = false } = {}) {
     hideStatus();
 
     if (response.provider_ok) {
+      failedRequest = null;
+      if (input.value.trim() === text) input.value = "";
       appendMessageBubble("assistant", response.reply, {
         intent: response.intent,
         agent: response.selected_agent,
@@ -487,7 +527,7 @@ async function sendMessage(overrideText = null, { isRetry = false } = {}) {
       });
     } else {
       // Clear error presentation: DO NOT present error as valid AI reply
-      appendProviderErrorCard(response.reply, response.provider_used, text);
+      appendProviderErrorCard(response.reply, response.provider_used, text, submission);
     }
     scrollToBottom();
 
@@ -498,15 +538,18 @@ async function sendMessage(overrideText = null, { isRetry = false } = {}) {
     await loadSessions();
   } catch (err) {
     hideStatus();
+    if (!input.value.trim()) input.value = text;
+    appendProviderErrorCard(`Lỗi gửi tin: ${err.message}`, null, text, submission);
     showError(`Lỗi gửi tin: ${err.message}`);
   } finally {
     isSending = false;
     el("sendBtn").disabled = false;
+    el("projectSelect").disabled = false;
     el("messageInput").focus();
   }
 }
 
-function appendProviderErrorCard(errorText, providerName, failedMessage) {
+function appendProviderErrorCard(errorText, providerName, failedMessage, requestData = null) {
   const list = el("messageList");
   const card = document.createElement("div");
   card.className = "message system-error";
@@ -526,8 +569,13 @@ function appendProviderErrorCard(errorText, providerName, failedMessage) {
   retryBtn.className = "btn-secondary btn-sm";
   retryBtn.textContent = "🔄 Thử lại (Retry)";
   retryBtn.onclick = () => {
+    if (isSending || isResolving) return;
+    if (requestData && (requestData.sessionId !== currentSessionId || requestData.projectId !== (el("projectSelect").value || null))) {
+      showError("Mở lại phiên và dự án của tin nhắn bị lỗi trước khi thử lại.");
+      return;
+    }
     card.remove();
-    sendMessage(failedMessage, { isRetry: true });
+    sendMessage(failedMessage, { isRetry: true, retryRequest: requestData });
   };
 
   actions.appendChild(retryBtn);
@@ -586,6 +634,7 @@ function appendMessageBubble(role, content, meta = {}) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
       tag.textContent = meta.response_source === "grounded_template" ? "Trích trí nhớ đã lưu" :
+        meta.response_source === "replay" ? "Phản hồi đã xác nhận trước đó" :
         meta.response_source === "clarification" ? "Cần làm rõ" :
         meta.response_source === "mock" ? "Phản hồi thử nghiệm" : "Thao tác ứng dụng";
       metaEl.appendChild(tag);
@@ -640,7 +689,7 @@ async function loadMemories(search = null) {
     allMemories = await apiFetch(`/v1/memories?${params}`);
     renderMemoryList(allMemories);
   } catch (err) {
-    console.error("Load memories failed:", err);
+    showError(`Không tải được trí nhớ: ${err.message}`);
   }
 }
 
@@ -750,6 +799,7 @@ function showAddMemoryModal() {
   typeLabel.textContent = "Loại thông tin";
   const typeInput = document.createElement("input");
   typeInput.id = "modalMemType";
+  typeLabel.htmlFor = typeInput.id;
   typeInput.className = "field-input";
   typeInput.placeholder = "preference, goal, decision, project_fact, …";
   typeInput.value = "decision";
@@ -759,6 +809,7 @@ function showAddMemoryModal() {
   contentLabel.textContent = "Nội dung";
   const contentInput = document.createElement("textarea");
   contentInput.id = "modalMemContent";
+  contentLabel.htmlFor = contentInput.id;
   contentInput.className = "field-input";
   contentInput.rows = 4;
   contentInput.placeholder = "Mô tả thông tin muốn ghi nhớ…";
@@ -767,9 +818,11 @@ function showAddMemoryModal() {
   saveBtn.className = "btn-primary";
   saveBtn.textContent = "Lưu trí nhớ";
   saveBtn.onclick = async () => {
+    if (saveBtn.disabled) return;
     const type = typeInput.value.trim() || "general";
     const content = contentInput.value.trim();
     if (!content) return;
+    saveBtn.disabled = true;
     try {
       await apiFetch("/v1/memories", {
         method: "POST",
@@ -779,6 +832,8 @@ function showAddMemoryModal() {
       await loadMemories();
     } catch (err) {
       alert(`Lỗi: ${err.message}`);
+    } finally {
+      saveBtn.disabled = false;
     }
   };
 
@@ -807,6 +862,7 @@ function showEditMemoryModal(mem) {
   typeLabel.textContent = "Loại thông tin";
   const typeInput = document.createElement("input");
   typeInput.id = "editMemType";
+  typeLabel.htmlFor = typeInput.id;
   typeInput.className = "field-input";
   typeInput.value = mem.info_type;
 
@@ -815,6 +871,7 @@ function showEditMemoryModal(mem) {
   contentLabel.textContent = "Nội dung mới";
   const contentInput = document.createElement("textarea");
   contentInput.id = "editMemContent";
+  contentLabel.htmlFor = contentInput.id;
   contentInput.className = "field-input";
   contentInput.rows = 4;
   contentInput.value = mem.content;
@@ -823,6 +880,8 @@ function showEditMemoryModal(mem) {
   saveBtn.className = "btn-primary";
   saveBtn.textContent = "Lưu phiên bản mới";
   saveBtn.onclick = async () => {
+    if (saveBtn.disabled || !contentInput.value.trim()) return;
+    saveBtn.disabled = true;
     try {
       await apiFetch(`/v1/memories/${mem.memory_id}`, {
         method: "PUT",
@@ -835,6 +894,8 @@ function showEditMemoryModal(mem) {
       await loadMemories();
     } catch (err) {
       alert(`Lỗi: ${err.message}`);
+    } finally {
+      saveBtn.disabled = false;
     }
   };
 
@@ -1152,5 +1213,7 @@ if (typeof module !== "undefined") {
     safeText,
     formatDate,
     checkProviderHealth,
+    apiFetch,
+    sendMessage,
   };
 }

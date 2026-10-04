@@ -21,7 +21,7 @@ builder.Services.AddHttpClient("ai", client =>
 {
     var baseUrl = Environment.GetEnvironmentVariable("AI_API_URL") ?? "http://localhost:8000";
     client.BaseAddress = new Uri(baseUrl);
-    client.Timeout = TimeSpan.FromSeconds(60);
+    client.Timeout = TimeSpan.FromSeconds(double.Parse(Environment.GetEnvironmentVariable("DUSNX_GATEWAY_TIMEOUT") ?? "90", System.Globalization.CultureInfo.InvariantCulture));
 });
 
 builder.Services.AddSingleton<LocalStateStore>();
@@ -33,6 +33,7 @@ builder.Services.AddHostedService<PresentationJobWorker>();
 builder.Services.AddHostedService<PlatformEventWorker>();
 
 var app = builder.Build();
+var gatewayBuildSha = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Program).Assembly.Location))).ToLowerInvariant();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
@@ -54,7 +55,10 @@ app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",
     service = "dusnx-gateway",
-    phase = "week-1",
+    phase = "week-4",
+    api_contract = "week4-v1",
+    binary_sha256 = gatewayBuildSha,
+    ai_api_url = Environment.GetEnvironmentVariable("AI_API_URL") ?? "http://localhost:8000",
     utc = DateTimeOffset.UtcNow
 }));
 
@@ -91,11 +95,11 @@ app.MapPost("/api/v1/events", async (
         var result = await orchestrator.ProcessAsync(request, cancellationToken);
         return Results.Json(result);
     }
-    catch (HttpRequestException ex)
+    catch (HttpRequestException)
     {
         return Results.Problem(
             title: "AI service unavailable",
-            detail: ex.Message,
+            detail: "DUSN-X AI API unavailable",
             statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 });
@@ -276,11 +280,16 @@ async Task ProxyToAiApi(HttpContext context, string targetPath, IHttpClientFacto
         context.Response.Headers.Remove("Transfer-Encoding");
         await response.Content.CopyToAsync(context.Response.Body, context.RequestAborted);
     }
-    catch (HttpRequestException ex)
+    catch (HttpRequestException)
     {
         context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(new { detail = $"AI API unavailable: {ex.Message}" });
+        await context.Response.WriteAsJsonAsync(new { detail = "Không thể kết nối DUSN-X AI API. Kiểm tra dịch vụ và AI_API_URL." });
+    }
+    catch (OperationCanceledException) when (!context.RequestAborted.IsCancellationRequested)
+    {
+        context.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
+        await context.Response.WriteAsJsonAsync(new { detail = "DUSN-X AI API quá thời gian chờ. Kiểm tra trạng thái trước khi thử lại thao tác ghi." });
     }
 }
 

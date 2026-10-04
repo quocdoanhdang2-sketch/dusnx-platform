@@ -1,0 +1,20 @@
+{
+  "date_local": "2026-10-04",
+  "timezone": "Asia/Saigon",
+  "reviewer": "codex",
+  "source": "actual tool command outputs; runtime/browser reports are separate",
+  "python": {"command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short --basetemp runtime/week4-pytest-delivery", "exit_code": 0, "passed": 193, "elapsed_seconds": 34.23},
+  "web_node": {"command": "node --test web-ui/app.test.js", "exit_code": 0, "passed": 11, "failed": 0},
+  "gateway_build": {"command": "dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release", "exit_code": 0, "warnings": 0, "errors": 0},
+  "gateway_tests": {"command": "dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release", "exit_code": 0, "passed": 7, "total": 7},
+  "powershell_health": {"command": "powershell -ExecutionPolicy Bypass -File scripts/tests/local-health.tests.ps1", "exit_code": 0, "passed": 6, "total": 6},
+  "compile": {"command": "python/.venv/Scripts/python.exe -m compileall -q python/apps python/src python/scripts scripts", "exit_code": 0},
+  "whitespace": {"command": "git diff --check", "exit_code": 0},
+  "native_start_stop_restart": {"status": "passed", "commands": ["scripts/stop-local.ps1", "start-local.ps1 -AiDataDir runtime/week4-native-ai -GatewayDataDir runtime/week4-native-gateway"], "scope": "verified DUSN-X processes only; scratch databases"},
+  "router_sha256": "56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1",
+  "llm_export_inventory": {"status": "passed", "command": "dusnx_core.llm_artifacts.verify_file_manifest(runtime/llm-export-retry3, artifact_manifest.json)", "weights_committed": false},
+  "candidate_promoted": false,
+  "holdout_v3_evaluated": false,
+  "independent_human_content_review": false,
+  "ci": "recorded separately by exact pushed commit"
+}

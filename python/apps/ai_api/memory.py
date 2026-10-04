@@ -125,6 +125,13 @@ def _init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages(session_id);
         CREATE INDEX IF NOT EXISTS idx_pending_user ON pending_decision_updates(user_id);
         CREATE INDEX IF NOT EXISTS idx_user_events_user_time ON user_events(user_id, event_time_utc DESC);
+        CREATE TABLE IF NOT EXISTS chat_receipts (
+            user_id TEXT NOT NULL,
+            request_id TEXT NOT NULL,
+            fingerprint TEXT NOT NULL,
+            response TEXT NOT NULL,
+            PRIMARY KEY(user_id, request_id)
+        );
     """)
     # Schema migration: ensure existing databases get the new columns if created earlier
     existing_pending_cols = {
@@ -243,9 +250,9 @@ class MemoryDB:
         source_session: Optional[str] = None,
     ) -> Optional[dict]:
         """Supersede old memory and create a new version. Returns new memory."""
-        with self._lock:
+        with self._lock, self._conn:
             old = self.get_memory(user_id, memory_id)
-            if old is None:
+            if old is None or not old["is_active"]:
                 return None
             new_id = secrets.token_hex(16)
             now = _now()
@@ -264,7 +271,6 @@ class MemoryDB:
                 "UPDATE memories SET is_active=0, superseded_by=?, updated_at=? WHERE memory_id=? AND user_id=?",
                 (new_id, now, memory_id, user_id),
             )
-            self._conn.commit()
             return self.get_memory(user_id, new_id)
 
     def get_memory_history(self, user_id: str, memory_id: str) -> list[dict]:
@@ -641,6 +647,20 @@ class MemoryDB:
         return dict(row) if row else None
 
     def resolve_pending_decision_atomic(
+        self,
+        user_id: str,
+        pending_id: str,
+        accepted: bool,
+        source_session: Optional[str] = None,
+        allow_idempotent_retry: bool = False,
+    ) -> dict:
+        # REST resolve and chat must share the same connection lock so SQLite
+        # transaction scopes cannot commit/rollback another thread's writes.
+        with self._lock:
+            return self._resolve_pending_decision_atomic(
+                user_id, pending_id, accepted, source_session, allow_idempotent_retry)
+
+    def _resolve_pending_decision_atomic(
         self,
         user_id: str,
         pending_id: str,

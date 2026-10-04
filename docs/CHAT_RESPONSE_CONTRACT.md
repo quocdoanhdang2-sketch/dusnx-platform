@@ -24,4 +24,15 @@ Chọn theo từ khóa chủ đề phân biệt, bỏ từ chung; hỏi tổng h
 
 Retry lượt provider thất bại không tăng thêm event/state version hoặc tạo memory. Retry confirmation dùng transaction idempotent sẵn có; đã sửa để không tăng state lần nữa. Không thay logic SQL supersede nguyên tử.
 
+Tuần4 bổ sung `request_id` tùy chọn, Web luôn gửi và giữ nguyên ID khi retry cùng
+session/message/project. Receipt per-user được ghi bền; response thành công replay
+nguyên message/state version, không chạy mutation/provider lần nữa. Replay có
+`response_source=replay`, `replayed=true`, `provider_called=false`, provider/model/token
+null; nguồn lần sinh gốc ở `original_provenance`. Không giả là lượt gọi Ollama mới.
+ID dùng cho nội dung khác trả409. Reservation dở dang trả409 kết quả chưa xác định,
+không tự thử lại thao tác ghi. Lỗi provider đã xác định cho phép explicit retry,
+giữ state/event của lần đầu. Client legacy thiếu ID không có guarantee tương đương.
+`state_reset/reset_reason` phản ánh reset tương thích, state malformed bị từ chối409.
+GET state trả model/schema đã lưu và `state_compatible`, không gán model mới cho blob cũ.
+
 Kiểm chứng: `python scripts/verify_chat_provenance.py --output runtime/chat-provenance.json`. Script dùng user thử mới, bỏ credentials khỏi evidence. Template recall và Ollama generation là hai phép kiểm chứng riêng; health không chứng minh generation.

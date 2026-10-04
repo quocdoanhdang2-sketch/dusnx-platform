@@ -1,0 +1,58 @@
+{
+  "base": {
+    "successful": 8,
+    "total": 8,
+    "mean_gateway_roundtrip_ms": 3291.156637511449,
+    "median_gateway_roundtrip_ms": 2397.271850029938,
+    "automatic_checks": {
+      "required_fact_exact": {
+        "passed": 4,
+        "measured": 8,
+        "rate": 0.5
+      },
+      "forbidden_fact_exact": {
+        "passed": 8,
+        "measured": 8,
+        "rate": 1
+      },
+      "clarification_shape": {
+        "passed": 5,
+        "measured": 8,
+        "rate": 0.625
+      },
+      "no_false_save_heuristic": {
+        "passed": 0,
+        "measured": 0,
+        "rate": null
+      }
+    }
+  },
+  "candidate": {
+    "successful": 8,
+    "total": 8,
+    "mean_gateway_roundtrip_ms": 2724.449037501472,
+    "median_gateway_roundtrip_ms": 2462.7207000157796,
+    "automatic_checks": {
+      "required_fact_exact": {
+        "passed": 4,
+        "measured": 8,
+        "rate": 0.5
+      },
+      "forbidden_fact_exact": {
+        "passed": 7,
+        "measured": 8,
+        "rate": 0.875
+      },
+      "clarification_shape": {
+        "passed": 5,
+        "measured": 8,
+        "rate": 0.625
+      },
+      "no_false_save_heuristic": {
+        "passed": 0,
+        "measured": 0,
+        "rate": null
+      }
+    }
+  }
+}

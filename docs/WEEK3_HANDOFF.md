@@ -1,5 +1,12 @@
 # Báo cáo bàn giao Tuần 3: LLM SFT Pipeline, Rà soát Dữ liệu và Kiểm thử
 
+> Bản bàn giao lịch sử. Trạng thái đã thay đổi sau đó: artifact LoRA full epoch3/
+> checkpoint21 đã tồn tại, export inventory đã kiểm hash, candidate đã import,
+> pair transport8/8 mỗi model. Candidate chưa được promote và chưa có independent
+> human content review. Không chạy lại các cổng train/review cũ hoặc thay attestation.
+> [Tuần4 hiện hành](WEEK4_COMPLETION_REPORT.md),
+> [bằng chứng LLM](evidence/llm-sft/evaluation-01/README.md).
+
 > **Trạng thái:** Toàn bộ phần mã nguồn, dữ liệu phát triển, công cụ review/khóa, kiểm thử tự động, tài liệu và quy trình huấn luyện của Tuần 3 đã **hoàn tất 100% về mặt kỹ thuật**.  
 > **Cổng chờ:** Đang chờ con người duyệt dữ liệu thực tế, viết tập test độc lập, chạy huấn luyện LoRA trên Google Colab GPU và chấm điểm candidate qua Gateway.  
 > **Tuyên bố trung thực:** Chưa chạy huấn luyện GPU và chưa có model LoRA hoàn chỉnh; model mặc định của hệ thống vẫn là base `qwen2.5:0.5b`, checkpoint router `router.pt` được bảo toàn nguyên vẹn.

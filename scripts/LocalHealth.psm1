@@ -55,12 +55,12 @@ function Assert-DusnxFastApiCheckpoint {
         if ($Probe) { & $Probe $Uri } else { Invoke-RestMethod -Uri $Uri -TimeoutSec 3 }
     }
     catch {
-        return $null
+        throw "Port $($Owner.Port) is occupied by PID $($Owner.ProcessId) ($($Owner.ProcessName)), but DUSN-X identity could not be verified. No process was stopped."
     }
 
-    $isDusnx = ($health -and ($health.runtime_mode -or $health.status -eq "ok" -or $health.checkpoint -or $health.checkpoint_path))
+    $isDusnx = ($health -and $health.service -eq "dusnx-ai-api")
     if (-not $isDusnx) {
-        return $null
+        throw "Port $($Owner.Port) belongs to an unverified service (PID $($Owner.ProcessId), $($Owner.ProcessName)). No process was stopped. Choose another port or inspect its owner."
     }
 
     $loadedPath = if ($health.checkpoint_path) {
@@ -71,7 +71,7 @@ function Assert-DusnxFastApiCheckpoint {
         $null
     }
 
-    $isMatch = ($health.checkpoint_loaded -eq $true -and $loadedPath -and ($loadedPath -ieq $expectedNorm))
+    $isMatch = ($health.runtime_mode -eq "trained_dusnx" -and $health.checkpoint_loaded -eq $true -and $health.model_version -and $loadedPath -and ($loadedPath -ieq $expectedNorm))
     if (-not $isMatch) {
         $loadedDisplay = if ($loadedPath) {
             if ($health.checkpoint_loaded -eq $true) { $loadedPath } else { "$loadedPath (checkpoint_loaded=false, mode=$($health.runtime_mode))" }
@@ -80,7 +80,7 @@ function Assert-DusnxFastApiCheckpoint {
         }
         $pidInfo = if ($Owner.ProcessId) { "PID $($Owner.ProcessId)" } else { "PID unknown" }
         $procInfo = if ($Owner.ProcessName) { "$($Owner.ProcessName)" } else { "unknown" }
-        $stopCmd = if ($Owner.ProcessId) { "Stop-Process -Id $($Owner.ProcessId) -Force" } else { "Stop-Process -Name python -Force" }
+        $stopCmd = if ($Owner.ProcessId) { "Recheck PID and service identity, then Stop-Process -Id $($Owner.ProcessId)" } else { "Inspect the listening PID first; never stop processes by name." }
 
         $msg = "Port 8000 is already running FastAPI ($pidInfo, $procInfo) with a different checkpoint:`n" +
                "  Loaded checkpoint:    $loadedDisplay`n" +

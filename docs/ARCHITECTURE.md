@@ -1,5 +1,24 @@
 # DUSN-X Architecture v0.2 — Phase 1
 
+## Hiện hành Tuần 4
+
+Đường Web cá nhân hóa dùng Gateway ASP.NET Core HttpClient proxy → FastAPI.
+Opaque Bearer token lấy user từ SQLite auth, memory/session/pending/state/events
+trong SQLite; không dùng linkedUserId của client cho đường `/v1/me/*`.
+Router checkpoint PyTorch cập nhật vector recurrent và dự đoán routing; rules
+nghiệp vụ quyết định CRUD/xác nhận/clarification. Recall trích memory bằng template
+không gọi provider. Generation riêng gọi Ollama base `qwen2.5:0.5b`.
+Candidate LoRA chỉ evaluation, không thay router hoặc model base mặc định.
+
+Native startup root-resolves checkpoint/config, xác minh service/source/binary,
+không kill port owner, cho cấu hình cổng. Request ID/receipt bền trong SQLite bảo vệ
+retry chat từ Web. Transaction supersede và khóa kết nối được dùng chung cho chat/REST.
+Health/source provenance, DB memory và hidden state vector là các khái niệm riêng.
+
+Diagram/Phase2 adapters bên dưới là kiến trúc Phase1 lịch sử và hướng mở rộng,
+không có nghĩa SQL Server/Redis/MinIO/JWT/RAG/native Office đã triển khai.
+Xem [acceptance Tuần4](WEEK4_COMPLETION_REPORT.md) và [runbook](WINDOWS_NATIVE_RUNBOOK.md).
+
 ```text
 Web / PowerPoint / Zalo
         |
