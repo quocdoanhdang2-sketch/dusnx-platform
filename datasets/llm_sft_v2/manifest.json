@@ -2,11 +2,11 @@
   "schema_version": 1,
   "status": "ai_draft_needs_independent_human_review",
   "locked": false,
-  "source_revision": "post-week4-v2-draft-01",
+  "source_revision": "post-week4-v2-draft-03",
   "files": {
-    "train.jsonl": "b9365c7aba4a09698c4f764e8426eb8af7bde98c05884835b8b659a4acfac930",
-    "validation.jsonl": "6d84cfe9a3de1d4dfad3622470d11e8541b4cb5216d1e09e4db64a886a0b3849",
-    "test_draft.jsonl": "cdf6ccefc3b1799a512166ad3c48b46c994405888f232264537ffd22d9def217"
+    "train.jsonl": "c9c0ddb7f4c7585404a8fe96ed8dd8d811d8d5edc2465cb77557254b4543ef3d",
+    "validation.jsonl": "c5ccd2df0eccce248d197d4575d87b41b3ed574aba5a422a92178f2ca56fcccd",
+    "test_draft.jsonl": "c0254c0a99be0593e6d96e1e42856391814f2f796d8b3ed25005653d18ef15e4"
   },
   "counts": {
     "train": {
