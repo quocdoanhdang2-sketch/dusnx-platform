@@ -6,16 +6,27 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+var maxRequestBytes = long.Parse(Environment.GetEnvironmentVariable("DUSNX_MAX_REQUEST_BYTES") ?? "1048576");
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBytes);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddSignalR();
+var configuredOrigins = (Environment.GetEnvironmentVariable("DUSNX_CORS_ORIGINS") ?? "http://localhost:8080,http://localhost:3000,https://localhost:3001")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
-    policy.SetIsOriginAllowed(_ => true)
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()));
+    policy.WithOrigins(configuredOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+builder.Services.AddRateLimiter(options => {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions {
+            PermitLimit = int.Parse(Environment.GetEnvironmentVariable("DUSNX_RATE_LIMIT_PER_MINUTE") ?? "120"),
+            Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true
+        }));
+});
 
 builder.Services.AddHttpClient("ai", client =>
 {
@@ -38,6 +49,18 @@ var gatewayBuildSha = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(type
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseCors();
+app.UseRateLimiter();
+app.Use(async (context, next) => {
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    // The current static UI uses inline event attributes. Keep them functional while
+    // all untrusted content is rendered with textContent; move handlers to JS before
+    // removing unsafe-inline in a later CSP hardening pass.
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://appsforoffice.microsoft.com; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8080 https:; frame-ancestors 'self' https://*.officeapps.live.com https://*.office.com";
+    await next();
+});
 
 var webUiPath = Environment.GetEnvironmentVariable("DUSNX_WEB_UI_DIR") 
     ?? Path.Combine(builder.Environment.ContentRootPath, "..", "web-ui");
@@ -237,15 +260,26 @@ app.MapHub<JobHub>("/hubs/jobs");
 
 async Task ProxyToAiApi(HttpContext context, string targetPath, IHttpClientFactory httpClientFactory)
 {
+    var carriesBody = HttpMethods.IsPost(context.Request.Method) || HttpMethods.IsPut(context.Request.Method) || HttpMethods.IsPatch(context.Request.Method);
+    if (carriesBody && context.Request.ContentLength > maxRequestBytes)
+    {
+        context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+        await context.Response.WriteAsJsonAsync(new { detail = "Request body exceeds the configured limit." });
+        return;
+    }
+    if (carriesBody && !(context.Request.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) ?? false))
+    {
+        context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await context.Response.WriteAsJsonAsync(new { detail = "Only application/json is supported." });
+        return;
+    }
     var client = httpClientFactory.CreateClient("ai");
     var queryString = context.Request.QueryString.Value;
     var requestUri = targetPath + queryString;
 
     using var requestMessage = new HttpRequestMessage(new HttpMethod(context.Request.Method), requestUri);
 
-    if (HttpMethods.IsPost(context.Request.Method) ||
-        HttpMethods.IsPut(context.Request.Method) ||
-        HttpMethods.IsPatch(context.Request.Method))
+    if (carriesBody)
     {
         var streamContent = new StreamContent(context.Request.Body);
         if (!string.IsNullOrEmpty(context.Request.ContentType))

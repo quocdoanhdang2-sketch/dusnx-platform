@@ -13,6 +13,7 @@ REVIEW_STATES = {"needs_human_review", "human_reviewed"}
 SOURCES = {"synthetic_designed", "human_designed"}
 RESPONSE_MODES = {"answer", "clarify", "acknowledge"}
 VI_MARKERS = {"bạn", "mình", "tôi", "là", "và", "đã", "đang", "chưa", "không", "cần", "theo", "hiện", "được", "với", "của", "cho", "hãy", "vẫn", "này", "để"}
+EN_MARKERS = {"the", "is", "are", "you", "your", "please", "what", "which", "how", "current", "saved", "answer", "decision"}
 
 
 def digest(path):
@@ -41,6 +42,11 @@ def _looks_vietnamese(value):
     words = _words(value)
     accents = len(re.findall(r"[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]", normalized(value)))
     return bool(words) and (accents > 0 or len(VI_MARKERS.intersection(words)) >= 2)
+
+
+def _looks_english(value):
+    words = _words(value)
+    return bool(words) and len(EN_MARKERS.intersection(words)) >= 2 and not _looks_vietnamese(value)
 
 
 def _content(messages):
@@ -123,8 +129,9 @@ def validate(rows, split):
         for turn_number, (message_index, contract) in enumerate(zip(assistant_indexes, contracts), 1):
             if contract.get("assistant_turn") != turn_number or contract.get("response_mode") not in RESPONSE_MODES:
                 raise ValueError("Invalid assistant turn contract")
-            if contract.get("language") != "vi":
-                raise ValueError("Vietnamese output contract required")
+            language = contract.get("response_language", contract.get("language"))
+            if language not in {"vi", "en"}:
+                raise ValueError("Vietnamese or English output contract required")
             for field in ("required_facts", "forbidden_facts", "future_facts"):
                 if not isinstance(contract.get(field), list) or any(not isinstance(value, str) or not value.strip() for value in contract[field]):
                     raise ValueError(f"Invalid {field} contract")
@@ -145,8 +152,10 @@ def validate(rows, split):
                     raise ValueError(f"{row['id']} turn {turn_number}: future fact leaked: {fact}")
             if contract["response_mode"] == "clarify" and "?" not in messages[message_index]["content"]:
                 raise ValueError(f"{row['id']} turn {turn_number}: clarification response must ask a question")
-            if not _looks_vietnamese(messages[message_index]["content"]):
-                raise ValueError("Assistant answer is not detectably Vietnamese")
+            language_ok = (_looks_vietnamese(messages[message_index]["content"]) if language == "vi"
+                           else _looks_english(messages[message_index]["content"]))
+            if not language_ok:
+                raise ValueError(f"Assistant answer does not match response_language={language}")
     if not rows:
         raise ValueError("Empty partition")
 

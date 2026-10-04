@@ -12,6 +12,7 @@ from typing import Annotated, Optional
 import torch
 from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, Field
 
 from dusnx_core.checkpoint import load_checkpoint, model_identifier
@@ -31,12 +32,13 @@ from .decision_updater import (
     synthesize_full_decision,
     extract_modify_components,
 )
+from .language import detect_language, preference_instruction, response_language
 
 # ── Model loading ─────────────────────────────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
 SOURCE_HASHES = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
-                 for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py")}
+                 for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py", "language.py")}
 
 def resolve_default_checkpoint() -> str:
     env_ckpt = os.getenv("DUSNX_CHECKPOINT")
@@ -128,13 +130,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="DUSN-X AI API", version="0.3.0", lifespan=lifespan)
 
+_cors_origins = [value.strip() for value in os.getenv(
+    "DUSNX_CORS_ORIGINS", "http://localhost:8080,http://localhost:3000,https://localhost:3001"
+).split(",") if value.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=[value.strip() for value in os.getenv(
+    "DUSNX_TRUSTED_HOSTS", "localhost,127.0.0.1,testserver"
+).split(",") if value.strip()])
 
 
 # ── Auth dependency ────────────────────────────────────────────────────────────
@@ -176,6 +184,7 @@ def health():
             "device_requested": os.getenv("DUSNX_DEVICE", "auto"),
             "ollama_url": os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434").rstrip("/"),
             "evaluation_enabled": os.getenv("DUSNX_ENABLE_LLM_EVAL") == "1",
+            "inspector_enabled": os.getenv("DUSNX_ENABLE_INSPECTOR") == "1",
         },
         "device": DEVICE,
         "runtime_mode": RUNTIME_MODE,
@@ -727,6 +736,7 @@ class ChatRequest(BaseModel):
     feedback_value: float = Field(default=0.0)
     is_retry: bool = Field(default=False)
     request_id: Optional[str] = Field(default=None, min_length=8, max_length=120)
+    preferred_language: str = Field(default="auto", pattern="^(auto|vi|en)$")
 
 
 class ChatResponse(BaseModel):
@@ -754,6 +764,10 @@ class ChatResponse(BaseModel):
     reset_reason: Optional[str] = None
     replayed: bool = False
     original_provenance: Optional[dict] = None
+    preferred_language: str = "auto"
+    detected_language: str = "unknown"
+    response_language: str = "vi"
+    inspector: Optional[dict] = None
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
@@ -820,14 +834,40 @@ def _chat_impl(req: ChatRequest, user: dict):
     memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, query=req.message, limit=15)
     candidate_ids = [m["memory_id"] for m in memories]
     memory_ids = []
+    saved_language = next(("en" if "language:en" in m["content"] else "vi"
+                           for m in memories if m.get("info_type") == "preference"
+                           and "language:" in m.get("content", "")), None)
+    requested_preference = req.preferred_language if req.preferred_language != "auto" else (saved_language or "auto")
+    detected_language = detect_language(req.message)
+    reply_language = response_language(requested_preference, detected_language)
 
     def chat_response(**kwargs):
         if kwargs.get("next_action") == "clarify" and "response_source" not in kwargs:
             kwargs["response_source"] = "clarification"
         stored = db.get_dusnx_state(user_id)
         blob = stored["state_blob"] if stored else {}
+        inspector = None
+        if os.getenv("DUSNX_ENABLE_INSPECTOR") == "1":
+            safe_state = {name: len(blob.get(name, [])) for name in ("global_state", "platform_state", "task_state")}
+            inspector = {
+                "intent": kwargs.get("intent"), "selected_agent": kwargs.get("selected_agent"),
+                "next_action": kwargs.get("next_action"), "routing_source": kwargs.get("routing_source"),
+                "confidence": kwargs.get("confidence"), "platform": "web",
+                "state": {"dimensions": safe_state, "version": kwargs.get("state_version"),
+                          "schema_version": blob.get("state_schema_version"),
+                          "checksum": hashlib.sha256(json.dumps(blob, sort_keys=True).encode()).hexdigest()[:16] if blob else None},
+                "candidate_memory_ids": candidate_ids,
+                "prompt_memory_ids": kwargs.get("prompt_memory_ids", []),
+                "memory_ids_used": kwargs.get("memory_ids_used", []),
+                "response_source": kwargs.get("response_source", "application_rule"),
+                "provider_called": kwargs.get("provider_called", False),
+                "provider_used": kwargs.get("provider_used"), "model_used": kwargs.get("model_used"),
+                "checkpoint_version": MODEL_VERSION, "pending_decision": bool(db.get_session_pending_decision(user_id, req.session_id)),
+            }
         return ChatResponse(candidate_memory_ids=candidate_ids,
-                            state_reset=bool(blob.get("state_reset")), reset_reason=blob.get("reset_reason"), **kwargs)
+                            state_reset=bool(blob.get("state_reset")), reset_reason=blob.get("reset_reason"),
+                            preferred_language=requested_preference, detected_language=detected_language,
+                            response_language=reply_language, inspector=inspector, **kwargs)
 
     def advance(*args, **kwargs):
         if req.is_retry:
@@ -846,6 +886,36 @@ def _chat_impl(req: ChatRequest, user: dict):
     if req.project_id:
         proj = db.get_project(user_id, req.project_id)
         project_name = proj["name"] if proj else None
+
+    # Language preference is an explicit, durable user preference. Supersede the
+    # previous language record so translations never create duplicate memories.
+    language_change = preference_instruction(req.message)
+    if language_change:
+        language_memories = [m for m in db.list_memories(user_id, include_inactive=False)
+                             if m["info_type"] == "preference" and "language:" in m["content"]]
+        content = f"language:{language_change}"
+        if language_memories:
+            new_mem = (language_memories[0] if language_memories[0]["content"] == content else
+                       db.update_memory(user_id, language_memories[0]["memory_id"], content,
+                                        source_session=req.session_id))
+        else:
+            new_mem = db.create_memory(user_id=user_id, info_type="preference", content=content,
+                                       source_session=req.session_id)
+        requested_preference = reply_language = language_change
+        reply_text = ("Language preference saved. I will answer in English from now on."
+                      if language_change == "en" else
+                      "Đã lưu lựa chọn ngôn ngữ. Từ giờ tôi sẽ trả lời bằng tiếng Việt.")
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="language_preference", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", reply_text,
+                                memory_ids_used=[new_mem["memory_id"]], state_version=s_ver)
+        return chat_response(message_id=msg["message_id"], reply=reply_text,
+            intent="set_language_preference", selected_agent="memory", next_action="save_preference",
+            confidence=1.0, runtime_mode=RUNTIME_MODE, routing_source="application_rule",
+            provider_used=None, provider_ok=True, state_version=s_ver,
+            memory_ids_used=[new_mem["memory_id"]], session_id=req.session_id,
+            response_source="application_rule")
 
     # ── Missing context guard ─────────────────────────────────────────────────
     if _detect_missing_context_query(req.message) or _detect_project_scoped_question(req.message, req.project_id):
@@ -1126,6 +1196,7 @@ def _chat_impl(req: ChatRequest, user: dict):
         generated = generate_response(
             user_message=req.message, memories=selected, intent=dusnx_intent,
             session_history=history, project_name=project_name,
+            response_language=reply_language,
         )
         reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
         provider_called = getattr(generated, "provider_called", False)

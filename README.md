@@ -1,4 +1,10 @@
-# DUSN-X Platform — Tuần 4 native integration
+# DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng cho chatbot và ứng dụng đa nền tảng
+
+Giai đoạn sau Tuần 4 bổ sung Inspector opt-in, chính sách VI/EN/auto, PowerPoint task pane,
+data SFT v2 draft và template triển khai an toàn. Xem [roadmap](docs/POST_WEEK4_ROADMAP.md).
+Web vẫn là sản phẩm chính; PowerPoint là tích hợp minh chứng. Router không sinh văn bản,
+SQLite memory không phải hidden state, và rule/template không phải năng lực neural model.
+Candidate v1 chưa promote; candidate v2 chưa train; holdout v3 chưa được mở.
 
 Trạng thái hiện hành và acceptance: [báo cáo Tuần 4](docs/WEEK4_COMPLETION_REPORT.md).
 Chạy/stop/restart Windows: [runbook](docs/WINDOWS_NATIVE_RUNBOOK.md).

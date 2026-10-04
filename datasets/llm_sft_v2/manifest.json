@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "status": "ai_draft_needs_independent_human_review",
+  "locked": false,
+  "source_revision": "post-week4-v2-draft-01",
+  "files": {
+    "train.jsonl": "b9365c7aba4a09698c4f764e8426eb8af7bde98c05884835b8b659a4acfac930",
+    "validation.jsonl": "6d84cfe9a3de1d4dfad3622470d11e8541b4cb5216d1e09e4db64a886a0b3849",
+    "test_draft.jsonl": "cdf6ccefc3b1799a512166ad3c48b46c994405888f232264537ffd22d9def217"
+  },
+  "counts": {
+    "train": {
+      "sequences": 100,
+      "assistant_pairs": 100
+    },
+    "validation": {
+      "sequences": 24,
+      "assistant_pairs": 24
+    },
+    "test_draft": {
+      "sequences": 16,
+      "assistant_pairs": 16
+    }
+  },
+  "training_allowed": false,
+  "official_evaluation_allowed": false
+}

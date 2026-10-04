@@ -211,6 +211,7 @@ def generate_response(
     intent: str,
     session_history: Optional[list[dict]] = None,
     project_name: Optional[str] = None,
+    response_language: str = "vi",
 ) -> tuple[str, bool, str, Optional[str], Optional[int]]:
     """
     Generate an AI response using the configured provider.
@@ -239,8 +240,11 @@ def generate_response(
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
+    language_rule = ("Reply in English, concisely and accurately. Preserve names, IDs, URLs and code verbatim."
+                     if response_language == "en" else
+                     "Bạn trả lời bằng tiếng Việt, ngắn gọn, chính xác. Giữ nguyên tên riêng, ID, URL và code.")
     system_prompt = f"""Bạn là DUSN-X, trợ lý AI cá nhân hóa thích ứng.
-Bạn trả lời bằng tiếng Việt, ngắn gọn, chính xác.
+{language_rule}
 
 {project_line}Trí nhớ cá nhân của người dùng (chỉ các mục đang hiệu lực):
 {memory_ctx}{history_ctx}

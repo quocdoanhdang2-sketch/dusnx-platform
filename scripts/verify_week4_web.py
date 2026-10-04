@@ -114,7 +114,15 @@ def main():
             report["checks"]["RT-01"] = True
             report["generation"] = {k: generated[k] for k in ("reply", "provider_called", "provider_used", "model_used", "response_source")}
             page.set_viewport_size({"width": 390, "height": 844})
-            page.wait_for_function("document.getElementById('sidebar').getBoundingClientRect().right <= 0")
+            # Poll geometry through Playwright instead of injecting string eval;
+            # production CSP intentionally does not allow unsafe-eval.
+            for _ in range(30):
+                box = page.locator("#sidebar").bounding_box()
+                if box and box["x"] + box["width"] <= 0:
+                    break
+                page.wait_for_timeout(100)
+            else:
+                raise AssertionError("mobile sidebar did not settle off-canvas")
             expect(page.locator("#messageInput")).to_be_visible()
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
             page.locator("#viewChat").screenshot(path=str(out / "mobile.png"))

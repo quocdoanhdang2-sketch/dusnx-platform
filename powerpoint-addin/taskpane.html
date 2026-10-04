@@ -1,14 +1,10 @@
-<!doctype html>
-<html><head><meta charset="utf-8"><title>DUSN-X PowerPoint</title>
-<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<style>body{font-family:Arial;padding:14px}textarea,input{width:100%;box-sizing:border-box;margin:6px 0;padding:8px}button{padding:9px 12px}pre{white-space:pre-wrap}</style></head>
-<body>
-<h2>DUSN-X</h2>
-<input id="user" value="ppt-user-001" />
-<input id="linked" value="global-demo-001" />
-<input id="slideCount" type="number" min="1" max="20" value="5" />
-<textarea id="prompt">Rút gọn nội dung slide và đề xuất bố cục</textarea>
-<button id="run">Gửi tới DUSN-X</button>
-<pre id="out"></pre>
-<script src="taskpane.js"></script>
-</body></html>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DUSN-X PowerPoint</title><script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>body{font:14px system-ui;padding:14px;color:#172033}label{display:block;font-weight:600;margin-top:10px}input,textarea,select,button{width:100%;box-sizing:border-box;margin:4px 0;padding:9px}button{cursor:pointer}.row{display:flex;gap:8px}.row>*{flex:1}pre{white-space:pre-wrap;word-break:break-word;background:#f4f6fa;padding:8px}.error{color:#b42318}.ok{color:#067647}</style></head>
+<body><h1>DUSN-X</h1><p id="status" role="status">Disconnected</p>
+<label for="username">Username</label><input id="username" autocomplete="username"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password">
+<div class="row"><button id="login">Sign in</button><button id="logout">Sign out</button></div><label for="session">Session</label><select id="session"></select><button id="newSession">New session</button>
+<label for="language">Response language</label><select id="language"><option value="auto">Auto</option><option value="vi">Tiếng Việt</option><option value="en">English</option></select>
+<label for="prompt">Instruction</label><textarea id="prompt" rows="4">Đề xuất tiêu đề ngắn gọn cho slide đang chọn.</textarea><button id="ask">Create proposal from selected slide</button>
+<h2>Proposal</h2><pre id="proposal"></pre><button id="apply" disabled>Apply to selected slide</button><details><summary>Provenance</summary><pre id="provenance"></pre></details>
+<script src="taskpane.js"></script></body></html>

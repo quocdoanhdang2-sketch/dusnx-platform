@@ -1,0 +1,17 @@
+﻿{
+    "status":  "passed",
+    "target":  "local_gateway_health",
+    "requests":  30,
+    "concurrency":  1,
+    "p50_ms":  0.86,
+    "p95_ms":  1.48,
+    "error_rate":  0,
+    "throughput_rps":  241.59,
+    "security_headers":  {
+                             "csp_present":  true,
+                             "nosniff":  "nosniff"
+                         },
+    "unsupported_content_type_status":  415,
+    "oversized_payload_status":  413,
+    "scope":  "local laptop; not production capacity"
+}

@@ -1,0 +1,53 @@
+﻿{
+    "generated_at":  "2026-10-04T15:40:32.4379797Z",
+    "service":  "dusnx-ai-api",
+    "runtime_mode":  "trained_dusnx",
+    "checkpoint_loaded":  true,
+    "checkpoint_sha256":  "56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1",
+    "configured_model":  "qwen2.5:0.5b",
+    "synthetic_user":  "demo_0718ee883177",
+    "token_persisted":  false,
+    "session_ids":  [
+                        "7af892095f141b9884ce3c6a7902e550",
+                        "905ffbae8fc603ad94937f3ae2f0e40e"
+                    ],
+    "steps":  [
+                  {
+                      "response_source":  "application_rule",
+                      "name":  "save",
+                      "intent":  "memory_create"
+                  },
+                  {
+                      "next_action":  "await_confirm",
+                      "name":  "propose",
+                      "intent":  "decision_modify_intent"
+                  },
+                  {
+                      "name":  "confirm",
+                      "memory_ids_used":  [
+                                              "ed713976c35947e6f0d694334da06332",
+                                              "e89a04d104c6b7d83a78753b47ea0208"
+                                          ],
+                      "intent":  "decision_update"
+                  },
+                  {
+                      "name":  "new_session_recall",
+                      "memory_ids_used":  [
+                                              "ed713976c35947e6f0d694334da06332"
+                                          ],
+                      "intent":  "chat"
+                  },
+                  {
+                      "next_action":  "await_confirm",
+                      "name":  "ambiguous",
+                      "intent":  "decision_modify_intent"
+                  }
+              ],
+    "active_memories":  [
+                            {
+                                "info_type":  "decision",
+                                "memory_id":  "ed713976c35947e6f0d694334da06332",
+                                "version":  2
+                            }
+                        ]
+}

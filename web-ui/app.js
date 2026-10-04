@@ -20,6 +20,7 @@ let isSending = false;
 let isResolving = false;
 let isCreatingSession = false;
 let failedRequest = null;
+let preferredLanguage = (typeof localStorage !== "undefined" && localStorage.getItem("dusnx_language")) || "auto";
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
@@ -161,9 +162,29 @@ async function handleLogout() {
 async function enterApp() {
   currentUser = await apiFetch("/v1/auth/me");
   showScreen("appScreen");
+  if (el("languageSelect")) {
+    el("languageSelect").value = preferredLanguage;
+    el("languageSelect").onchange = () => {
+      preferredLanguage = el("languageSelect").value;
+      if (typeof localStorage !== "undefined") localStorage.setItem("dusnx_language", preferredLanguage);
+      applyUiLanguage(preferredLanguage === "en" ? "en" : "vi");
+    };
+  }
   await Promise.all([loadSessions(), loadProjects(), checkProviderHealth()]);
   showView("chat");
   await startNewSession();
+}
+
+function applyUiLanguage(language) {
+  document.documentElement.lang = language;
+  const dictionary = language === "en" ? {
+    newChatBtn: "＋ New chat", statusText: "Processing…", messageInput: "Type a message…"
+  } : {
+    newChatBtn: "＋ Phiên chat mới", statusText: "Đang xử lý…", messageInput: "Nhập tin nhắn…"
+  };
+  if (el("newChatBtn")) el("newChatBtn").textContent = dictionary.newChatBtn;
+  if (el("statusText")) el("statusText").textContent = dictionary.statusText;
+  if (el("messageInput")) el("messageInput").placeholder = dictionary.messageInput;
 }
 
 // ── App Init ───────────────────────────────────────────────────────────────────
@@ -505,6 +526,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
         project_id: projectId || null,
         feedback_value: 0,
         is_retry: isRetry,
+        preferred_language: preferredLanguage,
       }),
     });
 
@@ -523,6 +545,8 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
         response_source: response.response_source,
         state_version: response.state_version,
         memory_ids_used: response.memory_ids_used,
+        response_language: response.response_language,
+        inspector: response.inspector,
         created_at: new Date().toISOString(),
       });
     } else {
@@ -644,6 +668,21 @@ function appendMessageBubble(role, content, meta = {}) {
       tag.className = "meta-tag";
       tag.textContent = `🧠 ${meta.memory_ids_used.length} trí nhớ`;
       metaEl.appendChild(tag);
+    }
+    if (meta.inspector) {
+      const details = document.createElement("details");
+      details.className = "inspector-card";
+      const summary = document.createElement("summary");
+      summary.textContent = "DUSN-X Inspector";
+      const pre = document.createElement("pre");
+      safeText(pre, meta.inspector);
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "action-btn";
+      copy.textContent = "Copy filtered JSON";
+      copy.onclick = () => navigator.clipboard?.writeText(JSON.stringify(meta.inspector, null, 2));
+      details.append(summary, pre, copy);
+      col.appendChild(details);
     }
   }
 

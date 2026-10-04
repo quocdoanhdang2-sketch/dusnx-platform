@@ -1,0 +1,23 @@
+﻿{
+    "status":  "passed",
+    "service":  "dusnx-ai-api",
+    "english":  {
+                    "provider_called":  true,
+                    "detected":  "en",
+                    "model":  "qwen2.5:0.5b",
+                    "response":  "en"
+                },
+    "preference":  {
+                       "response_language":  "en",
+                       "intent":  "set_language_preference"
+                   },
+    "inspector":  {
+                      "routing_source":  "model",
+                      "contains_token":  false,
+                      "used_count":  0,
+                      "state_schema_version":  2,
+                      "present":  true,
+                      "checkpoint_version":  "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+                      "candidate_count":  0
+                  }
+}

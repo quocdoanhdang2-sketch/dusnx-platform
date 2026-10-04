@@ -534,6 +534,10 @@ body {
 .meta-tag.warn { background: rgba(245,166,35,0.1); border-color: rgba(245,166,35,0.3); color: var(--warning); }
 .meta-tag.error { background: var(--danger-dim); border-color: rgba(245,101,101,0.3); color: var(--danger); }
 
+.inspector-card { margin-top:8px; padding:8px 10px; max-width:680px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-base); font-size:12px; }
+.inspector-card summary { cursor:pointer; color:var(--accent-bright); font-weight:600; }
+.inspector-card pre { max-height:260px; overflow:auto; white-space:pre-wrap; word-break:break-word; color:var(--text-secondary); }
+
 /* Input area */
 .input-area {
   padding: 12px 16px 16px;
