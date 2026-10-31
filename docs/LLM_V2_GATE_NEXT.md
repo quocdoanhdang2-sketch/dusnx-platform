@@ -62,3 +62,42 @@ pipeline mới hoặc artifact candidate. Giữ base `qwen2.5:0.5b` theo cấu h
 Đọc [runbook training](WEEK3_LLM_TRAINING.md) sau khi gate thực sự đạt; số liệu lịch sử
 v1 trong tài liệu đó không thay thế gate v2. Dùng output path mới, pin code/data/base
 revision, checksum artifact; đánh giá theo nhóm và independent review trước đề xuất promote.
+
+## Precheck chỉ đọc trên Windows hoặc cloud
+
+Repo có `scripts/check_llm_v2_review.py`, chạy bằng Python 3.11+ chuẩn, không cần cài torch.
+Không fetch/pull/apply, không sửa CSV/manifest, không mở test/holdout. Nó kiểm các cột
+nguồn với đúng train/validation, hash lúc export, đủ 124 khóa dòng và trường duyệt.
+Không xuất nội dung mẫu, tên reviewer hoặc thời điểm duyệt trong JSON tổng hợp.
+
+```powershell
+Set-Location D:\Projects\dusnx-platform
+git status --short
+git branch --show-current
+git rev-parse HEAD
+py -3 scripts/check_llm_v2_review.py --repo . `
+  --package runtime/llm-v2-human-gate-20261005-114208 `
+  --data datasets/llm_sft_v2
+```
+
+Không chép gói cloud đè gói trên Windows. Precheck hỗ trợ manifest review schema 1,
+review_type=train_validation, splits=train/validation; schema khác được báo chưa hỗ trợ,
+không tự suy ra đã duyệt. `cached_origin_main` là ref Git local, không phải phép đọc live
+GitHub. `--expected-main` mặc định là merge `b8c0a71`, có thể chỉ rõ SHA cần đối chiếu.
+
+Exit 2 nghĩa là thiếu gói/dữ liệu/dòng duyệt hoặc lỗi cần xử lý; đây là kết quả gate
+đang chặn, không phải công cụ tự sửa. Exit 0 chỉ nghĩa `STRUCTURALLY_COMPLETE_ONLY`:
+đủ cấu trúc không chứng minh reviewer là người thật, nội dung sửa đã đúng nghĩa, test
+độc lập/receipt/attestation hợp lệ hoặc được phép training. Công cụ luôn trả
+`training_authorized_by_this_check=false` và `human_authenticity_verified=false`.
+Vẫn cần validators/pipeline hiện có và người thật chịu trách nhiệm duyệt.
+
+Harness chỉ dùng fixture tổng hợp:
+
+```powershell
+py -3 -m unittest discover -s scripts/tests -p test_llm_v2_review_precheck.py -v
+```
+
+Workflow `review-precheck.yml` chỉ chạy harness này trên Linux/Windows, không cài
+model, không training/evaluation hoặc mở test dữ liệu thật. Kết quả Windows chỉ được
+coi đã xác minh khi job đó thực sự hoàn tất; không suy ra từ lần chạy Linux local.
