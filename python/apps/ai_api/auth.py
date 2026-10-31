@@ -1,7 +1,7 @@
 """
 DUSN-X Authentication Module
 - SQLite-backed user store (no plaintext passwords)
-- SHA-256 + salt password hashing (no bcrypt dependency needed for Week 1)
+- Versioned scrypt password hashes; legacy SHA-256 upgraded on successful login
 - JWT-style opaque tokens with expiry stored in DB
 - Used by FastAPI endpoints and proxied through Gateway
 """
@@ -61,7 +61,19 @@ import threading
 
 
 def _hash_password(password: str, salt: str) -> str:
-    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+    derived = hashlib.scrypt(password.encode("utf-8"), salt=salt.encode("utf-8"),
+                             n=16384, r=8, p=1, dklen=32)
+    return "scrypt$16384$8$1$" + derived.hex()
+
+
+def _verify_password(password: str, salt: str, stored: str) -> bool:
+    if stored.startswith("scrypt$16384$8$1$"):
+        return secrets.compare_digest(_hash_password(password, salt), stored)
+    # Preserve existing accounts without rewriting their DB or password column.
+    if len(stored) == 64:
+        legacy = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+        return secrets.compare_digest(legacy, stored)
+    return False
 
 
 class AuthDB:
@@ -95,7 +107,7 @@ class AuthDB:
         pw_hash = _hash_password(password, salt)
         user_id = secrets.token_hex(16)
         created_at = datetime.now(timezone.utc).isoformat()
-        with self._lock:
+        with self._lock, self._conn:
             try:
                 self._conn.execute(
                     "INSERT INTO users(user_id, username, password_hash, salt, created_at) VALUES(?,?,?,?,?)",
@@ -115,9 +127,11 @@ class AuthDB:
             ).fetchone()
             if row is None:
                 return None
-            pw_hash = _hash_password(password, row["salt"])
-            if not secrets.compare_digest(pw_hash, row["password_hash"]):
+            if not _verify_password(password, row["salt"], row["password_hash"]):
                 return None
+            if not row["password_hash"].startswith("scrypt$"):
+                self._conn.execute("UPDATE users SET password_hash=? WHERE user_id=?",
+                                   (_hash_password(password, row["salt"]), row["user_id"]))
             token = secrets.token_hex(32)
             expires_at = (datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS)).isoformat()
             self._conn.execute(

@@ -105,10 +105,13 @@ app.MapGet("/v1/health", (HttpContext ctx, IHttpClientFactory f) => ProxyToAiApi
 app.MapGet("/api/v1/health", (HttpContext ctx, IHttpClientFactory f) => ProxyToAiApi(ctx, "/health", f));
 
 app.MapPost("/api/v1/events", async (
+    HttpContext context,
     EventRequest request,
     AiOrchestrator orchestrator,
     CancellationToken cancellationToken) =>
 {
+    if (!HistoryAccess.IsAllowed(context.Connection.RemoteIpAddress, context.Request.Headers.Origin))
+        return Results.NotFound();
     var validation = RequestValidator.Validate(request);
     if (validation is not null)
         return Results.ValidationProblem(validation);
@@ -129,12 +132,15 @@ app.MapPost("/api/v1/events", async (
 
 // Development-only lookup. Replace with JWT-based /users/me/state in Phase 2.
 app.MapGet("/api/v1/state/{platform}/{platformUserId}", async (
+    HttpContext context,
     string platform,
     string platformUserId,
     string? linkedUserId,
     LocalStateStore store,
     CancellationToken cancellationToken) =>
 {
+    if (!HistoryAccess.IsAllowed(context.Connection.RemoteIpAddress, context.Request.Headers.Origin))
+        return Results.NotFound();
     var globalUserId = IdentityResolver.Resolve(platform, platformUserId, linkedUserId);
     var state = await store.GetAsync(globalUserId, cancellationToken);
     return state is null
@@ -228,14 +234,14 @@ app.MapPost("/webhooks/zalo", async (
     CancellationToken cancellationToken) =>
 {
     var configuredSecret = Environment.GetEnvironmentVariable("ZALO_WEBHOOK_SECRET");
-    if (!string.IsNullOrWhiteSpace(configuredSecret))
-    {
-        var suppliedSecret = httpRequest.Headers["X-DUSNX-Webhook-Secret"].ToString();
-        if (!CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(configuredSecret),
-                Encoding.UTF8.GetBytes(suppliedSecret)))
-            return Results.Unauthorized();
-    }
+    if (string.IsNullOrWhiteSpace(configuredSecret))
+        return Results.Problem(statusCode: StatusCodes.Status503ServiceUnavailable,
+                               title: "Zalo webhook is not configured");
+    var suppliedSecret = httpRequest.Headers["X-DUSNX-Webhook-Secret"].ToString();
+    if (!CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(configuredSecret),
+            Encoding.UTF8.GetBytes(suppliedSecret)))
+        return Results.Unauthorized();
 
     var eventId = string.IsNullOrWhiteSpace(request.EventId)
         ? Guid.NewGuid().ToString("N")
@@ -260,7 +266,8 @@ app.MapHub<JobHub>("/hubs/jobs");
 
 async Task ProxyToAiApi(HttpContext context, string targetPath, IHttpClientFactory httpClientFactory)
 {
-    var carriesBody = HttpMethods.IsPost(context.Request.Method) || HttpMethods.IsPut(context.Request.Method) || HttpMethods.IsPatch(context.Request.Method);
+    var methodAcceptsBody = HttpMethods.IsPost(context.Request.Method) || HttpMethods.IsPut(context.Request.Method) || HttpMethods.IsPatch(context.Request.Method);
+    var carriesBody = methodAcceptsBody && (context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpRequestBodyDetectionFeature>()?.CanHaveBody ?? false);
     if (carriesBody && context.Request.ContentLength > maxRequestBytes)
     {
         context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;

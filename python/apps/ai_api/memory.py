@@ -198,7 +198,7 @@ class MemoryDB:
     ) -> dict:
         memory_id = secrets.token_hex(16)
         now = _now()
-        with self._lock:
+        with self._lock, self._conn:
             self._conn.execute(
                 """INSERT INTO memories(memory_id, user_id, info_type, content,
                    source_event, source_session, project_id, created_at, updated_at,
@@ -280,8 +280,17 @@ class MemoryDB:
             if target is None:
                 return []
             rows = self._conn.execute(
-                "SELECT * FROM memories WHERE user_id=? AND created_at=? ORDER BY version ASC",
-                (user_id, target["created_at"]),
+                """WITH RECURSIVE chain(memory_id) AS (
+                    SELECT memory_id FROM memories WHERE memory_id=? AND user_id=?
+                    UNION
+                    SELECT m.memory_id FROM memories m JOIN chain c
+                      ON m.superseded_by=c.memory_id WHERE m.user_id=?
+                    UNION
+                    SELECT m.superseded_by FROM memories m JOIN chain c
+                      ON m.memory_id=c.memory_id WHERE m.user_id=? AND m.superseded_by IS NOT NULL
+                ) SELECT m.* FROM memories m JOIN chain c ON m.memory_id=c.memory_id
+                  WHERE m.user_id=? ORDER BY m.version ASC""",
+                (memory_id, user_id, user_id, user_id, user_id),
             ).fetchall()
             return [_row_to_memory(r) for r in rows]
 
@@ -480,6 +489,28 @@ class MemoryDB:
                 d["memory_ids_used"] = []
             result.append(d)
         return result
+
+    def get_recent_messages(self, user_id: str, session_id: str, limit: int = 12) -> list[dict]:
+        """Read the latest context window, returned in conversation order.
+
+        Keep get_messages' oldest-first pagination contract unchanged.
+        SQLite rowid breaks equal timestamp ties in append order.
+        """
+        with self._lock:
+            rows = self._conn.execute(
+                """SELECT * FROM chat_messages WHERE session_id=? AND user_id=?
+                   ORDER BY created_at DESC, rowid DESC LIMIT ?""",
+                (session_id, user_id, max(0, limit)),
+            ).fetchall()
+            result = []
+            for row in reversed(rows):
+                item = dict(row)
+                try:
+                    item["memory_ids_used"] = json.loads(item["memory_ids_used"] or "[]")
+                except (ValueError, TypeError):
+                    item["memory_ids_used"] = []
+                result.append(item)
+            return result
 
 
     # ── DUSN-X Persistent State ────────────────────────────────────────────────

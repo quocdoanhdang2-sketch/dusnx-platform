@@ -9,6 +9,7 @@ services:
       DUSNX_PROVIDER: ${DUSNX_PROVIDER:-ollama}
       DUSNX_OLLAMA_URL: ${DUSNX_OLLAMA_URL:-http://host.docker.internal:11434}
       PYTHONPATH: /app/src
+      DUSNX_TRUSTED_HOSTS: localhost,127.0.0.1,ai-api
     volumes:
       - ./artifacts:/app/artifacts:ro
       - ./runtime/ai-data:/app/data
@@ -23,7 +24,7 @@ services:
     environment:
       AI_API_URL: http://ai-api:8000
       DUSNX_DATA_DIR: /app/data
-      ZALO_WEBHOOK_SECRET: ${ZALO_WEBHOOK_SECRET:-change-before-tunnel}
+      ZALO_WEBHOOK_SECRET: ${ZALO_WEBHOOK_SECRET:-}
     volumes:
       - ./runtime/gateway-data:/app/data
     depends_on:

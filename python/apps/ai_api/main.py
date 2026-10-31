@@ -5,6 +5,7 @@ import json
 import math
 import os
 import re
+import sqlite3
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Optional
@@ -13,6 +14,7 @@ import torch
 from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from dusnx_core.checkpoint import load_checkpoint, model_identifier
@@ -129,6 +131,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DUSN-X AI API", version="0.3.0", lifespan=lifespan)
+
+
+@app.exception_handler(sqlite3.Error)
+async def database_unavailable(request: Request, exc: sqlite3.Error):
+    # Keep database paths, queries and payloads out of the response. A controlled
+    # error also avoids tearing down the upstream connection after a write fault.
+    return JSONResponse(status_code=503, content={
+        "detail": "Database temporarily unavailable. Check state before retrying a write."
+    })
 
 _cors_origins = [value.strip() for value in os.getenv(
     "DUSNX_CORS_ORIGINS", "http://localhost:8080,http://localhost:3000,https://localhost:3001"
@@ -824,7 +835,7 @@ def _chat_impl(req: ChatRequest, user: dict):
 
     # Retry check: prevent duplicate user message
     if req.is_retry:
-        last_msgs = db.get_messages(user_id, req.session_id, limit=1)
+        last_msgs = db.get_recent_messages(user_id, req.session_id, limit=1)
         if not (last_msgs and last_msgs[0]["role"] == "user" and last_msgs[0]["content"] == req.message):
             db.append_message(req.session_id, user_id, "user", req.message)
     else:
@@ -877,7 +888,7 @@ def _chat_impl(req: ChatRequest, user: dict):
         return _advance_user_state(*args, **kwargs)
 
     # Get recent session history (for context)
-    history = db.get_messages(user_id, req.session_id, limit=12)
+    history = db.get_recent_messages(user_id, req.session_id, limit=12)
     # Exclude the just-added user message from history (it's the current input)
     history = history[:-1] if history else []
 
