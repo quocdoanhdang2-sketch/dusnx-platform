@@ -82,3 +82,5 @@ jobs:
           node-version: "22"
       - name: Test safe rendering (XSS prevention, memory cards, chat bubbles)
         run: node --test web-ui/app.test.js
+      - name: Test PowerPoint proposal and Apply guards (Office mock only)
+        run: node --test powerpoint-addin/taskpane.test.js

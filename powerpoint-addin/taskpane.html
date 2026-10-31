@@ -5,6 +5,6 @@
 <label for="username">Username</label><input id="username" autocomplete="username"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password">
 <div class="row"><button id="login">Sign in</button><button id="logout">Sign out</button></div><label for="session">Session</label><select id="session"></select><button id="newSession">New session</button>
 <label for="language">Response language</label><select id="language"><option value="auto">Auto</option><option value="vi">Tiếng Việt</option><option value="en">English</option></select>
-<label for="prompt">Instruction</label><textarea id="prompt" rows="4">Đề xuất tiêu đề ngắn gọn cho slide đang chọn.</textarea><button id="ask">Create proposal from selected slide</button>
-<h2>Proposal</h2><pre id="proposal"></pre><button id="apply" disabled>Apply to selected slide</button><details><summary>Provenance</summary><pre id="provenance"></pre></details>
+<label for="prompt">Instruction</label><textarea id="prompt" rows="4">Viết lại nội dung Text Box đang chọn, giữ nguyên ý. Chỉ trả về nội dung mới, không kèm giải thích.</textarea><button id="ask">Create proposal from selected text shape</button>
+<h2>Proposal</h2><pre id="proposal"></pre><button id="apply" disabled>Apply to original text shape</button><details><summary>Provenance</summary><pre id="provenance"></pre></details>
 <script src="taskpane.js"></script></body></html>
