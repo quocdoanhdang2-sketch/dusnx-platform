@@ -73,12 +73,23 @@ def verify(base,output):
                 except Exception:report["logout"]="failed"
     path=Path(output);path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps(report,ensure_ascii=False,indent=2))
     return 0 if report["status"]=="passed" else 1
 
 
 if __name__=="__main__":
     if hasattr(sys.stdout,"reconfigure"):sys.stdout.reconfigure(encoding="utf-8")
-    p=argparse.ArgumentParser();p.add_argument("--gateway",default="http://127.0.0.1:8080")
-    p.add_argument("--output",default="runtime/chat-provenance.json");a=p.parse_args()
-    sys.exit(verify(a.gateway,a.output))
+    p=argparse.ArgumentParser()
+    p.add_argument("--gateway",default=None,help="Gateway URL to test against")
+    p.add_argument("--spawn-stack",action="store_true",help="Spawn an isolated local Stack automatically")
+    p.add_argument("--output",default="runtime/chat-provenance.json")
+    a=p.parse_args()
+    if a.spawn_stack or not a.gateway:
+        from verify_week4_runtime import Stack
+        stack_dir = Path(a.output).resolve().parent / "provenance-stack"
+        with Stack(stack_dir) as stack:
+            sys.exit(verify(stack.url, a.output))
+    else:
+        sys.exit(verify(a.gateway,a.output))

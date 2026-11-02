@@ -7,7 +7,7 @@
  * - User cannot supply arbitrary linkedUserId to read other users' memory
  */
 
-const GATEWAY = window.DUSNX_GATEWAY || (window.location?.port === "8080" || window.location?.port === "3000" ? "" : "http://localhost:8080");
+const GATEWAY = window.DUSNX_GATEWAY || (window.location?.protocol?.startsWith("http") ? "" : "http://localhost:8080");
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let authToken = sessionStorage.getItem("dusnx_token") || null;
@@ -71,7 +71,7 @@ async function apiFetch(path, options = {}) {
     resp = await fetch(`${base}${path}`, { ...options, headers });
   } catch (err) {
     assertCurrentSession();
-    throw new Error(`Không thể kết nối Gateway (${err.message}). Vui lòng đảm bảo Gateway đang chạy tại http://localhost:8080.`);
+    throw new Error(`Không thể kết nối Gateway (${err.message}). Vui lòng đảm bảo Gateway đang chạy tại ${GATEWAY || window.location?.origin || "http://localhost:8080"}.`);
   }
   assertCurrentSession();
   if (!resp.ok) {
@@ -88,7 +88,7 @@ async function apiFetch(path, options = {}) {
         const body = await resp.json();
         msg = body.detail || body.message || msg;
       } else if (resp.status === 404) {
-        msg = `HTTP 404: Đường dẫn '${path}' không tồn tại trên máy chủ này. Nếu bạn đang chạy 'python -m http.server 3000' mà không có proxy, vui lòng mở Web qua Gateway: http://localhost:8080 (Native) hoặc http://localhost:3000 (Docker Compose).`;
+        msg = `HTTP 404: Đường dẫn '${path}' không tồn tại trên máy chủ này. Nếu bạn đang chạy 'python -m http.server 3000' mà không có proxy, vui lòng mở Web qua Gateway: ${window.location?.origin || "http://localhost:8080"} (Native) hoặc http://localhost:3000 (Docker Compose).`;
       }
     } catch {}
     assertCurrentSession();

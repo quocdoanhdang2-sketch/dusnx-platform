@@ -17,7 +17,7 @@ from verify_week4_runtime import API, Stack
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--chromium", default="/usr/bin/chromium")
+    parser.add_argument("--chromium", default="/usr/bin/chromium" if Path("/usr/bin/chromium").exists() else None)
     args = parser.parse_args()
     out = Path(args.output_dir).resolve()
     out.mkdir(parents=True, exist_ok=False)
