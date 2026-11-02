@@ -149,39 +149,119 @@ verification harness. Lưu draft không áp dụng network policy hoặc publish
 Sau khi gỡ chặn và kiểm chứng generation, người dùng có thể Publish môi trường
 để giữ filesystem đã chuẩn bị; tiến trình dịch vụ phải khởi động lại ở task mới.
 
-## Nghiệm thu thực tế trên máy Windows (02/11/2026)
+## Nghiệm thu thực tế và bàn giao trên máy Windows (02/11/2026)
 
 Môi trường: Windows native (`D:\Projects\dusnx-platform`), Ollama 0.40.13 (`127.0.0.1:11434`),
 .NET 8.0.427, Node v24.20.0, Python 3.12.10 trong `python/.venv`, Playwright Chromium 153.0.8010.12.
-Cổng 8080 thuộc Docker Desktop Task Tracker (PID 8520); nghiệm thu sử dụng cổng độc lập hoặc
-harness `Stack` tự cấp phát cổng trống.
+Cổng 8080 thuộc Docker Desktop (`com.docker.backend.exe`, PID 8520); nghiệm thu sử dụng cổng độc lập
+(ví dụ Gateway 8088 / AI 8000) hoặc harness `Stack` tự cấp phát cổng trống.
 
-### 1. Đính chính và làm rõ các kết luận trước
-- **Ngôn ngữ generation của `qwen2.5:0.5b`:**
-  - Ở test harness trước (`docs/evidence/chat-provenance/gateway.json`), câu trả lời cho prompt `"Viết hai câu về lợi ích của việc đọc sách."` là:
-    `"1. Reading can improve your vocabulary and comprehension skills.\n2. Reading can enhance your critical thinking and analytical abilities."`
-  - Đây là **tiếng Anh**, không phải tiếng Việt. Việc test đánh dấu "PASSED" chỉ chứng minh transport (`provider_called=true`, `provider_ok=true`, `response_source=llm`), không chứng minh mô hình sinh tiếng Việt.
-  - Phân tích nguyên nhân: Mô hình 0.5B có dung lượng tham số nhỏ; cụm từ "Viết hai câu..." kích hoạt xác suất token tiếng Anh mạnh hơn so với lệnh hệ thống. Trong khi đó, các câu lệnh như `"Viết một câu ngắn về lợi ích đọc sách."` hay `"Lợi ích của việc đọc sách là gì?"` sinh tiếng Việt chuẩn xác (`"Lợi ích đọc sách: Tạo sự thư giãn, tăng cường trí nhớ và cải thiện tư duy."`).
-  - Đã củng cố prompt chỉ thị tiếng Việt rõ ràng trong `python/apps/ai_api/provider.py`.
-- **Dự đoán của router:**
-  - `routing_source=model` chỉ xác nhận router neural network đã thực hiện suy luận (inference), không tự động chứng minh kết quả phân loại là đúng nếu không so khớp với nhãn chuẩn (ground truth).
-- **Cơ chế URL của Web UI:**
-  - Hàm `apiFetch` trong `web-ui/app.js` luôn dùng `window.DUSNX_GATEWAY || ""` (URL tương đối theo origin của trình duyệt). Việc cập nhật hằng số `GATEWAY` trước đây là hoàn thiện nội dung thông báo lỗi khi kết nối thất bại, không phải sửa lỗi sai cổng request.
-- **Bảo toàn dữ liệu ngoài Git:**
-  - Git branch/stash không theo dõi các file trong `.gitignore` (như checkpoint, `python/data/*.db`). Toàn bộ database cá nhân được backup riêng tại `backup-data-protected/`. Checkpoint router `router.pt` được xác minh khớp SHA-256 `56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1`.
+### 1. Bảng yêu cầu → Bằng chứng → Kết quả
 
-### 2. Kết quả kiểm thử thực tế trên Windows
-| Bộ kiểm thử / Harness | Kết quả | Ghi chú |
+| Yêu cầu | Bằng chứng thực tế | Kết quả |
 |---|---|---|
-| `pytest python/tests -q --tb=short` | **205 passed** | 0 failed, 0 skipped (105s) |
-| `node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js` | **26 passed** | 6 suites, 0 failed (216ms) |
-| `dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release` | **0 errors, 0 warnings** | DLL biên dịch sẵn sàng |
-| `dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release` | **7/7 passed** | Pagination, concurrent append, identity |
-| `powershell scripts/tests/local-health.tests.ps1` | **6/6 passed** | Health contracts |
-| `scripts/verify_web_auth.py` | **5/5 passed** | Real Chromium + real Gateway + late response discard |
-| `scripts/verify_chat_history.py` | **6/6 passed** | >200 messages pagination, cursor ordering, switch sessions |
-| `scripts/verify_memory_reliability.py` | **10/10 passed** | Atomic supersede, isolation, clarifiy, corrupt DB refusal |
-| `scripts/verify_chat_provenance.py` | **passed** | Live Ollama qwen2.5:0.5b generation + trained router |
-| `scripts/verify_week4_web.py` | **8/8 passed** | Confirmation buttons, XSS safety, mobile 390px, 401 token clear |
-| `scripts/verify_week4_runtime.py` | **19/19 passed** | RT-01 to RT-16, restoration, SHA256 integrity |
-| GitHub Actions Run ID `41461886421` | **4/4 jobs succeeded** | Commit `24a26fcb42e35315c9d762e8dea7d957627ce6b1` |
+| **Web Demo luồng lõi**<br>Web → Gateway (ASP.NET Core) → FastAPI → Router đã train → Ollama sinh văn bản thật | - `scripts/verify_chat_provenance.py` chạy qua Gateway và Ollama thật.<br>- `scripts/verify_week4_web.py` dùng Chromium thao tác UI thật.<br>- Provenance: `response_source=llm`, `provider_called=true`, `provider_ok=true`, `model_used=qwen2.5:0.5b`, `routing_source=model`. | **ĐẠT** |
+| **Bảo mật và Phân trang lịch sử**<br>Auth token expiry, late response discard, phân trang cursor >200 tin | - `scripts/verify_web_auth.py` (5/5 nhóm): 401 token clear, late response guard.<br>- `scripts/verify_chat_history.py` (6/6 nhóm): phân trang cursor tin nhắn, không lệch thứ tự, cô lập session. | **ĐẠT** |
+| **Độ tin cậy của Trí nhớ (Memory)**<br>Active / supersede, loại trừ quyết định cũ, cô lập user | - `scripts/verify_memory_reliability.py` (10/10 nhóm).<br>- `scripts/verify_sqlite_backup_restore.py`: sau restore, memory truy xuất đúng bản cập nhật mới nhất (`MongoDB`), loại trừ bản cũ (`PostgreSQL`). | **ĐẠT** |
+| **Đánh giá song ngữ VI / EN / Auto**<br>13 ca kiểm thử đa dạng, giữ nguyên văn bản trả về | - `scripts/verify_bilingual_generation.py`: 13/13 transport passed, 10/13 linguistic match, 3/13 divergent (do giới hạn mô hình sub-1B). Lưu nguyên văn tại `runtime/bilingual-generation/`. | **ĐẠT CÓ GHI NHẬN GIỚI HẠN** |
+| **Đánh giá Router có căn cứ**<br>Phân biệt file hash, load kiến trúc, gọi inference, và độ chính xác dự đoán | - `scripts/verify_router_diagnostic.py`: SHA-256 khớp chuẩn, load đạt 100%.<br>- Đánh giá trên `benchmarks/benchmark_v2_ai_diagnostic.jsonl` (11 turns recurrent): Agent acc 63.6%, Intent acc 36.4%, Action acc 36.4%.<br>- Holdout v3 (`benchmarks/holdout_v3.jsonl`) được khóa bảo tồn. | **ĐẠT (RÕ RANH GIỚI)** |
+| **Xác minh Backup / Restore SQLite**<br>ACID backup trên DB WAL, khôi phục và kiểm chứng tính toàn vẹn | - `scripts/verify_sqlite_backup_restore.py`:<br>  + Level 1: DB tổng hợp khôi phục, khởi động stack, auth/session/memory/retry receipt toàn vẹn.<br>  + Level 2: `backup-data-protected/` kiểm tra read-only, `journal_mode=wal`, `integrity_check=ok`. | **ĐẠT** |
+
+### 2. Bảng lỗi → Tái hiện → Nguyên nhân đã chứng minh → Bản sửa → Regression
+
+| Lỗi phát hiện | Cách tái hiện | Nguyên nhân đã chứng minh | Bản sửa | Regression test |
+|---|---|---|---|---|
+| **Lỗi 1: Windows Console CP1252 Crash** | Chạy script Python in chuỗi tiếng Việt trên Windows CMD/PowerShell mặc định. | `sys.stdout` mặc định dùng bảng mã Windows-1252, không mã hóa được ký tự Unicode tiếng Việt (như `\u1edb`). | Thêm cấu hình encoding an toàn: `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")`. | Tất cả test script (`verify_bilingual_generation.py`, `verify_sqlite_backup_restore.py`, `verify_router_diagnostic.py`) chạy in tiếng Việt trơn tru. |
+| **Lỗi 2: Xung đột cổng 8080 với Docker Desktop** | Khởi chạy harness gọi trực tiếp `http://127.0.0.1:8080`. | Docker Desktop (`com.docker.backend.exe`, PID 8520) chiếm giữ cổng 8080 từ trước cho dịch vụ Task Tracker. | Bổ sung class `Stack` tự động dò tìm cổng ngẫu nhiên khả dụng và hỗ trợ tham số `--gateway` linh hoạt. | `scripts/verify_week4_web.py` và `scripts/verify_week4_runtime.py` vượt qua 100% không xung đột cổng. |
+| **Lỗi 3: Biến `args` chưa định nghĩa trong harness** | Gọi trực tiếp hàm kiểm thử sau khi tái cấu trúc module. | Biến CLI `args` được tham chiếu bên trong hàm con sau khi tách hàm. | Đổi thành tham số tường minh `gateway` và `data_dir` truyền vào hàm. | Tách biệt gọi hàm nội bộ và gọi qua CLI không phát sinh `NameError`. |
+| **Lỗi 4: Xung đột thư mục `Stack` khi Restore** | Khởi tạo `Stack` trên thư mục đã có file database restore sẵn. | `Stack.__init__` gọi `mkdir(parents=True, exist_ok=False)` nên báo `FileExistsError`. | Khởi tạo instance `Stack(target_dir)` trước để tạo cây thư mục, sau đó copy database đã restore vào `stack.directory / "ai"` rồi mới kích hoạt context manager `with stack:`. | `scripts/verify_sqlite_backup_restore.py` khởi động và kiểm thử stack trên DB khôi phục thành công. |
+| **Lỗi 5: Whitespace vi phạm `git diff --check`** | Chạy `git diff --check` trước khi commit. | Tồn tại dòng trống ở cuối file (trailing newlines) tại `scripts/verify_week4_runtime.py` và `docs/PROJECT_STATUS_20261102.md`. | Dọn dẹp ký tự thừa cuối file để `git diff --check` trả về exit code 0. | `git diff --check` trả về mã 0 sạch hoàn toàn. |
+
+### 3. Đánh giá Song ngữ VI / EN / Auto (13 Ca kiểm thử)
+
+Thực hiện qua `scripts/verify_bilingual_generation.py` với Gateway và Ollama `qwen2.5:0.5b` thật:
+- **Tổng số ca:** 13 ca kiểm thử độc lập bao quát các tương tác.
+- **Transport / Contract:** 13/13 ca đạt (`provider_called=true`, `provider_ok=true`, `response_source=llm`, câu trả lời không rỗng).
+- **Độ tương thích ngôn ngữ nội dung:** 10/13 ca khớp chính xác với ngôn ngữ mong đợi; 3/13 ca xuất hiện bất đồng ngôn ngữ (divergence).
+- **Phân tích ca bất đồng ngôn ngữ (Cross-lingual divergence):**
+  1. `CASE_03_VI_PREF_EN`: Câu hỏi tiếng Việt (`"Giải thích ngắn gọn khái niệm máy học là gì."`) nhưng người dùng cài đặt `preferred_language=en`. Mô hình 0.5B trả lời bằng tiếng Việt thay vì dịch/trả lời bằng tiếng Anh.
+  2. `CASE_04_EN_PREF_VI`: Câu hỏi tiếng Anh (`"What are two key benefits of automated unit testing?"`) nhưng người dùng cài đặt `preferred_language=vi`. Mô hình trả lời bằng tiếng Anh thay vì dịch/trả lời bằng tiếng Việt.
+  3. `CASE_07_AUTO_SHORT_CONTEXT`: Lệnh ngắn phụ thuộc lịch sử ngữ cảnh.
+- **Nguyên nhân kỹ thuật đã xác minh:**
+  Mô hình `qwen2.5:0.5b` (dung lượng tham số ~490M) chịu ảnh hưởng mạnh bởi ngôn ngữ của câu hỏi đầu vào (prior tokens) lấn át chỉ thị ngôn ngữ trong system prompt khi có xung đột chéo giữa ngôn ngữ hỏi và ngôn ngữ đích. Khi ngôn ngữ câu hỏi và preferred_language đồng nhất (VI+VI hoặc EN+EN), mô hình tuân thủ ngôn ngữ rất tốt.
+- **Tính minh bạch:**
+  Toàn bộ câu trả lời nguyên văn được lưu giữ tại `runtime/bilingual-generation/report.json` và bảng duyệt `runtime/bilingual-generation/review_table.md`. Các ô đánh giá con người được để trống (`[ ] needs_human_review`) để chờ người thật duyệt; không tự gán nhãn AI đánh giá là human review.
+
+### 4. Đánh giá Router có căn cứ và Ranh giới
+
+- **Tính toàn vẹn Checkpoint:**
+  - File: `training-results/colab-run-01/extracted/dusnx-router-full-01/router.pt`
+  - SHA-256: `56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1` (Khớp 100%).
+  - Kiến trúc: 16,384 vocab, 6 intents, 3 agents, 6 next actions. Trọng số load strict đạt chuẩn.
+- **Inference thực tế:**
+  - Provenance trả `routing_source=model` chứng minh mạng nơ-ron hồi quy PyTorch đã tính toán phân phối xác suất logits.
+- **Độ chính xác trên tập Diagnostic được phép (`benchmarks/benchmark_v2_ai_diagnostic.jsonl`, 11 turns sequence):**
+  - **Agent Accuracy:** **63.64%** (Macro-F1: 0.5079) - Mô hình nhận diện đúng agent phần lớn các trường hợp (conversation, productivity, search_rag).
+  - **Intent Accuracy:** **36.36%** (Macro-F1: 0.3278) - Nhầm lẫn giữa `research` và `chat`, hoặc `recommendation` và `followup`.
+  - **Next Action Accuracy:** **36.36%** (Macro-F1: 0.3278) - Nhầm lẫn giữa `reply` và `search`.
+  - **Cả 3 Heads khớp hoàn toàn:** **27.27%** (3/11 turns).
+- **Quy tắc nghiệp vụ (Business-Rule Overrides):**
+  Trong ứng dụng thực tế, các quy tắc nghiệp vụ (`preference_instruction`, `_detect_missing_context_query`, `_detect_remember_intent`, `pending_decision` confirmation) được thiết kế ưu tiên cao hơn đầu ra của router nhằm bảo đảm ứng dụng không hành động sai khi router nơ-ron phân loại nhầm.
+- **Bảo tồn Holdout v3:**
+  Tập dữ liệu `benchmarks/holdout_v3.jsonl` được **KHÓA BẢO TỒN**, tuyệt đối không mở, không chạy và không dùng để điều chỉnh mô hình.
+
+### 5. Xác minh Khôi phục Backup SQLite (2 Cấp độ)
+
+- **Cấp độ 1: Dữ liệu tổng hợp (End-to-End Synthetic Restore & Idempotency):**
+  - Khởi tạo stack với database SQLite ở chế độ WAL.
+  - Tạo tài khoản, phiên làm việc, gửi hội thoại dài (>200 tin), thiết lập memory với 2 quyết định (bản ghi đầu `PostgreSQL`, bản ghi sau ghi đè thành `MongoDB`).
+  - Thực hiện sao lưu thông qua SQLite Backup API (`src.backup(dst)`), đảm bảo tính toàn vẹn ACID ngay cả khi database đang mở.
+  - Khôi phục sang thư mục độc lập mới và kiểm tra `PRAGMA integrity_check` trả về `"ok"`.
+  - Khởi động stack trên bản sao lưu đã khôi phục:
+    + Đăng nhập tài khoản thành công.
+    + Lịch sử tin nhắn được đọc đầy đủ và chính xác thứ tự.
+    + Trí nhớ hoạt động chuẩn: Quyết định mới `MongoDB` được trả về, quyết định cũ `PostgreSQL` bị loại trừ chính xác.
+    + Gửi lại request cũ: Hệ thống nhận diện receipt có sẵn, trả về kết quả replay mà không nhân đôi bản ghi mutation.
+- **Cấp độ 2: Dữ liệu cá nhân được bảo vệ (`backup-data-protected/`):**
+  - Thực hiện kiểm tra an toàn ở chế độ chỉ đọc (read-only).
+  - Xác nhận `journal_mode=wal` và `PRAGMA integrity_check` = `"ok"`.
+  - Thống kê an toàn không làm lộ dữ liệu:
+    + `auth.db`: 2 users, 2 sessions.
+    + `memory.db`: 36 messages, 2 memories.
+  - Không dump nội dung hoặc token cá nhân ra log/evidence công khai.
+
+### 6. Thống kê Kiểm thử Tách bạch theo đúng Phạm vi
+
+Tránh gộp các bộ test khác nhau để tránh ngộ nhận:
+
+| Phân hệ kiểm thử | Số lượng test | Trạng thái | Ghi chú phạm vi |
+|---|---|---|---|
+| **Python Unit & Integration** (`pytest`) | **205 passed** | Thành công (105s) | Toàn bộ kiểm thử logic lõi, state, auth, pagination, memory, routing, provider |
+| **Web UI Core Tests** (`node --test`) | **13 passed** | Thành công | Kiểm thử render, XSS protection, giao diện chat |
+| **Web Auth Guard Tests** (`node --test`) | **5 passed** | Thành công | Token expiry, logout state cleanup, late response discarding |
+| **PowerPoint Add-in Mock** (`node --test`) | **8 passed** | Thành công | Unit test kiểm thử taskpane logic với in-memory mock của Office JS API.<br>*(Làm rõ: Mock KHÔNG chứng minh chạy được trên PowerPoint Desktop Office 365)* |
+| **Tổng số JavaScript Tests** | **26 passed** | Thành công (216ms) | Bao gồm 13 Web UI + 5 Web Auth + 8 PowerPoint Mock |
+| **.NET Gateway Tests** | **7 passed** | Thành công | Pagination endpoint, concurrent stream append, identity forwarding |
+| **PowerShell Health Tests** | **6 passed** | Thành công | Khế ước `/health` và `/v1/health` của Gateway và AI API |
+| **Harness Web Auth** (`verify_web_auth.py`) | **5/5 groups** | Thành công | Real Chromium + Gateway + late response discard |
+| **Harness Chat History** (`verify_chat_history.py`) | **6/6 groups** | Thành công | >200 messages pagination, cursor ordering, session isolation |
+| **Harness Memory Reliability** (`verify_memory_reliability.py`) | **10/10 groups** | Thành công | Atomic supersede, isolation, corrupt DB refusal |
+| **Harness Chat Provenance** (`verify_chat_provenance.py`) | **1 test** | Thành công | Real Ollama qwen2.5:0.5b generation + trained router |
+| **Harness Week 4 Web** (`verify_week4_web.py`) | **8/8 tests** | Thành công | Confirmation buttons, XSS safety, mobile 390px, 401 token clear |
+| **Harness Week 4 Runtime** (`verify_week4_runtime.py`) | **19/19 tests** | Thành công | RT-01 đến RT-16, restoration, SHA256 integrity |
+| **Harness Bilingual Generation** (`verify_bilingual_generation.py`) | **13 tests** | 13/13 transport ok, 10/13 lang match | Kiểm thử song ngữ 13 ca trên mô hình thật |
+| **Harness SQLite Backup/Restore** (`verify_sqlite_backup_restore.py`) | **2 levels** | Thành công | Level 1 synthetic restore & idempotency + Level 2 protected check |
+| **Harness Router Diagnostic** (`verify_router_diagnostic.py`) | **11 turns** | Hoàn thành | Đánh giá 11 turns trên `benchmark_v2_ai_diagnostic.jsonl` |
+
+### 7. Ranh giới Bàn giao và Các phần chưa hoàn tất
+
+- **Đã bàn giao và kiểm chứng:**
+  - Demo Web core: Web → Gateway (ASP.NET Core) → FastAPI → Trained router (`router.pt`) → Ollama (`qwen2.5:0.5b`) sinh câu trả lời thật.
+  - Quản lý phiên, lịch sử chat dài (>200 tin) với phân trang cursor mượt mà.
+  - Quản lý trí nhớ dài hạn (ghi nhớ, ghi đè quyết định, loại trừ quyết định cũ).
+  - Cơ chế idempotent retry và khôi phục SQLite backup an toàn.
+- **Ranh giới và Phần chưa hoàn tất:**
+  1. **Khả năng dịch chéo ngôn ngữ của mô hình nhỏ:** `qwen2.5:0.5b` chưa đáp ứng dịch chéo mượt mà khi hỏi bằng tiếng Việt nhưng yêu cầu trả lời tiếng Anh (hoặc ngược lại).
+  2. **Độ chính xác router nơ-ron thuần túy:** Đạt 63.6% Agent và 36.4% Intent/Action trên tập diagnostic; hệ thống đang dựa vào các business rules để bảo vệ độ chính xác nghiệp vụ.
+  3. **PowerPoint Desktop:** Mới kiểm chứng mock in-memory trong Node; chưa nghiệm thu sideload thực tế trên Office 365 Desktop.
+  4. **Môi trường Production diện rộng:** Chưa thực hiện load test hàng ngàn người dùng đồng thời, chưa thiết lập SSL termination và reverse proxy production.
