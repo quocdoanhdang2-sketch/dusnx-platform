@@ -2,6 +2,9 @@
    DUSN-X Design System — Dark, premium, adaptive AI
    ═══════════════════════════════════════════════════════ */
 
+/* Component display rules must not reveal hidden forms or private panels. */
+[hidden] { display: none !important; }
+
 :root {
   --bg-base: #0a0c12;
   --bg-surface: #111520;
