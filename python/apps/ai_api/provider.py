@@ -63,13 +63,16 @@ def check_ollama_health() -> dict:
                 raise ValueError("invalid_schema")
             models = [m["name"] for m in data["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
             available = target_model in models
-            return {
+            health = {
                 "reachable": True,
                 "available": available,
                 "models_available": models,
                 "configured_model": target_model,
                 "model_available": available,
             }
+            if not available:
+                health["error"] = "model_missing"
+            return health
     except Exception as exc:
         return {"reachable": False, "available": False, "error": ollama_error(exc), "model_available": False, "configured_model": target_model}
 

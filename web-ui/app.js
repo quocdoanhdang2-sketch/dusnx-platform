@@ -306,7 +306,13 @@ async function checkProviderHealth() {
     } else {
       const pName = provider.provider || "none";
       const err = provider.error ? `: ${provider.error.slice(0, 45)}` : "";
-      statusEl.textContent = `✕ LLM không khả dụng (${pName}${err})`;
+      if (pName === "ollama" && provider.reachable && provider.model_available === false) {
+        statusEl.textContent = `✕ Ollama đang chạy nhưng chưa có model ${provider.configured_model || "được cấu hình"}`;
+      } else if (pName === "ollama" && provider.error === "unreachable") {
+        statusEl.textContent = "✕ Không kết nối được Ollama; kiểm tra dịch vụ và địa chỉ kết nối";
+      } else {
+        statusEl.textContent = `✕ LLM không khả dụng (${pName}${err})`;
+      }
       statusEl.className = "provider-status err";
     }
   } catch (err) {

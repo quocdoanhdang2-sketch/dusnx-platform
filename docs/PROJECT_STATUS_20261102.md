@@ -106,6 +106,16 @@ chặn, nên harness dùng executable có sẵn với TLS/CSP không bị nới 
 
 ## Còn thiếu và thứ tự tiếp theo
 
+Kiểm tra bổ sung về nghi vấn Ollama chưa mở/cập nhật lỗi:
+Ollama cloud trả HTTP 200 tại `/api/version` (0.40.13), `/api/tags` trả danh sách
+model trống. FastAPI và Gateway trả HTTP 200; router được nạp. Registry trả 200,
+nhưng kết nối domain lưu blob vẫn bị proxy trả 403. Chưa có bằng chứng bản cập
+nhật Ollama hỏng; không thể suy ra trạng thái Windows từ các kết quả cloud này.
+Đã bổ sung `error=model_missing` vào health khi Ollama chạy nhưng thiếu model,
+và thông báo Web riêng cho thiếu model/không kết nối được dịch vụ. Kiểm tra cuối:
+**205 Python tests**, **26 JavaScript tests** đạt. Đối chiếu Chromium với Ollama
+thật ở `runtime/ollama-readiness-check-01/readiness.json`.
+
 1. **Bắt buộc cho nghiệm thu chatbot thật:** tải `qwen2.5:0.5b`. Registry đã trả
    HTTP 200, nhưng domain lưu blob
    `dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com` vẫn bị proxy trả 403.
