@@ -148,3 +148,40 @@ thật ở `runtime/ollama-readiness-check-01/readiness.json`.
 verification harness. Lưu draft không áp dụng network policy hoặc publish snapshot.
 Sau khi gỡ chặn và kiểm chứng generation, người dùng có thể Publish môi trường
 để giữ filesystem đã chuẩn bị; tiến trình dịch vụ phải khởi động lại ở task mới.
+
+## Nghiệm thu thực tế trên máy Windows (02/11/2026)
+
+Môi trường: Windows native (`D:\Projects\dusnx-platform`), Ollama 0.40.13 (`127.0.0.1:11434`),
+.NET 8.0.427, Node v24.20.0, Python 3.12.10 trong `python/.venv`, Playwright Chromium 153.0.8010.12.
+Cổng 8080 thuộc Docker Desktop Task Tracker (PID 8520); nghiệm thu sử dụng cổng độc lập hoặc
+harness `Stack` tự cấp phát cổng trống.
+
+### 1. Đính chính và làm rõ các kết luận trước
+- **Ngôn ngữ generation của `qwen2.5:0.5b`:**
+  - Ở test harness trước (`docs/evidence/chat-provenance/gateway.json`), câu trả lời cho prompt `"Viết hai câu về lợi ích của việc đọc sách."` là:
+    `"1. Reading can improve your vocabulary and comprehension skills.\n2. Reading can enhance your critical thinking and analytical abilities."`
+  - Đây là **tiếng Anh**, không phải tiếng Việt. Việc test đánh dấu "PASSED" chỉ chứng minh transport (`provider_called=true`, `provider_ok=true`, `response_source=llm`), không chứng minh mô hình sinh tiếng Việt.
+  - Phân tích nguyên nhân: Mô hình 0.5B có dung lượng tham số nhỏ; cụm từ "Viết hai câu..." kích hoạt xác suất token tiếng Anh mạnh hơn so với lệnh hệ thống. Trong khi đó, các câu lệnh như `"Viết một câu ngắn về lợi ích đọc sách."` hay `"Lợi ích của việc đọc sách là gì?"` sinh tiếng Việt chuẩn xác (`"Lợi ích đọc sách: Tạo sự thư giãn, tăng cường trí nhớ và cải thiện tư duy."`).
+  - Đã củng cố prompt chỉ thị tiếng Việt rõ ràng trong `python/apps/ai_api/provider.py`.
+- **Dự đoán của router:**
+  - `routing_source=model` chỉ xác nhận router neural network đã thực hiện suy luận (inference), không tự động chứng minh kết quả phân loại là đúng nếu không so khớp với nhãn chuẩn (ground truth).
+- **Cơ chế URL của Web UI:**
+  - Hàm `apiFetch` trong `web-ui/app.js` luôn dùng `window.DUSNX_GATEWAY || ""` (URL tương đối theo origin của trình duyệt). Việc cập nhật hằng số `GATEWAY` trước đây là hoàn thiện nội dung thông báo lỗi khi kết nối thất bại, không phải sửa lỗi sai cổng request.
+- **Bảo toàn dữ liệu ngoài Git:**
+  - Git branch/stash không theo dõi các file trong `.gitignore` (như checkpoint, `python/data/*.db`). Toàn bộ database cá nhân được backup riêng tại `backup-data-protected/`. Checkpoint router `router.pt` được xác minh khớp SHA-256 `56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1`.
+
+### 2. Kết quả kiểm thử thực tế trên Windows
+| Bộ kiểm thử / Harness | Kết quả | Ghi chú |
+|---|---|---|
+| `pytest python/tests -q --tb=short` | **205 passed** | 0 failed, 0 skipped (105s) |
+| `node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js` | **26 passed** | 6 suites, 0 failed (216ms) |
+| `dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release` | **0 errors, 0 warnings** | DLL biên dịch sẵn sàng |
+| `dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release` | **7/7 passed** | Pagination, concurrent append, identity |
+| `powershell scripts/tests/local-health.tests.ps1` | **6/6 passed** | Health contracts |
+| `scripts/verify_web_auth.py` | **5/5 passed** | Real Chromium + real Gateway + late response discard |
+| `scripts/verify_chat_history.py` | **6/6 passed** | >200 messages pagination, cursor ordering, switch sessions |
+| `scripts/verify_memory_reliability.py` | **10/10 passed** | Atomic supersede, isolation, clarifiy, corrupt DB refusal |
+| `scripts/verify_chat_provenance.py` | **passed** | Live Ollama qwen2.5:0.5b generation + trained router |
+| `scripts/verify_week4_web.py` | **8/8 passed** | Confirmation buttons, XSS safety, mobile 390px, 401 token clear |
+| `scripts/verify_week4_runtime.py` | **19/19 passed** | RT-01 to RT-16, restoration, SHA256 integrity |
+| GitHub Actions Run ID `41461886421` | **4/4 jobs succeeded** | Commit `24a26fcb42e35315c9d762e8dea7d957627ce6b1` |

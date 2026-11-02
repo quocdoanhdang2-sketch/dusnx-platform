@@ -117,21 +117,18 @@ class API:
             self.client.close()
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gateway", default="http://127.0.0.1:8080")
-    parser.add_argument("--data-dir", required=True, help="Main acceptance AI DB directory, never a personal DB")
-    parser.add_argument("--output-dir", required=True, help="Must be new")
-    args = parser.parse_args()
-    out = Path(args.output_dir).resolve()
-    out.mkdir(parents=True, exist_ok=False)
+def run_runtime(gateway_url, out, data_dir=None):
+    if data_dir is None:
+        data_dir = out / "primary-stack/ai"
+    else:
+        data_dir = Path(data_dir).resolve()
     report = dict(timestamp_utc=datetime.now(timezone.utc).isoformat(), transport="real_native_http_gateway",
-                  gateway=args.gateway, checks={}, responses={}, failure_processes="isolated_new_databases")
+                  gateway=gateway_url, checks={}, responses={}, failure_processes="isolated_new_databases")
     checks = report["checks"]
     def record(name, r):
         report["responses"][name] = {k: r.get(k) for k in ("reply", "intent", "next_action", "provider_ok", "provider_called",
            "provider_used", "model_used", "response_source", "state_version", "candidate_memory_ids", "prompt_memory_ids", "memory_ids_used")}
-    a, b = API(args.gateway), API(args.gateway)
+    a, b = API(gateway_url), API(gateway_url)
     try:
         health = a.call("GET", "/v1/health")
         report["health"] = {k: health[k] for k in ("service", "api_contract", "runtime_mode", "checkpoint_loaded", "model_loaded", "checkpoint_path", "model_version", "provider_ok", "provider")}
@@ -150,7 +147,7 @@ def main():
         assert replay["message_id"] == first["message_id"] and replay["reply"] == first["reply"]
         assert replay["replayed"] and not replay["provider_called"] and replay["response_source"] == "replay"
         assert len(a.call("GET", "/v1/memories")) == 1
-        db_path = Path(args.data_dir).resolve() / "memory.db"
+        db_path = data_dir / "memory.db"
         with sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro", uri=True) as db:
             row = db.execute("SELECT content,version,is_active FROM memories WHERE memory_id=? AND user_id=?", (mid, uid)).fetchone()
             assert row and "PostgreSQL" in row[0] and row[1:] == (1, 1)
@@ -343,6 +340,22 @@ def main():
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["status"] == "passed" else 1
 
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--gateway", default=None, help="Gateway URL (defaults to spawning isolated primary Stack)")
+    parser.add_argument("--spawn-stack", action="store_true", help="Spawn an isolated local Stack automatically")
+    parser.add_argument("--data-dir", default=None, help="Main acceptance AI DB directory, never a personal DB")
+    parser.add_argument("--output-dir", required=True, help="Must be new")
+    args = parser.parse_args()
+    out = Path(args.output_dir).resolve()
+    out.mkdir(parents=True, exist_ok=False)
+    if args.spawn_stack or not args.gateway:
+        primary_dir = out / "primary-stack"
+        with Stack(primary_dir) as primary_stack:
+            return run_runtime(primary_stack.url, out, data_dir=primary_dir / "ai")
+    else:
+        return run_runtime(args.gateway, out, data_dir=args.data_dir or (ROOT / "runtime/week4-native-ai"))
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
