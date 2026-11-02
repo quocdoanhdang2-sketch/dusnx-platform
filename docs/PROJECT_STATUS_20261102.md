@@ -176,21 +176,30 @@ Cổng 8080 thuộc Docker Desktop (`com.docker.backend.exe`, PID 8520); nghiệ
 | **Lỗi 3: Biến `args` chưa định nghĩa trong harness** | Gọi trực tiếp hàm kiểm thử sau khi tái cấu trúc module. | Biến CLI `args` được tham chiếu bên trong hàm con sau khi tách hàm. | Đổi thành tham số tường minh `gateway` và `data_dir` truyền vào hàm. | Tách biệt gọi hàm nội bộ và gọi qua CLI không phát sinh `NameError`. |
 | **Lỗi 4: Xung đột thư mục `Stack` khi Restore** | Khởi tạo `Stack` trên thư mục đã có file database restore sẵn. | `Stack.__init__` gọi `mkdir(parents=True, exist_ok=False)` nên báo `FileExistsError`. | Khởi tạo instance `Stack(target_dir)` trước để tạo cây thư mục, sau đó copy database đã restore vào `stack.directory / "ai"` rồi mới kích hoạt context manager `with stack:`. | `scripts/verify_sqlite_backup_restore.py` khởi động và kiểm thử stack trên DB khôi phục thành công. |
 | **Lỗi 5: Whitespace vi phạm `git diff --check`** | Chạy `git diff --check` trước khi commit. | Tồn tại dòng trống ở cuối file (trailing newlines) tại `scripts/verify_week4_runtime.py` và `docs/PROJECT_STATUS_20261102.md`. | Dọn dẹp ký tự thừa cuối file để `git diff --check` trả về exit code 0. | `git diff --check` trả về mã 0 sạch hoàn toàn. |
+| **Lỗi 6: Harness song ngữ cộng đếm cứng và lẫn mẫu số** | Soi code `verify_bilingual_generation.py` các ca 11–13. | Ca 11–13 tự cộng dồn `linguistic_matched += 1` mà không phân tích nội dung; ca lỗi provider bị tính vào mẫu số ngôn ngữ; không có exit code khác 0 khi contract fail. | Tách rõ `case_type`, tính summary động từ danh sách case, loại trừ template/provider error khỏi mẫu số ngôn ngữ; thêm exit nonzero khi contract fail hoặc cờ `--strict-language`. | `python/tests/test_harness_contracts.py` (6 tests PASSED). |
+| **Lỗi 7: Backup/restore chưa đối chiếu >200 tin và nguy cơ KeyError** | Soi code `verify_sqlite_backup_restore.py`: kiểm tra `len(messages) >= 3` và truy cập `integrity_passed` khi thư mục protected thiếu. | Kiểm tra `len >= 3` không chứng minh >200 tin hoặc đúng thứ tự qua phân trang cursor; hàm trả `{"status": "skipped"}` thiếu key `integrity_passed` gây `KeyError`. | Sinh chính xác 205 tin nhắn tuần tự, backup SQLite online, restore sang stack mới và duyệt phân trang cursor 3 trang (100, 100, 5) đối chiếu 100% ID và nội dung; chuẩn hóa `integrity_passed: None` khi thiếu thư mục. | Chạy lại `verify_sqlite_backup_restore.py` đạt 205/205 tin nhắn; test regression unit trong `test_harness_contracts.py` đạt. |
 
 ### 3. Đánh giá Song ngữ VI / EN / Auto (13 Ca kiểm thử)
 
 Thực hiện qua `scripts/verify_bilingual_generation.py` với Gateway và Ollama `qwen2.5:0.5b` thật:
 - **Tổng số ca:** 13 ca kiểm thử độc lập bao quát các tương tác.
-- **Transport / Contract:** 13/13 ca đạt (`provider_called=true`, `provider_ok=true`, `response_source=llm`, câu trả lời không rỗng).
-- **Độ tương thích ngôn ngữ nội dung:** 10/13 ca khớp chính xác với ngôn ngữ mong đợi; 3/13 ca xuất hiện bất đồng ngôn ngữ (divergence).
-- **Phân tích ca bất đồng ngôn ngữ (Cross-lingual divergence):**
-  1. `CASE_03_VI_PREF_EN`: Câu hỏi tiếng Việt (`"Giải thích ngắn gọn khái niệm máy học là gì."`) nhưng người dùng cài đặt `preferred_language=en`. Mô hình 0.5B trả lời bằng tiếng Việt thay vì dịch/trả lời bằng tiếng Anh.
-  2. `CASE_04_EN_PREF_VI`: Câu hỏi tiếng Anh (`"What are two key benefits of automated unit testing?"`) nhưng người dùng cài đặt `preferred_language=vi`. Mô hình trả lời bằng tiếng Anh thay vì dịch/trả lời bằng tiếng Việt.
-  3. `CASE_07_AUTO_SHORT_CONTEXT`: Lệnh ngắn phụ thuộc lịch sử ngữ cảnh.
-- **Nguyên nhân kỹ thuật đã xác minh:**
-  Mô hình `qwen2.5:0.5b` (dung lượng tham số ~490M) chịu ảnh hưởng mạnh bởi ngôn ngữ của câu hỏi đầu vào (prior tokens) lấn át chỉ thị ngôn ngữ trong system prompt khi có xung đột chéo giữa ngôn ngữ hỏi và ngôn ngữ đích. Khi ngôn ngữ câu hỏi và preferred_language đồng nhất (VI+VI hoặc EN+EN), mô hình tuân thủ ngôn ngữ rất tốt.
+- **Contract đạt chuẩn bắt buộc:** **13 / 13 ca đạt** (Thất bại: 0).
+- **Phân loại ca kiểm thử rõ ràng:**
+  - **LLM Generation thật thành công:** **9 ca** (Cases 1, 2, 3, 4, 5, 6, 7, 9, 10) — `provider_called=true`, `provider_ok=true`, `model_used=qwen2.5:0.5b`, `response_source=llm`, reply không rỗng.
+  - **Template Recall (trí nhớ, không gọi LLM):** **1 ca** (Case 8) — `response_source=grounded_template`, `provider_called=false`. Không tính vào mẫu số ngôn ngữ LLM.
+  - **Lỗi Provider kỳ vọng (bắt lỗi trung thực):** **2 ca** (Case 12 offline provider, Case 13 missing model) — `provider_ok=false`, `response_source=provider_error`, không lưu assistant message vào DB. Không tính vào mẫu số ngôn ngữ.
+  - **Cô lập cấu hình User:** **1 ca** (Case 11) — User A (en) và User B (vi) độc lập.
+- **Mẫu số đánh giá ngôn ngữ hợp lệ:** **10 ca** (9 LLM generation + 1 user isolation):
+  - **Khớp ngôn ngữ kỳ vọng (Matched):** **7 / 10 ca** (70%).
+  - **Lệch ngôn ngữ (Divergent):** **3 / 10 ca** (30%):
+    1. `CASE_03_VI_PREF_EN`: Hỏi tiếng Việt (`"Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway."`), user yêu cầu `preferred_language=en`. Mô hình trả lời bằng tiếng Việt thay vì tiếng Anh.
+    2. `CASE_04_EN_PREF_VI`: Hỏi tiếng Anh (`"Briefly explain why database indexing improves query performance."`), user yêu cầu `preferred_language=vi`. Mô hình trả lời bằng tiếng Anh thay vì tiếng Việt.
+    3. `CASE_10_DURABLE_MEMORY_PREF_CHANGE`: Lệnh trước đổi sang tiếng Anh, câu sau hỏi tiếng Việt (`"Hãy nêu 2 hệ điều hành phổ biến nhất."`), mô hình trả lời bằng tiếng Việt.
+  - **Chưa xác định rõ (Uncertain):** **0 ca**.
+- **Nhận xét khách quan:**
+  Mô hình `qwen2.5:0.5b` có xu hướng trả lời theo ngôn ngữ của câu hỏi thay vì tuân thủ chỉ thị `preferred_language` khi có xung đột chéo giữa ngôn ngữ hỏi và ngôn ngữ đích (không suy diễn chủ quan về cấu trúc trọng số nội tại). Khi câu hỏi và ngôn ngữ đích đồng nhất, mô hình tuân thủ ngôn ngữ rất tốt.
 - **Tính minh bạch:**
-  Toàn bộ câu trả lời nguyên văn được lưu giữ tại `runtime/bilingual-generation/report.json` và bảng duyệt `runtime/bilingual-generation/review_table.md`. Các ô đánh giá con người được để trống (`[ ] needs_human_review`) để chờ người thật duyệt; không tự gán nhãn AI đánh giá là human review.
+  Toàn bộ câu trả lời nguyên văn được lưu giữ tại `runtime/bilingual-generation-v2/report.json` và bảng duyệt `runtime/bilingual-generation-v2/review_table.md`. Các ô đánh giá con người được để trống (`[ ] needs_human_review`) để chờ người thật duyệt.
 
 ### 4. Đánh giá Router có căn cứ và Ranh giới
 
@@ -214,20 +223,21 @@ Thực hiện qua `scripts/verify_bilingual_generation.py` với Gateway và Oll
 
 - **Cấp độ 1: Dữ liệu tổng hợp (End-to-End Synthetic Restore & Idempotency):**
   - Khởi tạo stack với database SQLite ở chế độ WAL.
-  - Tạo tài khoản, phiên làm việc, gửi hội thoại dài (>200 tin), thiết lập memory với 2 quyết định (bản ghi đầu `PostgreSQL`, bản ghi sau ghi đè thành `MongoDB`).
+  - Tạo tài khoản, phiên làm việc, thiết lập memory với 2 quyết định (bản ghi đầu `PostgreSQL`, bản ghi sau ghi đè thành `MongoDB`).
+  - Tạo một phiên riêng chứa **chính xác 205 tin nhắn tuần tự** với ID và nội dung xác định (`synthetic-history-item-000` đến `204`).
   - Thực hiện sao lưu thông qua SQLite Backup API (`src.backup(dst)`), đảm bảo tính toàn vẹn ACID ngay cả khi database đang mở.
   - Khôi phục sang thư mục độc lập mới và kiểm tra `PRAGMA integrity_check` trả về `"ok"`.
-  - Khởi động stack trên bản sao lưu đã khôi phục:
-    + Đăng nhập tài khoản thành công.
-    + Lịch sử tin nhắn được đọc đầy đủ và chính xác thứ tự.
+  - Khởi động stack mới trên bản sao lưu đã khôi phục:
+    + Đăng nhập tài khoản thành công (`auth_verified_after_restore = true`).
+    + **Duyệt qua 3 trang cursor pagination** (Trang 1: 100 tin, Trang 2: 100 tin, Trang 3: 5 tin), thu thập đủ 205 tin nhắn, khớp 100% ID và nội dung trước backup, không mất hoặc lặp tin nhắn tại ranh giới trang.
     + Trí nhớ hoạt động chuẩn: Quyết định mới `MongoDB` được trả về, quyết định cũ `PostgreSQL` bị loại trừ chính xác.
     + Gửi lại request cũ: Hệ thống nhận diện receipt có sẵn, trả về kết quả replay mà không nhân đôi bản ghi mutation.
 - **Cấp độ 2: Dữ liệu cá nhân được bảo vệ (`backup-data-protected/`):**
-  - Thực hiện kiểm tra an toàn ở chế độ chỉ đọc (read-only).
-  - Xác nhận `journal_mode=wal` và `PRAGMA integrity_check` = `"ok"`.
+  - Thực hiện kiểm tra an toàn ở chế độ chỉ đọc (read-only), an toàn không crash khi thư mục thiếu (trả về `status=skipped`, `integrity_passed=None`).
+  - Khi thư mục có sẵn: xác nhận `journal_mode=wal` và `PRAGMA integrity_check` = `"ok"`.
   - Thống kê an toàn không làm lộ dữ liệu:
-    + `auth.db`: 2 users, 2 sessions.
-    + `memory.db`: 36 messages, 2 memories.
+    + `auth.db`: 21 users, 33 tokens.
+    + `memory.db`: 41 memories, 5 projects, 61 sessions, 246 messages, 20 states, 19 pending decisions, 127 user events, 67 receipts.
   - Không dump nội dung hoặc token cá nhân ra log/evidence công khai.
 
 ### 6. Thống kê Kiểm thử Tách bạch theo đúng Phạm vi
@@ -236,11 +246,11 @@ Tránh gộp các bộ test khác nhau để tránh ngộ nhận:
 
 | Phân hệ kiểm thử | Số lượng test | Trạng thái | Ghi chú phạm vi |
 |---|---|---|---|
-| **Python Unit & Integration** (`pytest`) | **205 passed** | Thành công (105s) | Toàn bộ kiểm thử logic lõi, state, auth, pagination, memory, routing, provider |
-| **Web UI Core Tests** (`node --test`) | **13 passed** | Thành công | Kiểm thử render, XSS protection, giao diện chat |
-| **Web Auth Guard Tests** (`node --test`) | **5 passed** | Thành công | Token expiry, logout state cleanup, late response discarding |
-| **PowerPoint Add-in Mock** (`node --test`) | **8 passed** | Thành công | Unit test kiểm thử taskpane logic với in-memory mock của Office JS API.<br>*(Làm rõ: Mock KHÔNG chứng minh chạy được trên PowerPoint Desktop Office 365)* |
-| **Tổng số JavaScript Tests** | **26 passed** | Thành công (216ms) | Bao gồm 13 Web UI + 5 Web Auth + 8 PowerPoint Mock |
+| **Python Unit & Integration** (`pytest`) | **211 passed** | Thành công (39.15s) | Toàn bộ kiểm thử logic lõi, state, auth, pagination, memory, routing, provider, cộng thêm 6 regression tests mới cho harness contracts |
+| **Web UI Core Tests** (`web-ui/app.test.js`) | **12 passed** (6 suites) | Thành công (115ms) | Kiểm thử render, XSS protection, provider health check |
+| **Web Auth Guard Tests** (`web-ui/auth.test.js`) | **5 passed** | Thành công (85ms) | Token expiry, logout state cleanup, late response discarding |
+| **PowerPoint Add-in Mock** (`powerpoint-addin/taskpane.test.js`) | **9 passed** | Thành công (86ms) | Unit test kiểm thử taskpane logic với in-memory mock của Office JS API.<br>*(Làm rõ: Mock KHÔNG chứng minh chạy được trên PowerPoint Desktop Office 365)* |
+| **Tổng số JavaScript Tests** (`node --test`) | **26 passed** (6 suites) | Thành công (216ms) | 12 Web UI + 5 Web Auth + 9 PowerPoint Mock |
 | **.NET Gateway Tests** | **7 passed** | Thành công | Pagination endpoint, concurrent stream append, identity forwarding |
 | **PowerShell Health Tests** | **6 passed** | Thành công | Khế ước `/health` và `/v1/health` của Gateway và AI API |
 | **Harness Web Auth** (`verify_web_auth.py`) | **5/5 groups** | Thành công | Real Chromium + Gateway + late response discard |
@@ -249,8 +259,8 @@ Tránh gộp các bộ test khác nhau để tránh ngộ nhận:
 | **Harness Chat Provenance** (`verify_chat_provenance.py`) | **1 test** | Thành công | Real Ollama qwen2.5:0.5b generation + trained router |
 | **Harness Week 4 Web** (`verify_week4_web.py`) | **8/8 tests** | Thành công | Confirmation buttons, XSS safety, mobile 390px, 401 token clear |
 | **Harness Week 4 Runtime** (`verify_week4_runtime.py`) | **19/19 tests** | Thành công | RT-01 đến RT-16, restoration, SHA256 integrity |
-| **Harness Bilingual Generation** (`verify_bilingual_generation.py`) | **13 tests** | 13/13 transport ok, 10/13 lang match | Kiểm thử song ngữ 13 ca trên mô hình thật |
-| **Harness SQLite Backup/Restore** (`verify_sqlite_backup_restore.py`) | **2 levels** | Thành công | Level 1 synthetic restore & idempotency + Level 2 protected check |
+| **Harness Bilingual Generation** (`verify_bilingual_generation.py`) | **13 tests** | 13/13 contract ok, 7/10 lang match | 9 LLM generations, 1 template recall, 2 expected provider errors, 1 user isolation |
+| **Harness SQLite Backup/Restore** (`verify_sqlite_backup_restore.py`) | **2 levels** | Thành công | Level 1: 205 tin nhắn phân trang 3 trang khôi phục nguyên vẹn + Level 2: WAL integrity ok |
 | **Harness Router Diagnostic** (`verify_router_diagnostic.py`) | **11 turns** | Hoàn thành | Đánh giá 11 turns trên `benchmark_v2_ai_diagnostic.jsonl` |
 
 ### 7. Ranh giới Bàn giao và Các phần chưa hoàn tất
@@ -259,7 +269,7 @@ Tránh gộp các bộ test khác nhau để tránh ngộ nhận:
   - Demo Web core: Web → Gateway (ASP.NET Core) → FastAPI → Trained router (`router.pt`) → Ollama (`qwen2.5:0.5b`) sinh câu trả lời thật.
   - Quản lý phiên, lịch sử chat dài (>200 tin) với phân trang cursor mượt mà.
   - Quản lý trí nhớ dài hạn (ghi nhớ, ghi đè quyết định, loại trừ quyết định cũ).
-  - Cơ chế idempotent retry và khôi phục SQLite backup an toàn.
+  - Cơ chế idempotent retry và khôi phục SQLite backup an toàn (kiểm chứng trên 205 tin nhắn).
 - **Ranh giới và Phần chưa hoàn tất:**
   1. **Khả năng dịch chéo ngôn ngữ của mô hình nhỏ:** `qwen2.5:0.5b` chưa đáp ứng dịch chéo mượt mà khi hỏi bằng tiếng Việt nhưng yêu cầu trả lời tiếng Anh (hoặc ngược lại).
   2. **Độ chính xác router nơ-ron thuần túy:** Đạt 63.6% Agent và 36.4% Intent/Action trên tập diagnostic; hệ thống đang dựa vào các business rules để bảo vệ độ chính xác nghiệp vụ.

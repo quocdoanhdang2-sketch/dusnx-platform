@@ -2,14 +2,20 @@
 
 Thực hiện kiểm chứng 2 mức độc lập:
 1. Mức 1 (DB tổng hợp đầy đủ):
-   - Tạo user, session, message, active/superseded memory, receipt ID trên Stack đang chạy.
+   - Tạo user, session, chuỗi lịch sử dài (>200 tin nhắn với thứ tự và ID xác định),
+     active/superseded memory, receipt ID trên Stack đang chạy.
    - Backup bằng SQLite Backup API (src.backup(dst)) trong khi service đang hoạt động.
    - Kiểm tra PRAGMA integrity_check trên bản backup.
    - Khôi phục (restore) sang thư mục hoàn toàn mới.
    - Khởi động Stack mới trên dữ liệu khôi phục.
-   - Xác minh auth, session, memory recall (loại bỏ superseded), và tính bất biến của retry (idempotency, không tạo trùng mutation).
+   - Xác minh auth hoạt động sau restore.
+   - Đọc hết các trang lịch sử (cursor pagination), đối chiếu toàn bộ >200 tin nhắn
+     khớp 100% ID và nội dung trước backup, không mất/trùng tin tại ranh giới trang.
+   - Xác minh memory recall (chỉ trả về quyết định active mới, loại bỏ superseded cũ).
+   - Xác minh tính bất biến của retry (idempotency replay, không tạo trùng mutation/tin nhắn/state).
 2. Mức 2 (Dữ liệu bảo vệ / Backup cá nhân):
-   - Kiểm tra tính toàn vẹn (PRAGMA integrity_check, journal_mode WAL) trên bản sao read-only.
+   - Kiểm tra an toàn ở chế độ chỉ đọc (read-only), không làm sập tiến trình nếu thư mục thiếu.
+   - Kiểm tra tính toàn vẹn (PRAGMA integrity_check, journal_mode WAL).
    - Đếm số lượng bản ghi theo bảng mà KHÔNG in hoặc dump nội dung riêng tư.
 """
 from __future__ import annotations
@@ -47,7 +53,9 @@ def verify_synthetic_backup_restore(out_dir: Path) -> dict:
         "backup_integrity_checked": False,
         "restored_stack_started": False,
         "auth_verified_after_restore": False,
-        "session_history_verified": False,
+        "long_history_restored_in_order": False,
+        "total_messages_verified": 0,
+        "pages_fetched": 0,
         "superseded_memory_excluded": False,
         "retry_idempotency_verified": False,
     }
@@ -63,6 +71,8 @@ def verify_synthetic_backup_restore(out_dir: Path) -> dict:
             assert r_log.status_code == 200
             token = r_log.json()["token"]
             headers = {"Authorization": f"Bearer {token}"}
+            me = client.get("/v1/auth/me", headers=headers).json()
+            user_id = me["user_id"]
 
             r_sid = client.post("/v1/sessions", json={"title": "Pre-Backup Session"}, headers=headers)
             assert r_sid.status_code == 201
@@ -90,8 +100,35 @@ def verify_synthetic_backup_restore(out_dir: Path) -> dict:
             }, headers=headers)
             assert r_conf.status_code == 200 and r_conf.json()["intent"] == "decision_update"
 
-            # Perform online backup using SQLite Backup API while service is actively running
+            # Create a dedicated long-history session with exactly 205 messages
+            r_long = client.post("/v1/sessions", json={"title": "Long History 205 msgs"}, headers=headers)
+            assert r_long.status_code == 201
+            long_session_id = r_long.json()["session_id"]
+
+            expected_history_contents = [f"synthetic-history-item-{i:03d}" for i in range(205)]
+            expected_history_ids = [f"msg-{i:04d}" for i in range(205)]
+
+            # Insert 205 deterministic messages directly into active SQLite WAL database
             ai_data_dir = live_stack_dir / "ai"
+            with sqlite3.connect(ai_data_dir / "memory.db") as conn:
+                conn.executemany(
+                    "INSERT INTO chat_messages(message_id,session_id,user_id,role,content,"
+                    "memory_ids_used,created_at) VALUES(?,?,?,?,?,?,?)",
+                    [
+                        (
+                            expected_history_ids[i],
+                            long_session_id,
+                            user_id,
+                            "user",
+                            expected_history_contents[i],
+                            "[]",
+                            f"2026-11-02T10:{i // 60:02d}:{i % 60:02d}+00:00",
+                        )
+                        for i in range(205)
+                    ],
+                )
+
+            # Perform online backup using SQLite Backup API while service is actively running
             for db_name in ("auth.db", "memory.db"):
                 src_path = ai_data_dir / db_name
                 dst_path = backup_dir / db_name
@@ -125,10 +162,33 @@ def verify_synthetic_backup_restore(out_dir: Path) -> dict:
             headers2 = {"Authorization": f"Bearer {token2}"}
             results["auth_verified_after_restore"] = True
 
-            # Verify session history survived restore
-            r_msgs = client.get(f"/v1/sessions/{session_id}/messages", headers=headers2)
-            assert r_msgs.status_code == 200 and len(r_msgs.json()) >= 3
-            results["session_history_verified"] = True
+            # Verify cursor-based pagination over 205 messages across all pages without loss/duplicate
+            collected_messages = []
+            cursor = None
+            pages_count = 0
+
+            while True:
+                url = f"/v1/sessions/{long_session_id}/messages/page?limit=100"
+                if cursor:
+                    url += f"&before={cursor}"
+                r_page = client.get(url, headers=headers2)
+                assert r_page.status_code == 200, f"Failed to get page: {r_page.text}"
+                page_data = r_page.json()
+                batch = page_data["messages"]
+                pages_count += 1
+                collected_messages = batch + collected_messages
+                cursor = page_data.get("next_before")
+                if not cursor:
+                    break
+
+            assert len(collected_messages) == 205, f"Expected 205 messages, got {len(collected_messages)}"
+            assert [m["content"] for m in collected_messages] == expected_history_contents
+            assert [m["message_id"] for m in collected_messages] == expected_history_ids
+            assert pages_count == 3  # Page 1: 100 msgs, Page 2: 100 msgs, Page 3: 5 msgs
+
+            results["long_history_restored_in_order"] = True
+            results["total_messages_verified"] = len(collected_messages)
+            results["pages_fetched"] = pages_count
 
             # Verify memory recall: only active fact (MongoDB) is returned, superseded (PostgreSQL) is excluded
             r_recall = client.post("/v1/chat", json={
@@ -170,18 +230,26 @@ def verify_protected_backup_integrity(protected_dir: Path) -> dict:
     """Level 2: Non-invasive, read-only integrity and schema check on protected backup files."""
     results = {
         "protected_dir": str(protected_dir),
+        "status": "unverified",
         "databases": {},
-        "integrity_passed": True,
+        "integrity_passed": False,
     }
 
     if not protected_dir.is_dir():
-        return {"status": "skipped", "reason": "protected_dir_not_found"}
+        return {
+            "protected_dir": str(protected_dir),
+            "status": "skipped",
+            "reason": "protected_dir_not_found",
+            "integrity_passed": None,
+            "databases": {},
+        }
 
+    all_ok = True
     for db_name in ("auth.db", "memory.db"):
         db_file = protected_dir / db_name
         if not db_file.is_file():
             results["databases"][db_name] = {"present": False}
-            results["integrity_passed"] = False
+            all_ok = False
             continue
 
         conn = sqlite3.connect(f"file:{db_file.as_posix()}?mode=ro", uri=True)
@@ -199,7 +267,7 @@ def verify_protected_backup_integrity(protected_dir: Path) -> dict:
 
             db_ok = (check == "ok")
             if not db_ok:
-                results["integrity_passed"] = False
+                all_ok = False
 
             results["databases"][db_name] = {
                 "present": True,
@@ -211,6 +279,8 @@ def verify_protected_backup_integrity(protected_dir: Path) -> dict:
         finally:
             conn.close()
 
+    results["integrity_passed"] = all_ok
+    results["status"] = "passed" if all_ok else "failed"
     return results
 
 
@@ -218,6 +288,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output-dir", default="runtime/sqlite-backup-restore")
     p.add_argument("--protected-dir", default="backup-data-protected")
+    p.add_argument("--require-protected", action="store_true", help="Fail if protected backup directory is missing")
     args = p.parse_args()
 
     out = Path(args.output_dir).resolve()
@@ -228,12 +299,20 @@ def main():
         "level1_synthetic_backup_restore": verify_synthetic_backup_restore(out),
         "level2_protected_backup_integrity": verify_protected_backup_integrity(Path(args.protected_dir).resolve()),
     }
-    report["status"] = (
-        "passed"
-        if report["level1_synthetic_backup_restore"]["status"] == "passed"
-        and report["level2_protected_backup_integrity"]["integrity_passed"]
-        else "failed"
-    )
+
+    lvl1_ok = (report["level1_synthetic_backup_restore"]["status"] == "passed")
+    lvl2 = report["level2_protected_backup_integrity"]
+
+    if lvl2.get("status") == "skipped":
+        if args.require_protected:
+            report["status"] = "failed"
+            report["status_reason"] = "protected_backup_missing_and_required"
+        else:
+            report["status"] = "passed" if lvl1_ok else "failed"
+            report["status_reason"] = "level1_verified_level2_skipped"
+    else:
+        report["status"] = "passed" if (lvl1_ok and lvl2.get("integrity_passed") is True) else "failed"
+        report["status_reason"] = "level1_and_level2_verified"
 
     (out / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False))

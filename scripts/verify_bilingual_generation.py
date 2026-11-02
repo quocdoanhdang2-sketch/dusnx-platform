@@ -3,9 +3,12 @@
 Tách bạch rõ ràng:
 1. Transport / provider contract (provider_called, provider_ok, model_used, tokens_generated).
 2. Lựa chọn ngôn ngữ trong metadata (preferred_language, detected_language, response_language).
-3. Ngôn ngữ thực tế của câu trả lời (phân tích heuristic ký tự có dấu / từ vựng).
-4. Phân biệt template recall với LLM generation thực tế.
-5. Tạo bảng đánh giá kèm phiếu review độc lập chưa duyệt (needs_human_review).
+3. Ngôn ngữ thực tế của câu trả lời (heuristic phân tích ký tự có dấu / từ vựng; có trạng thái uncertain).
+4. Phân biệt template recall với LLM generation thực tế (template recall không tính vào mẫu số ngôn ngữ LLM).
+5. Phân loại lỗi provider kỳ vọng (không tính vào số generation thành công hoặc tỷ lệ khớp ngôn ngữ).
+6. Tính toán summary chặt chẽ từ danh sách case, không cộng dồn cứng.
+7. Thoát mã lỗi (exit code khác 0) khi có contract/assertion bắt buộc thất bại.
+8. Tạo bảng đánh giá kèm phiếu review độc lập chưa duyệt (needs_human_review).
 """
 from __future__ import annotations
 
@@ -35,7 +38,14 @@ EN_COMMON_WORDS = {"the", "is", "are", "you", "please", "what", "which", "how", 
 def evaluate_text_language(text: str) -> dict:
     """Heuristic assessment of actual text content language."""
     if not text or not text.strip():
-        return {"actual_language": "empty", "confidence": 1.0, "vi_diacritics": 0, "vi_words": 0, "en_words": 0}
+        return {
+            "actual_language": "empty",
+            "confidence": 1.0,
+            "vi_diacritics": 0,
+            "vi_words": 0,
+            "en_words": 0,
+            "method": "heuristic",
+        }
     norm = unicodedata.normalize("NFC", text).casefold()
     words = set(re.findall(r"[\w]+", norm, flags=re.UNICODE))
     diacritics_count = len(VI_DIACRITICS.findall(norm))
@@ -45,6 +55,7 @@ def evaluate_text_language(text: str) -> dict:
     vi_score = diacritics_count * 2 + vi_word_count * 3
     en_score = en_word_count * 3
 
+    # Do not assume lack of Vietnamese diacritics means English
     if vi_score > en_score and vi_score >= 3:
         lang = "vi"
         conf = min(1.0, vi_score / max(1, vi_score + en_score))
@@ -52,7 +63,7 @@ def evaluate_text_language(text: str) -> dict:
         lang = "en"
         conf = min(1.0, en_score / max(1, vi_score + en_score))
     else:
-        lang = "mixed_or_uncertain"
+        lang = "uncertain"
         conf = 0.5
 
     return {
@@ -61,6 +72,48 @@ def evaluate_text_language(text: str) -> dict:
         "vi_diacritics": diacritics_count,
         "vi_words": vi_word_count,
         "en_words": en_word_count,
+        "method": "heuristic",
+    }
+
+
+def compute_bilingual_summary(cases: dict) -> dict:
+    """Calculate summary deterministically from individual case results."""
+    total_cases = len(cases)
+    contract_passed = sum(1 for c in cases.values() if c.get("contract_passed") is True)
+    contract_failed = total_cases - contract_passed
+
+    real_llm_generations = sum(
+        1 for c in cases.values()
+        if c.get("case_type") in ("llm_generation", "verbatim_entities") and c.get("contract_passed") is True
+    )
+    template_recalls = sum(
+        1 for c in cases.values()
+        if c.get("case_type") == "template_recall" and c.get("contract_passed") is True
+    )
+    expected_provider_failures = sum(
+        1 for c in cases.values()
+        if c.get("case_type") == "expected_provider_error" and c.get("contract_passed") is True
+    )
+
+    eligible_language_cases = sum(
+        1 for c in cases.values()
+        if c.get("linguistic_status") in ("matched", "divergent", "uncertain")
+    )
+    linguistic_matched = sum(1 for c in cases.values() if c.get("linguistic_status") == "matched")
+    linguistic_divergent = sum(1 for c in cases.values() if c.get("linguistic_status") == "divergent")
+    linguistic_uncertain = sum(1 for c in cases.values() if c.get("linguistic_status") == "uncertain")
+
+    return {
+        "total_cases": total_cases,
+        "contract_passed": contract_passed,
+        "contract_failed": contract_failed,
+        "real_llm_generations": real_llm_generations,
+        "template_recalls": template_recalls,
+        "expected_provider_failures": expected_provider_failures,
+        "eligible_language_cases": eligible_language_cases,
+        "linguistic_matched": linguistic_matched,
+        "linguistic_divergent": linguistic_divergent,
+        "linguistic_uncertain": linguistic_uncertain,
     }
 
 
@@ -125,14 +178,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         "gateway_url": gateway_url,
         "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
         "cases": {},
-        "summary": {
-            "total_cases": 0,
-            "transport_passed": 0,
-            "linguistic_matched": 0,
-            "linguistic_divergent": 0,
-            "template_recalls": 0,
-            "provider_errors_correctly_reported": 0,
-        },
+        "summary": {},
     }
 
     client = GatewayClient(gateway_url)
@@ -143,6 +189,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         test_cases_spec = [
             {
                 "case_id": "CASE_01_VI_PREF_VI",
+                "case_type": "llm_generation",
                 "objective": "Prompt tiếng Việt, preferred_language=vi. Yêu cầu sinh tiếng Việt.",
                 "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
                 "preferred_language": "vi",
@@ -151,6 +198,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_02_EN_PREF_EN",
+                "case_type": "llm_generation",
                 "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
                 "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
                 "preferred_language": "en",
@@ -159,6 +207,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_03_VI_PREF_EN",
+                "case_type": "llm_generation",
                 "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
                 "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
                 "preferred_language": "en",
@@ -167,6 +216,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_04_EN_PREF_VI",
+                "case_type": "llm_generation",
                 "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
                 "prompt": "Briefly explain why database indexing improves query performance.",
                 "preferred_language": "vi",
@@ -175,6 +225,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_05_AUTO_VI",
+                "case_type": "llm_generation",
                 "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
                 "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
                 "preferred_language": "auto",
@@ -183,6 +234,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_06_AUTO_EN",
+                "case_type": "llm_generation",
                 "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
                 "prompt": "How does public key cryptography secure internet communications?",
                 "preferred_language": "auto",
@@ -191,6 +243,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_07_VERBATIM_ENTITIES",
+                "case_type": "verbatim_entities",
                 "objective": "Bảo toàn tên riêng, ID, URL và mã cấu hình trong câu trả lời.",
                 "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
                 "preferred_language": "vi",
@@ -200,6 +253,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             {
                 "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+                "case_type": "template_recall",
                 "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
                 "setup_prompt": "Hãy nhớ rằng chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
                 "prompt": "Cụm máy chủ chọn công nghệ gì?",
@@ -220,30 +274,53 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             verbatim_reply = res.get("reply", "")
             heuristic = evaluate_text_language(verbatim_reply)
 
-            # Transport validation
+            # Contract validation
             transport_ok = res.get("provider_ok") is True
             if spec["is_llm"]:
-                transport_ok = transport_ok and res.get("provider_called") is True and res.get("response_source") == "llm"
+                transport_ok = (
+                    transport_ok
+                    and res.get("provider_called") is True
+                    and res.get("response_source") == "llm"
+                    and bool(verbatim_reply.strip())
+                    and res.get("model_used") == "qwen2.5:0.5b"
+                )
             else:
-                transport_ok = transport_ok and res.get("provider_called") is False and res.get("response_source") == spec.get("expected_source")
+                transport_ok = (
+                    transport_ok
+                    and res.get("provider_called") is False
+                    and res.get("response_source") == spec.get("expected_source")
+                    and bool(verbatim_reply.strip())
+                )
 
-            # Check substrings if required
+            # Substrings verification
             substrings_ok = True
             for sub in spec.get("required_substrings", []):
                 if sub not in verbatim_reply:
                     substrings_ok = False
 
-            # Linguistic adherence check
+            contract_passed = bool(transport_ok and substrings_ok)
+
+            # Linguistic adherence check (only for LLM generation)
             expected_lang = spec["expected_response_lang"]
             meta_resp_lang = res.get("response_language")
             actual_lang = heuristic["actual_language"]
-            linguistic_match = (actual_lang == expected_lang)
 
-            case_result = {
+            if not spec["is_llm"]:
+                linguistic_status = "not_applicable"
+            elif actual_lang == expected_lang:
+                linguistic_status = "matched"
+            elif actual_lang == "uncertain":
+                linguistic_status = "uncertain"
+            else:
+                linguistic_status = "divergent"
+
+            report["cases"][case_id] = {
                 "case_id": case_id,
+                "case_type": spec["case_type"],
                 "objective": spec["objective"],
                 "prompt": spec["prompt"],
                 "input_preferred_language": spec["preferred_language"],
+                "expected_response_language": expected_lang,
                 "metadata": {
                     "detected_language": res.get("detected_language"),
                     "response_language": meta_resp_lang,
@@ -257,22 +334,10 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 },
                 "verbatim_reply": verbatim_reply,
                 "heuristic_evaluation": heuristic,
-                "transport_passed": transport_ok and substrings_ok,
-                "linguistic_matched": linguistic_match,
+                "contract_passed": contract_passed,
+                "linguistic_status": linguistic_status,
                 "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
             }
-            report["cases"][case_id] = case_result
-
-            # Update summary
-            report["summary"]["total_cases"] += 1
-            if case_result["transport_passed"]:
-                report["summary"]["transport_passed"] += 1
-            if linguistic_match:
-                report["summary"]["linguistic_matched"] += 1
-            else:
-                report["summary"]["linguistic_divergent"] += 1
-            if not spec["is_llm"]:
-                report["summary"]["template_recalls"] += 1
 
         # Case 09: Context-dependent short turn in multi-turn conversation
         case_09_id = "CASE_09_AUTO_SHORT_HISTORY"
@@ -281,11 +346,20 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         res_09 = client.chat(sid_short, "Ưu điểm là gì?", preferred_language="auto")
         reply_09 = res_09.get("reply", "")
         heur_09 = evaluate_text_language(reply_09)
+        c09_passed = (
+            res_09.get("provider_ok") is True
+            and res_09.get("provider_called") is True
+            and res_09.get("response_source") == "llm"
+            and bool(reply_09.strip())
+        )
+        c09_status = "matched" if heur_09["actual_language"] == "vi" else ("uncertain" if heur_09["actual_language"] == "uncertain" else "divergent")
         report["cases"][case_09_id] = {
             "case_id": case_09_id,
+            "case_type": "llm_generation",
             "objective": "Câu ngắn ('Ưu điểm là gì?'), auto detection phải giữ ngữ cảnh tiếng Việt từ lịch sử hội thoại.",
             "prompt": "Ưu điểm là gì?",
             "input_preferred_language": "auto",
+            "expected_response_language": "vi",
             "metadata": {
                 "detected_language": res_09.get("detected_language"),
                 "response_language": res_09.get("response_language"),
@@ -296,31 +370,35 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             "verbatim_reply": reply_09,
             "heuristic_evaluation": heur_09,
-            "transport_passed": res_09.get("provider_ok") is True and res_09.get("response_source") == "llm",
-            "linguistic_matched": heur_09["actual_language"] == "vi",
-            "notes": "Short Vietnamese turn correctly maintained.",
+            "contract_passed": c09_passed,
+            "linguistic_status": c09_status,
+            "notes": "Short Vietnamese turn evaluated against contextual history.",
         }
-        report["summary"]["total_cases"] += 1
-        if report["cases"][case_09_id]["transport_passed"]:
-            report["summary"]["transport_passed"] += 1
-        if report["cases"][case_09_id]["linguistic_matched"]:
-            report["summary"]["linguistic_matched"] += 1
-        else:
-            report["summary"]["linguistic_divergent"] += 1
 
         # Case 10: Language preference durable memory change
         case_10_id = "CASE_10_DURABLE_MEMORY_PREF_CHANGE"
         sid_pref = client.create_session("Memory Pref Change")
         res_cmd = client.chat(sid_pref, "Từ giờ trả lời bằng tiếng Anh nhé", preferred_language="auto")
-        assert res_cmd["intent"] == "set_language_preference" and "English" in res_cmd["reply"]
+        cmd_ok = (res_cmd.get("intent") == "set_language_preference" and "English" in res_cmd.get("reply", ""))
         res_after = client.chat(sid_pref, "Hãy nêu 2 hệ điều hành phổ biến nhất.", preferred_language="auto")
         reply_10 = res_after.get("reply", "")
         heur_10 = evaluate_text_language(reply_10)
+        c10_passed = (
+            cmd_ok
+            and res_after.get("provider_ok") is True
+            and res_after.get("provider_called") is True
+            and res_after.get("response_source") == "llm"
+            and res_after.get("response_language") == "en"
+            and bool(reply_10.strip())
+        )
+        c10_status = "matched" if heur_10["actual_language"] == "en" else ("uncertain" if heur_10["actual_language"] == "uncertain" else "divergent")
         report["cases"][case_10_id] = {
             "case_id": case_10_id,
+            "case_type": "llm_generation",
             "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
             "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
             "input_preferred_language": "auto",
+            "expected_response_language": "en",
             "metadata": {
                 "detected_language": res_after.get("detected_language"),
                 "response_language": res_after.get("response_language"),
@@ -330,17 +408,10 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             },
             "verbatim_reply": reply_10,
             "heuristic_evaluation": heur_10,
-            "transport_passed": res_after.get("provider_ok") is True and res_after.get("response_language") == "en",
-            "linguistic_matched": heur_10["actual_language"] == "en",
+            "contract_passed": c10_passed,
+            "linguistic_status": c10_status,
             "notes": "Memory preference superseded previous setting atomically.",
         }
-        report["summary"]["total_cases"] += 1
-        if report["cases"][case_10_id]["transport_passed"]:
-            report["summary"]["transport_passed"] += 1
-        if report["cases"][case_10_id]["linguistic_matched"]:
-            report["summary"]["linguistic_matched"] += 1
-        else:
-            report["summary"]["linguistic_divergent"] += 1
 
         # Case 11: Two users with distinct language preferences (no leakage)
         case_11_id = "CASE_11_TWO_USERS_LANGUAGE_ISOLATION"
@@ -353,18 +424,38 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         res_a = client.chat(sid_pref, "What is open source software?", preferred_language="auto")
         res_b = user_b.chat(sid_b, "Phần mềm mã nguồn mở là gì?", preferred_language="auto")
 
+        reply_a = res_a.get("reply", "")
+        reply_b = res_b.get("reply", "")
+        heur_a = evaluate_text_language(reply_a)
+        heur_b = evaluate_text_language(reply_b)
+
+        c11_passed = (
+            res_a.get("response_language") == "en"
+            and res_b.get("response_language") == "vi"
+            and res_a.get("provider_ok") is True
+            and res_b.get("provider_ok") is True
+            and bool(reply_a.strip())
+            and bool(reply_b.strip())
+        )
+        both_matched = (heur_a["actual_language"] == "en" and heur_b["actual_language"] == "vi")
+        any_uncertain = (heur_a["actual_language"] == "uncertain" or heur_b["actual_language"] == "uncertain")
+        c11_status = "matched" if both_matched else ("uncertain" if any_uncertain else "divergent")
+
         report["cases"][case_11_id] = {
             "case_id": case_11_id,
+            "case_type": "user_preference_isolation",
             "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+            "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+            "input_preferred_language": "auto",
+            "expected_response_language": "A:en, B:vi",
             "user_a_response_lang": res_a.get("response_language"),
             "user_b_response_lang": res_b.get("response_language"),
-            "transport_passed": res_a.get("response_language") == "en" and res_b.get("response_language") == "vi",
-            "linguistic_matched": True,
-            "notes": "Isolated per-user preference state verified.",
+            "verbatim_reply": f"User A: {reply_a}\n---\nUser B: {reply_b}",
+            "heuristic_evaluation": {"user_a": heur_a, "user_b": heur_b},
+            "contract_passed": c11_passed,
+            "linguistic_status": c11_status,
+            "notes": "Isolated per-user preference state verified via distinct tokens.",
         }
-        report["summary"]["total_cases"] += 1
-        report["summary"]["transport_passed"] += 1
-        report["summary"]["linguistic_matched"] += 1
         user_b.close()
 
     finally:
@@ -379,27 +470,29 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             sid_off = c_off.create_session("Fault Session")
             res_off = c_off.chat(sid_off, "Xin chào DUSN-X")
             msgs = c_off.get_messages(sid_off)
+            c12_passed = (
+                res_off.get("provider_ok") is False
+                and res_off.get("response_source") == "provider_error"
+                and all(m["role"] == "user" for m in msgs)
+            )
             report["cases"][case_12_id] = {
                 "case_id": case_12_id,
+                "case_type": "expected_provider_error",
                 "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+                "prompt": "Xin chào DUSN-X",
+                "input_preferred_language": "auto",
+                "expected_response_language": None,
                 "metadata": {
                     "provider_ok": res_off.get("provider_ok"),
                     "provider_called": res_off.get("provider_called"),
                     "response_source": res_off.get("response_source"),
                 },
                 "verbatim_reply": res_off.get("reply"),
-                "transport_passed": (
-                    res_off.get("provider_ok") is False
-                    and res_off.get("response_source") == "provider_error"
-                    and all(m["role"] == "user" for m in msgs)
-                ),
-                "linguistic_matched": True,
-                "notes": "Offline error properly categorized and isolated.",
+                "heuristic_evaluation": evaluate_text_language(res_off.get("reply", "")),
+                "contract_passed": c12_passed,
+                "linguistic_status": "not_applicable",
+                "notes": "Offline error properly categorized and isolated. Not counted as generation.",
             }
-            report["summary"]["total_cases"] += 1
-            report["summary"]["transport_passed"] += 1
-            report["summary"]["linguistic_matched"] += 1
-            report["summary"]["provider_errors_correctly_reported"] += 1
         finally:
             c_off.close()
 
@@ -411,30 +504,35 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             sid_mis = c_mis.create_session("Fault Missing Model")
             res_mis = c_mis.chat(sid_mis, "Xin chào DUSN-X")
             msgs_mis = c_mis.get_messages(sid_mis)
+            c13_passed = (
+                res_mis.get("provider_ok") is False
+                and res_mis.get("response_source") == "provider_error"
+                and "model_missing" in res_mis.get("reply", "")
+                and all(m["role"] == "user" for m in msgs_mis)
+            )
             report["cases"][case_13_id] = {
                 "case_id": case_13_id,
+                "case_type": "expected_provider_error",
                 "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+                "prompt": "Xin chào DUSN-X",
+                "input_preferred_language": "auto",
+                "expected_response_language": None,
                 "metadata": {
                     "provider_ok": res_mis.get("provider_ok"),
                     "provider_called": res_mis.get("provider_called"),
                     "response_source": res_mis.get("response_source"),
                 },
                 "verbatim_reply": res_mis.get("reply"),
-                "transport_passed": (
-                    res_mis.get("provider_ok") is False
-                    and res_mis.get("response_source") == "provider_error"
-                    and "model_missing" in res_mis.get("reply", "")
-                    and all(m["role"] == "user" for m in msgs_mis)
-                ),
-                "linguistic_matched": True,
-                "notes": "Missing model error cleanly caught.",
+                "heuristic_evaluation": evaluate_text_language(res_mis.get("reply", "")),
+                "contract_passed": c13_passed,
+                "linguistic_status": "not_applicable",
+                "notes": "Missing model error cleanly caught. Not counted as generation.",
             }
-            report["summary"]["total_cases"] += 1
-            report["summary"]["transport_passed"] += 1
-            report["summary"]["linguistic_matched"] += 1
-            report["summary"]["provider_errors_correctly_reported"] += 1
         finally:
             c_mis.close()
+
+    # Calculate summary deterministically from individual cases
+    report["summary"] = compute_bilingual_summary(report["cases"])
 
     # Write JSON report
     (output_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -447,28 +545,32 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         "**Mục đích:** Đánh giá khách quan ngôn ngữ thực tế của mô hình Qwen 2.5 0.5B qua pipeline thật.",
         "**Quy tắc:** Cột `Quyết định Người duyệt (Review)` để trống cho người thẩm định độc lập điền (`approve` / `revise`). Không tự ý điền sẵn quyết định.",
         "",
-        "| Mã ca (Case ID) | Mục tiêu kiểm thử | Prompt đầu vào | Meta Lang | Ngôn ngữ thực tế (Heuristic) | Nội dung câu trả lời thực tế (Trích đoạn) | Quyết định Người duyệt (Review) | Ghi chú người duyệt |",
-        "|---|---|---|---|---|---|:---:|---|",
+        "| Mã ca (Case ID) | Loại ca (Type) | Mục tiêu kiểm thử | Prompt đầu vào | Meta Lang | Ngôn ngữ thực tế (Heuristic) | Đánh giá Heuristic | Nội dung câu trả lời thực tế (Trích đoạn) | Quyết định Người duyệt (Review) | Ghi chú người duyệt |",
+        "|---|---|---|---|---|---|:---:|---|:---:|---|",
     ]
 
     for cid, c in report["cases"].items():
         prompt = c.get("prompt", "N/A").replace("\n", " ")
         meta_lang = c.get("metadata", {}).get("response_language", c.get("input_preferred_language", "N/A"))
         act_lang = c.get("heuristic_evaluation", {}).get("actual_language", "N/A")
-        reply_snip = c.get("verbatim_reply", "").replace("\n", " ").replace("|", "\\|")[:90]
+        status = c.get("linguistic_status", "N/A")
+        reply_snip = (c.get("verbatim_reply") or "").replace("\n", " ").replace("|", "\\|")[:85]
         table_lines.append(
-            f"| `{cid}` | {c['objective']} | {prompt} | `{meta_lang}` | `{act_lang}` | {reply_snip}... | [ ] | needs_human_review |"
+            f"| `{cid}` | `{c['case_type']}` | {c['objective']} | {prompt} | `{meta_lang}` | `{act_lang}` | `{status}` | {reply_snip}... | [ ] | needs_human_review |"
         )
 
     table_lines.extend([
         "",
         "## Tổng kết định lượng:",
         f"- Tổng số ca kiểm thử: **{report['summary']['total_cases']}**",
-        f"- Transport / contract đạt: **{report['summary']['transport_passed']} / {report['summary']['total_cases']}**",
-        f"- Khớp ngôn ngữ kỳ vọng (Heuristic): **{report['summary']['linguistic_matched']} / {report['summary']['total_cases']}**",
-        f"- Lệch ngôn ngữ (Divergent, cần lưu ý): **{report['summary']['linguistic_divergent']}**",
-        f"- Ca recall template (không gọi LLM): **{report['summary']['template_recalls']}**",
-        f"- Ca bắt lỗi ngoại lệ dịch vụ trung thực: **{report['summary']['provider_errors_correctly_reported']}**",
+        f"- Contract đạt chuẩn bắt buộc: **{report['summary']['contract_passed']} / {report['summary']['total_cases']}** (Thất bại: **{report['summary']['contract_failed']}**)",
+        f"- Số ca LLM generation thật thành công: **{report['summary']['real_llm_generations']}**",
+        f"- Số ca Template recall (không gọi LLM): **{report['summary']['template_recalls']}**",
+        f"- Số ca bắt lỗi Provider ngoại lệ đúng chuẩn: **{report['summary']['expected_provider_failures']}**",
+        f"- Số ca đủ điều kiện đánh giá ngôn ngữ: **{report['summary']['eligible_language_cases']}**",
+        f"  + Khớp ngôn ngữ kỳ vọng (Matched): **{report['summary']['linguistic_matched']} / {report['summary']['eligible_language_cases']}**",
+        f"  + Lệch ngôn ngữ (Divergent): **{report['summary']['linguistic_divergent']} / {report['summary']['eligible_language_cases']}**",
+        f"  + Chưa xác định rõ (Uncertain): **{report['summary']['linguistic_uncertain']} / {report['summary']['eligible_language_cases']}**",
     ])
 
     (output_dir / "review_table.md").write_text("\n".join(table_lines), encoding="utf-8")
@@ -480,14 +582,28 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--gateway", default=None, help="Gateway URL (defaults to auto-spawning Stack)")
     p.add_argument("--output-dir", default="runtime/bilingual-generation")
+    p.add_argument("--strict-language", action="store_true", help="Fail if any linguistic divergence occurs")
     args = p.parse_args()
     out = Path(args.output_dir).resolve()
 
     if not args.gateway:
         with Stack(out / "primary_stack") as stack:
-            run_evaluation(stack.url, out)
+            report = run_evaluation(stack.url, out)
     else:
-        run_evaluation(args.gateway, out)
+        report = run_evaluation(args.gateway, out)
+
+    summary = report["summary"]
+    # Fail if any mandatory contract failed
+    if summary["contract_failed"] > 0:
+        print(f"FAILED: {summary['contract_failed']} contract checks failed.")
+        sys.exit(1)
+
+    # Fail if strict language mode requested and there are divergent cases
+    if args.strict_language and summary["linguistic_divergent"] > 0:
+        print(f"FAILED (strict-language): {summary['linguistic_divergent']} linguistic divergences detected.")
+        sys.exit(1)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
