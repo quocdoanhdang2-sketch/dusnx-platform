@@ -1,0 +1,434 @@
+{
+  "timestamp_utc": "2026-11-03T06:12:41.424466+00:00",
+  "gateway_url": "http://127.0.0.1:[redacted-port]",
+  "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
+  "cases": {
+    "CASE_01_VI_PREF_VI": {
+      "case_id": "CASE_01_VI_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=vi. Yêu cầu sinh tiếng Việt.",
+      "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 22,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Dữ liệu, quản lý trí nhớ dài hạn, định tuyến tác vụ qua router đa tác tử.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 16,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_02_EN_PREF_EN": {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
+      "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 159,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Continuous Integration (CI) enhances collaboration and reduces defects by allowing developers to integrate their code changes into a shared repository. This process automatically tests new features against existing ones without manual intervention, reducing errors caused by human error or bugs introduced during development cycles.\n\nKey Benefits:\n1. **Speed**: CI speeds up the software delivery cycle from release candidate (RC) through QA and production.\n2. **Quality Control**: Automated testing ensures that changes are stable before they reach users, improving overall quality of code.\n3. **Reduced Errors**: By integrating new features with existing ones in a single process, it minimizes potential errors introduced during development phases.\n\nIn summary, CI significantly improves the efficiency and reliability of software delivery by automating integration processes and reducing manual intervention costs associated with human error or bugs.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 7,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_03_VI_PREF_EN": {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
+      "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 256,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "API Gateway operates by routing incoming requests to appropriate endpoints based on predefined rules. It then forwards these requests through a series of middleware components, including authentication and authorization mechanisms (such as OAuth 2.0), caching strategies for reducing repeated calls from the same origin server, rate limiting policies to prevent abuse or denial-of-service attacks, error handling procedures that return HTTP status codes indicating issues with API operations, and security measures such as encryption and access controls.\n\nRules:\n- The primary benefit of using an API Gateway is its ability to manage multiple APIs in a single endpoint. This simplifies the process for developers by reducing redundancy.\n- It also provides built-in support for various authentication methods (such as OAuth 2.0) that can be used across different services and applications, enhancing security through secure token exchanges.\n\nRules:\n- The Gateway allows you to define rules on how requests should behave when they reach your API endpoints. These rules are typically expressed in a language called Swagger or OpenAPI.\n- By defining these rules, the Gateway enables developers to control what actions can be taken by their APIs and ensure that only authorized users have access.\n\nRules:\n- The Gateway supports various caching strategies (such as In-Memory Caching) for reducing repeated calls from the same origin server. This helps in",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 14,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_04_EN_PREF_VI": {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
+      "prompt": "Briefly explain why database indexing improves query performance.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 53,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Điều này giúp tăng hiệu suất kiểm tra các yêu cầu và giảm thời gian xử lý dữ liệu. Dữ liệu được sắp xếp theo cách dễ dàng hơn, điều đó có thể cải thiện tốc độ tìm kiếm thông tin trong hệ thống.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 45,
+        "vi_words": 7,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_05_AUTO_VI": {
+      "case_id": "CASE_05_AUTO_VI",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
+      "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 85,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Đảm bảo rằng bạn sử dụng thiết bị và ứng dụng phù hợp với thời gian di chuyển, tránh các ứng dụng công nghệ không cần thiết. Sử dụng chế độ tắt màn hình hoặc bật sáng tối để giảm cảm giác疲倦. Đặt lịch trình cụ thể cho việc làm việc từ xa bằng cách sắp xếp lại ngày của mình theo đúng giờ đồng hồ và đặt mục tiêu hiệu quả hơn.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 75,
+        "vi_words": 9,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_06_AUTO_EN": {
+      "case_id": "CASE_06_AUTO_EN",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
+      "prompt": "How does public key cryptography secure internet communications?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 145,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Public Key Cryptography (PKC) secures Internet Communications by enabling two parties to exchange messages securely. It works through the use of a shared secret called an \"encryption key,\" which is exchanged between both participants before any data can be sent or received.\n\nThe encryption process involves using one party's public key, while another uses their private key for decryption and verification purposes. This ensures that only authorized users with access to the correct keys are able to read messages without being intercepted by unauthorized parties.\n\nPKC also includes mechanisms like digital signatures (where a message is signed) or hash functions (which can be used as authentication codes). These add an extra layer of security, making it more difficult for attackers to forge valid communications.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 10,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_07_VERBATIM_ENTITIES": {
+      "case_id": "CASE_07_VERBATIM_ENTITIES",
+      "case_type": "verbatim_entities",
+      "objective": "Bảo toàn tên riêng, ID, URL và mã cấu hình trong câu trả lời.",
+      "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 62,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "URL: https://api.dusnx.org/v1/auth \nVar: DUSNXPRT = 8088\n\nCâu hỏi: Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 6,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "quality_flags": []
+    },
+    "CASE_08_MEMORY_RECALL_TEMPLATE": {
+      "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+      "case_type": "template_recall",
+      "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
+      "prompt": "Cụm máy chủ chọn công nghệ gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "grounded_template",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "memory_ids_used": [
+          "[redacted-id]"
+        ]
+      },
+      "verbatim_reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 12,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_09_AUTO_SHORT_HISTORY": {
+      "case_id": "CASE_09_AUTO_SHORT_HISTORY",
+      "case_type": "llm_generation",
+      "objective": "Câu ngắn ('Ưu điểm là gì?'), auto detection phải giữ ngữ cảnh tiếng Việt từ lịch sử hội thoại.",
+      "prompt": "Ưu điểm là gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b"
+      },
+      "verbatim_reply": "DUSN-X có ưu điểm lớn như:\n\n1. Quản lý trí nhớ dài hạn (ghi nhớ và cập nhật quyết định cá nhân): Dữ liệu được lưu trữ trong hệ thống, giúp người dùng quản lý lại thông tin.\n\n2. Định tuyến tác vụ qua router đa tác tử: Tác vụ được phân chia thành nhiều đoạn nhỏ để tránh sự nhầm lẫn giữa các đoạn khác nhau.\n\n3. Phân tích dữ liệu: Hệ thống có khả năng thu thập và xử lý dữ liệu từ nhiều nguồn khác nhau, giúp người dùng nắm bắt thông tin tốt hơn.\n\n4. Tích hợp giao diện Web và Office taskpane: Người dùng có thể dễ dàng sử dụng hệ điều hành Windows hoặc macOS trên điện thoại di động để quản trị thiết bị cá nhân của mình.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 130,
+        "vi_words": 8,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Short Vietnamese turn evaluated against contextual history.",
+      "quality_flags": []
+    },
+    "CASE_10_DURABLE_MEMORY_PREF_CHANGE": {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "case_type": "llm_generation",
+      "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
+      "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b"
+      },
+      "verbatim_reply": "The two most popular operating systems are Windows and macOS.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 3,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Memory preference superseded previous setting atomically.",
+      "quality_flags": []
+    },
+    "CASE_11_TWO_USERS_LANGUAGE_ISOLATION": {
+      "case_id": "CASE_11_TWO_USERS_LANGUAGE_ISOLATION",
+      "case_type": "user_preference_isolation",
+      "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+      "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+      "input_preferred_language": "auto",
+      "expected_response_language": "A:en, B:vi",
+      "user_a_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "response_source": "llm"
+      },
+      "user_b_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "response_source": "llm"
+      },
+      "user_a_response_lang": "en",
+      "user_b_response_lang": "vi",
+      "verbatim_reply": "User A: Open-source software (OSS) refers to computer programs where the code and data are available for anyone to use. It allows users or developers to modify and distribute these projects freely without restrictions from copyright holders.\n\nKey features of OSS include:\n\n1. Source Code: The full, unaltered source code is made publicly accessible.\n2. License Terms: Users must adhere to specific terms that define how the software can be used, modified, distributed, etc., ensuring compatibility with other open-source licenses and standards like GPL (GNU General Public License).\n3. Community Engagement: Developers often contribute back into OSS projects through pull requests or forks.\n\nExamples of popular open source applications include:\n\n- Linux\n- Apache HTTP Server\n- Mozilla Firefox\n\nIn summary, open-source software is a model for collaboration where all contributors have equal access to the codebase and can make changes freely without needing permission from copyright holders.\n---\nUser B: Phần mềm mã nguồn mở (Open Source) là một loại phần mềm mà tất cả các tham gia đều có quyền truy cập và chỉnh sửa code, không cần phải chấp nhận bản quyền. Đây là cách tiếp cận tốt hơn cho việc phát triển ứng dụng thông qua Internet vì nó giảm thiểu rủi ro về tính bảo mật của dữ liệu.\n\nTrong trường hợp bạn muốn tạo phần mềm mã nguồn mở, các bước sau có thể giúp bạn thực hiện:\n\n1. Tạo một tài khoản trên trang web Open Source Initiative (OSI).\n2. Cập nhật bản quyền cho ứng dụng.\n3. Chọn ngôn ngữ lập trình và cơ sở dữ liệu phù hợp với mục đích của mình.\n\nĐể tạo phần mềm mã nguồn mở, bạn cần phải:\n- Có ý tưởng sáng suốt\n- Tạo một dự án cụ thể\n- Sử dụng các công nghệ hiện đại như Git để quản lý code\n\nTuy nhiên, việc sử dụng ngôn ngữ lập trình C++ là một lựa chọn tốt vì nó có nhiều cơ sở dữ liệu và giải pháp hỗ trợ khác nhau.",
+      "heuristic_evaluation": {
+        "user_a": {
+          "actual_language": "en",
+          "confidence": 1.0,
+          "vi_diacritics": 0,
+          "vi_words": 0,
+          "en_words": 10,
+          "method": "heuristic"
+        },
+        "user_b": {
+          "actual_language": "vi",
+          "confidence": 1.0,
+          "vi_diacritics": 167,
+          "vi_words": 14,
+          "en_words": 0,
+          "method": "heuristic"
+        }
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Isolated per-user preference state verified via distinct tokens.",
+      "quality_flags": []
+    },
+    "CASE_12_PROVIDER_OFFLINE": {
+      "case_id": "CASE_12_PROVIDER_OFFLINE",
+      "case_type": "expected_provider_error",
+      "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Không kết nối được Ollama (unreachable)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 6,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Offline error properly categorized and isolated. Not counted as generation."
+    },
+    "CASE_13_MODEL_MISSING": {
+      "case_id": "CASE_13_MODEL_MISSING",
+      "case_type": "expected_provider_error",
+      "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Model cấu hình không tồn tại trong Ollama (model_missing)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 5,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Missing model error cleanly caught. Not counted as generation."
+    }
+  },
+  "summary": {
+    "quality_flagged_cases": 0,
+    "total_cases": 13,
+    "contract_passed": 13,
+    "contract_failed": 0,
+    "real_llm_generations": 9,
+    "template_recalls": 1,
+    "expected_provider_failures": 2,
+    "eligible_language_cases": 10,
+    "linguistic_matched": 10,
+    "linguistic_divergent": 0,
+    "linguistic_uncertain": 0
+  }
+}
