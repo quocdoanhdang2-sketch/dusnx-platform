@@ -38,6 +38,11 @@ def get_ollama_model() -> str:
     return os.getenv("DUSNX_OLLAMA_MODEL", "qwen2.5:0.5b").strip()
 
 
+def _ollama_model_tag_matches(configured: str, available: str) -> bool:
+    """Treat an untagged model name as Ollama's implicit ``:latest`` tag only."""
+    return configured == available or (":" not in configured and available == configured + ":latest")
+
+
 def get_ollama_timeout() -> float:
     return float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
 
@@ -64,7 +69,7 @@ def check_ollama_health() -> dict:
             if not isinstance(data, dict) or not isinstance(data.get("models"), list):
                 raise ValueError("invalid_schema")
             models = [m["name"] for m in data["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
-            available = target_model in models
+            available = any(_ollama_model_tag_matches(target_model, name) for name in models)
             health = {
                 "reachable": True,
                 "available": available,

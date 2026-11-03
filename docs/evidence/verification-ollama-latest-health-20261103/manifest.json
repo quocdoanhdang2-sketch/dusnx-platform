@@ -1,0 +1,33 @@
+{
+  "title": "Isolated Ollama implicit latest health regression",
+  "recorded_at_utc": "2026-11-03T14:12:42.170421+00:00",
+  "code_checked": {
+    "base_commit_sha": "a5c9fa5be6fe7c0975f65ceef3129921a1b61556",
+    "dirty_patch_sha256": "a207511d5f5686ca1e9c2aa25dae8e1f5c5d3a35396fa4c8091b16fca5ec6138",
+    "patch_algorithm": "SHA-256 over git diff --binary HEAD bytes",
+    "branch": "fix/ollama-latest-health"
+  },
+  "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_provider_readiness.py -q --basetemp runtime/pytest-main-health-evidence-r2",
+  "working_directory": ".",
+  "exit_code": 0,
+  "result": "5 passed, 1 PytestCacheWarning (cache write access denied); test output is mocked Ollama /api/tags and does not claim live generation.",
+  "behavior_under_test": "Configured untagged model name matches only the same model at implicit :latest; explicit other version remains unavailable.",
+  "scope": "Independent provider health correctness fix; no prompt or generation behavior changed.",
+  "model": "not applicable; test uses synthetic Ollama tags response.",
+  "files": [
+    {
+      "path": "provider-readiness-pytest.log",
+      "source": "runtime/main-health-alias-20261103/run2.log",
+      "source_time_utc": "2026-11-03T14:12:34.293128+00:00",
+      "source_sha256": "6fbc245f912c94e8d924b5d3202ee49ff8d1ca795c58fadb22ba795c8107793f",
+      "evidence_copy_sha256": "6fbc245f912c94e8d924b5d3202ee49ff8d1ca795c58fadb22ba795c8107793f",
+      "git_index_blob_sha256": "6fbc245f912c94e8d924b5d3202ee49ff8d1ca795c58fadb22ba795c8107793f"
+    }
+  ],
+  "limitations": [
+    "Not a live Ollama generation test.",
+    "No full suite run on main; focused provider readiness tests cover the changed helper.",
+    "This evidence was generated on a dirty tree based on the stated base commit, before the evidence commit."
+  ],
+  "hash_notes": "Source and evidence-copy SHA-256 identify exact original and copied bytes; git_index_blob_sha256 hashes the exact staged blob bytes. Manifest does not hash itself."
+}
