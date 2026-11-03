@@ -5,7 +5,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary
+from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion
 from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -101,6 +101,15 @@ def test_language_evaluator_uncertain_does_not_assume_english():
     assert heur["actual_language"] == "uncertain"
     assert heur["vi_words"] == 0
     assert heur["en_words"] == 0
+
+
+def test_completion_uses_finish_reason_and_output_shape_not_budget_alone():
+    assert assess_completion("A complete answer.", "stop", 544, 512)["status"] == "passed"
+    limited_complete = assess_completion("A useful short list item", "length", 512, 512)
+    assert limited_complete["status"] == "uncertain"
+    assert limited_complete["reason"] == "provider_limit_without_clear_truncation"
+    assert assess_completion("This helps in", "length", 512, 512)["status"] == "failed"
+    assert assess_completion("```python\nprint(1)", "stop", 512, 512)["reason"] == "unclosed_code_fence"
 
 
 def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):

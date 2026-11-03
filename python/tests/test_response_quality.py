@@ -338,7 +338,12 @@ def test_completion_assessment_uses_finish_reason_and_budget_as_distinct_evidenc
     assert assess_completion("MongoDB", "stop", 1)["status"] == "passed"
     assert assess_completion("```python\nprint(1)\n```", None, 3)["status"] == "passed"
     assert assess_completion("This helps in", "stop", 4)["status"] == "failed"
-    assert assess_completion("A complete response", "length", 512)["status"] == "failed"
+    limited_but_unambiguously_closed = assess_completion("A complete response.", "length", 512)
+    assert limited_but_unambiguously_closed["status"] == "uncertain"
+    assert limited_but_unambiguously_closed["reason"] == "provider_limit_without_clear_truncation"
+    stopped_at_budget = assess_completion("A complete response.", "stop", 512)
+    assert stopped_at_budget["status"] == "passed"
+    assert stopped_at_budget["reason"] == "provider_reported_stop_at_or_above_token_budget"
     uncertain = assess_completion("A response", None, 512)
     assert uncertain["status"] == "uncertain"
     assert "proof_of_truncation" in uncertain["reason"]

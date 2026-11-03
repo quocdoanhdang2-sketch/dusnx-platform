@@ -46,9 +46,10 @@ class ProviderResult(tuple):
 
 class ProviderCall(tuple):
     """Backward-compatible four-value transport result with finish metadata."""
-    def __new__(cls, text, ok, model, tokens, *, done_reason=None):
+    def __new__(cls, text, ok, model, tokens, *, done_reason=None, diagnostics=None):
         result=super().__new__(cls,(text,ok,model,tokens))
         result.done_reason=done_reason
+        result.diagnostics=diagnostics or {}
         return result
 
 
@@ -136,15 +137,19 @@ def check_ollama_health() -> dict:
 
 def validate_ollama_response(data: object) -> tuple[str, str, Optional[int], Optional[str]]:
     """Require a completed native chat response; reject partial or malformed output."""
-    if not isinstance(data, dict) or data.get("done") is not True:
+    if not isinstance(data, dict):
         raise ValueError("invalid_schema")
+    if data.get("done") is not True:
+        raise ValueError("incomplete_response")
     message = data.get("message")
     model = data.get("model")
     if not isinstance(message, dict) or not isinstance(message.get("content"), str):
         raise ValueError("invalid_schema")
     text = message["content"].strip()
-    if not text or not isinstance(model, str) or not model.strip():
+    if not isinstance(model, str) or not model.strip():
         raise ValueError("invalid_schema")
+    if not text:
+        raise ValueError("empty_content")
     tokens = data.get("eval_count")
     if tokens is not None and (type(tokens) is not int or tokens < 0):
         raise ValueError("invalid_schema")
@@ -161,7 +166,7 @@ def ollama_error(exc: Exception) -> str:
     if isinstance(exc, json.JSONDecodeError):
         return "invalid_json"
     if isinstance(exc, ValueError):
-        return "invalid_schema"
+        return str(exc) if str(exc) in {"invalid_schema", "empty_content", "incomplete_response"} else "invalid_schema"
     if isinstance(exc, (TimeoutError, socket.timeout)):
         return "timeout"
     if isinstance(exc, urllib.error.URLError):
@@ -170,16 +175,12 @@ def ollama_error(exc: Exception) -> str:
 
 
 def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
-    """One native chat attempt. Transport failure must never become a successful reply."""
-    repeat_penalty = float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25"))
-    repeat_last_n = int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64"))
-    temperature = float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1"))
-    num_predict = int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512"))
+    """One native chat attempt with safe provider response diagnostics."""
     options = {
-        "temperature": temperature,
-        "num_predict": num_predict,
-        "repeat_penalty": repeat_penalty,
-        "repeat_last_n": repeat_last_n,
+        "temperature": float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1")),
+        "num_predict": int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512")),
+        "repeat_penalty": float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25")),
+        "repeat_last_n": int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64")),
     }
     context_size = os.getenv("DUSNX_OLLAMA_NUM_CTX")
     if context_size:
@@ -196,19 +197,47 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
     }).encode("utf-8")
     request = urllib.request.Request(get_ollama_url() + "/api/chat", data=payload,
                                      headers={"Content-Type": "application/json"}, method="POST")
+    diagnostics = {"configured_model": get_ollama_model(), "num_predict": options["num_predict"],
+                   "call_timeout_seconds": get_ollama_timeout()}
     try:
         with urllib.request.urlopen(request, timeout=get_ollama_timeout()) as response:
-            data = json.load(response)
+            raw_body = response.read()
+        diagnostics["response_bytes"] = len(raw_body)
+        diagnostics["response_sha256"] = hashlib.sha256(raw_body).hexdigest()
+        data = json.loads(raw_body.decode("utf-8"))
+        if isinstance(data, dict):
+            for key in ("model", "done", "done_reason", "prompt_eval_count", "eval_count",
+                        "total_duration", "load_duration", "prompt_eval_duration", "eval_duration"):
+                value = data.get(key)
+                if value is None or type(value) in (str, int, float, bool):
+                    diagnostics[key] = value
+            message = data.get("message")
+            if isinstance(message, dict):
+                for key in ("content", "thinking"):
+                    value = message.get(key)
+                    if isinstance(value, str):
+                        diagnostics[key + "_chars"] = len(value)
+                        diagnostics[key + "_sha256"] = hashlib.sha256(value.encode("utf-8")).hexdigest()
+                        if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1":
+                            diagnostics[key] = value
         text, model, tokens, done_reason = validate_ollama_response(data)
-        return ProviderCall(text, True, model, tokens, done_reason=done_reason)
+        diagnostics["validation"] = "passed"
+        return ProviderCall(text, True, model, tokens, done_reason=done_reason, diagnostics=diagnostics)
     except Exception as exc:
         category = ollama_error(exc)
-        descriptions = {"model_missing": "Model cấu hình không tồn tại trong Ollama",
-                        "unreachable": "Không kết nối được Ollama", "timeout": "Ollama quá thời gian chờ",
-                        "invalid_json": "Ollama trả dữ liệu không phải JSON",
-                        "invalid_schema": "Ollama trả JSON không đúng hợp đồng"}
-        return ProviderCall(f"[{descriptions.get(category, 'Lỗi dịch vụ Ollama')} ({category})]", False, None, None)
-
+        diagnostics["validation"] = category
+        descriptions = {
+            "model_missing": "Model c\u1ea5u h\u00ecnh kh\u00f4ng t\u1ed3n t\u1ea1i trong Ollama",
+            "unreachable": "Kh\u00f4ng k\u1ebft n\u1ed1i \u0111\u01b0\u1ee3c Ollama",
+            "timeout": "Ollama qu\u00e1 th\u1eddi gian ch\u1edd",
+            "invalid_json": "Ollama tr\u1ea3 d\u1eef li\u1ec7u kh\u00f4ng ph\u1ea3i JSON",
+            "invalid_schema": "Ollama tr\u1ea3 JSON kh\u00f4ng \u0111\u00fang h\u1ee3p \u0111\u1ed3ng",
+            "empty_content": "Ollama tr\u1ea3 n\u1ed9i dung r\u1ed7ng",
+            "incomplete_response": "Ollama ch\u01b0a ho\u00e0n t\u1ea5t ph\u1ea3n h\u1ed3i",
+        }
+        return ProviderCall(f"[{descriptions.get(category, 'Ollama service error')} ({category})]", False,
+                            diagnostics.get("model"), diagnostics.get("eval_count"),
+                            done_reason=diagnostics.get("done_reason"), diagnostics=diagnostics)
 
 def _openai_generate(system_prompt: str, user_message: str) -> ProviderCall:
     """Call OpenAI-compatible API. Returns (text, success, model_used, tokens_generated)."""
@@ -607,6 +636,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
         call_count = 1 if called and did_call else 0
         raw_provider_reply, ok, model_used, tokens_generated = result
         done_reason = getattr(result, "done_reason", None)
+        attempt_diagnostics = getattr(result, "diagnostics", {})
         sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
         text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
         entity_prompt = "" if re.search(
@@ -618,6 +648,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
                 "model_used": model_used,
                 "elapsed_ms": round(attempt_elapsed_ms, 2),
                 "tokens_generated": tokens_generated, "sanitizer_changed": sanitizer_changed,
+                "provider_diagnostics": attempt_diagnostics,
                 "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                 "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
                 "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
@@ -645,12 +676,14 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
                     call_count += 1
                     raw_provider_reply, ok, model_used, tokens_generated = retry_result
                     done_reason = getattr(retry_result, "done_reason", None)
+                    attempt_diagnostics = getattr(retry_result, "diagnostics", {})
                     sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
                     text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
                     assessment = _quality_assessment(entity_prompt, text, response_language) if ok else assessment
                     provider_attempts.append({"attempt": 2, "elapsed_ms": round(retry_elapsed_ms, 2), "called": True,
                         "done_reason": done_reason, "model_used": model_used,
                         "tokens_generated": tokens_generated,
+                        "provider_diagnostics": attempt_diagnostics,
                         "sanitizer_changed": sanitizer_changed,
                         "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                         "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
@@ -678,6 +711,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
             provider_attempts.append({"attempt": 1, "done_reason": done_reason,
                 "elapsed_ms": round(attempt_elapsed_ms, 2), "called": did_call,
                 "model_used": model_used, "tokens_generated": tokens_generated, "sanitizer_changed": False,
+                "provider_diagnostics": attempt_diagnostics,
                 "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                 "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
                 "sanitized_output": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,

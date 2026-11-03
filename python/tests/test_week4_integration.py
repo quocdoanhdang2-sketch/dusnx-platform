@@ -12,7 +12,7 @@ from test_week2_acceptance import isolated_week2_env, client, _register_and_logi
     (b"not json", "invalid_json"),
     (b'[]', "invalid_schema"),
     (b'{"done":true,"model":"qwen","message":{"content":5}}', "invalid_schema"),
-    (b'{"done":false,"model":"qwen","message":{"content":"partial"}}', "invalid_schema"),
+    (b'{"done":false,"model":"qwen","message":{"content":"partial"}}', "incomplete_response"),
 ])
 def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, category):
     calls = []
@@ -21,8 +21,38 @@ def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, cate
         return BytesIO(raw)
     monkeypatch.setattr(provider.urllib.request, "urlopen", response)
     text, ok, model, tokens = provider._ollama_generate("context", "question")
-    assert not ok and model is None and tokens is None and category in text
+    assert not ok and category in text
+    assert model == ("qwen" if b'"model":"qwen"' in raw else None)
     assert len(calls) == 1
+
+
+def test_qwen_thinking_only_response_is_empty_content_with_metadata(monkeypatch):
+    raw = json.dumps({"done": True, "done_reason": "length", "model": "qwen3:4b",
+                      "eval_count": 128, "prompt_eval_count": 42,
+                      "message": {"role": "assistant", "content": "", "thinking": "private reasoning"}}).encode()
+    monkeypatch.delenv("DUSNX_CAPTURE_RAW_GENERATION", raising=False)
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
+    result = provider._ollama_generate("system", "user")
+    assert not result[1] and "empty_content" in result[0]
+    assert result[2:] == ("qwen3:4b", 128)
+    assert result.done_reason == "length"
+    assert "n\u1ed9i dung r\u1ed7ng" in result[0]
+    assert result.diagnostics["thinking_chars"] == len("private reasoning")
+    assert "private reasoning" not in result.diagnostics
+    assert result.diagnostics["num_predict"] == 512
+    assert result.diagnostics["response_sha256"]
+
+
+def test_qwen_content_and_thinking_raw_capture_is_explicit(monkeypatch):
+    raw = json.dumps({"done": True, "done_reason": "stop", "model": "qwen3:4b",
+                      "eval_count": 9, "message": {"content": "Trả lời.", "thinking": "reason"}}).encode()
+    monkeypatch.setenv("DUSNX_CAPTURE_RAW_GENERATION", "1")
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
+    result = provider._ollama_generate("system", "user")
+    assert result[0] == "Trả lời." and result[1]
+    assert result.diagnostics["done_reason"] == "stop"
+    assert result.diagnostics["content"] == "Trả lời."
+    assert result.diagnostics["thinking"] == "reason"
 
 
 def test_provider_http_failure_does_not_expose_secret_url(monkeypatch):

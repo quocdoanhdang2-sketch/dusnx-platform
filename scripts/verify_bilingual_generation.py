@@ -244,17 +244,21 @@ def assess_completion(text: str, done_reason: str | None, tokens: int | None,
                       token_budget: int = 512, provider_ok: bool = True) -> dict:
     if not provider_ok:
         return {"status": "not_applicable", "reason": "provider_not_successful"}
-    if done_reason in {"length", "max_tokens"}:
-        return {"status": "failed", "reason": "provider_reported_token_limit", "done_reason": done_reason}
-    if tokens is not None and tokens >= token_budget:
-        return {"status": "uncertain", "reason": "token_budget_reached_without_proof_of_truncation",
-                "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
     if text.count("```") % 2:
         return {"status": "failed", "reason": "unclosed_code_fence", "done_reason": done_reason}
     # Missing terminal punctuation is deliberately not a failure. Detect only a
     # clearly dangling conjunction/preposition at the actual response boundary.
-    if re.search(r"\b(?:in|of|to|for|and|with|và|của|trong|để|với)$", text.strip(), re.I):
+    if re.search(r"\b(?:in|of|to|for|and|with|v\u00e0|c\u1ee7a|trong|\u0111\u1ec3|v\u1edbi)$", text.strip(), re.I):
         return {"status": "failed", "reason": "dangling_final_clause", "done_reason": done_reason}
+    if done_reason in {"length", "max_tokens"}:
+        return {"status": "uncertain", "reason": "provider_limit_without_clear_truncation",
+                "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
+    if tokens is not None and tokens >= token_budget and done_reason != "stop":
+        return {"status": "uncertain", "reason": "token_budget_reached_without_proof_of_truncation",
+                "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
+    if tokens is not None and tokens >= token_budget:
+        return {"status": "passed", "reason": "provider_reported_stop_at_or_above_token_budget",
+                "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
     return {"status": "passed", "reason": "no_provider_limit_or_obvious_open_clause", "done_reason": done_reason}
 
 
