@@ -1,0 +1,262 @@
+{
+  "timestamp_utc": "2026-11-02T15:50:41.473807+00:00",
+  "checkpoint_path": "D:\\Projects\\dusnx-platform\\training-results\\colab-run-01\\extracted\\dusnx-router-full-01\\router.pt",
+  "dataset_evaluated": "D:\\Projects\\dusnx-platform\\benchmarks\\benchmark_v2_ai_diagnostic.jsonl",
+  "status": "passed",
+  "checkpoint_integrity": {
+    "sha256_match": true,
+    "sha256": "56f56e6d61afc264fb02d690d2872fb3ac5db9749a659c8493fd9d99eab7e7b1",
+    "vocab_size": 16384,
+    "num_intents": 6,
+    "num_agents": 3,
+    "num_actions": 6,
+    "compatibility_ok": true,
+    "strict_load_ok": true,
+    "model_metadata": {
+      "dataset_name": null,
+      "best_val_loss": null,
+      "best_epoch": null,
+      "total_epochs": null
+    }
+  },
+  "model_only_evaluation": {
+    "total_samples": 11,
+    "metrics": {
+      "intent_accuracy": 0.3636,
+      "agent_accuracy": 0.6364,
+      "action_accuracy": 0.3636,
+      "all_three_exact_accuracy": 0.2727,
+      "intent_macro_f1": 0.3278,
+      "agent_macro_f1": 0.5079,
+      "action_macro_f1": 0.3278
+    },
+    "summary_text": "Evaluated 11 diagnostic turns. Intent Accuracy: 36.4%, Agent Accuracy: 63.6%, Action Accuracy: 36.4%. All 3 Heads Exact Match: 27.3%."
+  },
+  "confusion_cases": [
+    {
+      "case_id": "v2-d01-1",
+      "sequence_id": "v2-d01",
+      "step": 1,
+      "query": "Gợi ý cho tôi vài chủ đề hấp dẫn về ứng dụng AI trong quản trị nhân sự để làm workshop.",
+      "platform": "web",
+      "expected": {
+        "intent": "recommendation",
+        "agent": "conversation",
+        "action": "recommend"
+      },
+      "predicted": {
+        "intent": "followup",
+        "agent": "conversation",
+        "action": "clarify"
+      },
+      "confidence": {
+        "intent": 0.707,
+        "agent": 1.0,
+        "action": 0.562
+      },
+      "matches": {
+        "intent": false,
+        "agent": true,
+        "action": false
+      },
+      "notes": "Nguồn D01-1; reviewer chưa duyệt. Không có feedback quan sát được."
+    },
+    {
+      "case_id": "v2-d02-1",
+      "sequence_id": "v2-d02",
+      "step": 1,
+      "query": "Tìm các bài báo gần đây về xu hướng dịch chuyển chuỗi cung ứng khỏi Trung Quốc.",
+      "platform": "web",
+      "expected": {
+        "intent": "research",
+        "agent": "search_rag",
+        "action": "search"
+      },
+      "predicted": {
+        "intent": "chat",
+        "agent": "conversation",
+        "action": "reply"
+      },
+      "confidence": {
+        "intent": 0.69,
+        "agent": 1.0,
+        "action": 0.814
+      },
+      "matches": {
+        "intent": false,
+        "agent": false,
+        "action": false
+      },
+      "notes": "Nguồn D02-1; chỉ kiểm tra routing, không chứng minh bài báo được truy xuất. Reviewer chưa duyệt."
+    },
+    {
+      "case_id": "v2-d02-3",
+      "sequence_id": "v2-d02",
+      "step": 3,
+      "query": "Tôi chưa hiểu lắm, bạn làm rõ thêm tại sao Việt Nam lại nằm trong top 3 đó được không?",
+      "platform": "zalo",
+      "expected": {
+        "intent": "followup",
+        "agent": "conversation",
+        "action": "clarify"
+      },
+      "predicted": {
+        "intent": "chat",
+        "agent": "conversation",
+        "action": "reply"
+      },
+      "confidence": {
+        "intent": 0.814,
+        "agent": 1.0,
+        "action": 0.968
+      },
+      "matches": {
+        "intent": false,
+        "agent": true,
+        "action": false
+      },
+      "notes": "Nguồn D02-3; yêu cầu làm rõ kết quả trước, không tạo summary_text giả. Reviewer chưa duyệt."
+    },
+    {
+      "case_id": "v2-d02-4",
+      "sequence_id": "v2-d02",
+      "step": 4,
+      "query": "Tạo một biểu đồ cột so sánh lợi thế của 3 quốc gia đó vào slide số 4 dựa trên dữ liệu bạn vừa có.",
+      "platform": "powerpoint",
+      "expected": {
+        "intent": "presentation_edit",
+        "agent": "productivity",
+        "action": "edit_slide"
+      },
+      "predicted": {
+        "intent": "summarize",
+        "agent": "productivity",
+        "action": "summarize"
+      },
+      "confidence": {
+        "intent": 0.759,
+        "agent": 0.979,
+        "action": 0.725
+      },
+      "matches": {
+        "intent": false,
+        "agent": true,
+        "action": false
+      },
+      "notes": "Nguồn D02-4; không tạo clarification_text giả. Evaluator không chứng minh dữ liệu biểu đồ có thật; reviewer chưa duyệt."
+    },
+    {
+      "case_id": "v2-d03-1",
+      "sequence_id": "v2-d03",
+      "step": 1,
+      "query": "Bạn tra cứu giúp mình log lỗi hệ thống của ngày hôm qua xem có gì bất thường không.",
+      "platform": "zalo",
+      "expected": {
+        "intent": "research",
+        "agent": "search_rag",
+        "action": "search"
+      },
+      "predicted": {
+        "intent": "research",
+        "agent": "conversation",
+        "action": "search"
+      },
+      "confidence": {
+        "intent": 0.462,
+        "agent": 0.696,
+        "action": 0.514
+      },
+      "matches": {
+        "intent": true,
+        "agent": false,
+        "action": true
+      },
+      "notes": "Nguồn D03-1; chỉ kiểm tra routing. Dự án không chứng minh có kết nối hoặc quyền đọc log thật; reviewer chưa duyệt."
+    },
+    {
+      "case_id": "v2-d03-2",
+      "sequence_id": "v2-d03",
+      "step": 2,
+      "query": "Ý mình là chỉ lọc các lỗi liên quan đến cổng thanh toán (payment gateway) thôi nhé.",
+      "platform": "zalo",
+      "expected": {
+        "intent": "followup",
+        "agent": "conversation",
+        "action": "clarify"
+      },
+      "predicted": {
+        "intent": "summarize",
+        "agent": "conversation",
+        "action": "summarize"
+      },
+      "confidence": {
+        "intent": 0.466,
+        "agent": 0.968,
+        "action": 0.437
+      },
+      "matches": {
+        "intent": false,
+        "agent": true,
+        "action": false
+      },
+      "notes": "Nguồn D03-2; thu hẹp yêu cầu trước bằng latent state, không tạo error_logs giả. Reviewer chưa duyệt."
+    },
+    {
+      "case_id": "v2-s05-diag-1",
+      "sequence_id": "v2-s05-diag",
+      "step": 1,
+      "query": "Tìm hiểu thêm về công nghệ 'RAG' trong AI.",
+      "platform": "web",
+      "expected": {
+        "intent": "research",
+        "agent": "search_rag",
+        "action": "search"
+      },
+      "predicted": {
+        "intent": "chat",
+        "agent": "conversation",
+        "action": "reply"
+      },
+      "confidence": {
+        "intent": 0.557,
+        "agent": 0.947,
+        "action": 0.431
+      },
+      "matches": {
+        "intent": false,
+        "agent": false,
+        "action": false
+      },
+      "notes": "Nguồn S05_Diag-1; chỉ kiểm tra routing. Reviewer chưa duyệt."
+    },
+    {
+      "case_id": "v2-s05-diag-2",
+      "sequence_id": "v2-s05-diag",
+      "step": 2,
+      "query": "Có khóa học nào ngắn hạn về cái này trên Coursera không, recommend vài cái xem nào.",
+      "platform": "web",
+      "expected": {
+        "intent": "recommendation",
+        "agent": "conversation",
+        "action": "recommend"
+      },
+      "predicted": {
+        "intent": "summarize",
+        "agent": "productivity",
+        "action": "summarize"
+      },
+      "confidence": {
+        "intent": 0.663,
+        "agent": 0.632,
+        "action": 0.673
+      },
+      "matches": {
+        "intent": false,
+        "agent": false,
+        "action": false
+      },
+      "notes": "Nguồn S05_Diag-2; nhãn được bàn sau khi xem prediction tập cũ, chỉ dùng post-hoc diagnostic và chưa được reviewer duyệt."
+    }
+  ],
+  "holdout_v3_status": "LOCKED_PRESERVED_NOT_EVALUATED"
+}
