@@ -25,7 +25,7 @@ def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, cate
     assert len(calls) == 1
 
 
-def test_ollama_diagnostics_capture_thinking_only_invalid_schema(monkeypatch):
+def test_ollama_diagnostics_distinguish_thinking_only_budget_empty_content_from_invalid_schema(monkeypatch):
     response = BytesIO(json.dumps({
         "done": True, "done_reason": "length", "model": "qwen3:4b",
         "eval_count": 256, "prompt_eval_count": 91,
@@ -35,12 +35,27 @@ def test_ollama_diagnostics_capture_thinking_only_invalid_schema(monkeypatch):
     result = provider._ollama_generate("synthetic system", "synthetic question")
     text, ok, model, tokens = result
     assert not ok and model is None and tokens is None
-    assert "invalid_schema" in text
+    assert "empty_content" in text
+    assert result.diagnostics["schema_valid"] is True
     assert result.diagnostics["done_reason"] == "length"
     assert result.diagnostics["eval_count"] == 256
     assert result.diagnostics["content_chars"] == 0
     assert result.diagnostics["thinking_chars"] == len("private synthetic reasoning")
+    assert result.diagnostics["response_classification"] == "thinking_only_budget_exhausted"
+    assert result.diagnostics["token_budget_status"] == "reached"
     assert "private synthetic reasoning" not in json.dumps(result.diagnostics)
+
+
+def test_ollama_empty_content_without_budget_metadata_keeps_budget_unknown(monkeypatch):
+    response = BytesIO(json.dumps({
+        "done": True, "done_reason": "stop", "model": "qwen3:4b",
+        "message": {"content": ""},
+    }).encode())
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: response)
+    result = provider._ollama_generate("synthetic system", "synthetic question")
+    assert result.diagnostics["error_category"] == "empty_content"
+    assert result.diagnostics["response_classification"] == "empty_content"
+    assert result.diagnostics["token_budget_status"] == "unknown"
 
 
 @pytest.mark.parametrize("error", [
