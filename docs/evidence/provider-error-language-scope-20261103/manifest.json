@@ -1,0 +1,75 @@
+{
+  "title": "Provider error language scoring correction evidence",
+  "created_utc": "2026-11-03T15:25:22.886956+00:00",
+  "repo": "quocdoanhdang2-sketch/dusnx-platform",
+  "baseline": {
+    "branch": "fix/provider-error-language-scope",
+    "head": "4d75b0f606476467fd5db385f7e52d789c94e1c4",
+    "working_tree": "dirty; two tracked source files modified at run time",
+    "dirty_patch_sha256": "f311f6088deee7cf199b9d6a8971c12175ba0d3a5307c73aceab119eaa231031",
+    "patch_scope": "git diff --binary relative to HEAD; tracked source changes only"
+  },
+  "behavior_scope": "Harness reporting only; no application/model output behavior changes.",
+  "commands": [
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py -q --basetemp runtime/quality-work-20261103/pytest-main-harness-r2",
+      "exit_code": 0,
+      "result": "7 passed",
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "finished_utc": "2026-11-03T15:25:01.023169+00:00",
+      "dirty_patch_sha256": "f311f6088deee7cf199b9d6a8971c12175ba0d3a5307c73aceab119eaa231031",
+      "transcript": "pytest-focused.log"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --basetemp runtime/quality-work-20261103/pytest-main-full",
+      "exit_code": 0,
+      "result": "256 passed",
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "finished_utc": "2026-11-03T15:24:49.533248+00:00",
+      "dirty_patch_sha256": "f311f6088deee7cf199b9d6a8971c12175ba0d3a5307c73aceab119eaa231031",
+      "transcript": "pytest-full.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "dirty_patch_sha256": "f311f6088deee7cf199b9d6a8971c12175ba0d3a5307c73aceab119eaa231031"
+    }
+  ],
+  "tool_versions": {
+    "python": "3.12.10",
+    "pytest": "9.1.1"
+  },
+  "artifacts": [
+    {
+      "path": "pytest-full.log",
+      "source_path": "runtime/quality-work-20261103/pytest-main-full.log",
+      "source_mtime_utc": "2026-11-03T15:24:49.533248+00:00",
+      "source_sha256": "789217d678e93752ef99cec413ca8d30a123c4a051b822b1d03763723a6c7e90",
+      "evidence_file_sha256": "e47f46b2cd70531c2aa893c44c99af31b088227c04a4930e9004ebcd45b8616e",
+      "same_bytes_as_source": false,
+      "normalization": "PowerShell UTF-16LE transcript converted to UTF-8",
+      "git_blob_oid_sha1": "55424ca61ca57ff9195bca67228b215ddbb3471f"
+    },
+    {
+      "path": "pytest-focused.log",
+      "source_path": "runtime/quality-work-20261103/pytest-main-harness-r2.log",
+      "source_mtime_utc": "2026-11-03T15:25:01.023169+00:00",
+      "source_sha256": "1f263868bda57518eb3e295a73c1d61bbbc1a46ab55cb484b5be864e864c3f1f",
+      "evidence_file_sha256": "202f3e71e428e62f23cdbd544be14da7239df0cc2eb0cc3b80d3ac5d81eef985",
+      "same_bytes_as_source": false,
+      "normalization": "PowerShell UTF-16LE transcript converted to UTF-8",
+      "git_blob_oid_sha1": "42e0276f1d0e73ba297f37fd87207df9350af7ba"
+    },
+    {
+      "path": "README.md",
+      "source_path": "generated documentation",
+      "source_mtime_utc": "2026-11-03T15:25:13.223693+00:00",
+      "source_sha256": "355ec1dcdcf51f9c778b5fdaca0b263b9c642add4885ed4b16593fdf19977286",
+      "evidence_file_sha256": "355ec1dcdcf51f9c778b5fdaca0b263b9c642add4885ed4b16593fdf19977286",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "25e575b9faa7a251d175232d4ad54a15e920d1b4"
+    }
+  ],
+  "privacy": "Synthetic test data only; no credentials, database, model weights, or private logs.",
+  "normalization": "Transcript source SHA-256 and UTF-8 evidence SHA-256 are distinct. Git blob SHA-1 IDs record staged normalized bytes for each evidence artifact except this manifest, whose self-hash is intentionally omitted. Git may normalize Markdown line endings."
+}

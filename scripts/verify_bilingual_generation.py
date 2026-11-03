@@ -76,6 +76,35 @@ def evaluate_text_language(text: str) -> dict:
     }
 
 
+def response_language_status(text: str, expected_language: str, *, is_generation: bool,
+                             provider_ok: bool) -> str:
+    """Score language only when a provider produced a successful answer."""
+    if not is_generation or provider_ok is not True:
+        return "not_applicable"
+    actual = evaluate_text_language(text)["actual_language"]
+    if actual == expected_language:
+        return "matched"
+    if actual == "uncertain":
+        return "uncertain"
+    return "divergent"
+
+
+def aggregate_language_status(statuses: list[str]) -> str:
+    """Combine only evaluated outputs; provider errors do not become language failures."""
+    eligible = [status for status in statuses if status != "not_applicable"]
+    if not eligible:
+        return "not_applicable"
+    if len(eligible) == 1:
+        return eligible[0]
+    if all(status == "matched" for status in eligible):
+        return "matched"
+    if "uncertain" in eligible:
+        return "uncertain"
+    if "matched" in eligible and any(status == "divergent" for status in eligible):
+        return "mixed"
+    return "divergent"
+
+
 def generation_contract(response: dict, expected_model: str = "qwen2.5:0.5b") -> bool:
     """The same live-generation contract is used by every generation case."""
     reply = response.get("reply")
@@ -357,14 +386,10 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             meta_resp_lang = res.get("response_language")
             actual_lang = heuristic["actual_language"]
 
-            if not spec["is_llm"]:
-                linguistic_status = "not_applicable"
-            elif actual_lang == expected_lang:
-                linguistic_status = "matched"
-            elif actual_lang == "uncertain":
-                linguistic_status = "uncertain"
-            else:
-                linguistic_status = "divergent"
+            linguistic_status = response_language_status(
+                verbatim_reply, expected_lang, is_generation=spec["is_llm"],
+                provider_ok=res.get("provider_ok") is True,
+            )
 
             report["cases"][case_id] = {
                 "case_id": case_id,
@@ -399,7 +424,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         reply_09 = res_09.get("reply", "")
         heur_09 = evaluate_text_language(reply_09)
         c09_passed = generation_contract(res_09)
-        c09_status = "matched" if heur_09["actual_language"] == "vi" else ("uncertain" if heur_09["actual_language"] == "uncertain" else "divergent")
+        c09_status = response_language_status(reply_09, "vi", is_generation=True,
+                                               provider_ok=res_09.get("provider_ok") is True)
         report["cases"][case_09_id] = {
             "case_id": case_09_id,
             "case_type": "llm_generation",
@@ -433,7 +459,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         heur_10 = evaluate_text_language(reply_10)
         c10_passed = (cmd_ok and generation_contract(res_after)
                       and res_after.get("response_language") == "en")
-        c10_status = "matched" if heur_10["actual_language"] == "en" else ("uncertain" if heur_10["actual_language"] == "uncertain" else "divergent")
+        c10_status = response_language_status(reply_10, "en", is_generation=True,
+                                               provider_ok=res_after.get("provider_ok") is True)
         report["cases"][case_10_id] = {
             "case_id": case_10_id,
             "case_type": "llm_generation",
@@ -481,9 +508,12 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             and bool(reply_a.strip())
             and bool(reply_b.strip())
         )
-        both_matched = (heur_a["actual_language"] == "en" and heur_b["actual_language"] == "vi")
-        any_uncertain = (heur_a["actual_language"] == "uncertain" or heur_b["actual_language"] == "uncertain")
-        c11_status = "matched" if both_matched else ("uncertain" if any_uncertain else "divergent")
+        c11_status = aggregate_language_status([
+            response_language_status(reply_a, "en", is_generation=True,
+                                     provider_ok=res_a.get("provider_ok") is True),
+            response_language_status(reply_b, "vi", is_generation=True,
+                                     provider_ok=res_b.get("provider_ok") is True),
+        ])
 
         report["cases"][case_11_id] = {
             "case_id": case_11_id,
