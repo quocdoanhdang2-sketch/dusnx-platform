@@ -17,6 +17,13 @@ def test_both_topics_does_not_select_a_third_unrelated_memory():
     assert "thứ sáu" not in answer
 
 
+def test_translation_with_url_query_and_config_is_not_misclassified_as_memory_question():
+    from apps.ai_api.grounding import is_memory_question, memory_answer_with_selection
+    prompt = "Translate to English: Dùng callback https://login.example.dev/oauth/callback?client_id=acme&scope=read với biến AUTH_REDIRECT_PORT=9443."
+    assert not is_memory_question(prompt)
+    assert memory_answer_with_selection(prompt, [])[0] is None
+
+
 def setup_user(client,name):
     _,token=_register_and_login(client,name)
     h={"Authorization":f"Bearer {token}"}
