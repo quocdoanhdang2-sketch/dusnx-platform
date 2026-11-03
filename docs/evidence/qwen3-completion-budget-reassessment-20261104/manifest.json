@@ -1,0 +1,29 @@
+{
+  "evidence_kind": "offline post-hoc evaluator reassessment; no generation run",
+  "source_report": {
+    "path": "docs/evidence/qwen3-invalid-schema-followup-20261104/gateway-qwen3-num-predict-1024-final-report.json",
+    "code_sha": "3747cbdaf4af9d8ea0ba7920c18c8bebf118cbe4",
+    "sha256": "ff1329444d3182e22a8441565b805ac16b1eefa2414d14997c5181653b03a825"
+  },
+  "reassessment_code_base_sha": "002f5a8959625b0012d8526eb6a241efd8b2e7c0",
+  "dirty_harness_test_patch_sha256": "1295909f82aad538af3066838840e83c24cbe6287adaae9570e81cd0b37350c0",
+  "source_time": "2026-11-04 Asia/Saigon; exact reassessment invocation time unknown",
+  "command": "PowerShell here-string piped to python/.venv/Scripts/python.exe -; offline JSON load and evaluate_case_output; no network/model request",
+  "exit_code": 0,
+  "artifacts": [
+    {
+      "path": "reassessment.json",
+      "source": "offline computation from the saved source report",
+      "time_local": "2026-11-04 Asia/Saigon",
+      "sha256": "19ce31f609662cb65bfeaed5084ccca89b35afb0a7f86588a3de447cf553ab07"
+    },
+    {
+      "path": "README.md",
+      "source": "authored explanation of reassessment.json",
+      "time_local": "2026-11-04 Asia/Saigon",
+      "sha256": "740a3640fc212c21c34d3141f449e418c4a989621d6631647e61ca2737b4f7fd"
+    }
+  ],
+  "manifest_self_hash": "not included; recursive",
+  "privacy": "Raw prompt and generated response text are not repeated in the reassessment artifact. Source report already contains synthetic-case raw outputs; this file includes only case IDs and status/metadata."
+}
