@@ -1,0 +1,208 @@
+{
+  "timestamp_utc": "2026-11-03T15:14:52.707209+00:00",
+  "gateway": "http://127.0.0.1:65314",
+  "expected_model": "dusnx-vi-candidate:latest",
+  "expected_model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+  "model_identity": {
+    "name": "dusnx-vi-candidate:latest",
+    "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+    "parameter_size": "494.03M",
+    "quantization_level": "F16",
+    "size_bytes": 994169232
+  },
+  "status": "provider_quality_rejected",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "4e16e917335f48fd5e524b8898c201d4",
+        "987360e1f886793e50ec9ab60ceaf891"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "4e16e917335f48fd5e524b8898c201d4"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "987360e1f886793e50ec9ab60ceaf891",
+        "4e16e917335f48fd5e524b8898c201d4"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "987360e1f886793e50ec9ab60ceaf891"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "4e16e917335f48fd5e524b8898c201d4",
+        "987360e1f886793e50ec9ab60ceaf891"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "4e16e917335f48fd5e524b8898c201d4",
+        "987360e1f886793e50ec9ab60ceaf891"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "4e16e917335f48fd5e524b8898c201d4",
+        "987360e1f886793e50ec9ab60ceaf891"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "llm": {
+      "reply": "[Provider output failed quality validation (repeated_lines)]",
+      "raw_provider_reply": "Lợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm",
+      "provider_sanitized_reply": "Lợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm",
+      "candidate_memory_ids": [
+        "4e16e917335f48fd5e524b8898c201d4",
+        "987360e1f886793e50ec9ab60ceaf891"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "provider_call_count": 2,
+      "response_source": "provider_error",
+      "provider_ok": false,
+      "provider_used": "ollama",
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": "length",
+      "sanitizer_changed": false,
+      "raw_output_sha256": "58185a337517ab679e4ded6029ce96f317e9be38a7276e0ff6564117c530c13c",
+      "quality_status": "failed",
+      "provider_elapsed_ms": 10016.00000000326,
+      "provider_attempts": [
+        {
+          "attempt": 1,
+          "done_reason": "stop",
+          "model_used": "dusnx-vi-candidate:latest",
+          "elapsed_ms": 2657.0,
+          "tokens_generated": 30,
+          "sanitizer_changed": false,
+          "raw_output_sha256": "e25d9706966ef086654f37b54360e09d3a1a9c519dd1456defa9f29eaeb40e1a",
+          "raw_provider_reply": "1. Reading books can enhance cognitive abilities and broaden horizons.\n2. Engaging in reading activities improves memory retention and enhances critical thinking skills.",
+          "sanitized_output": "1. Reading books can enhance cognitive abilities and broaden horizons.\n2. Engaging in reading activities improves memory retention and enhances critical thinking skills.",
+          "quality_status": "divergent",
+          "entity_status": "not_applicable",
+          "repetition_flags": []
+        },
+        {
+          "attempt": 2,
+          "elapsed_ms": 7344.0,
+          "called": true,
+          "done_reason": "length",
+          "model_used": "dusnx-vi-candidate:latest",
+          "tokens_generated": 512,
+          "sanitizer_changed": false,
+          "raw_output_sha256": "58185a337517ab679e4ded6029ce96f317e9be38a7276e0ff6564117c530c13c",
+          "raw_provider_reply": "Lợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm",
+          "sanitized_output": "Lợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm lý do mất thời gian để làm việc hoặc chơi game.\n\nLợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra sự hiểu biết sâu sắc về văn hóa và lịch sử.\n2. Cải thiện khả năng tư duy logic, giải quyết vấn đề thông qua quá trình học hỏi từ các tác phẩm.\n3. Giảm căng thẳng tâm",
+          "quality_status": "matched",
+          "entity_status": "not_applicable",
+          "repetition_flags": [
+            "repeated_lines"
+          ]
+        }
+      ],
+      "token_budget": null
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  },
+  "generation_evaluation": {
+    "status": "provider_quality_rejected",
+    "transport_status": "passed",
+    "actual_model": "dusnx-vi-candidate:latest",
+    "language_evaluation": {
+      "status": "not_applicable",
+      "reason": "provider_not_successful"
+    },
+    "language_status": "not_applicable",
+    "completion_evaluation": {
+      "status": "not_applicable",
+      "reason": "provider_not_successful"
+    },
+    "task_status": "uncertain",
+    "task_review": "not_evaluated",
+    "application_quality_status": "rejected",
+    "provider_call_count": 2
+  },
+  "transport_status": "passed",
+  "language_status": "not_applicable",
+  "completion_status": "not_applicable",
+  "task_status": "uncertain"
+}

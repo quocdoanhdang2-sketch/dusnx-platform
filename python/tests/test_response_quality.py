@@ -18,6 +18,7 @@ from scripts.verify_bilingual_generation import (
     evaluation_exit_code,
     verify_ollama_model_identity,
 )
+from scripts.verify_chat_provenance import assess_generation_provenance
 
 
 @pytest.fixture
@@ -61,6 +62,23 @@ def test_mixed_script_is_not_accepted_as_vietnamese_but_code_and_quotes_are_exem
     assert assess_response_language(code, "vi")["status"] == "matched"
     assert assess_response_language("It's a useful approach. It improves reliability.", "en")["status"] == "matched"
     assert assess_response_language("Dùng ký hiệu π trong công thức.", "vi")["status"] == "matched"
+
+
+def test_language_detector_flags_a_foreign_prose_segment_without_penalizing_code_or_names():
+    mixed = (
+        "The API Gateway routes requests to the backend and controls access.\n"
+        "Lợi ích của API Gateway bao gồm quản lý tập trung.\n"
+        "It also supports shared authentication controls."
+    )
+    result = assess_response_language(mixed, "en")
+    assert result["status"] == "mixed"
+    assert result["mixed_language_segments"] == 1
+    assert assess_response_language(
+        "The API Gateway centralizes request routing.\nSet `Lợi ích của nó` only as the literal example.", "en"
+    )["status"] == "matched"
+    assert assess_response_language(
+        "Designed by Nguyễn Văn A for API Gateway.", "en"
+    )["status"] == "matched"
 
 
 def test_entity_check_discards_prompt_echo_and_detects_similar_key_mutation():
@@ -328,6 +346,7 @@ def test_completion_assessment_uses_finish_reason_and_budget_as_distinct_evidenc
 
 def test_ollama_finish_reason_and_configured_token_budget_are_reported(monkeypatch):
     monkeypatch.setenv("DUSNX_OLLAMA_NUM_PREDICT", "640")
+    monkeypatch.setenv("DUSNX_OLLAMA_NUM_CTX", "4096")
     requests = []
 
     def response(request, timeout):
@@ -341,6 +360,7 @@ def test_ollama_finish_reason_and_configured_token_budget_are_reported(monkeypat
     assert result[1:] == (True, "qwen-test", 640)
     assert result.done_reason == "length"
     assert requests[0]["options"]["num_predict"] == 640
+    assert requests[0]["options"]["num_ctx"] == 4096
 
 
 def test_generation_prompt_uses_recent_context_without_product_blurb(monkeypatch):
@@ -468,6 +488,77 @@ def test_contextless_ambiguous_followup_requests_clarification(client, monkeypat
     assert response.json()["response_source"] == "clarification"
     assert response.json()["provider_called"] is False
     assert calls == []
+
+
+def test_context_clarification_contract_is_passed_without_claiming_topic_answer():
+    result = evaluate_case_output(
+        "Ưu điểm là gì?", "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?", "vi",
+        "application_clarification",
+        {"response_source": "clarification", "provider_called": False},
+        {"kind": "context_subject", "subject_terms": ["microservices", "distributed systems"],
+         "forbidden_terms": ["uptane", "dusn-x"]},
+    )
+    assert result["task"]["status"] == "passed"
+    assert result["task"]["method"] == "application_clarification_contract"
+    assert result["task"]["topic_answered"] is False
+    assert result["task"]["clarification"] is True
+
+
+def test_context_keyword_alone_stays_uncertain_and_predeclared_false_claim_fails():
+    topic_only = evaluate_case_output(
+        "What are ECC's advantages?", "ECC is the current topic and may be useful.", "en",
+        "llm_generation", {"provider_called": True, "provider_ok": True},
+        {"kind": "context_subject", "subject_terms": ["ECC"], "forbidden_terms": [],
+         "factual_red_flags": [{"id": "direct_password_encryption",
+                                "pattern": r"(?i)encryption.{0,20}passwords?"}]},
+    )
+    assert topic_only["task"]["status"] == "uncertain"
+    false_claim = evaluate_case_output(
+        "Nó có ưu điểm gì?", "ECC is an encryption method for passwords and is more secure than RSA.", "en",
+        "llm_generation", {"provider_called": True, "provider_ok": True},
+        {"kind": "context_subject", "subject_terms": ["ECC", "elliptic curve"], "forbidden_terms": [],
+         "factual_red_flags": [{"id": "direct_password_encryption",
+                                "pattern": r"(?i)encryption.{0,20}passwords?"}]},
+    )
+    assert false_claim["task"]["status"] == "failed"
+    assert false_claim["task"]["factual_red_flags"] == ["direct_password_encryption"]
+
+
+def test_provenance_separates_provider_transport_language_and_application_quality():
+    rejected = assess_generation_provenance({
+        "provider_called": True, "provider_call_count": 2, "provider_used": "ollama",
+        "provider_ok": False, "response_source": "provider_error", "quality_status": "failed",
+        "model_used": None, "provider_sanitized_reply": "The useful outcome is better feedback.",
+        "provider_attempts": [
+            {"attempt": 1, "called": True, "model_used": "qwen-test", "done_reason": "stop"},
+            {"attempt": 2, "called": True, "model_used": "qwen-test", "done_reason": "stop"},
+        ],
+    }, "qwen-test", "vi")
+    assert rejected["transport_status"] == "passed"
+    assert rejected["language_status"] == "not_applicable"
+    assert rejected["application_quality_status"] == "rejected"
+    assert rejected["task_status"] == "uncertain"
+    assert rejected["status"] == "provider_quality_rejected"
+
+    accepted_transport_only = assess_generation_provenance({
+        "provider_called": True, "provider_call_count": 1, "provider_used": "ollama",
+        "provider_ok": True, "response_source": "llm", "provider_sanitized_reply": "Đây là câu trả lời.",
+        "provider_attempts": [{"attempt": 1, "called": True, "model_used": "qwen-test", "done_reason": "stop"}],
+    }, "qwen-test", "vi")
+    assert accepted_transport_only["status"] == "transport_and_language_passed_task_unverified"
+    assert accepted_transport_only["task_status"] == "uncertain"
+
+
+def test_provider_error_text_is_not_scored_as_generated_language_or_task():
+    result = evaluate_case_output(
+        "Explain API Gateway.", "Ollama returned invalid_schema", "vi",
+        "llm_generation", {"provider_called": True, "provider_ok": False,
+                           "response_source": "provider_error"},
+        {"kind": "open_ended", "rubric_id": "api_gateway_v1", "criteria": []},
+    )
+    assert result["language"]["status"] == "not_applicable"
+    assert result["task"]["status"] == "not_applicable"
+    assert result["completion"]["status"] == "not_applicable"
 
 
 def test_ambiguous_followup_after_multiple_user_topics_clarifies(client, monkeypatch):

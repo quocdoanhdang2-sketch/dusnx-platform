@@ -5,7 +5,11 @@ import re
 import unicodedata
 
 SUPPORTED = {"auto", "vi", "en"}
-VI_WORDS = {"bạn", "tôi", "mình", "là", "và", "không", "có", "hãy", "đang", "đã", "muốn", "trả", "lời", "bằng", "tiếng"}
+VI_WORDS = {
+    "bạn", "tôi", "mình", "là", "và", "không", "có", "hãy", "đang", "đã", "muốn",
+    "trả", "lời", "bằng", "tiếng", "của", "trong", "với", "này", "các", "những",
+    "được", "cho", "về", "nó", "một", "những", "để", "từ", "khi", "thì",
+}
 EN_WORDS = {
     "the", "is", "are", "you", "please", "what", "which", "how", "why", "where", "when",
     "answer", "english", "vietnamese", "from", "now", "briefly", "explain", "database",
@@ -68,7 +72,31 @@ def _natural_language_text(text: str) -> str:
     text = re.sub(r"https?://\S+|\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", " ", text)
     # Quoted source text, labels, and proper names are not evidence of the prose language.
     text = re.sub(r"“[^”]*”|‘[^’]*’|\"[^\"]*\"|(?<!\w)'[^'\n]{2,}'(?!\w)", " ", text)
+    # Names following common attribution phrases are not prose-language samples.
+    text = re.sub(
+        r"(?i)(?:(?<=\bby )(?:[A-ZÀ-Ỵ][\w'’-]*\s+){1,}[A-ZÀ-Ỵ][\w'’-]*|"
+        r"(?<=\bbởi )(?:[A-ZÀ-Ỵ][\w'’-]*\s+){1,}[A-ZÀ-Ỵ][\w'’-]*)",
+        " ", text,
+    )
     return text
+
+
+def _confident_segment_language(segment: str) -> str | None:
+    """Return a prose language only when one language has several independent signals."""
+    normalized = unicodedata.normalize("NFC", segment).casefold()
+    words = set(re.findall(r"[\w]+", normalized, flags=re.UNICODE))
+    vi_marks = len(VI_DIACRITICS.findall(normalized))
+    vi_words = len(words & VI_WORDS)
+    en_words = len(words & EN_WORDS)
+    vi_score = vi_marks * 2 + vi_words
+    en_score = en_words
+    # Requiring multiple signals reduces false positives from product names,
+    # short headings, and isolated technical terms.
+    if vi_score >= 5 and vi_score > en_score and (vi_words >= 1 or vi_marks >= 6):
+        return "vi"
+    if en_words >= 3 and en_score >= vi_score + 3:
+        return "en"
+    return None
 
 
 def assess_response_language(text: str, expected: str) -> dict:
@@ -86,12 +114,21 @@ def assess_response_language(text: str, expected: str) -> dict:
     scripts = {name: count for name, count in scripts.items() if count >= 2}
     scripts = {name: count for name, count in scripts.items() if count}
     latin_letters = len(re.findall(r"[A-Za-zÀ-ɏ]", prose))
+    segments = [part.strip() for part in re.split(r"(?:\r?\n|(?<=[.!?])\s+)", prose) if part.strip()]
+    segment_languages = [language for part in segments
+                         if (language := _confident_segment_language(part)) is not None]
+    has_expected_segment = expected in segment_languages
+    has_other_segment = any(language in {"vi", "en"} and language != expected
+                            for language in segment_languages)
+    mixed_segments = bool(has_expected_segment and has_other_segment)
 
     if scripts and latin_letters:
         status = "mixed"
     elif scripts:
         status = "divergent"
         actual = "other_script"
+    elif mixed_segments:
+        status = "mixed"
     elif actual == expected:
         status = "matched"
     elif actual in {"vi", "en"}:
@@ -103,6 +140,7 @@ def assess_response_language(text: str, expected: str) -> dict:
         "actual_language": actual,
         "expected_language": expected,
         "unsupported_script_counts": scripts,
+        "mixed_language_segments": sum(1 for language in segment_languages if language != expected),
         "method": "lexical_and_unicode_script_heuristic",
-        "limitation": "Does not judge task correctness, factuality, or human acceptability.",
+        "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality.",
     }

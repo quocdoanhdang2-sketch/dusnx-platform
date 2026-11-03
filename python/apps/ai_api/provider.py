@@ -175,17 +175,24 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
     repeat_last_n = int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64"))
     temperature = float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1"))
     num_predict = int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512"))
+    options = {
+        "temperature": temperature,
+        "num_predict": num_predict,
+        "repeat_penalty": repeat_penalty,
+        "repeat_last_n": repeat_last_n,
+    }
+    context_size = os.getenv("DUSNX_OLLAMA_NUM_CTX")
+    if context_size:
+        parsed_context_size = int(context_size)
+        if parsed_context_size < 512:
+            raise ValueError("DUSNX_OLLAMA_NUM_CTX must be at least 512")
+        options["num_ctx"] = parsed_context_size
     payload = json.dumps({
         "model": get_ollama_model(),
         "messages": [{"role": "system", "content": system_prompt},
                      {"role": "user", "content": user_message}],
         "stream": False,
-        "options": {
-            "temperature": temperature,
-            "num_predict": num_predict,
-            "repeat_penalty": repeat_penalty,
-            "repeat_last_n": repeat_last_n,
-        },
+        "options": options,
     }).encode("utf-8")
     request = urllib.request.Request(get_ollama_url() + "/api/chat", data=payload,
                                      headers={"Content-Type": "application/json"}, method="POST")
@@ -608,6 +615,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
         if ok:
             assessment = _quality_assessment(entity_prompt, text, response_language)
             provider_attempts.append({"attempt": 1, "done_reason": done_reason,
+                "model_used": model_used,
                 "elapsed_ms": round(attempt_elapsed_ms, 2),
                 "tokens_generated": tokens_generated, "sanitizer_changed": sanitizer_changed,
                 "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
@@ -641,7 +649,8 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
                     text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
                     assessment = _quality_assessment(entity_prompt, text, response_language) if ok else assessment
                     provider_attempts.append({"attempt": 2, "elapsed_ms": round(retry_elapsed_ms, 2), "called": True,
-                        "done_reason": done_reason, "tokens_generated": tokens_generated,
+                        "done_reason": done_reason, "model_used": model_used,
+                        "tokens_generated": tokens_generated,
                         "sanitizer_changed": sanitizer_changed,
                         "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                         "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
@@ -668,7 +677,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
         else:
             provider_attempts.append({"attempt": 1, "done_reason": done_reason,
                 "elapsed_ms": round(attempt_elapsed_ms, 2), "called": did_call,
-                "tokens_generated": tokens_generated, "sanitizer_changed": False,
+                "model_used": model_used, "tokens_generated": tokens_generated, "sanitizer_changed": False,
                 "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                 "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
                 "sanitized_output": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,

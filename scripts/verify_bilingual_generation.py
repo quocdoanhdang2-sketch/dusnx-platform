@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -277,6 +278,22 @@ def run_open_ended_coverage(text: str, task_rubric: dict) -> dict:
 
 def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                          case_type: str, metadata: dict, task_rubric: dict | None = None) -> dict:
+    # Provider errors are transport evidence only. Their localized error text
+    # must not be mistaken for a generated answer or scored by task/language
+    # heuristics.
+    if metadata.get("provider_ok") is False or metadata.get("response_source") == "provider_error":
+        return {
+            "language": {"status": "not_applicable", "reason": "provider_not_successful"},
+            "task": {"status": "not_applicable", "reason": "provider_not_successful"},
+            "entities": {"status": "not_applicable", "missing": [], "mutated": [],
+                         "prompt_echo_removed": False},
+            "content_quality": {"status": "not_applicable", "reason": "provider_not_successful"},
+            "factual_accuracy": {"status": "not_applicable", "reason": "provider_not_successful"},
+            "context_relevance": {"status": "not_applicable"},
+            "instruction_leak_and_repetition": {"status": "not_applicable", "flags": []},
+            "completion": {"status": "not_applicable", "reason": "provider_not_successful"},
+            "evaluation_limitations": ["No content evaluation is possible for a provider error."],
+        }
     language = assess_response_language(reply, expected_language)
     entities = assess_entity_preservation(prompt, reply)
     if task_rubric:
@@ -308,13 +325,24 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
             forbidden_match = [term for term in task_rubric.get("forbidden_terms", [])
                                if term.casefold() in first_sentence]
             clarify = bool(re.search(r"(?i)(bạn muốn hỏi|could you clarify|do you mean|bạn đang hỏi)", answer_without_echo))
+            clarification_contract = (clarify
+                                      and metadata.get("response_source") == "clarification"
+                                      and metadata.get("provider_called") is False)
+            factual_red_flags = [item["id"] for item in task_rubric.get("factual_red_flags", [])
+                                 if re.search(item["pattern"], answer_without_echo)]
             complete = (subject_match or clarify) and not forbidden_match
-            task = {"status": ("uncertain" if complete else "failed"),
-                    "method": "subject/clarification signals can reject obvious drift but cannot establish relevance or answer correctness; human review required",
+            task = {"status": ("failed" if factual_red_flags else
+                               "passed" if clarification_contract else
+                               ("uncertain" if complete else "failed")),
+                    "method": ("predeclared_factual_contradiction_signal" if factual_red_flags else
+                               "application_clarification_contract" if clarification_contract else
+                               "subject keyword does not establish relevance or answer correctness; human review required"),
                     "subject_match": subject_match, "clarification": clarify,
+                    "topic_answered": subject_match if not clarification_contract else False,
+                    "factual_red_flags": factual_red_flags,
                     "forbidden_subjects_found": forbidden_match,
-                    "review_required": complete,
-                    "review_status": "needs_human_review" if complete else "not_applicable"}
+                    "review_required": (complete and not clarification_contract) or bool(factual_red_flags),
+                    "review_status": "needs_human_review" if (complete and not clarification_contract) or factual_red_flags else "not_applicable"}
         elif rubric_kind == "answer_count":
             number = task_rubric.get("number", 1)
             items = re.findall(r"(?m)^\s*(?:[-*]|\d+[.)])\s+\S+", answer_without_echo)
@@ -468,6 +496,11 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                           "actual_model_tag": os.getenv("DUSNX_ACTUAL_MODEL_TAG", "unknown"),
                           "actual_model_digest": os.getenv("DUSNX_ACTUAL_MODEL_DIGEST", "unknown"),
                           "token_budget": int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512")),
+                          "context_size": (int(os.environ["DUSNX_OLLAMA_NUM_CTX"])
+                                           if os.getenv("DUSNX_OLLAMA_NUM_CTX") else None),
+                          "temperature": float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1")),
+                          "repeat_penalty": float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25")),
+                          "repeat_last_n": int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64")),
                           "checkpoint": os.getenv("DUSNX_CHECKPOINT", "project default"),
                           "raw_capture_enabled": os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1"},
         "cases": {},
@@ -654,7 +687,15 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "is_llm": True,
                 "task_rubric": {"kind": "context_subject",
                     "subject_terms": ["elliptic-curve", "elliptic curve", "ECC", "đường cong elliptic"],
-                    "forbidden_terms": ["monolith", "microservices"]},
+                    "forbidden_terms": ["monolith", "microservices"],
+                    "factual_red_flags": [
+                        {"id": "passwords_misrepresented_as_direct_ecc_encryption",
+                         "pattern": r"(?i)(?:(?:encrypt(?:ing|ion)?|encryption method).{0,30}passwords?|mã hóa.{0,20}mật khẩu)"},
+                        {"id": "elliptic_curve_misrepresented_as_linear",
+                         "pattern": r"(?i)(?:linear equation|phương trình (?:số )?tuyến tính)"},
+                        {"id": "unqualified_ecc_superiority_over_rsa",
+                         "pattern": r"(?i)(?:more secure than RSA|bảo mật tốt hơn (?:so với )?thuật toán RSA)"},
+                    ]},
             },
             {
                 "case_id": "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT",
@@ -673,6 +714,83 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                     ]},
             },
             {
+                "case_id": "VARIANT_23_TOPIC_SHIFT_TLS_FOLLOWUP",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "After an explicit topic switch, answer the short follow-up from the latest TLS certificate/hostname context; a topic keyword alone does not establish correctness.",
+                "setup_history": [
+                    "I am comparing PostgreSQL and MySQL for transaction-heavy applications.",
+                    "Switching topics: I am learning how TLS validates a server certificate and hostname.",
+                ],
+                "prompt": "What risk does that check reduce?",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"kind": "context_subject",
+                    "subject_terms": ["TLS", "certificate", "hostname", "man-in-the-middle"],
+                    "forbidden_terms": ["PostgreSQL", "MySQL", "database"]},
+            },
+            {
+                "case_id": "VARIANT_24_ECC_STANDARD_USE",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "State one standard use of elliptic-curve cryptography; automated concept signals do not establish factual correctness.",
+                "prompt": "Name one standard use of elliptic-curve cryptography in secure communications.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "ecc_standard_use_v1",
+                    "basis": "A valid example should identify a standard cryptographic use; source/factual review remains required.",
+                    "criteria": [
+                        {"id": "key_agreement", "terms_any": ["ECDH", "key agreement", "key exchange"]},
+                        {"id": "digital_signature", "terms_any": ["ECDSA", "digital signature", "signatures"]},
+                        {"id": "secure_protocol", "terms_any": ["TLS", "secure channel", "authenticate"]},
+                    ]},
+            },
+            {
+                "case_id": "VARIANT_25_TRANSLATE_PRESERVE_LITERAL",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Translate explanatory prose to English while preserving the user-supplied URL and KEY=VALUE literal exactly.",
+                "prompt": "Translate this sentence to English: Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"assignments": ["DUSNX_PORT=8188"]},
+            },
+            {
+                "case_id": "VARIANT_26_CROSS_LANGUAGE_PASSWORD_SALT",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Answer an unseen Vietnamese prompt in the explicitly selected English response language; content quality remains separate.",
+                "prompt": "Hãy giải thích ngắn gọn vì sao cần salt khi băm mật khẩu.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "password_salt_v1",
+                    "basis": "A useful explanation should describe per-password random salt and its role against precomputed hash attacks; human factual review remains required.",
+                    "criteria": [
+                        {"id": "unique_random_salt", "terms_any": ["unique salt", "random salt", "different salt"]},
+                        {"id": "precomputation_resistance", "terms_any": ["rainbow table", "precomputed", "pre-computed"]},
+                    ]},
+            },
+            {
+                "case_id": "VARIANT_27_HTTP_IDEMPOTENCY_EXPLANATION",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Give one concise, accurate explanation of idempotency in HTTP retries; concept signals do not claim semantic review.",
+                "prompt": "In one sentence, explain what idempotency means when an HTTP request is retried.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "http_idempotency_v1",
+                    "basis": "A valid explanation should state that repeated equivalent requests have the same intended effect; factual/semantic review remains required.",
+                    "criteria": [
+                        {"id": "repeat_effect", "terms_any": ["same effect", "same result", "same intended effect"]},
+                        {"id": "repeated_request", "terms_any": ["repeated request", "repeat the request", "retry"]},
+                    ]},
+            },
+            {
                 "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
                 "case_type": "template_recall",
                 "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
@@ -685,6 +803,9 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "required_substrings": ["Kubernetes"],
             },
         ]
+        report["locked_case_specs_sha256"] = hashlib.sha256(
+            json.dumps(test_cases_spec, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
 
         for spec in test_cases_spec:
             case_id = spec["case_id"]
@@ -726,7 +847,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             meta_resp_lang = res.get("response_language")
             actual_lang = heuristic["actual_language"]
 
-            if spec["case_type"] == "template_recall":
+            if spec["case_type"] == "template_recall" or not res.get("provider_ok"):
                 linguistic_status = "not_applicable"
             else:
                 linguistic_status = assess_response_language(verbatim_reply, expected_lang)["status"]
@@ -814,7 +935,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             "heuristic_evaluation": heur_09,
             "contract_passed": c09_passed,
             "linguistic_status": c09_status,
-            "evaluation": evaluate_case_output("Ưu điểm là gì?", reply_09, "vi", "llm_generation", res_09,
+            "evaluation": evaluate_case_output("Ưu điểm là gì?", reply_09, "vi", "application_clarification", res_09,
                 {"kind": "context_subject", "subject_terms": ["microservices", "distributed systems", "kiến trúc dịch vụ", "hệ thống phân tán"], "forbidden_terms": ["uptane", "dusn-x"]}),
             "setup_history": ["Tôi đang tìm hiểu về kiến trúc microservices và distributed systems."],
             "evaluation_label": "development_regression",
@@ -831,7 +952,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             client.chat(sid_shift, setup, preferred_language="auto")
         res_16 = client.chat(sid_shift, "Những rủi ro của nó là gì?", preferred_language="auto")
         reply_16 = res_16.get("provider_sanitized_reply") or res_16.get("reply", "")
-        lang_16 = assess_response_language(reply_16, "vi")["status"]
+        lang_16 = (assess_response_language(reply_16, "vi")["status"]
+                   if res_16.get("provider_ok") is True else "not_applicable")
         report["cases"][case_16_id] = {
             "case_id": case_16_id, "case_type": "llm_generation",
             "objective": "Câu tiếp nối sau khi đổi chủ đề phải bám chủ đề gần nhất trong cùng session.",
@@ -893,7 +1015,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         heur_10 = evaluate_text_language(reply_10)
         c10_passed = (cmd_ok and generation_contract(res_after)
                       and res_after.get("response_language") == "en")
-        c10_status = assess_response_language(reply_10, "en")["status"]
+        c10_status = (assess_response_language(reply_10, "en")["status"]
+                      if res_after.get("provider_ok") is True else "not_applicable")
         report["cases"][case_10_id] = {
             "case_id": case_10_id,
             "case_type": "llm_generation",
@@ -954,10 +1077,11 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         )
         both_matched = (heur_a["actual_language"] == "en" and heur_b["actual_language"] == "vi")
         any_uncertain = (heur_a["actual_language"] == "uncertain" or heur_b["actual_language"] == "uncertain")
-        lang_a = assess_response_language(reply_a, "en")["status"]
-        lang_b = assess_response_language(reply_b, "vi")["status"]
-        statuses = {lang_a, lang_b}
-        c11_status = ("matched" if statuses == {"matched"} else
+        statuses = [assess_response_language(reply, expected)["status"]
+                    for reply, expected, result in ((reply_a, "en", res_a), (reply_b, "vi", res_b))
+                    if result.get("provider_ok") is True]
+        c11_status = ("not_applicable" if not statuses else statuses[0] if len(statuses) == 1 else
+                      "matched" if set(statuses) == {"matched"} else
                       "mixed" if "mixed" in statuses else
                       "uncertain" if "uncertain" in statuses else "divergent")
 
