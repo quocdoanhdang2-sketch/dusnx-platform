@@ -6,7 +6,13 @@ import unicodedata
 
 SUPPORTED = {"auto", "vi", "en"}
 VI_WORDS = {"bạn", "tôi", "mình", "là", "và", "không", "có", "hãy", "đang", "đã", "muốn", "trả", "lời", "bằng", "tiếng"}
-EN_WORDS = {"the", "is", "are", "you", "please", "what", "which", "how", "answer", "english", "vietnamese", "from", "now"}
+EN_WORDS = {
+    "the", "is", "are", "you", "please", "what", "which", "how", "why", "where", "when",
+    "answer", "english", "vietnamese", "from", "now", "briefly", "explain", "database",
+    "indexing", "improves", "query", "performance", "system", "features", "core", "benefits",
+    "with", "this", "that", "about", "can", "could", "should", "would", "will", "have", "has",
+    "for", "and", "or", "in", "on", "at", "to", "by", "of", "it", "its", "software", "data",
+}
 VI_DIACRITICS = re.compile(r"[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]", re.I)
 
 

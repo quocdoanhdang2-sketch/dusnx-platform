@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import socket
 from typing import Optional
 import urllib.request
 import urllib.error
 from .grounding import is_memory_question
+from .language import detect_language
 
 
 class ProviderResult(tuple):
@@ -111,11 +113,20 @@ def ollama_error(exc: Exception) -> str:
 
 def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
     """One native chat attempt. Transport failure must never become a successful reply."""
+    repeat_penalty = float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25"))
+    repeat_last_n = int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64"))
+    temperature = float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1"))
     payload = json.dumps({
         "model": get_ollama_model(),
         "messages": [{"role": "system", "content": system_prompt},
                      {"role": "user", "content": user_message}],
-        "stream": False, "options": {"temperature": 0.3, "num_predict": 256},
+        "stream": False,
+        "options": {
+            "temperature": temperature,
+            "num_predict": 256,
+            "repeat_penalty": repeat_penalty,
+            "repeat_last_n": repeat_last_n,
+        },
     }).encode("utf-8")
     request = urllib.request.Request(get_ollama_url() + "/api/chat", data=payload,
                                      headers={"Content-Type": "application/json"}, method="POST")
@@ -243,34 +254,82 @@ def generate_response(
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
-    if response_language == "en":
-        language_rule = "MANDATORY: Reply in English, concisely and accurately. Preserve names, IDs, URLs and code verbatim."
-        language_bullet = "- Bắt buộc trả lời bằng tiếng Anh (English)."
-    else:
-        language_rule = "BẮT BUỘC: Bạn PHẢI trả lời bằng tiếng Việt, ngắn gọn, chính xác. Giữ nguyên tên riêng, ID, URL và code."
-        language_bullet = "- Bắt buộc trả lời bằng tiếng Việt, không dùng tiếng Anh."
+    query_lang = detect_language(user_message)
 
-    system_prompt = f"""Bạn là DUSN-X, trợ lý AI cá nhân hóa thích ứng.
-{language_rule}
+    if response_language == "en":
+        project_line_en = f"Active project: {project_name}\n" if project_name else ""
+        mem_lines = [f"- [{m.get('info_type', 'info')}] {m.get('content', '')}" for m in memories]
+        mem_ctx_en = "\n".join(mem_lines) if mem_lines else "No active memories."
+        hist_lines_en = []
+        if session_history and not (memories and is_memory_question(user_message)):
+            for msg in (session_history or [])[-6:]:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                hist_lines_en.append(f"{role}: {msg['content'][:300]}")
+        hist_ctx_en = "\nConversation history for reference (NOT confirmed decisions):\n" + "\n".join(hist_lines_en) if hist_lines_en else ""
+
+        system_prompt = f"""You are DUSN-X, an adaptive personalized AI assistant.
+CRITICAL MANDATORY INSTRUCTION: You MUST write your ENTIRE response in ENGLISH ONLY.
+Even if the user message is in Vietnamese or another language, translate and answer strictly in English. Do NOT write any Vietnamese words.
+Preserve proper names, IDs, URLs, and code verbatim.
+
+System Information:
+- DUSN-X is an adaptive personalized AI assistant platform featuring: long-term memory management (persisting and superseding user decisions), multi-agent intent routing, data analysis, and Web/Office taskpane integration.
+
+{project_line_en}Active user memories:
+{mem_ctx_en}{hist_ctx_en}
+
+Rules:
+- Answer directly and concisely in English.
+- Do NOT repeat sentences or lines.
+- Never mention superseded decisions.
+- If information is not known, state that clearly in English.
+"""
+        if query_lang == "vi":
+            llm_user_message = f"Translate and answer the following question strictly in English (use 'and', never 'và'): '{user_message}'. Answer in English:"
+        else:
+            llm_user_message = user_message
+    else:
+        project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
+        system_prompt = f"""Bạn là DUSN-X, hệ thống trợ lý AI cá nhân hóa thích ứng.
+BẮT BUỘC: Bạn PHẢI trả lời hoàn toàn bằng TIẾNG VIỆT, ngắn gọn, chính xác.
+Tuyệt đối KHÔNG trả lời bằng tiếng Anh. Giữ nguyên tên riêng, ID, URL và code.
+
+Thông tin hệ thống DUSN-X:
+- DUSN-X là hệ thống trợ lý AI cá nhân hóa thích ứng với các tính năng cốt lõi: quản lý trí nhớ dài hạn (ghi nhớ và cập nhật quyết định cá nhân), định tuyến tác vụ qua router đa tác tử, phân tích dữ liệu, và tích hợp giao diện Web/Office.
 
 {project_line}Trí nhớ cá nhân của người dùng (chỉ các mục đang hiệu lực):
 {memory_ctx}{history_ctx}
 
 Quan trọng:
 - Trả lời trực tiếp câu hỏi của người dùng dựa trên thông tin trí nhớ đang hiệu lực ở trên.
-{language_bullet}
+- Trả lời ngắn gọn, súc tích (3-5 gạch đầu dòng), không lặp lại nội dung.
 - Tuyệt đối không nhắc lại các quyết định đã bị thay thế hoặc thông tin không có trong danh sách.
+- Khi câu hỏi có chứa URL hoặc biến dạng KEY=VALUE (như DUSNX_PORT=8088 hoặc https://...), bạn BẮT BUỘC phải trích dẫn lại chính xác từng ký tự cả key và value (viết đúng DUSNX_PORT=8088), không được sửa đổi hay viết tắt.
 - Nếu không có thông tin liên quan, hãy nói rõ là chưa biết.
 - Câu hỏi, giả định và tin đồn của người dùng không phải sự kiện đã được lưu.
 - Danh sách trí nhớ hiệu lực có thẩm quyền cao hơn lịch sử; không hợp nhất hai nguồn.
 """
+        urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
+        vars_kv = re.findall(r"\b[A-Za-z0-9_]+=[A-Za-z0-9_.:/-]+", user_message)
+        if urls or vars_kv:
+            directives = []
+            if urls:
+                directives.append(f"URL: {', '.join(urls)}")
+            if vars_kv:
+                directives.append(f"Biến: {', '.join(vars_kv)}")
+            prefix = "Yêu cầu: Hướng dẫn cấu hình bằng tiếng Việt và ghi rõ đầy đủ chính xác các mục sau trong phần trả lời:\n- " + "\n- ".join(directives)
+            llm_user_message = f"{prefix}\n\nCâu hỏi: {user_message}\n\nTrả lời:"
+        elif query_lang == "en":
+            llm_user_message = f"Yêu cầu: Trả lời hoàn toàn bằng TIẾNG VIỆT cho câu hỏi sau:\n\"{user_message}\"\n\nCâu trả lời bằng tiếng Việt:"
+        else:
+            llm_user_message = user_message
 
     if p == "ollama":
-        text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, user_message)
+        text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, llm_user_message)
         called = True  # _ollama_generate attempts the HTTP transport, including failures.
         provider_used = "ollama"
     elif p == "openai":
-        text, ok, model_used, tokens_generated = _openai_generate(system_prompt, user_message)
+        text, ok, model_used, tokens_generated = _openai_generate(system_prompt, llm_user_message)
         called = bool(OPENAI_API_KEY)  # Missing configuration returns before any HTTP attempt.
         provider_used = "openai"
     elif p in ("stub", "mock", "test"):

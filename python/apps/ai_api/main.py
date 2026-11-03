@@ -861,7 +861,8 @@ def _chat_impl(req: ChatRequest, user: dict):
     candidate_ids = [m["memory_id"] for m in memories]
     memory_ids = []
     saved_language = next(("en" if "language:en" in m["content"] else "vi"
-                           for m in memories if m.get("info_type") == "preference"
+                           for m in db.list_memories(user_id, include_inactive=False)
+                           if m.get("info_type") == "preference"
                            and "language:" in m.get("content", "")), None)
     requested_preference = req.preferred_language if req.preferred_language != "auto" else (saved_language or "auto")
     detected_language = detect_language(req.message)
