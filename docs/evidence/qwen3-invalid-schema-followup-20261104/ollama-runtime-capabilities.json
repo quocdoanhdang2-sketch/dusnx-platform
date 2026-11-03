@@ -1,0 +1,12 @@
+{
+  "observed_at_utc": "2026-11-03T17:11:23.3743838Z",
+  "ollama_version": "0.40.14",
+  "model": "qwen3:4b",
+  "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+  "capabilities": [
+    "completion",
+    "tools",
+    "thinking"
+  ],
+  "thinking_option_values": "unknown; /api/show returned capability only"
+}
