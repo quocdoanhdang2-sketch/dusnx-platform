@@ -359,7 +359,6 @@
     "not_rerun": "Strict live Qwen3 generation report; report-label-only change does not alter provider/generation behavior; prior live report remains on e89e57467fde95ed11d077033ecfbc23a30b7ff3",
     "observed_at_utc": "2026-11-03T18:39:41Z"
   },
-  "quality_branch_pushed_sha": "e7458682e4c1a1ec2b10def6bd42bb1b5d16ade9",
   "independent_main_harness_pr": {
     "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
     "base_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
@@ -379,5 +378,7 @@
   "main_review_table_after": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
   "evidence_package_commit": "7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a",
   "evidence_manifest_update_commit": "This manifest update is recorded in its containing Git commit; not embedded to avoid self-reference",
-  "evidence_commit_note": "Evidence files were added in 7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a; this later manifest update commit is not embedded in its own contents."
+  "evidence_commit_note": "Evidence files were added in 7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a; this later manifest update commit is not embedded in its own contents.",
+  "quality_branch_sha_before_manifest_update_commit": "e7458682e4c1a1ec2b10def6bd42bb1b5d16ade9",
+  "quality_branch_sha_note": "The final remote branch SHA is verified and reported separately; a manifest cannot embed the SHA of the commit that contains the same manifest without self-reference."
 }
