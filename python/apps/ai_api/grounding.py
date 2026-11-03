@@ -41,7 +41,12 @@ def select_memories(message: str, memories: list[dict], *, recall=False) -> list
 
 def is_memory_question(message: str) -> bool:
     text = message.casefold().strip()
-    question = "?" in text or any(p in text for p in ("nhắc lại", "đã chọn gì", "đang dùng gì", "chọn gì", "dùng gì", "là gì", "nào"))
+    # Translation/transform instructions can contain personal-memory vocabulary
+    # and URL query markers. They are tasks over supplied text, not memory queries.
+    if re.match(r"^(?:please\s+)?(?:translate|translation|dịch)\b", text):
+        return False
+    question_text = re.sub(r"https?://\S+", " ", text)
+    question = "?" in question_text or any(p in text for p in ("nhắc lại", "đã chọn gì", "đang dùng gì", "chọn gì", "dùng gì", "là gì", "nào"))
     personal = any(p in text for p in (
         "chọn", "quyết định", "lựa chọn", "dùng", "sử dụng",
         "hiện tại", "hiện nay", "dự án", "của tôi", "chúng tôi",
