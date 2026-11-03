@@ -276,6 +276,17 @@ def resolve_token_budget(metadata: dict) -> int | None:
     return None
 
 
+def provider_attempt_metadata(response: dict) -> dict:
+    """Serialize provider provenance consistently, including budget from the actual attempt."""
+    fields = (
+        "provider_called", "provider_call_count", "provider_ok", "response_source",
+        "provider_used", "model_used", "tokens_generated", "done_reason",
+        "provider_attempts", "sanitizer_changed", "raw_output_sha256", "response_language",
+    )
+    return {**{key: response.get(key) for key in fields},
+            "token_budget": resolve_token_budget(response)}
+
+
 def run_open_ended_coverage(text: str, task_rubric: dict) -> dict:
     """Emit transparent concept signals; deliberately never claims semantic correctness."""
     normalized = text.casefold()
@@ -977,9 +988,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             "objective": "Câu tiếp nối sau khi đổi chủ đề phải bám chủ đề gần nhất trong cùng session.",
             "prompt": "Những rủi ro của nó là gì?", "setup_history": setup_16,
             "input_preferred_language": "auto", "expected_response_language": "vi",
-            "metadata": {k: res_16.get(k) for k in ("provider_called", "provider_call_count", "provider_ok",
-                "response_source", "provider_used", "model_used", "tokens_generated", "done_reason",
-                "sanitizer_changed", "raw_output_sha256", "response_language", "provider_attempts")},
+            "metadata": provider_attempt_metadata(res_16),
             "raw_provider_reply": res_16.get("raw_provider_reply"),
             "sanitized_provider_output": reply_16, "verbatim_reply": reply_16,
             "heuristic_evaluation": evaluate_text_language(reply_16),
@@ -1043,19 +1052,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             "input_preferred_language": "auto",
             "expected_response_language": "en",
             "metadata": {
+                **provider_attempt_metadata(res_after),
                 "detected_language": res_after.get("detected_language"),
-                "response_language": res_after.get("response_language"),
-                "response_source": res_after.get("response_source"),
-                "provider_called": res_after.get("provider_called"),
-                "provider_ok": res_after.get("provider_ok"),
-                "provider_used": res_after.get("provider_used"),
-                "model_used": res_after.get("model_used"),
-                "tokens_generated": res_after.get("tokens_generated"),
-                "done_reason": res_after.get("done_reason"),
-                "provider_call_count": res_after.get("provider_call_count"),
-                "provider_attempts": res_after.get("provider_attempts", []),
-                "sanitizer_changed": res_after.get("sanitizer_changed"),
-                "raw_output_sha256": res_after.get("raw_output_sha256"),
             },
             "verbatim_reply": reply_10,
             "raw_provider_reply": res_after.get("raw_provider_reply"),
@@ -1110,8 +1108,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
             "input_preferred_language": "auto",
             "expected_response_language": "A:en, B:vi",
-            "user_a_provenance": {k: res_a.get(k) for k in ("provider_ok", "provider_called", "provider_call_count", "provider_attempts", "provider_used", "model_used", "response_source")},
-            "user_b_provenance": {k: res_b.get(k) for k in ("provider_ok", "provider_called", "provider_call_count", "provider_attempts", "provider_used", "model_used", "response_source")},
+            "user_a_provenance": provider_attempt_metadata(res_a),
+            "user_b_provenance": provider_attempt_metadata(res_b),
             "user_a_response_lang": res_a.get("response_language"),
             "user_b_response_lang": res_b.get("response_language"),
             "verbatim_reply": f"User A: {reply_a}\n---\nUser B: {reply_b}",
@@ -1179,9 +1177,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "input_preferred_language": "auto",
                 "expected_response_language": None,
                 "metadata": {
-                    "provider_ok": res_off.get("provider_ok"),
-                    "provider_called": res_off.get("provider_called"),
-                    "response_source": res_off.get("response_source"),
+                    **provider_attempt_metadata(res_off),
                 },
                 "verbatim_reply": res_off.get("reply"),
                 "heuristic_evaluation": evaluate_text_language(res_off.get("reply", "")),
@@ -1214,9 +1210,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "input_preferred_language": "auto",
                 "expected_response_language": None,
                 "metadata": {
-                    "provider_ok": res_mis.get("provider_ok"),
-                    "provider_called": res_mis.get("provider_called"),
-                    "response_source": res_mis.get("response_source"),
+                    **provider_attempt_metadata(res_mis),
                 },
                 "verbatim_reply": res_mis.get("reply"),
                 "heuristic_evaluation": evaluate_text_language(res_mis.get("reply", "")),

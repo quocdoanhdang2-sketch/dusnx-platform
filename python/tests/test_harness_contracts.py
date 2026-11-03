@@ -5,7 +5,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget
+from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget, provider_attempt_metadata
 from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -132,6 +132,20 @@ def test_completion_uses_budget_from_actual_provider_attempt_not_harness_default
         "llm_generation", response)["completion"]
     assert completion["status"] == "uncertain"
     assert completion["token_budget"] == 1024
+
+
+def test_manual_case_provenance_carries_actual_attempt_budget_even_for_provider_errors():
+    response = {
+        "provider_called": True, "provider_ok": False, "response_source": "provider_error",
+        "done_reason": "length", "provider_attempts": [
+            {"attempt": 1, "provider_diagnostics": {"num_predict": 1024, "eval_count": 1024}}
+        ],
+    }
+    metadata = provider_attempt_metadata(response)
+    assert metadata["token_budget"] == 1024
+    assert metadata["provider_attempts"] == response["provider_attempts"]
+    unknown = provider_attempt_metadata({"provider_called": True, "provider_attempts": []})
+    assert unknown["token_budget"] is None
 
 
 def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):
