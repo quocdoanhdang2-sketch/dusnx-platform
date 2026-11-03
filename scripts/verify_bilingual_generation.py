@@ -287,6 +287,15 @@ def provider_attempt_metadata(response: dict) -> dict:
             "token_budget": resolve_token_budget(response)}
 
 
+def review_model_label(report: dict) -> str:
+    """Use the model declared by this run; never bake a model name into review output."""
+    configuration = report.get("configuration")
+    if not isinstance(configuration, dict):
+        return "unknown model"
+    model = configuration.get("expected_model")
+    return model.strip() if isinstance(model, str) and model.strip() else "unknown model"
+
+
 def run_open_ended_coverage(text: str, task_rubric: dict) -> dict:
     """Emit transparent concept signals; deliberately never claims semantic correctness."""
     normalized = text.casefold()
@@ -1235,11 +1244,12 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
     (output_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # Generate Human Review Table Markdown with blank decision columns
+    model_for_review = review_model_label(report)
     table_lines = [
         "# Phiếu đánh giá chất lượng ngôn ngữ DUSN-X (Human Review Package)",
         "",
         f"**Thời điểm tạo:** {report['timestamp_utc']}",
-        "**Mục đích:** Đánh giá khách quan ngôn ngữ thực tế của mô hình Qwen 2.5 0.5B qua pipeline thật.",
+        f"**Mục đích:** Đánh giá khách quan ngôn ngữ thực tế của mô hình {model_for_review} qua pipeline thật.",
         "**Quy tắc:** Cột `Quyết định Người duyệt (Review)` để trống cho người thẩm định độc lập điền (`approve` / `revise`). Không tự ý điền sẵn quyết định.",
         "",
         "| Mã ca (Case ID) | Loại ca (Type) | Mục tiêu kiểm thử | Prompt đầu vào | Meta Lang | Ngôn ngữ thực tế (Heuristic) | Đánh giá Heuristic | Nội dung câu trả lời thực tế (Trích đoạn) | Quyết định Người duyệt (Review) | Ghi chú người duyệt |",

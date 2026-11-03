@@ -5,7 +5,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget, provider_attempt_metadata
+from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget, provider_attempt_metadata, review_model_label
 from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -146,6 +146,12 @@ def test_manual_case_provenance_carries_actual_attempt_budget_even_for_provider_
     assert metadata["provider_attempts"] == response["provider_attempts"]
     unknown = provider_attempt_metadata({"provider_called": True, "provider_attempts": []})
     assert unknown["token_budget"] is None
+
+
+def test_review_table_model_label_comes_from_run_configuration():
+    assert review_model_label({"configuration": {"expected_model": "qwen3:4b"}}) == "qwen3:4b"
+    assert review_model_label({"configuration": {"expected_model": "  "}}) == "unknown model"
+    assert review_model_label({}) == "unknown model"
 
 
 def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):
