@@ -25,6 +25,39 @@ def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, cate
     assert len(calls) == 1
 
 
+def test_ollama_diagnostics_capture_thinking_only_invalid_schema(monkeypatch):
+    response = BytesIO(json.dumps({
+        "done": True, "done_reason": "length", "model": "qwen3:4b",
+        "eval_count": 256, "prompt_eval_count": 91,
+        "message": {"content": "", "thinking": "private synthetic reasoning"},
+    }).encode())
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: response)
+    result = provider._ollama_generate("synthetic system", "synthetic question")
+    text, ok, model, tokens = result
+    assert not ok and model is None and tokens is None
+    assert "invalid_schema" in text
+    assert result.diagnostics["done_reason"] == "length"
+    assert result.diagnostics["eval_count"] == 256
+    assert result.diagnostics["content_chars"] == 0
+    assert result.diagnostics["thinking_chars"] == len("private synthetic reasoning")
+    assert "private synthetic reasoning" not in json.dumps(result.diagnostics)
+
+
+@pytest.mark.parametrize("error", [
+    TimeoutError("http://user:password@host/?token=secret"),
+    urllib.error.URLError(TimeoutError("http://user:password@host/?token=secret")),
+])
+def test_ollama_diagnostics_mark_timeout_without_raw_exception(monkeypatch, error):
+    def timeout(req, timeout):
+        raise error
+    monkeypatch.setattr(provider.urllib.request, "urlopen", timeout)
+    result = provider._ollama_generate("synthetic system", "synthetic question")
+    assert result.diagnostics["error_category"] == "timeout"
+    assert result.diagnostics["http_completed"] is False
+    assert "password" not in json.dumps(result.diagnostics)
+    assert "secret" not in json.dumps(result.diagnostics)
+
+
 def test_provider_http_failure_does_not_expose_secret_url(monkeypatch):
     def failure(req, timeout):
         raise urllib.error.HTTPError("http://secret:password@host/?token=private", 404, "private", {}, None)
@@ -74,7 +107,8 @@ def test_llm_replay_reports_no_new_provider_call(client, monkeypatch):
     calls = []
     def generate(**kwargs):
         calls.append(kwargs)
-        return provider.ProviderResult("Một câu đã sinh.", True, "ollama", "test-model", 5, called=True)
+        return provider.ProviderResult("Một câu đã sinh.", True, "ollama", "test-model", 5, called=True,
+            diagnostics={"done_reason": "stop", "eval_count": 5, "content_chars": 15})
     monkeypatch.setattr(main, "generate_response", generate)
     _, token = _register_and_login(client, "week4_llm_replay")
     h = {"Authorization": f"Bearer {token}"}
@@ -87,6 +121,8 @@ def test_llm_replay_reports_no_new_provider_call(client, monkeypatch):
     assert repeated["response_source"] == "replay" and not repeated["provider_called"]
     assert repeated["provider_used"] is None and repeated["model_used"] is None
     assert repeated["original_provenance"]["model_used"] == "test-model"
+    assert original["provider_diagnostics"]["done_reason"] == "stop"
+    assert repeated["original_provenance"]["provider_diagnostics"]["eval_count"] == 5
 
 
 def test_direct_update_rolls_back_on_deactivation_failure(client):

@@ -11,6 +11,7 @@ import json
 import os
 import re
 import socket
+import time
 from typing import Optional
 import urllib.request
 import urllib.error
@@ -20,9 +21,18 @@ from .language import detect_language
 
 class ProviderResult(tuple):
     """Backward-compatible five values plus per-invocation transport metadata."""
-    def __new__(cls, text, ok, provider, model, tokens, *, called=False):
+    def __new__(cls, text, ok, provider, model, tokens, *, called=False, diagnostics=None):
         result=super().__new__(cls,(text,ok,provider,model,tokens))
         result.provider_called=called
+        result.provider_diagnostics=diagnostics
+        return result
+
+
+class OllamaResult(tuple):
+    """Four-value compatible Ollama response with safe diagnostic metadata."""
+    def __new__(cls, text, ok, model, tokens, *, diagnostics=None):
+        result = super().__new__(cls, (text, ok, model, tokens))
+        result.diagnostics = diagnostics or {}
         return result
 
 
@@ -109,7 +119,9 @@ def ollama_error(exc: Exception) -> str:
         return "invalid_json"
     if isinstance(exc, ValueError):
         return "invalid_schema"
-    if isinstance(exc, (TimeoutError, socket.timeout)):
+    if isinstance(exc, (TimeoutError, socket.timeout)) or (
+        isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, (TimeoutError, socket.timeout))
+    ):
         return "timeout"
     if isinstance(exc, urllib.error.URLError):
         return "unreachable"
@@ -118,6 +130,7 @@ def ollama_error(exc: Exception) -> str:
 
 def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
     """One native chat attempt. Transport failure must never become a successful reply."""
+    started = time.monotonic()
     repeat_penalty = float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25"))
     repeat_last_n = int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64"))
     temperature = float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1"))
@@ -128,25 +141,47 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
         "stream": False,
         "options": {
             "temperature": temperature,
-            "num_predict": 256,
+            "num_predict": int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "256")),
             "repeat_penalty": repeat_penalty,
             "repeat_last_n": repeat_last_n,
         },
     }).encode("utf-8")
     request = urllib.request.Request(get_ollama_url() + "/api/chat", data=payload,
                                      headers={"Content-Type": "application/json"}, method="POST")
+    diagnostics = {"provider": "ollama", "configured_model": get_ollama_model(),
+                   "timeout_seconds": get_ollama_timeout(), "num_predict": int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "256"))}
     try:
         with urllib.request.urlopen(request, timeout=get_ollama_timeout()) as response:
             data = json.load(response)
+        if isinstance(data, dict):
+            message = data.get("message") if isinstance(data.get("message"), dict) else {}
+            diagnostics.update({
+                "done": data.get("done") if isinstance(data.get("done"), bool) else None,
+                "done_reason": data.get("done_reason") if isinstance(data.get("done_reason"), str) else None,
+                "eval_count": data.get("eval_count") if type(data.get("eval_count")) is int else None,
+                "prompt_eval_count": data.get("prompt_eval_count") if type(data.get("prompt_eval_count")) is int else None,
+                "content_chars": len(message.get("content")) if isinstance(message.get("content"), str) else None,
+                "thinking_chars": len(message.get("thinking")) if isinstance(message.get("thinking"), str) else None,
+                "returned_model": data.get("model") if isinstance(data.get("model"), str) else None,
+            })
+        diagnostics["http_completed"] = True
+        diagnostics["error_category"] = None
         text, model, tokens = validate_ollama_response(data)
-        return text, True, model, tokens
+        diagnostics["schema_valid"] = True
+        diagnostics["latency_ms"] = round((time.monotonic() - started) * 1000, 1)
+        return OllamaResult(text, True, model, tokens, diagnostics=diagnostics)
     except Exception as exc:
         category = ollama_error(exc)
+        diagnostics["http_completed"] = not isinstance(exc, (TimeoutError, socket.timeout, urllib.error.URLError))
+        diagnostics["schema_valid"] = False if category in ("invalid_json", "invalid_schema") else None
+        diagnostics["error_category"] = category
+        diagnostics["exception_type"] = type(exc).__name__
+        diagnostics["latency_ms"] = round((time.monotonic() - started) * 1000, 1)
         descriptions = {"model_missing": "Model cấu hình không tồn tại trong Ollama",
                         "unreachable": "Không kết nối được Ollama", "timeout": "Ollama quá thời gian chờ",
                         "invalid_json": "Ollama trả dữ liệu không phải JSON",
                         "invalid_schema": "Ollama trả JSON không đúng hợp đồng"}
-        return f"[{descriptions.get(category, 'Lỗi dịch vụ Ollama')} ({category})]", False, None, None
+        return OllamaResult(f"[{descriptions.get(category, 'Lỗi dịch vụ Ollama')} ({category})]", False, None, None, diagnostics=diagnostics)
 
 
 def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
@@ -260,6 +295,7 @@ def generate_response(
     p = get_current_provider()
     # Build memory context using exactly the provided memories
     called = False
+    provider_diagnostics = None
     memory_lines = []
     for m in memories:
         tag = f"[{m['info_type']}]"
@@ -369,7 +405,9 @@ Thông tin hệ thống DUSN-X:
             llm_user_message = user_message
 
     if p == "ollama":
-        text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, llm_user_message)
+        ollama_result = _ollama_generate(system_prompt, llm_user_message)
+        text, ok, model_used, tokens_generated = ollama_result
+        provider_diagnostics = getattr(ollama_result, "diagnostics", None)
         called = True  # _ollama_generate attempts the HTTP transport, including failures.
         provider_used = "ollama"
         if ok:
@@ -407,4 +445,5 @@ Thông tin hệ thống DUSN-X:
         ok = False
         model_used = tokens_generated = None
 
-    return ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called)
+    return ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called,
+                          diagnostics=provider_diagnostics)

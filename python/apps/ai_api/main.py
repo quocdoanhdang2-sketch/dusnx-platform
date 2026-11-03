@@ -785,6 +785,7 @@ class ChatResponse(BaseModel):
     candidate_memory_ids: list[str] = Field(default_factory=list)
     prompt_memory_ids: list[str] = Field(default_factory=list)
     provider_called: bool = False
+    provider_diagnostics: Optional[dict] = None
     response_source: str = "application_rule"
     state_reset: bool = False
     reset_reason: Optional[str] = None
@@ -823,7 +824,7 @@ def chat(req: ChatRequest, user: CurrentUser):
                     raise HTTPException(404, "Session not found")
                 return ChatResponse(**{**previous, "replayed": True,
                     "original_provenance": {k: previous.get(k) for k in
-                        ("response_source", "provider_called", "provider_used", "model_used", "tokens_generated")},
+                        ("response_source", "provider_called", "provider_used", "model_used", "tokens_generated", "provider_diagnostics")},
                     "response_source": "replay", "provider_called": False,
                     "provider_used": None, "model_used": None, "tokens_generated": None})
         else:
@@ -1208,6 +1209,7 @@ def _chat_impl(req: ChatRequest, user: dict):
     grounded_answer, selected = memory_answer_with_selection(req.message, memories)
     prompt_ids = []
     provider_called = False
+    provider_diagnostics = None
     if grounded_answer is not None:
         reply_text, provider_ok = grounded_answer, True
         provider_used = model_used = tokens_generated = None
@@ -1226,6 +1228,7 @@ def _chat_impl(req: ChatRequest, user: dict):
         )
         reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
         provider_called = getattr(generated, "provider_called", False)
+        provider_diagnostics = getattr(generated, "provider_diagnostics", None)
         response_source = ("llm" if provider_called else "mock") if provider_ok else "provider_error"
         if not provider_called:
             provider_used = model_used = tokens_generated = None
@@ -1276,6 +1279,7 @@ def _chat_impl(req: ChatRequest, user: dict):
         answer_source="active_memory_extract" if grounded_answer is not None else "provider",
         prompt_memory_ids=prompt_ids,
         provider_called=provider_called,
+        provider_diagnostics=provider_diagnostics,
         response_source=response_source,
     )
 
