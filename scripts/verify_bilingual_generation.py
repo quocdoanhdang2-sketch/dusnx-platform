@@ -76,6 +76,35 @@ def evaluate_text_language(text: str) -> dict:
     }
 
 
+def generation_contract(response: dict, expected_model: str = "qwen2.5:0.5b") -> bool:
+    """The same live-generation contract is used by every generation case."""
+    reply = response.get("reply")
+    return (response.get("provider_ok") is True
+            and response.get("provider_called") is True
+            and response.get("provider_used") == "ollama"
+            and response.get("model_used") == expected_model
+            and response.get("response_source") == "llm"
+            and isinstance(reply, str) and bool(reply.strip()))
+
+
+def quality_flags(text: str) -> list[str]:
+    """Flag obvious repeated output; this does not establish factual correctness."""
+    lines = [re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", line).strip().casefold()
+             for line in text.splitlines() if line.strip()]
+    repeated = any(len(line) >= 15 and lines.count(line) >= 3 for line in set(lines))
+    return ["repeated_lines"] if repeated else []
+
+
+def evaluation_exit_code(summary: dict, strict_language=False, strict_quality=False) -> int:
+    if summary["contract_failed"]:
+        return 1
+    if strict_language and (summary["linguistic_divergent"] or summary["linguistic_uncertain"]):
+        return 1
+    if strict_quality and summary.get("quality_flagged_cases", 0):
+        return 1
+    return 0
+
+
 def compute_bilingual_summary(cases: dict) -> dict:
     """Calculate summary deterministically from individual case results."""
     total_cases = len(cases)
@@ -95,15 +124,17 @@ def compute_bilingual_summary(cases: dict) -> dict:
         if c.get("case_type") == "expected_provider_error" and c.get("contract_passed") is True
     )
 
-    eligible_language_cases = sum(
-        1 for c in cases.values()
-        if c.get("linguistic_status") in ("matched", "divergent", "uncertain")
-    )
-    linguistic_matched = sum(1 for c in cases.values() if c.get("linguistic_status") == "matched")
-    linguistic_divergent = sum(1 for c in cases.values() if c.get("linguistic_status") == "divergent")
-    linguistic_uncertain = sum(1 for c in cases.values() if c.get("linguistic_status") == "uncertain")
+    language_cases = [c for c in cases.values()
+                      if c.get("contract_passed") is True
+                      and c.get("case_type") in ("llm_generation", "verbatim_entities", "user_preference_isolation")
+                      and c.get("linguistic_status") in ("matched", "divergent", "uncertain")]
+    eligible_language_cases = len(language_cases)
+    linguistic_matched = sum(c["linguistic_status"] == "matched" for c in language_cases)
+    linguistic_divergent = sum(c["linguistic_status"] == "divergent" for c in language_cases)
+    linguistic_uncertain = sum(c["linguistic_status"] == "uncertain" for c in language_cases)
 
     return {
+        "quality_flagged_cases": sum(bool(c.get("quality_flags")) for c in cases.values()),
         "total_cases": total_cases,
         "contract_passed": contract_passed,
         "contract_failed": contract_failed,
@@ -277,13 +308,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             # Contract validation
             transport_ok = res.get("provider_ok") is True
             if spec["is_llm"]:
-                transport_ok = (
-                    transport_ok
-                    and res.get("provider_called") is True
-                    and res.get("response_source") == "llm"
-                    and bool(verbatim_reply.strip())
-                    and res.get("model_used") == "qwen2.5:0.5b"
-                )
+                transport_ok = generation_contract(res)
             else:
                 transport_ok = (
                     transport_ok
@@ -346,12 +371,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         res_09 = client.chat(sid_short, "Ưu điểm là gì?", preferred_language="auto")
         reply_09 = res_09.get("reply", "")
         heur_09 = evaluate_text_language(reply_09)
-        c09_passed = (
-            res_09.get("provider_ok") is True
-            and res_09.get("provider_called") is True
-            and res_09.get("response_source") == "llm"
-            and bool(reply_09.strip())
-        )
+        c09_passed = generation_contract(res_09)
         c09_status = "matched" if heur_09["actual_language"] == "vi" else ("uncertain" if heur_09["actual_language"] == "uncertain" else "divergent")
         report["cases"][case_09_id] = {
             "case_id": case_09_id,
@@ -366,6 +386,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "response_source": res_09.get("response_source"),
                 "provider_called": res_09.get("provider_called"),
                 "provider_ok": res_09.get("provider_ok"),
+                "provider_used": res_09.get("provider_used"),
                 "model_used": res_09.get("model_used"),
             },
             "verbatim_reply": reply_09,
@@ -383,14 +404,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         res_after = client.chat(sid_pref, "Hãy nêu 2 hệ điều hành phổ biến nhất.", preferred_language="auto")
         reply_10 = res_after.get("reply", "")
         heur_10 = evaluate_text_language(reply_10)
-        c10_passed = (
-            cmd_ok
-            and res_after.get("provider_ok") is True
-            and res_after.get("provider_called") is True
-            and res_after.get("response_source") == "llm"
-            and res_after.get("response_language") == "en"
-            and bool(reply_10.strip())
-        )
+        c10_passed = (cmd_ok and generation_contract(res_after)
+                      and res_after.get("response_language") == "en")
         c10_status = "matched" if heur_10["actual_language"] == "en" else ("uncertain" if heur_10["actual_language"] == "uncertain" else "divergent")
         report["cases"][case_10_id] = {
             "case_id": case_10_id,
@@ -404,6 +419,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "response_language": res_after.get("response_language"),
                 "response_source": res_after.get("response_source"),
                 "provider_called": res_after.get("provider_called"),
+                "provider_ok": res_after.get("provider_ok"),
+                "provider_used": res_after.get("provider_used"),
                 "model_used": res_after.get("model_used"),
             },
             "verbatim_reply": reply_10,
@@ -432,8 +449,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         c11_passed = (
             res_a.get("response_language") == "en"
             and res_b.get("response_language") == "vi"
-            and res_a.get("provider_ok") is True
-            and res_b.get("provider_ok") is True
+            and generation_contract(res_a)
+            and generation_contract(res_b)
             and bool(reply_a.strip())
             and bool(reply_b.strip())
         )
@@ -448,6 +465,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
             "input_preferred_language": "auto",
             "expected_response_language": "A:en, B:vi",
+            "user_a_provenance": {k: res_a.get(k) for k in ("provider_ok", "provider_called", "provider_used", "model_used", "response_source")},
+            "user_b_provenance": {k: res_b.get(k) for k in ("provider_ok", "provider_called", "provider_used", "model_used", "response_source")},
             "user_a_response_lang": res_a.get("response_language"),
             "user_b_response_lang": res_b.get("response_language"),
             "verbatim_reply": f"User A: {reply_a}\n---\nUser B: {reply_b}",
@@ -531,6 +550,11 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         finally:
             c_mis.close()
 
+    # Content heuristics are separate from transport and language compliance.
+    for case in report["cases"].values():
+        if case.get("case_type") not in ("template_recall", "expected_provider_error"):
+            case["quality_flags"] = quality_flags(case.get("verbatim_reply") or "")
+
     # Calculate summary deterministically from individual cases
     report["summary"] = compute_bilingual_summary(report["cases"])
 
@@ -562,9 +586,10 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
     table_lines.extend([
         "",
         "## Tổng kết định lượng:",
+        f"- Ca có cờ nội dung lặp (không phải đánh giá factuality): **{report['summary']['quality_flagged_cases']}**",
         f"- Tổng số ca kiểm thử: **{report['summary']['total_cases']}**",
         f"- Contract đạt chuẩn bắt buộc: **{report['summary']['contract_passed']} / {report['summary']['total_cases']}** (Thất bại: **{report['summary']['contract_failed']}**)",
-        f"- Số ca LLM generation thật thành công: **{report['summary']['real_llm_generations']}**",
+        f"- Số ca LLM generation đủ contract (không đếm setup hoặc từng response của ca isolation): **{report['summary']['real_llm_generations']}**",
         f"- Số ca Template recall (không gọi LLM): **{report['summary']['template_recalls']}**",
         f"- Số ca bắt lỗi Provider ngoại lệ đúng chuẩn: **{report['summary']['expected_provider_failures']}**",
         f"- Số ca đủ điều kiện đánh giá ngôn ngữ: **{report['summary']['eligible_language_cases']}**",
@@ -582,6 +607,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--gateway", default=None, help="Gateway URL (defaults to auto-spawning Stack)")
     p.add_argument("--output-dir", default="runtime/bilingual-generation")
+    p.add_argument("--strict-quality", action="store_true", help="Fail on repeated-output quality flags")
     p.add_argument("--strict-language", action="store_true", help="Fail if any linguistic divergence occurs")
     args = p.parse_args()
     out = Path(args.output_dir).resolve()
@@ -593,17 +619,7 @@ def main():
         report = run_evaluation(args.gateway, out)
 
     summary = report["summary"]
-    # Fail if any mandatory contract failed
-    if summary["contract_failed"] > 0:
-        print(f"FAILED: {summary['contract_failed']} contract checks failed.")
-        sys.exit(1)
-
-    # Fail if strict language mode requested and there are divergent cases
-    if args.strict_language and summary["linguistic_divergent"] > 0:
-        print(f"FAILED (strict-language): {summary['linguistic_divergent']} linguistic divergences detected.")
-        sys.exit(1)
-
-    sys.exit(0)
+    sys.exit(evaluation_exit_code(summary, args.strict_language, args.strict_quality))
 
 
 if __name__ == "__main__":
