@@ -10,7 +10,7 @@
   "probe_execution_status": "completed",
   "probe_trial_count": 12,
   "probe_shell_exit_code": "unknown (not captured; JSON execution_status=completed and contains 12 trials)",
-  "current_quality_branch_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3",
+  "current_quality_branch_code_sha": "7cfc2a4 (full SHA recorded after push verification)",
   "main_before": "7980e71350d9c3512aff897af3a1fa7fc13982df",
   "main_after": "953d62efa5bf874b9852f6a02fcb7844258ec317",
   "main_diagnostic_change": "PR https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4 merged normally; main workflow status for merge SHA was not returned; PR-head run success on 965c544f604691fee0e71a8fbd28b85946f47277",
@@ -36,42 +36,82 @@
   },
   "commands": [
     {
-      "command": "python -m py_compile runtime/qwen3-template-probe-20261104/run-paired-probe.py",
-      "working_directory": ".",
-      "exit_code": "unknown (not captured)"
-    },
-    {
-      "command": "python runtime/qwen3-template-probe-20261104/run-paired-probe.py",
-      "working_directory": ".",
-      "exit_code": "unknown (not captured); report completed 12 trials"
-    },
-    {
-      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_week4_integration.py python/tests/test_response_quality.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-qwen-diagnostics-20261104-r3",
-      "working_directory": ".",
-      "exit_code": 0,
-      "result": "56 passed in 7.79s"
-    },
-    {
-      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-full-qwen-diagnostics-20261104",
-      "working_directory": ".",
-      "exit_code": 0,
-      "result": "303 passed in 74.50s",
-      "tested_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3"
-    },
-    {
-      "command": "python/.venv/Scripts/python.exe -m pytest runtime/main-provider-diagnostic-check-20261104/python/tests/test_week4_integration.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-main-provider-20261104",
-      "working_directory": ".",
-      "exit_code": 0,
-      "result": "15 passed in 5.70s",
-      "tested_base_sha": "7980e71350d9c3512aff897af3a1fa7fc13982df",
-      "branch_commit": "965c544f604691fee0e71a8fbd28b85946f47277",
-      "pr": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4"
-    },
-    {
-      "command": "Focused suite before fixing fixture expectation",
+      "command": "python/.venv/Scripts/python.exe scripts/verify_chat_provenance.py --gateway http://127.0.0.1:8187 --output runtime/quality-gateway-probe-20261104/chat-provenance-r1.json --expected-model qwen3:4b --expected-model-digest 359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
       "working_directory": ".",
       "exit_code": 1,
-      "result": "55 passed, 1 failed; fixture eval_count was set to 512 but expected not_reached; fixture expectation corrected and full affected suite rerun successfully"
+      "result": "provider_quality_rejected; thinking-only empty content, 512/512, done_reason=length; 37.281s"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_bilingual_generation.py --gateway http://127.0.0.1:8187 --output-dir runtime/quality-gateway-probe-20261104/bilingual-strict-r1 --expected-model qwen3:4b --expected-model-digest 359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7 --strict-language --strict-quality",
+      "working_directory": ".",
+      "exit_code": 1,
+      "result": "27 cases; contract 16/27; 11 failures; 4 successful real generations; 4 task uncertain"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_week4_web.py --spawn-stack --output-dir runtime/quality-gateway-probe-20261104/browser-r1",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "8 Chromium Web checks passed; one qwen2.5:0.5b generation"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_memory_reliability.py --output-dir runtime/quality-gateway-probe-20261104/memory-reliability-r1",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "10 synthetic HTTP/Chromium/SQLite checks passed; provider-offline fault injection, not generation"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_sqlite_backup_restore.py --output-dir runtime/quality-gateway-probe-20261104/sqlite-backup-r1 --protected-dir runtime/nonexistent-protected-backup-for-probe-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "synthetic level 1 passed; 205 messages; protected data check skipped intentionally"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py python/tests/test_response_quality.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-harness-provenance-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "52 passed"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-final-e8be1f-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "304 passed in 71.82s",
+      "tested_code_sha": "e8be1f593a49eab81c5dc3bd8f046a0c08ca46b5"
+    },
+    {
+      "command": "node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "26 passed"
+    },
+    {
+      "command": "dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release --nologo",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "0 warnings, 0 errors"
+    },
+    {
+      "command": "dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "7/7 Gateway history tests passed"
+    },
+    {
+      "command": "./scripts/tests/local-health.tests.ps1",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "6/6 passed"
+    },
+    {
+      "command": "Initial focused pytest invocation using default temp directory",
+      "working_directory": ".",
+      "exit_code": "unknown; setup output had Windows PermissionError for D:/TMP/TMP/pytest-of-Admin; rerun with new workspace basetemp passed"
+    },
+    {
+      "command": "Intermediate focused pytest during fixture correction",
+      "working_directory": ".",
+      "exit_code": 1,
+      "result": "55 passed, 1 assertion failed; corrected fixture expected budget_reached; final focused/full passes recorded"
     }
   ],
   "scope_limits": [
@@ -126,11 +166,12 @@
     },
     {
       "path": "README.md",
-      "source_path": "authored evidence packaging file",
-      "source_sha256": "8153c930ca74017d0d5b383289fdfeb43560a41d36de9159d47189678544f204",
-      "packaged_source_bytes_sha256": "f11d9ac84b8b2f3beadaf2c0c737535a0dd19817f474a734d300322eeeaed0a6",
-      "git_blob_sha1": "85c156b55b0eabb46f853223d24e4001664b46eb",
-      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+      "source_path": "authored evidence README",
+      "source_sha256": "2e179dc805b67bccd3ebd85181798ecf45c2a131cc3b908884627e44c9e59641",
+      "packaged_source_bytes_sha256": "2e179dc805b67bccd3ebd85181798ecf45c2a131cc3b908884627e44c9e59641",
+      "git_blob_sha1": "07d6f18ff1020ac64a0cc32f30f7ad1666400317",
+      "normalization": "UTF-8 LF; SHA-256 records exact packaged bytes; Git blob recorded after staging",
+      "observed_at_utc": "2026-11-03T18:36:17Z"
     },
     {
       "path": "ollama-capabilities.json",
@@ -139,7 +180,173 @@
       "packaged_source_bytes_sha256": "6756c9b1162554a44525c703541d013d01d792880c2ef0572f4c48cb189daf4b",
       "git_blob_sha1": "5054db36b94ad2ff36e650ffe66ee065b83daa0f",
       "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "live-gateway-chat-provenance-qwen3-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/chat-provenance-r1.json",
+      "source_sha256": "da89bb6f33698aae38f82de5e0635dd36dde0a639be59e7f34b4465379b1c58b",
+      "packaged_source_bytes_sha256": "da89bb6f33698aae38f82de5e0635dd36dde0a639be59e7f34b4465379b1c58b",
+      "git_blob_sha1": "216cbdd73042c376a8bffc9f8f23150eec8321f6",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:07:31.306602+00:00",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "live-gateway-bilingual-strict-qwen3-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/bilingual-strict-r1/report.json",
+      "source_sha256": "5ddbe79ecad816320adbb9e78186db02aa83f6319c4027f639ab7071029c6339",
+      "packaged_source_bytes_sha256": "5ddbe79ecad816320adbb9e78186db02aa83f6319c4027f639ab7071029c6339",
+      "git_blob_sha1": "4530b2fb196505775fe15211918ec91bd4a4e643",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:08:28.096617+00:00",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "live-gateway-bilingual-review-qwen3-r1.md",
+      "source_path": "runtime/quality-gateway-probe-20261104/bilingual-strict-r1/review_table.md",
+      "source_sha256": "8e3f05e9a783f58f900e81ed4c563028d37786bd4297f0aec9ac7735547398a5",
+      "packaged_source_bytes_sha256": "8e3f05e9a783f58f900e81ed4c563028d37786bd4297f0aec9ac7735547398a5",
+      "git_blob_sha1": "b569cadb14786e94b994972768f9e66a86a89717",
+      "normalization": "copied byte-for-byte from generated Markdown; Git autocrlf blob recorded separately",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "direct-qwen3-budget1024-followup-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/direct-budget1024-report.json",
+      "source_sha256": "49f78e5099657ca7d9595938764482ef846a0dc23162ff561e078edb0b5b6e05",
+      "packaged_source_bytes_sha256": "49f78e5099657ca7d9595938764482ef846a0dc23162ff561e078edb0b5b6e05",
+      "git_blob_sha1": "a6d1004e202e9c6a1e775af52e1cfb7414de2cbc",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:21:28.662804+00:00",
+      "completed_at_utc": "2026-11-03T18:25:01.775163+00:00"
+    },
+    {
+      "path": "run-qwen3-budget1024-probe.py",
+      "source_path": "runtime/quality-gateway-probe-20261104/run-budget1024-probe.py",
+      "source_sha256": "4b255a113014761ac5833b2cd41e0dc5d1054d91ae1b2464ec2b8f084ae9ec34",
+      "packaged_source_bytes_sha256": "4b255a113014761ac5833b2cd41e0dc5d1054d91ae1b2464ec2b8f084ae9ec34",
+      "git_blob_sha1": "301807bcb8f41376718db652b2298d4ba4d0d1cc",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "direct-qwen25-default-task-comparison-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/qwen25-baseline-report.json",
+      "source_sha256": "41ee8a7e2cad12a1858c11095141883fa423366682da4108c703b224796ffcbc",
+      "packaged_source_bytes_sha256": "41ee8a7e2cad12a1858c11095141883fa423366682da4108c703b224796ffcbc",
+      "git_blob_sha1": "4ce0219203bbab93479f79b9ea6d593085cecbc1",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:29:58.801126+00:00",
+      "completed_at_utc": "2026-11-03T18:30:02.890850+00:00"
+    },
+    {
+      "path": "run-qwen25-baseline-probe.py",
+      "source_path": "runtime/quality-gateway-probe-20261104/run-qwen25-baseline-probe.py",
+      "source_sha256": "b4ef477661ba1d9b3f349a8a9aab671c99def1ba8fcd9c56052fa117f50e5885",
+      "packaged_source_bytes_sha256": "b4ef477661ba1d9b3f349a8a9aab671c99def1ba8fcd9c56052fa117f50e5885",
+      "git_blob_sha1": "6790801d00031e1bafa3b64ea0e3d5ea7c8b2027",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "chromium-web-runtime-qwen25-default-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/browser-r1/browser.json",
+      "source_sha256": "b8bcd4107314f3f6958ad6c9980d31ea09923a4307c3d086e13663190cc4422e",
+      "packaged_source_bytes_sha256": "b8bcd4107314f3f6958ad6c9980d31ea09923a4307c3d086e13663190cc4422e",
+      "git_blob_sha1": "9db588d2ce5b1f22369596806e8fdadc989bc8b9",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:27:34.861972+00:00",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "memory-reliability-http-chromium-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/memory-reliability-r1/report.json",
+      "source_sha256": "c2605357cf3f7cc3da291ebd054f848b319b7dc368c88c98205cbd1f6774fc4e",
+      "packaged_source_bytes_sha256": "c2605357cf3f7cc3da291ebd054f848b319b7dc368c88c98205cbd1f6774fc4e",
+      "git_blob_sha1": "dc368e7dcb769d77dd6447bcafa2908eb13ac0ab",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:28:14.100656+00:00",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "sqlite-backup-restore-synthetic-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/sqlite-backup-r1/report.json",
+      "source_sha256": "1a0ede8adbc9585f6891a018ae412ed0fe8cd48f4ed68a1af3bf69f3b75d9431",
+      "packaged_source_bytes_sha256": "1a0ede8adbc9585f6891a018ae412ed0fe8cd48f4ed68a1af3bf69f3b75d9431",
+      "git_blob_sha1": "dc07d6aa7de44ff85b8b41dc6925838f5b783735",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:29:05.374396+00:00",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "full-pytest-final-304-output.txt",
+      "source_path": "runtime/pytest-final-e8be1f-20261104.log",
+      "source_sha256": "7c059bbe2a5f9df9a8aa9db89dfe0db243faf3711a633d88be0615057e6bb925",
+      "packaged_source_bytes_sha256": "44fe157aed1f44b5aa0374f5131a2d6200b170645dade6b7efea7138488eadfe",
+      "git_blob_sha1": "c4effe4ac3f842d18193b46ddab5d1d3b1d45512",
+      "normalization": "UTF-16LE PowerShell source log converted to UTF-8; output text retained; both source and packaged SHA-256 recorded",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log"
+    },
+    {
+      "path": "pytest-review-table-label-11-passed-output.txt",
+      "source_path": "runtime/pytest-review-label-final-20261104.log",
+      "source_sha256": "9830e2c31919df7eb1d67205a5901773c68b58be9a8390c1ba2e280897d566e1",
+      "packaged_source_bytes_sha256": "9830e2c31919df7eb1d67205a5901773c68b58be9a8390c1ba2e280897d566e1",
+      "git_blob_sha1": "b72cfc4cca749447f01f59f461fd82e8d1d4797a",
+      "normalization": "PowerShell test output normalized to UTF-8 LF for packaging; output content preserved",
+      "observed_at_utc": "2026-11-03T18:39:41Z",
+      "completed_at_utc": "2026-11-03T18:39:42Z",
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-review-label-final-20261104",
+      "working_directory": "D:/Projects/dusnx-platform",
+      "exit_code": 0,
+      "result": "11 passed"
     }
   ],
-  "manifest_self_hash": "not included"
+  "manifest_self_hash": "not included",
+  "live_gateway_and_browser_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3",
+  "post_live_report_harness_fix_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
+  "evidence_commit_pending": "Evidence package will be committed after manifest blob hashes are finalized",
+  "ci": {
+    "pr": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4",
+    "pr_head_sha": "965c544f604691fee0e71a8fbd28b85946f47277",
+    "pr_head_workflow_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41689664607",
+    "pr_head_conclusion": "success",
+    "merged_main_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
+    "merged_sha_workflow_status": "unknown; no workflow run/status returned"
+  },
+  "live_results": {
+    "chat_provenance_exit": 1,
+    "chat_provenance_status": "provider_quality_rejected",
+    "bilingual_strict_exit": 1,
+    "bilingual_cases": 27,
+    "bilingual_contract_passed": 16,
+    "bilingual_contract_failed": 11,
+    "bilingual_real_successful_generations": 4,
+    "bilingual_task_uncertain": 4,
+    "qwen3_1024_translation_empty": "2/2",
+    "qwen3_1024_vietnamese_gateway_benefit_content": "2/2",
+    "qwen25_512_translation_wrong_language": "2/2",
+    "qwen25_512_gateway_benefit_overlong_repetitive": "2/2"
+  },
+  "not_run_this_turn": [
+    "Full strict bilingual was not rerun after reporting-only harness fix e8be1f5; prior report remains unchanged and code fix is covered by unit/full pytest",
+    "No independent human quality review",
+    "No main merge-SHA CI result (unknown)",
+    "No live generation rerun after review-table label-only harness fix; prior strict Qwen3 report is preserved unchanged"
+  ],
+  "harness_followup": {
+    "tested_code_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
+    "issue": "Historical review table heading hard-coded Qwen 2.5 0.5B although report configuration and live run were Qwen3 qwen3:4b",
+    "fix": "Future review table label reads configuration.expected_model; absent/invalid value renders unknown model",
+    "test_command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-review-label-final-20261104",
+    "exit_code": 0,
+    "passed": 11,
+    "failed": 0,
+    "not_rerun": "Strict live Qwen3 generation report; report-label-only change does not alter provider/generation behavior; prior live report remains on e89e57467fde95ed11d077033ecfbc23a30b7ff3",
+    "observed_at_utc": "2026-11-03T18:39:41Z"
+  }
 }
