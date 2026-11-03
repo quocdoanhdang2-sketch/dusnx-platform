@@ -5,7 +5,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget, provider_attempt_metadata, review_model_label
+from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget, provider_attempt_metadata, review_model_label, create_isolated_case_session
 from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -152,6 +152,22 @@ def test_review_table_model_label_comes_from_run_configuration():
     assert review_model_label({"configuration": {"expected_model": "qwen3:4b"}}) == "qwen3:4b"
     assert review_model_label({"configuration": {"expected_model": "  "}}) == "unknown model"
     assert review_model_label({}) == "unknown model"
+
+
+def test_standalone_matrix_cases_receive_distinct_sessions():
+    class SessionRecorder:
+        def __init__(self):
+            self.titles = []
+
+        def create_session(self, title):
+            self.titles.append(title)
+            return f"session-{len(self.titles)}"
+
+    client = SessionRecorder()
+    first = create_isolated_case_session(client, "CASE_A")
+    second = create_isolated_case_session(client, "CASE_B")
+    assert first != second
+    assert client.titles == ["Bilingual CASE_A", "Bilingual CASE_B"]
 
 
 def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):

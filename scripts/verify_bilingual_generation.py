@@ -517,6 +517,11 @@ class GatewayClient:
             self.client.close()
 
 
+def create_isolated_case_session(client: GatewayClient, case_id: str) -> str:
+    """Give each standalone matrix case a fresh session; setup turns stay case-local."""
+    return client.create_session(f"Bilingual {case_id}")
+
+
 def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     report = {
@@ -557,8 +562,6 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
     client = GatewayClient(gateway_url)
     try:
         client.register_and_login("eval_user_")
-        session_id = client.create_session("Bilingual Main Suite")
-
         test_cases_spec = [
             {
                 "case_id": "CASE_01_VI_PREF_VI",
@@ -829,6 +832,51 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                     ]},
             },
             {
+                "case_id": "VARIANT_28_TRANSLATE_QUERY_URL_CONFIG",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Translate to English while preserving an HTTPS URL with query punctuation and a different KEY=VALUE literal exactly.",
+                "prompt": "Translate to English: Dùng callback https://login.example.dev/oauth/callback?client_id=acme&scope=read với biến AUTH_REDIRECT_PORT=9443.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"assignments": ["AUTH_REDIRECT_PORT=9443"]},
+            },
+            {
+                "case_id": "VARIANT_29_TOPIC_SHIFT_SQLITE_FOLLOWUP",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "After a new topic switch, answer from SQLite transaction rollback history; keyword presence alone is not a semantic pass.",
+                "setup_history": [
+                    "I am comparing Kafka and RabbitMQ for message delivery.",
+                    "Switching topics: I am learning how SQLite transactions roll back failed writes.",
+                ],
+                "prompt": "What happens after the write fails?",
+                "preferred_language": "auto",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"kind": "context_subject",
+                    "subject_terms": ["SQLite", "transaction", "rollback", "uncommitted"],
+                    "forbidden_terms": ["Kafka", "RabbitMQ", "message queue"]},
+            },
+            {
+                "case_id": "VARIANT_30_TLS_HOSTNAME_FACTUAL",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Explain a factual security property in Vietnamese; automated concept signals do not replace source-based or human review.",
+                "prompt": "Vì sao TLS cần xác minh tên máy chủ khớp với chứng chỉ?",
+                "preferred_language": "vi",
+                "expected_response_lang": "vi",
+                "is_llm": True,
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "tls_hostname_validation_v1",
+                    "basis": "The answer should connect hostname-to-certificate identity checking with rejecting an impersonating endpoint; factual acceptability remains unreviewed.",
+                    "criteria": [
+                        {"id": "identity_match", "terms_any": ["hostname", "server name", "tên máy chủ", "tên miền"]},
+                        {"id": "certificate_identity", "terms_any": ["certificate", "chứng chỉ"]},
+                        {"id": "impersonation_risk", "terms_any": ["impersonation", "man-in-the-middle", "giả mạo", "kẻ trung gian"]},
+                    ]},
+            },
+            {
                 "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
                 "case_type": "template_recall",
                 "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
@@ -847,12 +895,13 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
 
         for spec in test_cases_spec:
             case_id = spec["case_id"]
+            case_session_id = create_isolated_case_session(client, case_id)
             if spec.get("setup_prompt"):
-                client.chat(session_id, spec["setup_prompt"], preferred_language="auto")
+                client.chat(case_session_id, spec["setup_prompt"], preferred_language="auto")
             for setup_turn in spec.get("setup_history", []):
-                client.chat(session_id, setup_turn, preferred_language="auto")
+                client.chat(case_session_id, setup_turn, preferred_language="auto")
 
-            res = client.chat(session_id, spec["prompt"], preferred_language=spec["preferred_language"])
+            res = client.chat(case_session_id, spec["prompt"], preferred_language=spec["preferred_language"])
             verbatim_reply = res.get("provider_sanitized_reply") or res.get("reply", "")
             heuristic = evaluate_text_language(verbatim_reply)
 
