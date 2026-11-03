@@ -74,5 +74,36 @@
       "newline_note": "source and package bytes copied exactly; newline convention recorded in hash",
       "sensitive_data_review": "synthetic prompts, accounts, and outputs; no bearer/API/password credential pattern found"
     }
-  ]
+  ],
+  "run_timestamp_utc": "2026-11-03T20:24:56.878678+00:00",
+  "report_code_sha": "780e340e32dd3445372707a39d80ee7ac6b29d4a",
+  "locked_case_specs_sha256": "411ef105d9f32cf440f7d17e10fccf4d74de2c4b4fcd02399d062ae545099be6",
+  "tool_versions": {
+    "python": "3.12.10"
+  },
+  "generation_options": {
+    "token_budget": 512,
+    "context_size": null,
+    "temperature": 0.1,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64
+  },
+  "latency_summary_provider_elapsed_ms_per_case": {
+    "cases_with_provider_call": 15,
+    "min": 2719.0,
+    "median": 7484.0,
+    "max": 12625.0,
+    "source": "each case metadata.provider_elapsed_ms; attempt-level timing remains in report.json"
+  },
+  "resource_telemetry": {
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU, 4 GiB (local inventory)",
+    "per-run VRAM/CPU/RAM telemetry": "unknown",
+    "model_weight_size_bytes": 986061892
+  },
+  "ollama": {
+    "version": "0.40.14",
+    "endpoint_scope": "loopback isolated stack",
+    "external_port_exposure": false
+  },
+  "comparison_note": "Earlier Qwen3 direct evidence: 2/2 1024-token translation probes had done_reason=length and empty content with thinking present; think=false placed analysis in content and was not safe. Qwen2.5 1.5B Instruct was chosen for fit and non-thinking compatibility, but its actual Gateway quality gate failed; no default promotion."
 }
