@@ -103,8 +103,10 @@ def validate_ollama_response(data: object) -> tuple[str, str, Optional[int]]:
     if not isinstance(message, dict) or not isinstance(message.get("content"), str):
         raise ValueError("invalid_schema")
     text = message["content"].strip()
-    if not text or not isinstance(model, str) or not model.strip():
+    if not isinstance(model, str) or not model.strip():
         raise ValueError("invalid_schema")
+    if not text:
+        raise ValueError("empty_content")
     tokens = data.get("eval_count")
     if tokens is not None and (type(tokens) is not int or tokens < 0):
         raise ValueError("invalid_schema")
@@ -118,7 +120,7 @@ def ollama_error(exc: Exception) -> str:
     if isinstance(exc, json.JSONDecodeError):
         return "invalid_json"
     if isinstance(exc, ValueError):
-        return "invalid_schema"
+        return str(exc) if str(exc) in {"invalid_schema", "empty_content"} else "invalid_schema"
     if isinstance(exc, (TimeoutError, socket.timeout)) or (
         isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, (TimeoutError, socket.timeout))
     ):
@@ -164,6 +166,21 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
                 "thinking_chars": len(message.get("thinking")) if isinstance(message.get("thinking"), str) else None,
                 "returned_model": data.get("model") if isinstance(data.get("model"), str) else None,
             })
+            content = message.get("content")
+            thinking = message.get("thinking")
+            if isinstance(content, str) and not content.strip():
+                diagnostics["response_classification"] = (
+                    "thinking_only_budget_exhausted"
+                    if isinstance(thinking, str) and thinking.strip() and data.get("done_reason") == "length"
+                    else "empty_content"
+                )
+            eval_count = data.get("eval_count")
+            budget = diagnostics["num_predict"]
+            diagnostics["token_budget_status"] = (
+                "reached" if type(eval_count) is int and eval_count >= budget
+                else "not_reached" if type(eval_count) is int
+                else "unknown"
+            )
         diagnostics["http_completed"] = True
         diagnostics["error_category"] = None
         text, model, tokens = validate_ollama_response(data)
@@ -173,7 +190,8 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
     except Exception as exc:
         category = ollama_error(exc)
         diagnostics["http_completed"] = not isinstance(exc, (TimeoutError, socket.timeout, urllib.error.URLError))
-        diagnostics["schema_valid"] = False if category in ("invalid_json", "invalid_schema") else None
+        diagnostics["schema_valid"] = (False if category in ("invalid_json", "invalid_schema")
+                                       else True if category == "empty_content" else None)
         diagnostics["error_category"] = category
         diagnostics["exception_type"] = type(exc).__name__
         diagnostics["latency_ms"] = round((time.monotonic() - started) * 1000, 1)
