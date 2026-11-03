@@ -653,9 +653,18 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
         attempt_diagnostics = getattr(result, "diagnostics", {})
         sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
         text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
-        entity_prompt = "" if re.search(
-            r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b", user_message, re.I
-        ) and extract_required_entities(user_message)["urls"] else user_message
+        task_text_without_urls = re.sub(r"https?://\S+", " ", user_message)
+        content_lookup = bool(re.search(
+            r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b",
+            task_text_without_urls, re.I,
+        ))
+        required = extract_required_entities(user_message)
+        if content_lookup and required["urls"]:
+            # A URL supplied as source material need not be repeated, but any
+            # independent KEY=VALUE literals in the task still must survive.
+            entity_prompt = "\n".join(f"{key}={value}" for key, value in required["assignments"])
+        else:
+            entity_prompt = user_message
         if ok:
             assessment = _quality_assessment(entity_prompt, text, response_language)
             provider_attempts.append({"attempt": 1, "done_reason": done_reason,

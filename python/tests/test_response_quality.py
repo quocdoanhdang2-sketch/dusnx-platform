@@ -97,6 +97,27 @@ def test_entity_variants_keep_query_url_and_punctuation_separate_from_assignment
     assert assess_entity_preservation(prompt, good)["status"] == "passed"
 
 
+def test_translation_url_query_read_value_does_not_disable_entity_validation(monkeypatch):
+    monkeypatch.setenv("DUSNX_PROVIDER", "ollama")
+    prompt = ("Translate to English: Dùng callback "
+              "https://login.example.dev/oauth/callback?client_id=acme&scope=read "
+              "với biến AUTH_REDIRECT_PORT=9443.")
+    calls = []
+
+    def omit_assignment(system, user):
+        calls.append(user)
+        return ("I cannot fetch the URL https://login.example.dev/oauth/callback?client_id=acme&scope=read. "
+                "Please provide the article text.", True, "qwen-test", 24)
+
+    with patch("apps.ai_api.provider._ollama_generate", side_effect=omit_assignment):
+        result = provider.generate_response(prompt, [], "chat", response_language="en")
+    assert result.response_source == "provider_error"
+    assert result.quality_status == "failed"
+    assert len(calls) == 2
+    assert "Exact required literals: " in calls[1]
+    assert "AUTH_REDIRECT_PORT=9443" in calls[1]
+
+
 @pytest.mark.parametrize("answer", [
     "```dotenv\nWEBHOOK_RETRY_LIMIT=7\n```",
     "- `WEBHOOK_RETRY_LIMIT = 7`",
