@@ -87,12 +87,39 @@ def generation_contract(response: dict, expected_model: str = "qwen2.5:0.5b") ->
             and isinstance(reply, str) and bool(reply.strip()))
 
 
+SYSTEM_INSTRUCTION_LEAK_PATTERNS = [
+    re.compile(r"\bquan trọng\s*:", re.IGNORECASE),
+    re.compile(r"\bbắt buộc\s*:\s*bạn phải", re.IGNORECASE),
+    re.compile(r"\bcritical mandatory instruction\b", re.IGNORECASE),
+    re.compile(r"\btuyệt đối không trả lời\b", re.IGNORECASE),
+    re.compile(r"\bchỉ thị hệ thống\b", re.IGNORECASE),
+    re.compile(r"\bgiữ nguyên tên riêng,\s*id,\s*url\b", re.IGNORECASE),
+    re.compile(r"\bhội thoại tham khảo,\s*không phải quyết định\b", re.IGNORECASE),
+    re.compile(r"\bdanh sách trí nhớ hiệu lực có thẩm quyền\b", re.IGNORECASE),
+]
+
+
 def quality_flags(text: str) -> list[str]:
-    """Flag obvious repeated output; this does not establish factual correctness."""
+    """
+    Evaluate generation quality heuristics:
+    1. repeated_lines: flags loops where a substantial line (>= 15 chars) repeats 3+ times.
+    2. system_instruction_leak: flags verbatim regurgitation of system prompt control directives.
+    Limitations: Heuristic detector only; does not evaluate semantic accuracy or factual truth.
+    Designed with specific control tokens to avoid false positives on legitimate conversational content.
+    """
+    flags = []
     lines = [re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", line).strip().casefold()
              for line in text.splitlines() if line.strip()]
     repeated = any(len(line) >= 15 and lines.count(line) >= 3 for line in set(lines))
-    return ["repeated_lines"] if repeated else []
+    if repeated:
+        flags.append("repeated_lines")
+
+    for pattern in SYSTEM_INSTRUCTION_LEAK_PATTERNS:
+        if pattern.search(text):
+            flags.append("system_instruction_leak")
+            break
+
+    return flags
 
 
 def evaluation_exit_code(summary: dict, strict_language=False, strict_quality=False) -> int:

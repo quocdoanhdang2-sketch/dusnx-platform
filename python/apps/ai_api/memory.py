@@ -170,9 +170,9 @@ def _row_to_memory(row: sqlite3.Row) -> dict:
 class MemoryDB:
     """Thread-safe memory database."""
 
-    def __init__(self) -> None:
+    def __init__(self, db_path: Optional[str | Path] = None) -> None:
         self._lock = threading.RLock()
-        self._db_path = _get_db_path()
+        self._db_path = Path(db_path) if db_path is not None else _get_db_path()
         self._conn = _get_conn(self._db_path)
         _init_db(self._conn)
 
@@ -214,6 +214,65 @@ class MemoryDB:
                 "SELECT * FROM memories WHERE memory_id=? AND user_id=?", (memory_id, user_id)
             ).fetchone()
             return _row_to_memory(row) if row else None
+
+    def get_language_preference(self, user_id: str, project_id: Optional[str] = None) -> Optional[str]:
+        """
+        Directly retrieve active language preference ('vi' or 'en') for user.
+        - Never limited by top-K or pagination.
+        - Scoped strictly to user_id.
+        - Respects project-scoped preference over global preference if project_id is provided.
+        - Parses strict 'language:(vi|en)' format only; ignores malformed or descriptive text.
+        """
+        with self._lock:
+            if project_id:
+                sql = """
+                    SELECT content, project_id FROM memories
+                    WHERE user_id = ? AND is_active = 1 AND info_type = 'preference'
+                      AND (project_id = ? OR project_id IS NULL OR project_id = '')
+                    ORDER BY (CASE WHEN project_id = ? THEN 1 ELSE 0 END) DESC, updated_at DESC
+                """
+                rows = self._conn.execute(sql, (user_id, project_id, project_id)).fetchall()
+            else:
+                sql = """
+                    SELECT content, project_id FROM memories
+                    WHERE user_id = ? AND is_active = 1 AND info_type = 'preference'
+                      AND (project_id IS NULL OR project_id = '')
+                    ORDER BY updated_at DESC
+                """
+                rows = self._conn.execute(sql, (user_id,)).fetchall()
+
+        for r in rows:
+            content = (r["content"] or "").strip().lower()
+            m = re.match(r"^language:\s*(vi|en)$", content)
+            if m:
+                return m.group(1)
+        return None
+
+    def get_active_language_preference_memory(self, user_id: str, project_id: Optional[str] = None) -> Optional[dict]:
+        """Retrieve the active language preference memory row for user, if any."""
+        with self._lock:
+            if project_id:
+                sql = """
+                    SELECT * FROM memories
+                    WHERE user_id = ? AND is_active = 1 AND info_type = 'preference'
+                      AND (project_id = ? OR project_id IS NULL OR project_id = '')
+                    ORDER BY (CASE WHEN project_id = ? THEN 1 ELSE 0 END) DESC, updated_at DESC
+                """
+                rows = self._conn.execute(sql, (user_id, project_id, project_id)).fetchall()
+            else:
+                sql = """
+                    SELECT * FROM memories
+                    WHERE user_id = ? AND is_active = 1 AND info_type = 'preference'
+                      AND (project_id IS NULL OR project_id = '')
+                    ORDER BY updated_at DESC
+                """
+                rows = self._conn.execute(sql, (user_id,)).fetchall()
+
+        for r in rows:
+            content = (r["content"] or "").strip().lower()
+            if re.match(r"^language:\s*(vi|en)$", content):
+                return _row_to_memory(r)
+        return None
 
     def list_memories(
         self,

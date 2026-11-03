@@ -859,11 +859,7 @@ def _chat_impl(req: ChatRequest, user: dict):
     # Get active memories for context (filtered and scored by query/project)
     memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, query=req.message, limit=15)
     candidate_ids = [m["memory_id"] for m in memories]
-    memory_ids = []
-    saved_language = next(("en" if "language:en" in m["content"] else "vi"
-                           for m in db.list_memories(user_id, include_inactive=False)
-                           if m.get("info_type") == "preference"
-                           and "language:" in m.get("content", "")), None)
+    saved_language = db.get_language_preference(user_id, project_id=req.project_id)
     requested_preference = req.preferred_language if req.preferred_language != "auto" else (saved_language or "auto")
     detected_language = detect_language(req.message)
     reply_language = response_language(requested_preference, detected_language)
@@ -918,16 +914,15 @@ def _chat_impl(req: ChatRequest, user: dict):
     # previous language record so translations never create duplicate memories.
     language_change = preference_instruction(req.message)
     if language_change:
-        language_memories = [m for m in db.list_memories(user_id, include_inactive=False)
-                             if m["info_type"] == "preference" and "language:" in m["content"]]
         content = f"language:{language_change}"
-        if language_memories:
-            new_mem = (language_memories[0] if language_memories[0]["content"] == content else
-                       db.update_memory(user_id, language_memories[0]["memory_id"], content,
+        existing_mem = db.get_active_language_preference_memory(user_id, project_id=req.project_id)
+        if existing_mem:
+            new_mem = (existing_mem if existing_mem["content"] == content else
+                       db.update_memory(user_id, existing_mem["memory_id"], content,
                                         source_session=req.session_id))
         else:
             new_mem = db.create_memory(user_id=user_id, info_type="preference", content=content,
-                                       source_session=req.session_id)
+                                       source_session=req.session_id, project_id=req.project_id)
         requested_preference = reply_language = language_change
         reply_text = ("Language preference saved. I will answer in English from now on."
                       if language_change == "en" else

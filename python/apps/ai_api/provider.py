@@ -219,6 +219,25 @@ def get_provider_health() -> dict:
     return {"provider": p, "available": False, "status": "unknown_provider"}
 
 
+def clean_url(u: str) -> str:
+    """Strip trailing punctuation that is not part of the URL."""
+    return re.sub(r"[.,;!?:)'\"]+$", "", u)
+
+
+def sanitize_generated_reply(text: str) -> str:
+    """Strip accidental leakage of system instructions or prompt boilerplate from model output."""
+    if not text:
+        return ""
+    cleaned = text.strip()
+    patterns = [
+        r"^(?:Quan trọng|BẮT BUỘC|Chỉ thị hệ thống|Quy tắc|Rules|Instructions|CRITICAL MANDATORY INSTRUCTION):\s*",
+        r"^(?:Trả lời thẳng vào câu hỏi|Trả lời trực tiếp câu hỏi)[^\n]*\n*",
+    ]
+    for pat in patterns:
+        cleaned = re.sub(pat, "", cleaned, flags=re.IGNORECASE).strip()
+    return cleaned
+
+
 def generate_response(
     user_message: str,
     memories: list[dict],
@@ -284,43 +303,63 @@ Rules:
 - Never mention superseded decisions.
 - If information is not known, state that clearly in English.
 """
-        if query_lang == "vi":
+        raw_urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
+        urls = [clean_url(u) for u in raw_urls if clean_url(u)]
+        vars_kv = re.findall(r"\b[A-Za-z0-9_]+=[A-Za-z0-9_.:/-]+", user_message)
+
+        is_url_fetch = bool(urls and re.search(r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b", user_message, re.I))
+
+        if is_url_fetch:
+            llm_user_message = (
+                f"Instruction: DUSN-X does not have internet access to fetch external URL content ({urls[0]}). "
+                f"State this limitation clearly and ask the user to provide the article text.\n\n"
+                f"User request: {user_message}"
+            )
+        elif urls or vars_kv:
+            directives = []
+            if urls:
+                directives.append(f"URL: {', '.join(urls)}")
+            if vars_kv:
+                directives.append(f"Variables: {', '.join(vars_kv)}")
+            prefix = "Instruction: Fulfill the user request while preserving these exact entities verbatim:\n- " + "\n- ".join(directives)
+            llm_user_message = f"{prefix}\n\nRequest: {user_message}\n\nAnswer in English:"
+        elif query_lang == "vi":
             llm_user_message = f"Translate and answer the following question strictly in English (use 'and', never 'và'): '{user_message}'. Answer in English:"
         else:
             llm_user_message = user_message
     else:
         project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
-        system_prompt = f"""Bạn là DUSN-X, hệ thống trợ lý AI cá nhân hóa thích ứng.
-BẮT BUỘC: Bạn PHẢI trả lời hoàn toàn bằng TIẾNG VIỆT, ngắn gọn, chính xác.
-Tuyệt đối KHÔNG trả lời bằng tiếng Anh. Giữ nguyên tên riêng, ID, URL và code.
+        system_prompt = f"""Bạn là DUSN-X, hệ thống trợ lý AI cá nhân hóa thích ứng. Trả lời bằng tiếng Việt ngắn gọn, hữu ích.
+Giữ nguyên tên riêng, ID, URL và mã code nếu có.
 
 Thông tin hệ thống DUSN-X:
-- DUSN-X là hệ thống trợ lý AI cá nhân hóa thích ứng với các tính năng cốt lõi: quản lý trí nhớ dài hạn (ghi nhớ và cập nhật quyết định cá nhân), định tuyến tác vụ qua router đa tác tử, phân tích dữ liệu, và tích hợp giao diện Web/Office.
+- DUSN-X là hệ thống trợ lý AI cá nhân hóa thích ứng với các tính năng cốt lõi: 1) Quản lý trí nhớ dài hạn (ghi nhớ và cập nhật quyết định cá nhân); 2) Định tuyến tác vụ qua router đa tác tử; 3) Phân tích dữ liệu; 4) Tích hợp giao diện Web và Office taskpane.
 
-{project_line}Trí nhớ cá nhân của người dùng (chỉ các mục đang hiệu lực):
+{project_line}Trí nhớ hiệu lực:
 {memory_ctx}{history_ctx}
-
-Quan trọng:
-- Trả lời trực tiếp câu hỏi của người dùng dựa trên thông tin trí nhớ đang hiệu lực ở trên.
-- Trả lời ngắn gọn, súc tích (3-5 gạch đầu dòng), không lặp lại nội dung.
-- Tuyệt đối không nhắc lại các quyết định đã bị thay thế hoặc thông tin không có trong danh sách.
-- Khi câu hỏi có chứa URL hoặc biến dạng KEY=VALUE (như DUSNX_PORT=8088 hoặc https://...), bạn BẮT BUỘC phải trích dẫn lại chính xác từng ký tự cả key và value (viết đúng DUSNX_PORT=8088), không được sửa đổi hay viết tắt.
-- Nếu không có thông tin liên quan, hãy nói rõ là chưa biết.
-- Câu hỏi, giả định và tin đồn của người dùng không phải sự kiện đã được lưu.
-- Danh sách trí nhớ hiệu lực có thẩm quyền cao hơn lịch sử; không hợp nhất hai nguồn.
 """
-        urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
+        raw_urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
+        urls = [clean_url(u) for u in raw_urls if clean_url(u)]
         vars_kv = re.findall(r"\b[A-Za-z0-9_]+=[A-Za-z0-9_.:/-]+", user_message)
-        if urls or vars_kv:
+
+        is_url_fetch = bool(urls and re.search(r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b", user_message, re.I))
+
+        if is_url_fetch:
+            llm_user_message = (
+                f"Chỉ dẫn: DUSN-X hiện chưa có tính năng duyệt web để đọc trực tiếp URL ngoài ({urls[0]}). "
+                f"Hãy nêu rõ giới hạn này và yêu cầu người dùng gửi trực tiếp nội dung văn bản để xử lý.\n\n"
+                f"Yêu cầu của người dùng: {user_message}"
+            )
+        elif urls or vars_kv:
             directives = []
             if urls:
                 directives.append(f"URL: {', '.join(urls)}")
             if vars_kv:
                 directives.append(f"Biến: {', '.join(vars_kv)}")
-            prefix = "Yêu cầu: Hướng dẫn cấu hình bằng tiếng Việt và ghi rõ đầy đủ chính xác các mục sau trong phần trả lời:\n- " + "\n- ".join(directives)
-            llm_user_message = f"{prefix}\n\nCâu hỏi: {user_message}\n\nTrả lời:"
+            prefix = "Yêu cầu: Trả lời bằng câu hoàn chỉnh tiếng Việt và ghi đúng nguyên văn các mục sau:\n- " + "\n- ".join(directives)
+            llm_user_message = f"{prefix}\n\nCâu hỏi: {user_message}\n\nTrả lời bằng tiếng Việt:"
         elif query_lang == "en":
-            llm_user_message = f"Yêu cầu: Trả lời hoàn toàn bằng TIẾNG VIỆT cho câu hỏi sau:\n\"{user_message}\"\n\nCâu trả lời bằng tiếng Việt:"
+            llm_user_message = f"Dịch và trả lời câu hỏi sau hoàn toàn bằng TIẾNG VIỆT (dùng 'và', không dùng từ tiếng Anh): '{user_message}'. Trả lời bằng tiếng Việt:"
         else:
             llm_user_message = user_message
 
@@ -328,10 +367,14 @@ Quan trọng:
         text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, llm_user_message)
         called = True  # _ollama_generate attempts the HTTP transport, including failures.
         provider_used = "ollama"
+        if ok:
+            text = sanitize_generated_reply(text)
     elif p == "openai":
         text, ok, model_used, tokens_generated = _openai_generate(system_prompt, llm_user_message)
         called = bool(OPENAI_API_KEY)  # Missing configuration returns before any HTTP attempt.
         provider_used = "openai"
+        if ok:
+            text = sanitize_generated_reply(text)
     elif p in ("stub", "mock", "test"):
         # For tests and stub evaluation: echo relevant context cleanly
         mem_summary = f" với {len(memories)} trí nhớ hiệu lực" if memories else ""
