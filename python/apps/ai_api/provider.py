@@ -8,21 +8,41 @@ DUSN-X Text Generation Provider
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 import socket
+from difflib import SequenceMatcher
 from typing import Optional
 import urllib.request
 import urllib.error
 from .grounding import is_memory_question
-from .language import detect_language
+from .language import assess_response_language, detect_language
 
 
 class ProviderResult(tuple):
     """Backward-compatible five values plus per-invocation transport metadata."""
-    def __new__(cls, text, ok, provider, model, tokens, *, called=False):
+    def __new__(cls, text, ok, provider, model, tokens, *, called=False, done_reason=None,
+                call_count=0, sanitizer_changed=False, raw_output_sha256=None, quality_status=None,
+                attempts=None):
         result=super().__new__(cls,(text,ok,provider,model,tokens))
         result.provider_called=called
+        result.done_reason=done_reason
+        result.provider_call_count=call_count
+        result.sanitizer_changed=sanitizer_changed
+        result.raw_output_sha256=raw_output_sha256
+        result.quality_status=quality_status
+        result.provider_attempts=attempts or []
+        result.raw_provider_reply=None
+        result.sanitized_provider_reply=text
+        return result
+
+
+class ProviderCall(tuple):
+    """Backward-compatible four-value transport result with finish metadata."""
+    def __new__(cls, text, ok, model, tokens, *, done_reason=None):
+        result=super().__new__(cls,(text,ok,model,tokens))
+        result.done_reason=done_reason
         return result
 
 
@@ -79,7 +99,7 @@ def check_ollama_health() -> dict:
         return {"reachable": False, "available": False, "error": ollama_error(exc), "model_available": False, "configured_model": target_model}
 
 
-def validate_ollama_response(data: object) -> tuple[str, str, Optional[int]]:
+def validate_ollama_response(data: object) -> tuple[str, str, Optional[int], Optional[str]]:
     """Require a completed native chat response; reject partial or malformed output."""
     if not isinstance(data, dict) or data.get("done") is not True:
         raise ValueError("invalid_schema")
@@ -93,7 +113,10 @@ def validate_ollama_response(data: object) -> tuple[str, str, Optional[int]]:
     tokens = data.get("eval_count")
     if tokens is not None and (type(tokens) is not int or tokens < 0):
         raise ValueError("invalid_schema")
-    return text, model, tokens
+    done_reason = data.get("done_reason")
+    if done_reason is not None and not isinstance(done_reason, str):
+        raise ValueError("invalid_schema")
+    return text, model, tokens, done_reason
 
 
 def ollama_error(exc: Exception) -> str:
@@ -111,11 +134,12 @@ def ollama_error(exc: Exception) -> str:
     return "transport_error"
 
 
-def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
+def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
     """One native chat attempt. Transport failure must never become a successful reply."""
     repeat_penalty = float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25"))
     repeat_last_n = int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64"))
     temperature = float(os.getenv("DUSNX_OLLAMA_TEMPERATURE", "0.1"))
+    num_predict = int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512"))
     payload = json.dumps({
         "model": get_ollama_model(),
         "messages": [{"role": "system", "content": system_prompt},
@@ -123,7 +147,7 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
         "stream": False,
         "options": {
             "temperature": temperature,
-            "num_predict": 256,
+            "num_predict": num_predict,
             "repeat_penalty": repeat_penalty,
             "repeat_last_n": repeat_last_n,
         },
@@ -133,21 +157,21 @@ def _ollama_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
     try:
         with urllib.request.urlopen(request, timeout=get_ollama_timeout()) as response:
             data = json.load(response)
-        text, model, tokens = validate_ollama_response(data)
-        return text, True, model, tokens
+        text, model, tokens, done_reason = validate_ollama_response(data)
+        return ProviderCall(text, True, model, tokens, done_reason=done_reason)
     except Exception as exc:
         category = ollama_error(exc)
         descriptions = {"model_missing": "Model cấu hình không tồn tại trong Ollama",
                         "unreachable": "Không kết nối được Ollama", "timeout": "Ollama quá thời gian chờ",
                         "invalid_json": "Ollama trả dữ liệu không phải JSON",
                         "invalid_schema": "Ollama trả JSON không đúng hợp đồng"}
-        return f"[{descriptions.get(category, 'Lỗi dịch vụ Ollama')} ({category})]", False, None, None
+        return ProviderCall(f"[{descriptions.get(category, 'Lỗi dịch vụ Ollama')} ({category})]", False, None, None)
 
 
-def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool, Optional[str], Optional[int]]:
+def _openai_generate(system_prompt: str, user_message: str) -> ProviderCall:
     """Call OpenAI-compatible API. Returns (text, success, model_used, tokens_generated)."""
     if not OPENAI_API_KEY:
-        return "[Provider OpenAI chưa được cấu hình. Đặt DUSNX_OPENAI_API_KEY.]", False, None, None
+        return ProviderCall("[Provider OpenAI chưa được cấu hình. Đặt DUSNX_OPENAI_API_KEY.]", False, None, None)
     payload = json.dumps({
         "model": OPENAI_MODEL,
         "messages": [
@@ -172,9 +196,10 @@ def _openai_generate(system_prompt: str, user_message: str) -> tuple[str, bool, 
             text = data["choices"][0]["message"]["content"].strip()
             model_used = data.get("model")
             eval_count = data.get("usage", {}).get("completion_tokens")
-            return text, True, model_used, eval_count
+            finish_reason = data["choices"][0].get("finish_reason")
+            return ProviderCall(text, True, model_used, eval_count, done_reason=finish_reason)
     except Exception as exc:
-        return f"[Lỗi OpenAI ({ollama_error(exc)})]", False, None, None
+        return ProviderCall(f"[Lỗi OpenAI ({ollama_error(exc)})]", False, None, None)
 
 
 def get_provider_health() -> dict:
@@ -221,7 +246,7 @@ def get_provider_health() -> dict:
 
 def clean_url(u: str) -> str:
     """Strip trailing punctuation that is not part of the URL."""
-    return re.sub(r"[.,;!?:)'\"]+$", "", u)
+    return re.sub(r"[.,;!?:)'\"*`]+$", "", u)
 
 
 def sanitize_generated_reply(text: str) -> str:
@@ -236,6 +261,77 @@ def sanitize_generated_reply(text: str) -> str:
     for pat in patterns:
         cleaned = re.sub(pat, "", cleaned, flags=re.IGNORECASE).strip()
     return cleaned
+
+
+def extract_required_entities(text: str) -> dict[str, list[str]]:
+    normalized = re.sub(r"(?<!\w)(?:\*\*|__)([^\n]+?)(?:\*\*|__)(?!\w)", r"\1", text)
+    urls = [clean_url(value) for value in re.findall(r"https?://[^\s\"'>)]+", normalized)]
+    without_urls = re.sub(r"https?://[^\s\"'>)]+", " ", normalized)
+    assignments = re.findall(r"(?<![\w])([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([^\s,;\]\[(){}]+)", without_urls)
+    return {"urls": list(dict.fromkeys(urls)),
+            "assignments": list(dict.fromkeys((key, value.rstrip(".,!?*`~")) for key, value in assignments))}
+
+
+def _repetition_flags(text: str) -> list[str]:
+    lines = [re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", line).strip().casefold()
+             for line in text.splitlines() if line.strip()]
+    lines = [line for line in lines if len(line) >= 15]
+    return ["repeated_lines"] if any(lines.count(line) >= 3 for line in set(lines)) else []
+
+
+def _without_prompt_echo(text: str, prompt: str) -> str:
+    normalized = " ".join(prompt.split())
+    if not normalized:
+        return text
+    pattern = re.escape(normalized).replace(r"\ ", r"\s+")
+    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
+
+
+def assess_entity_preservation(prompt: str, answer: str) -> dict:
+    """Check requested literals in answer content, excluding a copied prompt."""
+    required = extract_required_entities(prompt)
+    if not required["urls"] and not required["assignments"]:
+        return {"status": "not_applicable", "missing": [], "mutated": [], "prompt_echo_removed": False}
+
+    body = _without_prompt_echo(answer or "", prompt)
+    body = re.split(r"(?im)^\s*(?:Correction required:|Prior draft \(for correction only\):)", body)[0]
+    body = re.sub(r"(?im)^\s*(?:Task:|Tác vụ:|Exact required literals:|Correct literal mismatches).*?$", " ", body)
+    actual = extract_required_entities(body)
+    missing = []
+    mutated = []
+    for url in required["urls"]:
+        if url not in actual["urls"]:
+            missing.append(url)
+    for key, value in required["assignments"]:
+        if (key, value) in actual["assignments"]:
+            continue
+        candidates = [(actual_key, actual_value) for actual_key, actual_value in actual["assignments"]
+                      if SequenceMatcher(None, key.casefold(), actual_key.casefold()).ratio() >= 0.72]
+        if candidates:
+            mutated.append({"expected": f"{key}={value}",
+                            "actual": [f"{actual_key}={actual_value}" for actual_key, actual_value in candidates]})
+        else:
+            missing.append(f"{key}={value}")
+
+    substantive = re.sub(r"https?://\S+|\b[A-Za-z_][A-Za-z0-9_]*\s*=\s*[^\s,;]+", " ", body)
+    substantive = re.sub(r"[\W_]+", " ", substantive, flags=re.UNICODE).strip()
+    task_completed = bool(substantive or actual["assignments"] or actual["urls"])
+    status = "mutated" if mutated else ("missing" if missing else ("passed" if task_completed else "echo_only"))
+    if status == "passed" and not task_completed:
+        status = "echo_only"
+    return {"status": status, "missing": missing, "mutated": mutated,
+            "prompt_echo_removed": body != (answer or "")}
+
+
+def _quality_assessment(prompt: str, text: str, expected_language: str) -> dict:
+    language = assess_response_language(text, expected_language)
+    entities = assess_entity_preservation(prompt, text)
+    repetition = _repetition_flags(text)
+    return {"language": language, "entities": entities,
+            "repetition_flags": repetition,
+            "passed": language["status"] in ("matched", "uncertain")
+                      and entities["status"] in ("not_applicable", "passed")
+                      and not repetition}
 
 
 def generate_response(
@@ -263,13 +359,40 @@ def generate_response(
 
     memory_ctx = "\n".join(memory_lines) if memory_lines else "Chưa có trí nhớ nào."
 
-    # Build conversation history context (last 6 turns)
+    asks_about_prior_assistant = bool(re.search(
+        r"(?i)\b(?:your answer|previous answer|you said|you mentioned|the first|the second|that explanation|explain that|"
+        r"câu trả lời trước|bạn vừa nói|ý thứ|điểm thứ|giải thích (?:lại|thêm) (?:ý|điểm|phần))\b",
+        user_message,
+    ))
+
+    context_history = list((session_history or [])[-6:])
+    contextual_followup = len(user_message.strip()) <= 60 or bool(re.search(
+        r"(?i)(?:\b(?:it|its|that|this|they|them|those|these|what about|tell me more|continue|"
+        r"previous answer|your answer|you said|the first|the second|same topic)\b|"
+        r"(?:ưu điểm|nhược điểm|lợi ích|tác hại|rủi ro|nguyên nhân|kết quả|chi phí|thời gian)(?:\s+(?:là gì|ra sao|như thế nào|của (?:nó|điều đó)))?\s*[?.!]*$|"
+        r"(?:tại sao|vì sao|còn (?:nó|điều đó)|nói thêm|giải thích thêm)\b|^(?:why|how so)[?.!]*$)",
+        user_message.strip(),
+    ))
+    if not contextual_followup:
+        context_history = []
+    topic_shift = re.compile(
+        r"(?i)(?:chuyển sang chủ đề khác|đổi chủ đề|chủ đề mới|switch (?:to (?:a )?(?:new )?)?topics?|"
+        r"change (?:the )?(?:topic|subject)|moving on to)")
+    shift_indices = [index for index, msg in enumerate(context_history)
+                     if msg.get("role") == "user" and topic_shift.search(msg.get("content", ""))]
+    if shift_indices:
+        context_history = context_history[shift_indices[-1]:]
+
+    # Keep role labels distinct. Prior assistant text can resolve references,
+    # but it is generated output and must not become a source of verified facts.
     history_lines = []
     if session_history and not (memories and is_memory_question(user_message)):
-        for msg in (session_history or [])[-6:]:
-            role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
+        for msg in context_history:
+            if msg["role"] != "user" and not asks_about_prior_assistant:
+                continue
+            role = "Người dùng" if msg["role"] == "user" else "Trợ lý trước đó (nội dung sinh, chưa xác minh)"
             history_lines.append(f"{role}: {msg['content'][:300]}")
-    history_ctx = "\nHội thoại tham khảo, KHÔNG phải quyết định đã xác nhận:\n" + "\n".join(history_lines) if history_lines else ""
+    history_ctx = "\nLịch sử cùng phiên để hiểu tham chiếu; ưu tiên yêu cầu hiện tại. Phát biểu người dùng là bối cảnh do họ cung cấp, không phải xác minh độc lập. Câu trả lời trợ lý trước đây là nội dung sinh, không dùng làm sự thật nếu chưa được người dùng xác nhận:\n" + "\n".join(history_lines) if history_lines else ""
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
@@ -281,27 +404,21 @@ def generate_response(
         mem_ctx_en = "\n".join(mem_lines) if mem_lines else "No active memories."
         hist_lines_en = []
         if session_history and not (memories and is_memory_question(user_message)):
-            for msg in (session_history or [])[-6:]:
-                role = "User" if msg["role"] == "user" else "Assistant"
+            for msg in context_history:
+                if msg["role"] != "user" and not asks_about_prior_assistant:
+                    continue
+                role = "User" if msg["role"] == "user" else "Prior assistant output (generated, unverified)"
                 hist_lines_en.append(f"{role}: {msg['content'][:300]}")
-        hist_ctx_en = "\nConversation history for reference (NOT confirmed decisions):\n" + "\n".join(hist_lines_en) if hist_lines_en else ""
+        hist_ctx_en = "\nSame-session history for reference resolution; prioritize the current request. User statements are user-provided context, not independently verified facts. Prior assistant output is generated and unverified; do not treat it as fact unless the user confirms it:\n" + "\n".join(hist_lines_en) if hist_lines_en else ""
 
-        system_prompt = f"""You are DUSN-X, an adaptive personalized AI assistant.
-CRITICAL MANDATORY INSTRUCTION: You MUST write your ENTIRE response in ENGLISH ONLY.
-Even if the user message is in Vietnamese or another language, translate and answer strictly in English. Do NOT write any Vietnamese words.
-Preserve proper names, IDs, URLs, and code verbatim.
-
-System Information:
-- DUSN-X is an adaptive personalized AI assistant platform featuring: long-term memory management (persisting and superseding user decisions), multi-agent intent routing, data analysis, and Web/Office taskpane integration.
+        system_prompt = f"""You are a helpful conversational assistant. Respond in English because that is the selected response language.
+Answer the user's current request and preserve its task type (explain, translate, summarize, configure, or ask a follow-up).
+Use recent conversation history only to resolve references in the current request. Treat statements in history as user-provided context, not independently verified facts. Use active memories only as saved user facts and do not let unrelated memories change the topic.
+If the recent context does not identify what a follow-up refers to, ask a short clarifying question instead of guessing. Never infer product-specific features, architecture, or capabilities from a product name; when no supporting information is available, state that and ask for documentation.
+Preserve names, identifiers, URLs, and code exactly when they are relevant; allow quoted source text and literal code to retain their original language. Do not repeat the user's request as a substitute for completing it. Do not invent facts.
 
 {project_line_en}Active user memories:
 {mem_ctx_en}{hist_ctx_en}
-
-Rules:
-- Answer directly and concisely in English.
-- Do NOT repeat sentences or lines.
-- Never mention superseded decisions.
-- If information is not known, state that clearly in English.
 """
         raw_urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
         urls = [clean_url(u) for u in raw_urls if clean_url(u)]
@@ -321,19 +438,20 @@ Rules:
                 directives.append(f"URL: {', '.join(urls)}")
             if vars_kv:
                 directives.append(f"Variables: {', '.join(vars_kv)}")
-            prefix = "Instruction: Fulfill the user request while preserving these exact entities verbatim:\n- " + "\n- ".join(directives)
-            llm_user_message = f"{prefix}\n\nRequest: {user_message}\n\nAnswer in English:"
+            prefix = ("Task: Complete the user's requested task. Preserve the following literal entities exactly in the answer; ")
+            prefix += "do not turn the task into a list of entities or repeat the request.\n- " + "\n- ".join(directives)
+            llm_user_message = f"{prefix}\n\nUser request:\n{user_message}"
         elif query_lang == "vi":
             llm_user_message = f"Translate and answer the following question strictly in English (use 'and', never 'và'): '{user_message}'. Answer in English:"
         else:
             llm_user_message = user_message
     else:
         project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
-        system_prompt = f"""Bạn là DUSN-X, hệ thống trợ lý AI cá nhân hóa thích ứng. Trả lời bằng tiếng Việt ngắn gọn, hữu ích.
-Giữ nguyên tên riêng, ID, URL và mã code nếu có.
-
-Thông tin hệ thống DUSN-X:
-- DUSN-X là hệ thống trợ lý AI cá nhân hóa thích ứng với các tính năng cốt lõi: 1) Quản lý trí nhớ dài hạn (ghi nhớ và cập nhật quyết định cá nhân); 2) Định tuyến tác vụ qua router đa tác tử; 3) Phân tích dữ liệu; 4) Tích hợp giao diện Web và Office taskpane.
+        system_prompt = f"""Bạn là trợ lý hội thoại hữu ích. Hãy trả lời bằng tiếng Việt vì đây là ngôn ngữ phản hồi đã chọn.
+Hoàn thành đúng yêu cầu hiện tại và giữ nguyên loại tác vụ người dùng yêu cầu (giải thích, dịch, tóm tắt, cấu hình hoặc hỏi tiếp).
+Chỉ dùng lịch sử cùng phiên để hiểu đại từ hoặc câu hỏi tiếp nối; ưu tiên yêu cầu hiện tại. Phát biểu người dùng là bối cảnh do họ cung cấp, không phải sự kiện đã xác minh độc lập. Câu trả lời trợ lý trước đây là nội dung sinh, không dùng làm sự thật nếu người dùng chưa xác nhận. Chỉ dùng trí nhớ hiệu lực như thông tin đã lưu của người dùng; trí nhớ không liên quan không được đổi chủ đề.
+Nếu lịch sử gần đây không xác định được câu hỏi tiếp nối đang nói về điều gì, hãy hỏi ngắn gọn để làm rõ thay vì đoán. Không bao giờ suy ra tính năng, kiến trúc hoặc khả năng riêng của một sản phẩm chỉ từ tên sản phẩm; nếu không có thông tin hỗ trợ, hãy nêu rõ điều đó và yêu cầu tài liệu. Không bịa thông tin.
+Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù hợp. Trích dẫn và code được phép giữ nguyên ngôn ngữ gốc. Không lặp lại yêu cầu của người dùng thay cho việc hoàn thành tác vụ.
 
 {project_line}Trí nhớ hiệu lực:
 {memory_ctx}{history_ctx}
@@ -356,25 +474,99 @@ Thông tin hệ thống DUSN-X:
                 directives.append(f"URL: {', '.join(urls)}")
             if vars_kv:
                 directives.append(f"Biến: {', '.join(vars_kv)}")
-            prefix = "Yêu cầu: Trả lời bằng câu hoàn chỉnh tiếng Việt và ghi đúng nguyên văn các mục sau:\n- " + "\n- ".join(directives)
-            llm_user_message = f"{prefix}\n\nCâu hỏi: {user_message}\n\nTrả lời bằng tiếng Việt:"
+            prefix = "Tác vụ: Hoàn thành đúng việc người dùng yêu cầu. Giữ nguyên chính xác các thực thể sau; không đổi tác vụ thành liệt kê thực thể và không lặp lại yêu cầu.\n- " + "\n- ".join(directives)
+            llm_user_message = f"{prefix}\n\nYêu cầu của người dùng:\n{user_message}"
         elif query_lang == "en":
             llm_user_message = f"Dịch và trả lời câu hỏi sau hoàn toàn bằng TIẾNG VIỆT (dùng 'và', không dùng từ tiếng Anh): '{user_message}'. Trả lời bằng tiếng Việt:"
         else:
             llm_user_message = user_message
 
-    if p == "ollama":
-        text, ok, model_used, tokens_generated = _ollama_generate(system_prompt, llm_user_message)
-        called = True  # _ollama_generate attempts the HTTP transport, including failures.
-        provider_used = "ollama"
+    done_reason = None
+    call_count = 0
+    sanitizer_changed = False
+    raw_output_sha256 = None
+    raw_provider_reply = None
+    quality_status = None
+    sanitized_provider_reply = None
+    provider_attempts = []
+    if p in ("ollama", "openai"):
+        generate = _ollama_generate if p == "ollama" else _openai_generate
+        called = p == "ollama" or bool(OPENAI_API_KEY)
+        provider_used = p
+        attempt_prompt = llm_user_message
+        result = generate(system_prompt, attempt_prompt)
+        call_count = 1 if called else 0
+        raw_provider_reply, ok, model_used, tokens_generated = result
+        done_reason = getattr(result, "done_reason", None)
+        sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
+        text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
+        entity_prompt = "" if re.search(
+            r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b", user_message, re.I
+        ) and extract_required_entities(user_message)["urls"] else user_message
         if ok:
-            text = sanitize_generated_reply(text)
-    elif p == "openai":
-        text, ok, model_used, tokens_generated = _openai_generate(system_prompt, llm_user_message)
-        called = bool(OPENAI_API_KEY)  # Missing configuration returns before any HTTP attempt.
-        provider_used = "openai"
-        if ok:
-            text = sanitize_generated_reply(text)
+            assessment = _quality_assessment(entity_prompt, text, response_language)
+            provider_attempts.append({"attempt": 1, "done_reason": done_reason,
+                "tokens_generated": tokens_generated, "sanitizer_changed": sanitizer_changed,
+                "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
+                "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                "quality_status": assessment["language"]["status"],
+                "entity_status": assessment["entities"]["status"],
+                "repetition_flags": assessment["repetition_flags"]})
+            # One bounded corrective attempt for a clear language mix or a changed literal.
+            if not assessment["passed"] and call_count:
+                issue = assessment["entities"]["status"]
+                language_issue = assessment["language"]["status"]
+                correction = (
+                    "\n\nCorrection required: the previous draft did not satisfy the response checks. "
+                    "Complete the original task without repeating its prompt. Use only the selected response language "
+                    "for prose, while preserving quoted source text, code, URLs, and identifiers. "
+                    "Correct literal mismatches and answer from the recent conversation context."
+                )
+                if issue in ("missing", "mutated", "echo_only"):
+                    entities = extract_required_entities(entity_prompt)
+                    literals = [*entities["urls"], *(f"{key}={value}" for key, value in entities["assignments"])]
+                    correction += " Exact required literals: " + "; ".join(literals)
+                if assessment["repetition_flags"]:
+                    correction += " Remove repeated lines and answer each point once."
+                correction += "\nPrior draft (for correction only):\n" + text
+                result = generate(system_prompt, attempt_prompt + correction)
+                call_count += 1
+                raw_provider_reply, ok, model_used, tokens_generated = result
+                done_reason = getattr(result, "done_reason", None)
+                sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
+                text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
+                assessment = _quality_assessment(entity_prompt, text, response_language) if ok else assessment
+                provider_attempts.append({"attempt": 2, "done_reason": done_reason,
+                    "tokens_generated": tokens_generated, "sanitizer_changed": sanitizer_changed,
+                    "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
+                    "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                    "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                    "quality_status": assessment["language"]["status"] if ok else None,
+                    "entity_status": assessment["entities"]["status"] if ok else None,
+                    "repetition_flags": assessment["repetition_flags"] if ok else []})
+            sanitized_provider_reply = text
+            quality_status = assessment["language"]["status"] if assessment["passed"] else "failed"
+            if ok and not assessment["passed"]:
+                reasons = []
+                if assessment["language"]["status"] not in ("matched", "uncertain"):
+                    reasons.append("language_" + assessment["language"]["status"])
+                if assessment["entities"]["status"] not in ("not_applicable", "passed"):
+                    reasons.append("entities_" + assessment["entities"]["status"])
+                reasons.extend(assessment["repetition_flags"])
+                quality_status = "failed"
+                text = "[Provider output failed quality validation (" + ",".join(reasons) + ")]"
+                ok = False
+                model_used = tokens_generated = None
+        else:
+            provider_attempts.append({"attempt": 1, "done_reason": done_reason,
+                "tokens_generated": tokens_generated, "sanitizer_changed": False,
+                "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
+                "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                "sanitized_output": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                "quality_status": None, "entity_status": None, "repetition_flags": []})
+            sanitized_provider_reply = text
+        raw_output_sha256 = hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest() if called else None
     elif p in ("stub", "mock", "test"):
         # For tests and stub evaluation: echo relevant context cleanly
         mem_summary = f" với {len(memories)} trí nhớ hiệu lực" if memories else ""
@@ -402,4 +594,11 @@ Thông tin hệ thống DUSN-X:
         ok = False
         model_used = tokens_generated = None
 
-    return ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called)
+    result = ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called,
+                            done_reason=done_reason, call_count=call_count,
+                            sanitizer_changed=sanitizer_changed, raw_output_sha256=raw_output_sha256,
+                            quality_status=quality_status, attempts=provider_attempts)
+    if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" and called:
+        result.raw_provider_reply = raw_provider_reply
+        result.sanitized_provider_reply = sanitized_provider_reply if sanitized_provider_reply is not None else text
+    return result

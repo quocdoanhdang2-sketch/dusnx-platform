@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-11-03T11:43:48.258063+00:00",
+  "level1_synthetic_backup_restore": {
+    "status": "passed",
+    "live_creation": true,
+    "sqlite_backup_api_used": true,
+    "backup_integrity_checked": true,
+    "restored_stack_started": true,
+    "auth_verified_after_restore": true,
+    "long_history_restored_in_order": true,
+    "total_messages_verified": 205,
+    "pages_fetched": 3,
+    "superseded_memory_excluded": true,
+    "retry_idempotency_verified": true
+  },
+  "level2_protected_backup_integrity": {
+    "protected_dir": "[synthetic absent path]",
+    "status": "skipped",
+    "reason": "protected_dir_not_found",
+    "integrity_passed": null,
+    "databases": {}
+  },
+  "status": "passed",
+  "status_reason": "level1_verified_level2_skipped"
+}

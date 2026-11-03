@@ -1,14 +1,20 @@
-"""Real Gateway acceptance: synthetic account, two topics, one actual LLM call.
+"""Synthetic Gateway transport/provenance plus language check; no semantic review.
 
 No benchmark input, no credentials/headers/private data in saved evidence.
 """
 import argparse
 from datetime import datetime,timezone
 import json
+import os
 from pathlib import Path
 import secrets
 import sys
 import httpx
+import re
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "python"))
+from apps.ai_api.language import assess_response_language
 
 
 def verify(base,output):
@@ -22,8 +28,10 @@ def verify(base,output):
         def session():return call("POST","/v1/sessions",json={"title":"Synthetic provenance acceptance"})["session_id"]
         def chat(sid,text):return call("POST","/v1/chat",json={"session_id":sid,"message":text})
         def record(name,r):
-            fields=("reply","candidate_memory_ids","prompt_memory_ids","memory_ids_used","provider_called",
-                    "response_source","provider_ok","provider_used","model_used","tokens_generated")
+            fields=("reply","raw_provider_reply","provider_sanitized_reply","candidate_memory_ids","prompt_memory_ids",
+                    "memory_ids_used","provider_called","provider_call_count","response_source","provider_ok",
+                    "provider_used","model_used","tokens_generated","done_reason","sanitizer_changed",
+                    "raw_output_sha256","quality_status")
             report["responses"][name]={k:r.get(k) for k in fields}
         try:
             health=call("GET","/v1/health")
@@ -61,10 +69,26 @@ def verify(base,output):
             memories=call("GET","/v1/memories?include_inactive=true")
             assert any(m["memory_id"]==old and not m["is_active"] for m in memories)
             generated=chat(session(),"Viết hai câu về lợi ích của việc đọc sách.");record("llm",generated)
-            assert generated["provider_called"] and generated["provider_ok"]
+            transport_passed = bool(generated["provider_called"] and generated["provider_ok"]
+                and generated.get("provider_call_count", 0) >= 1)
             assert generated["response_source"]=="llm" and generated["provider_used"]=="ollama"
             assert generated["model_used"]=="qwen2.5:0.5b"
-            report["status"]="passed"
+            reply=generated.get("provider_sanitized_reply") or generated.get("reply", "")
+            language=assess_response_language(reply,"vi")
+            sentences=[part for part in re.split(r"(?<=[.!?])\s+",reply.strip()) if part.strip()]
+            report["responses"]["llm"]["language_evaluation"]=language
+            report["responses"]["llm"]["task_evaluation"]={
+                "status":"uncertain",
+                "structural_sentence_count":len(sentences),
+                "requested_sentence_count":2,
+                "semantic_quality":"not_evaluated",
+                "limitation":"No deterministic rubric or independent human semantic review in this transport harness.",
+            }
+            report["transport_status"]="passed" if transport_passed else "failed"
+            report["language_status"]=language["status"]
+            report["task_status"]="uncertain"
+            report["status"]=("transport_and_language_passed" if transport_passed and language["status"]=="matched"
+                              else "language_or_transport_failed")
         except Exception as exc:
             report["error"]=type(exc).__name__  # never serialize requests/auth bodies
         finally:
@@ -76,7 +100,12 @@ def verify(base,output):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps(report,ensure_ascii=False,indent=2))
-    return 0 if report["status"]=="passed" else 1
+    return 0 if report["status"]=="transport_and_language_passed" else 1
+
+
+def provenance_stack_directory(output):
+    output_path = Path(output).resolve()
+    return output_path.parent / f"{output_path.stem}-stack"
 
 
 if __name__=="__main__":
@@ -88,8 +117,14 @@ if __name__=="__main__":
     a=p.parse_args()
     if a.spawn_stack or not a.gateway:
         from verify_week4_runtime import Stack
-        stack_dir = Path(a.output).resolve().parent / "provenance-stack"
-        with Stack(stack_dir) as stack:
-            sys.exit(verify(stack.url, a.output))
+        stack_dir = provenance_stack_directory(a.output)
+        old_capture = os.environ.get("DUSNX_CAPTURE_RAW_GENERATION")
+        os.environ["DUSNX_CAPTURE_RAW_GENERATION"] = "1"
+        try:
+            with Stack(stack_dir) as stack:
+                sys.exit(verify(stack.url, a.output))
+        finally:
+            if old_capture is None:os.environ.pop("DUSNX_CAPTURE_RAW_GENERATION",None)
+            else:os.environ["DUSNX_CAPTURE_RAW_GENERATION"]=old_capture
     else:
         sys.exit(verify(a.gateway,a.output))

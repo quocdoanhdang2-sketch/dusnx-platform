@@ -46,3 +46,63 @@ def preference_instruction(text: str) -> str | None:
     if re.search(r"(?:từ giờ|kể từ giờ).*(?:tiếng việt|vietnamese)|answer in vietnamese from now on", value):
         return "vi"
     return None
+
+
+_NON_LATIN_SCRIPTS = {
+    "arabic": re.compile(r"[\u0600-\u06ff]"),
+    "cyrillic": re.compile(r"[\u0400-\u052f]"),
+    "devanagari": re.compile(r"[\u0900-\u097f]"),
+    "greek": re.compile(r"[\u0370-\u03ff]"),
+    "han": re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]"),
+    "hangul": re.compile(r"[\uac00-\ud7af\u1100-\u11ff]"),
+    "hebrew": re.compile(r"[\u0590-\u05ff]"),
+    "hiragana_katakana": re.compile(r"[\u3040-\u30ff]"),
+    "thai": re.compile(r"[\u0e00-\u0e7f]"),
+}
+
+
+def _natural_language_text(text: str) -> str:
+    """Ignore markup and clearly delimited literal material during script checks."""
+    text = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
+    text = re.sub(r"`[^`]*`", " ", text)
+    text = re.sub(r"https?://\S+|\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", " ", text)
+    # Quoted source text, labels, and proper names are not evidence of the prose language.
+    text = re.sub(r"“[^”]*”|‘[^’]*’|\"[^\"]*\"|(?<!\w)'[^'\n]{2,}'(?!\w)", " ", text)
+    return text
+
+
+def assess_response_language(text: str, expected: str) -> dict:
+    """Assess prose language independently of response-language metadata.
+
+    Script anomalies are only counted outside code, URLs, and quoted literals so
+    identifiers, examples, and explicitly quoted source text do not fail a turn.
+    The result is a conservative heuristic; it does not claim semantic review.
+    """
+    prose = _natural_language_text(text or "")
+    actual = detect_language(prose)
+    scripts = {name: len(pattern.findall(prose)) for name, pattern in _NON_LATIN_SCRIPTS.items()}
+    # A lone Greek/math symbol or a single non-Latin proper-name character is
+    # not strong evidence that the prose switched languages.
+    scripts = {name: count for name, count in scripts.items() if count >= 2}
+    scripts = {name: count for name, count in scripts.items() if count}
+    latin_letters = len(re.findall(r"[A-Za-zÀ-ɏ]", prose))
+
+    if scripts and latin_letters:
+        status = "mixed"
+    elif scripts:
+        status = "divergent"
+        actual = "other_script"
+    elif actual == expected:
+        status = "matched"
+    elif actual in {"vi", "en"}:
+        status = "divergent"
+    else:
+        status = "uncertain"
+    return {
+        "status": status,
+        "actual_language": actual,
+        "expected_language": expected,
+        "unsupported_script_counts": scripts,
+        "method": "lexical_and_unicode_script_heuristic",
+        "limitation": "Does not judge task correctness, factuality, or human acceptability.",
+    }

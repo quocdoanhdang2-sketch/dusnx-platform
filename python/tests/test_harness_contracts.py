@@ -6,6 +6,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary
+from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
 
@@ -61,6 +62,13 @@ def test_template_recall_not_in_language_denominator():
     assert summary["real_llm_generations"] == 0
     assert summary["eligible_language_cases"] == 0
     assert summary["linguistic_matched"] == 0
+
+
+def test_provenance_stack_directory_is_unique_per_report_name(tmp_path):
+    first = provenance_stack_directory(tmp_path / "provenance-r1.json")
+    second = provenance_stack_directory(tmp_path / "provenance-r2.json")
+    assert first.parent == second.parent == tmp_path
+    assert first != second
 
 
 def test_metadata_correct_but_output_divergent():

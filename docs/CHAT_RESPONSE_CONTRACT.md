@@ -36,3 +36,13 @@ giữ state/event của lần đầu. Client legacy thiếu ID không có guaran
 GET state trả model/schema đã lưu và `state_compatible`, không gán model mới cho blob cũ.
 
 Kiểm chứng: `python scripts/verify_chat_provenance.py --output runtime/chat-provenance.json`. Script dùng user thử mới, bỏ credentials khỏi evidence. Template recall và Ollama generation là hai phép kiểm chứng riêng; health không chứng minh generation.
+
+## Chất lượng generation và metadata provider
+
+Prompt provider giới hạn theo ngôn ngữ phản hồi, yêu cầu hiện tại, lịch sử gần nhất trong cùng session và memory hiệu lực. Mô tả chung về sản phẩm DUSN-X không được chèn vào ngữ cảnh trả lời. Câu người dùng nói trong lịch sử được đánh dấu là thông tin do người dùng cung cấp, không phải sự kiện đã xác minh. Ứng dụng hỏi làm rõ khi câu tiếp nối không có chủ đề trước đó.
+
+`provider_call_count` ghi số lần provider thực sự được gọi. Tối đa một lần gọi sửa được thực hiện khi phát hiện rõ sai ngôn ngữ hoặc đổi literal bắt buộc; retry request vẫn đi qua receipt/idempotency hiện có. Nếu câu trả lời vẫn không đạt quality guard, API trả `provider_error` và không lưu nó thành assistant message. `quality_status` là trạng thái ngôn ngữ tự động thận trọng, không phải đánh giá ngữ nghĩa.
+
+`done_reason` ghi metadata hoàn tất của provider khi có (`stop`, `length` hoặc giá trị riêng của provider). `DUSNX_OLLAMA_NUM_PREDICT` mặc định là 512. `length` là bằng chứng provider chạm giới hạn; đạt đúng số token cấu hình mà không có lý do kết thúc chỉ tạo cờ chưa chắc chắn. Thiếu dấu câu cuối không tự động là lỗi. `sanitizer_changed` và `raw_output_sha256` giúp quan sát sanitizer mà không để lộ raw output mặc định. `DUSNX_CAPTURE_RAW_GENERATION=1` chỉ mở raw/sanitized text cho lượt thu evidence tổng hợp được cấu hình rõ trên máy local; không bật với dữ liệu người dùng hoặc traffic production.
+
+Harness bilingual báo cáo riêng transport, ngôn ngữ, tác vụ/ngữ cảnh, thực thể, rò rỉ/lặp chỉ dẫn và trạng thái hoàn tất. Kiểm tra ngôn ngữ/script và hoàn tất là heuristic. Kết quả tác vụ không có rubric xác định giữ trạng thái `uncertain` và làm strict quality mode thất bại; không gọi đó là independent human review. `scripts/verify_chat_provenance.py` ghi rõ phạm vi transport/provenance và ngôn ngữ phản hồi, đồng thời đánh dấu semantic task review là chưa đánh giá.

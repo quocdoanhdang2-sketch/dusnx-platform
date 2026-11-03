@@ -1,0 +1,131 @@
+{
+  "timestamp_utc": "2026-11-03T11:41:33.844779+00:00",
+  "gateway": "http://127.0.0.1:50786",
+  "status": "unverified",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "28eaadaedd1018256e8673ba6301bee6",
+        "9ce21c8c3313dc706996b922514ec95e"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "28eaadaedd1018256e8673ba6301bee6"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "9ce21c8c3313dc706996b922514ec95e",
+        "28eaadaedd1018256e8673ba6301bee6"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "9ce21c8c3313dc706996b922514ec95e"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "28eaadaedd1018256e8673ba6301bee6",
+        "9ce21c8c3313dc706996b922514ec95e"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "28eaadaedd1018256e8673ba6301bee6",
+        "9ce21c8c3313dc706996b922514ec95e"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "28eaadaedd1018256e8673ba6301bee6",
+        "9ce21c8c3313dc706996b922514ec95e"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null
+    },
+    "llm": {
+      "reply": "[Provider output failed quality validation (language_divergent)]",
+      "raw_provider_reply": "1. Reading books can enhance vocabulary acquisition by exposing readers to various concepts in diverse fields like science or history.\n\n2. By immersing oneself in a wide array of topics through reading, individuals gain exposure to different perspectives on the world around them and improve their critical thinking skills while broadening horizons beyond specific subjects they are currently studying.",
+      "provider_sanitized_reply": "1. Reading books can enhance vocabulary acquisition by exposing readers to various concepts in diverse fields like science or history.\n\n2. By immersing oneself in a wide array of topics through reading, individuals gain exposure to different perspectives on the world around them and improve their critical thinking skills while broadening horizons beyond specific subjects they are currently studying.",
+      "candidate_memory_ids": [
+        "28eaadaedd1018256e8673ba6301bee6",
+        "9ce21c8c3313dc706996b922514ec95e"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "provider_call_count": 2,
+      "response_source": "provider_error",
+      "provider_ok": false,
+      "provider_used": "ollama",
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": "stop",
+      "sanitizer_changed": false,
+      "raw_output_sha256": "a2afcad899ef2014ad7dc412dc1ed19b87b7815031275e1dfba56f7b599726d0",
+      "quality_status": "failed"
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  },
+  "error": "AssertionError"
+}

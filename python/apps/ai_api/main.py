@@ -583,6 +583,51 @@ def _detect_missing_context_query(text: str) -> bool:
     return any(_re.search(p, t) for p in patterns)
 
 
+def _detect_ambiguous_followup(text: str) -> bool:
+    """Detect standalone follow-ups whose subject must come from prior context."""
+    import re as _re
+    value = " ".join(text.casefold().split()).strip(" .!?。？")
+    return bool(_re.fullmatch(
+        r"(?:ưu điểm|nhược điểm|lợi ích|tác hại|nguyên nhân|kết quả|chi phí|thời gian|"
+        r"rủi ro|risk|pros|cons|benefits|drawbacks|advantages|disadvantages)(?: của (?:nó|điều đó|this|it))?"
+        r"(?: là gì| là gì vậy| ra sao| như thế nào|\?)?",
+        value,
+        flags=_re.IGNORECASE,
+    ))
+
+
+def _detect_unverified_dusnx_product_question(text: str) -> bool:
+    """Avoid presenting undocumented DUSN-X product details as known facts."""
+    import re as _re
+    has_product = bool(_re.search(r"\bDUSN[- ]X\b", text, _re.IGNORECASE))
+    asks_facts = bool(_re.search(
+        r"(?i)(?:tính năng|chức năng|khả năng|kiến trúc|cốt lõi|features?|capabilities|architecture|what does .{0,20} do)",
+        text,
+    ))
+    cites_source = bool(_re.search(r"(?i)(?:theo (?:tài liệu|đoạn|spec)|based on (?:this|the) (?:document|spec)|dưới đây là (?:tài liệu|spec)|according to)", text))
+    return has_product and asks_facts and not cites_source
+
+
+def _has_conversational_topic(history: list[dict]) -> bool:
+    """Ignore control turns such as language-preference commands as topic context."""
+    return any(
+        message.get("role") == "user"
+        and bool(message.get("content", "").strip())
+        and preference_instruction(message.get("content", "")) is None
+        for message in history
+    )
+
+
+def _has_multiple_topic_candidates(history: list[dict]) -> bool:
+    """A short follow-up must clarify when the latest user turn names joined topics."""
+    import re as _re
+    latest_user = next((message.get("content", "") for message in reversed(history)
+                        if message.get("role") == "user"
+                        and preference_instruction(message.get("content", "")) is None
+                        and message.get("content", "").strip()), "")
+    return bool(_re.search(r"\b(?:and|or|và|hoặc)\b", latest_user, _re.IGNORECASE))
+
+
 _PROJECT_SCOPE_QUESTION_PATTERNS = [
     r"\b(?:dự án|dự án này|project)\b[^?]{0,60}\?\s*$",
 ]
@@ -785,6 +830,14 @@ class ChatResponse(BaseModel):
     candidate_memory_ids: list[str] = Field(default_factory=list)
     prompt_memory_ids: list[str] = Field(default_factory=list)
     provider_called: bool = False
+    provider_call_count: int = 0
+    provider_attempts: list[dict] = Field(default_factory=list)
+    done_reason: Optional[str] = None
+    sanitizer_changed: bool = False
+    raw_output_sha256: Optional[str] = None
+    raw_provider_reply: Optional[str] = None
+    provider_sanitized_reply: Optional[str] = None
+    quality_status: Optional[str] = None
     response_source: str = "application_rule"
     state_reset: bool = False
     reset_reason: Optional[str] = None
@@ -823,8 +876,12 @@ def chat(req: ChatRequest, user: CurrentUser):
                     raise HTTPException(404, "Session not found")
                 return ChatResponse(**{**previous, "replayed": True,
                     "original_provenance": {k: previous.get(k) for k in
-                        ("response_source", "provider_called", "provider_used", "model_used", "tokens_generated")},
+                        ("response_source", "provider_called", "provider_call_count", "provider_used", "model_used",
+                         "tokens_generated", "done_reason", "sanitizer_changed", "raw_output_sha256", "quality_status",
+                         "provider_attempts")},
                     "response_source": "replay", "provider_called": False,
+                    "provider_call_count": 0, "provider_attempts": [], "done_reason": None, "sanitizer_changed": False,
+                    "raw_provider_reply": None, "provider_sanitized_reply": None,
                     "provider_used": None, "model_used": None, "tokens_generated": None})
         else:
             if db.get_session(user["user_id"], req.session_id) is None:
@@ -861,8 +918,8 @@ def _chat_impl(req: ChatRequest, user: dict):
     candidate_ids = [m["memory_id"] for m in memories]
     saved_language = db.get_language_preference(user_id, project_id=req.project_id)
     requested_preference = req.preferred_language if req.preferred_language != "auto" else (saved_language or "auto")
-    detected_language = detect_language(req.message)
-    reply_language = response_language(requested_preference, detected_language)
+    detected_language = "unknown"
+    reply_language = "vi"
 
     def chat_response(**kwargs):
         if kwargs.get("next_action") == "clarify" and "response_source" not in kwargs:
@@ -903,6 +960,16 @@ def _chat_impl(req: ChatRequest, user: dict):
     history = db.get_recent_messages(user_id, req.session_id, limit=12)
     # Exclude the just-added user message from history (it's the current input)
     history = history[:-1] if history else []
+    detected_language = detect_language(req.message)
+    if detected_language == "unknown":
+        for previous in reversed(history):
+            if previous.get("role") == "user":
+                detected_language = detect_language(previous.get("content", ""))
+                if detected_language in {"vi", "en"}:
+                    break
+        else:
+            detected_language = "unknown"
+    reply_language = response_language(requested_preference, detected_language)
 
     # Determine project name if applicable
     project_name = None
@@ -944,13 +1011,48 @@ def _chat_impl(req: ChatRequest, user: dict):
             response_source="application_rule")
 
     # ── Missing context guard ─────────────────────────────────────────────────
-    if _detect_missing_context_query(req.message) or _detect_project_scoped_question(req.message, req.project_id):
-        has_context = bool(history) or bool(memories)
+    if _detect_unverified_dusnx_product_question(req.message):
+        reply_text = (
+            "I don't have verified documentation about DUSN-X's product features. Please share the relevant spec or documentation, and I can summarize it."
+            if reply_language == "en" else
+            "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp."
+        )
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", reply_text,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="clarify_unverified_product_information", selected_agent="conversation",
+            next_action="clarify", confidence=1.0, runtime_mode=RUNTIME_MODE,
+            routing_source="product_knowledge_guard", provider_used=None,
+            provider_ok=True, state_version=s_ver, memory_ids_used=[],
+            session_id=req.session_id, provider_called=False,
+            response_source="clarification")
+
+    ambiguous_followup = _detect_ambiguous_followup(req.message)
+    topic_history = _has_conversational_topic(history)
+    multiple_topic_candidates = ambiguous_followup and _has_multiple_topic_candidates(history)
+    topic_memories = [m for m in memories if not (
+        m.get("info_type") == "preference" and str(m.get("content", "")).startswith("language:")
+    )]
+    if (_detect_missing_context_query(req.message)
+            or (ambiguous_followup and (multiple_topic_candidates or (not topic_history and not topic_memories)))
+            or _detect_project_scoped_question(req.message, req.project_id)):
+        has_context = ((topic_history or bool(topic_memories)) and not multiple_topic_candidates) if ambiguous_followup else (bool(history) or bool(memories))
         if not has_context:
             s_ver, _, _, _, _, _, _ = advance(
                 db, user_id, req.message, req.feedback_value, platform="web", event_type="chat_message", project_id=req.project_id
             )
-            reply_text = "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?"
+            if multiple_topic_candidates:
+                reply_text = ("Which topic's advantages do you mean?"
+                              if reply_language == "en" else
+                              "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?")
+            else:
+                reply_text = ("I don't have prior context or a decision to recall. What would you like to discuss?"
+                              if reply_language == "en" else
+                              "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?")
             msg = db.append_message(
                 req.session_id, user_id, "assistant", reply_text,
                 memory_ids_used=[], state_version=s_ver,
@@ -1208,6 +1310,14 @@ def _chat_impl(req: ChatRequest, user: dict):
     grounded_answer, selected = memory_answer_with_selection(req.message, memories)
     prompt_ids = []
     provider_called = False
+    provider_call_count = 0
+    provider_attempts = []
+    done_reason = None
+    sanitizer_changed = False
+    raw_output_sha256 = None
+    raw_provider_reply = None
+    provider_sanitized_reply = None
+    quality_status = None
     if grounded_answer is not None:
         reply_text, provider_ok = grounded_answer, True
         provider_used = model_used = tokens_generated = None
@@ -1226,6 +1336,14 @@ def _chat_impl(req: ChatRequest, user: dict):
         )
         reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
         provider_called = getattr(generated, "provider_called", False)
+        provider_call_count = getattr(generated, "provider_call_count", int(provider_called))
+        provider_attempts = getattr(generated, "provider_attempts", [])
+        done_reason = getattr(generated, "done_reason", None)
+        sanitizer_changed = getattr(generated, "sanitizer_changed", False)
+        raw_output_sha256 = getattr(generated, "raw_output_sha256", None)
+        raw_provider_reply = getattr(generated, "raw_provider_reply", None)
+        provider_sanitized_reply = getattr(generated, "sanitized_provider_reply", None)
+        quality_status = getattr(generated, "quality_status", None)
         response_source = ("llm" if provider_called else "mock") if provider_ok else "provider_error"
         if not provider_called:
             provider_used = model_used = tokens_generated = None
@@ -1276,6 +1394,15 @@ def _chat_impl(req: ChatRequest, user: dict):
         answer_source="active_memory_extract" if grounded_answer is not None else "provider",
         prompt_memory_ids=prompt_ids,
         provider_called=provider_called,
+        provider_call_count=provider_call_count,
+        provider_attempts=provider_attempts,
+        done_reason=done_reason,
+        sanitizer_changed=sanitizer_changed,
+        raw_output_sha256=raw_output_sha256,
+        raw_provider_reply=raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+        provider_sanitized_reply=provider_sanitized_reply
+            if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+        quality_status=quality_status,
         response_source=response_source,
     )
 

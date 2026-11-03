@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-11-03T11:43:22.567166+00:00",
+  "status": "passed",
+  "transport": "real_gateway_fastapi_chromium_with_controlled_delays",
+  "checks": {
+    "only_selected_auth_form_visible": true,
+    "late_real_login_cannot_restore_logged_out_session": true,
+    "real_login_after_discarded_response": true,
+    "logout_clears_local_data_before_network_finishes": true,
+    "old_logout_response_preserves_new_login": true
+  }
+}
