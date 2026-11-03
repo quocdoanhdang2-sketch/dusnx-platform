@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import torch
-from fastapi import Depends, FastAPI, HTTPException, Header, Request
+from fastapi import Depends, FastAPI, HTTPException, Header, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -394,11 +394,26 @@ def get_session(session_id: str, user: CurrentUser):
 
 
 @app.get("/v1/sessions/{session_id}/messages")
-def get_messages(session_id: str, user: CurrentUser, limit: int = 100, offset: int = 0):
+def get_messages(session_id: str, user: CurrentUser,
+                 limit: Annotated[int, Query(ge=1, le=100)] = 100,
+                 offset: Annotated[int, Query(ge=0)] = 0):
     sess = get_memory_db().get_session(user["user_id"], session_id)
     if sess is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return get_memory_db().get_messages(user["user_id"], session_id, limit=limit, offset=offset)
+
+
+@app.get("/v1/sessions/{session_id}/messages/page")
+def get_message_page(session_id: str, user: CurrentUser,
+                     limit: Annotated[int, Query(ge=1, le=100)] = 100,
+                     before: str | None = None):
+    db = get_memory_db()
+    if db.get_session(user["user_id"], session_id) is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    try:
+        return db.get_message_page(user["user_id"], session_id, limit=limit, before=before)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid message cursor") from None
 
 
 @app.delete("/v1/sessions/{session_id}")

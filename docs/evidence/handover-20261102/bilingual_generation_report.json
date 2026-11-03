@@ -1,0 +1,406 @@
+{
+  "timestamp_utc": "2026-11-02T16:27:52.098191+00:00",
+  "gateway_url": "http://127.0.0.1:63889",
+  "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
+  "cases": {
+    "CASE_01_VI_PREF_VI": {
+      "case_id": "CASE_01_VI_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=vi. Yêu cầu sinh tiếng Việt.",
+      "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 256,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Hệ thống DUSN-X có các tính năng chính bao gồm:\n\n1. Mô phỏng và phân tích dữ liệu\n2. Tái tạo và phân phối dữ liệu\n3. Tái tạo và phân phối dữ liệu\n4. Tái tạo và phân phối dữ liệu\n5. Tái tạo và phân phối dữ liệu\n6. Tái tạo và phân phối dữ liệu\n7. Tái tạo và phân phối dữ liệu\n8. Tái tạo và phân phối dữ liệu\n9. Tái tạo và phân phối dữ liệu\n10. Tái tạo và phân phối dữ liệu\n11. Tái tạo và phân phối dữ liệu\n12. Tái tạo và phân phối dữ liệu\n13. Tái tạo và phân phối dữ liệu\n14. Tái tạo và phân phối dữ liệu\n15. Tái tạo và phân phối dữ liệu\n16. Tái tạo và phân phối dữ liệu\n17. Tái tạo và phân phối dữ liệu\n18. Tái tạo và phân phối dữ liệu\n19. Tái tạo và phân phối dữ liệu\n20. Tái tạo và phân phối dữ liệu\n21. Tái tạo và",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 151,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_02_EN_PREF_EN": {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
+      "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 256,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Continuous integration (CI) is a software development practice that involves the integration of code changes from multiple developers into a single, integrated codebase. Here are some of the primary benefits of CI in modern software engineering:\n\n1. **Reducing Development Time**: CI allows developers to integrate changes from multiple developers into a single codebase, reducing the time required to integrate changes from different developers.\n\n2. **Improved Collaboration**: CI promotes collaboration among developers by allowing them to work on the same codebase simultaneously. This can lead to faster and more efficient development cycles.\n\n3. **Reducing Bugs**: By integrating changes from multiple developers, CI can help catch and fix bugs more quickly and efficiently.\n\n4. **Reducing Risks**: CI can help mitigate risks associated with code changes by ensuring that changes are integrated into the correct codebase and that the changes are tested thoroughly.\n\n5. **Enhanced Testing**: CI can help improve the quality of the code by ensuring that changes are tested and integrated into the correct codebase.\n\n6. **Improved Feedback**: CI can help improve the feedback loop by providing immediate feedback to developers about changes made to the codebase.\n\n7. **Enhanced Collaboration**: CI can help enhance collaboration among developers by providing a common codebase for all developers to work on at",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 12,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_03_VI_PREF_EN": {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
+      "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 128,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "API Gateway là một hệ thống quản lý API (Application Programming Interface) giúp các ứng dụng API của bạn phân phối và cung cấp các API. Nó hoạt động theo nguyên lý của \"tái tạo và phân phối\", giúp tất cả các API của bạn được phân phối một cách một cách tự động. API Gateway sử dụng các thuật toán và mã nguồn gốc để phân phối các API, đảm bảo rằng API của bạn được cung cấp một cách tự động và dễ dàng hơn. API Gateway thường được sử dụng để quản lý các API của bạn, giúp bạn duy trì một hệ thống API ổn định và hiệu quả.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 106,
+        "vi_words": 7,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "divergent",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_04_EN_PREF_VI": {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
+      "prompt": "Briefly explain why database indexing improves query performance.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "unknown",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 71,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Database indexing improves query performance by allowing the database to quickly locate and access the data needed to perform a query. By creating an index on a column, the database can quickly find the row(s) that contain the specified value, reducing the time required to retrieve the data. This can lead to faster query execution times and improved overall performance of the database.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 5,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "divergent",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_05_AUTO_VI": {
+      "case_id": "CASE_05_AUTO_VI",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
+      "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 245,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Duy trì sự tập trung hiệu quả khi làm việc từ xa có thể thay đổi theo từng công việc cụ thể. Tuy nhiên, một số nguyên tắc phổ biến có thể áp dụng:\n\n1. **Giữ lịch trình**: Đặt lịch trình cụ thể cho các công việc và tập trung vào các công việc cần thiết.\n2. **Tăng cường tập luyện thể chất**: Đảm bảo rằng bạn đã tập luyện thể chất để tránh cảm giác căng thẳng và giảm thiểu sự mất tập trung.\n3. **Giữ liên lạc**: Sử dụng các ứng dụng di động hoặc công nghệ di động để liên lạc với người khác.\n4. **Giữ lịch trình học**: Đảm bảo rằng bạn đã học và thực hành các kỹ năng cần thiết trước khi làm việc từ xa.\n5. **Giữ lịch trình làm việc**: Đảm bảo rằng bạn đã sắp xếp lịch trình làm việc và tập trung vào các công việc cần thiết.\n\nCác nguyên tắc này có thể thay đổi theo từng công việc cụ thể, nhưng chúng là một số nguyên tắc quan trọng để duy trì sự tập trung hiệu quả khi làm việc từ xa.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 184,
+        "vi_words": 9,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_06_AUTO_EN": {
+      "case_id": "CASE_06_AUTO_EN",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
+      "prompt": "How does public key cryptography secure internet communications?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 83,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Public key cryptography secures internet communications by enabling secure key exchange and data encryption. It works by converting a private key into a public key, which can be used to encrypt data and decrypt it when needed. The public key is then used to encrypt messages, and only the recipient can decrypt them using their private key. This ensures that only the intended recipient can read the message, even if the message is intercepted.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 7,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_07_VERBATIM_ENTITIES": {
+      "case_id": "CASE_07_VERBATIM_ENTITIES",
+      "case_type": "verbatim_entities",
+      "objective": "Bảo toàn tên riêng, ID, URL và mã cấu hình trong câu trả lời.",
+      "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 61,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Dưới đây là cấu hình URL và biến DUSNX_PORT cho API DUSN-X:\n\n- URL: `https://api.dusnx.org/v1/auth`\n- biến: `DUSNX_PORT=8088`\n\nBạn có thể thay đổi biến này nếu cần.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 19,
+        "vi_words": 6,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_08_MEMORY_RECALL_TEMPLATE": {
+      "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+      "case_type": "template_recall",
+      "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
+      "prompt": "Cụm máy chủ chọn công nghệ gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "grounded_template",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "memory_ids_used": [
+          "3b07a09beaa900c0ecf1af4c5b95cfe9"
+        ]
+      },
+      "verbatim_reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 12,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."
+    },
+    "CASE_09_AUTO_SHORT_HISTORY": {
+      "case_id": "CASE_09_AUTO_SHORT_HISTORY",
+      "case_type": "llm_generation",
+      "objective": "Câu ngắn ('Ưu điểm là gì?'), auto detection phải giữ ngữ cảnh tiếng Việt từ lịch sử hội thoại.",
+      "prompt": "Ưu điểm là gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "model_used": "qwen2.5:0.5b"
+      },
+      "verbatim_reply": "Ưu điểm là: Microservices giúp giảm tải hệ thống, tăng hiệu suất và dễ dàng quản lý. Distributed systems giúp hệ thống hoạt động hiệu quả hơn, đồng thời tăng khả năng chống thay đổi.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 35,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Short Vietnamese turn evaluated against contextual history."
+    },
+    "CASE_10_DURABLE_MEMORY_PREF_CHANGE": {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "case_type": "llm_generation",
+      "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
+      "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "model_used": "qwen2.5:0.5b"
+      },
+      "verbatim_reply": "2.1 Windows: Được phát triển bởi Microsoft và được sử dụng rộng rãi trong nhiều hệ thống máy tính hiện đại.\n\n2.2 macOS: Được phát triển bởi Apple và được sử dụng rộng rãi trong nhiều hệ thống máy tính Apple.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 41,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "divergent",
+      "notes": "Memory preference superseded previous setting atomically."
+    },
+    "CASE_11_TWO_USERS_LANGUAGE_ISOLATION": {
+      "case_id": "CASE_11_TWO_USERS_LANGUAGE_ISOLATION",
+      "case_type": "user_preference_isolation",
+      "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+      "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+      "input_preferred_language": "auto",
+      "expected_response_language": "A:en, B:vi",
+      "user_a_response_lang": "en",
+      "user_b_response_lang": "vi",
+      "verbatim_reply": "User A: Open source software (OS) refers to software that is made available to the public under terms that allow anyone to use, modify, and distribute the software. It is characterized by the fact that the source code is freely available for anyone to review and modify, which makes it more transparent and accessible. This approach allows users to contribute to the development of the software and helps to foster a culture of collaboration and innovation.\n---\nUser B: Phần mềm mã nguồn mở là một loại phần mềm có nguồn code được ghi lại và được phép sử dụng bởi nhiều người cùng một lúc. Điều này bao gồm việc tạo ra phần mềm mà người dùng có thể tham khảo, thay đổi, và sử dụng, không phải chỉ có quyền kiểm soát mã nguồn.",
+      "heuristic_evaluation": {
+        "user_a": {
+          "actual_language": "en",
+          "confidence": 1.0,
+          "vi_diacritics": 0,
+          "vi_words": 0,
+          "en_words": 7,
+          "method": "heuristic"
+        },
+        "user_b": {
+          "actual_language": "vi",
+          "confidence": 1.0,
+          "vi_diacritics": 59,
+          "vi_words": 6,
+          "en_words": 0,
+          "method": "heuristic"
+        }
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "notes": "Isolated per-user preference state verified via distinct tokens."
+    },
+    "CASE_12_PROVIDER_OFFLINE": {
+      "case_id": "CASE_12_PROVIDER_OFFLINE",
+      "case_type": "expected_provider_error",
+      "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Không kết nối được Ollama (unreachable)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 6,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Offline error properly categorized and isolated. Not counted as generation."
+    },
+    "CASE_13_MODEL_MISSING": {
+      "case_id": "CASE_13_MODEL_MISSING",
+      "case_type": "expected_provider_error",
+      "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Model cấu hình không tồn tại trong Ollama (model_missing)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 5,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Missing model error cleanly caught. Not counted as generation."
+    }
+  },
+  "summary": {
+    "total_cases": 13,
+    "contract_passed": 13,
+    "contract_failed": 0,
+    "real_llm_generations": 9,
+    "template_recalls": 1,
+    "expected_provider_failures": 2,
+    "eligible_language_cases": 10,
+    "linguistic_matched": 7,
+    "linguistic_divergent": 3,
+    "linguistic_uncertain": 0
+  }
+}

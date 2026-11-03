@@ -1,5 +1,8 @@
 # DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng cho chatbot và ứng dụng đa nền tảng
 
+Kiểm tra cloud và sửa lịch sử chat dài ngày 02/11/2026:
+[trạng thái hiện tại, kiểm chứng và phần còn thiếu](docs/PROJECT_STATUS_20261102.md).
+
 Giai đoạn sau Tuần 4 bổ sung Inspector opt-in, chính sách VI/EN/auto, PowerPoint task pane,
 data SFT v2 draft và template triển khai an toàn. Xem [roadmap](docs/POST_WEEK4_ROADMAP.md).
 Web vẫn là sản phẩm chính; PowerPoint là tích hợp minh chứng. Router không sinh văn bản,

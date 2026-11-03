@@ -490,6 +490,38 @@ class MemoryDB:
             result.append(d)
         return result
 
+    def get_message_page(self, user_id: str, session_id: str, limit: int = 100,
+                         before: str | None = None) -> dict:
+        """Page backwards by insertion order, unaffected by newly appended messages."""
+        with self._lock:
+            params = [session_id, user_id]
+            cursor_clause = ""
+            if before is not None:
+                cursor = self._conn.execute(
+                    "SELECT rowid FROM chat_messages WHERE message_id=? AND session_id=? AND user_id=?",
+                    (before, session_id, user_id),
+                ).fetchone()
+                if cursor is None:
+                    raise ValueError("Invalid message cursor")
+                cursor_clause = " AND rowid < ?"
+                params.append(cursor[0])
+            params.append(limit + 1)
+            rows = self._conn.execute(
+                "SELECT * FROM chat_messages WHERE session_id=? AND user_id=?" + cursor_clause +
+                " ORDER BY rowid DESC LIMIT ?", params,
+            ).fetchall()
+            has_more = len(rows) > limit
+            messages = []
+            for row in reversed(rows[:limit]):
+                item = dict(row)
+                try:
+                    item["memory_ids_used"] = json.loads(item["memory_ids_used"] or "[]")
+                except (ValueError, TypeError):
+                    item["memory_ids_used"] = []
+                messages.append(item)
+            return {"messages": messages,
+                    "next_before": messages[0]["message_id"] if has_more else None}
+
     def get_recent_messages(self, user_id: str, session_id: str, limit: int = 12) -> list[dict]:
         """Read the latest context window, returned in conversation order.
 

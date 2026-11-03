@@ -9,13 +9,7 @@ import sys
 from playwright.sync_api import sync_playwright, expect
 
 
-def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--gateway", default="http://127.0.0.1:8080")
-    p.add_argument("--output-dir", required=True)
-    args = p.parse_args()
-    out = Path(args.output_dir)
-    out.mkdir(parents=True, exist_ok=False)
+def run_tests(gateway, out):
     report = dict(timestamp_utc=datetime.now(timezone.utc).isoformat(), transport="real_chromium_gateway_ollama",
                   status="unverified", checks={})
     with sync_playwright() as pw:
@@ -24,7 +18,7 @@ def main():
             context = browser.new_context(viewport={"width": 1280, "height": 900})
             page = context.new_page()
             page.set_default_timeout(30000)
-            page.goto(args.gateway)
+            page.goto(gateway)
             username, password = "w4_ui_" + secrets.token_hex(8), secrets.token_urlsafe(24)
             page.locator("#tabRegister").click()
             page.locator("#regUsername").fill(username)
@@ -92,7 +86,7 @@ def main():
             expect(page.locator("#sendBtn")).to_be_enabled()
             # Read only this synthetic user's memories via the actual authenticated Gateway.
             token = page.evaluate("authToken")
-            memories = context.request.get(args.gateway + "/v1/memories", headers={"Authorization": "Bearer " + token}).json()
+            memories = context.request.get(gateway + "/v1/memories", headers={"Authorization": "Bearer " + token}).json()
             assert len([m for m in memories if "trà sen" in m["content"]]) == 1
             report["checks"]["lost_success_response_retry_no_duplicate"] = True
             report["checks"]["later_success_preserves_failed_request_id"] = True
@@ -129,7 +123,7 @@ def main():
             report["checks"]["responsive_390px"] = True
             page.set_viewport_size({"width": 1280, "height": 900})
             # Revoke the synthetic token at server, then trigger Web's real 401 flow.
-            context.request.post(args.gateway + "/v1/auth/logout", headers={"Authorization": "Bearer " + token})
+            context.request.post(gateway + "/v1/auth/logout", headers={"Authorization": "Bearer " + token})
             page.locator("#messageInput").fill("Nội dung chưa gửi cần giữ lại")
             page.locator("#sendBtn").click()
             expect(page.locator("#authScreen")).to_have_class("screen active")
@@ -146,6 +140,22 @@ def main():
     (out / "browser.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["status"] == "passed" else 1
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--gateway", default=None, help="Gateway URL (defaults to spawning isolated Stack)")
+    p.add_argument("--spawn-stack", action="store_true", help="Spawn an isolated local Stack automatically")
+    p.add_argument("--output-dir", required=True)
+    args = p.parse_args()
+    out = Path(args.output_dir)
+    out.mkdir(parents=True, exist_ok=False)
+    if args.spawn_stack or not args.gateway:
+        from verify_week4_runtime import Stack
+        with Stack(out / "stack") as stack:
+            return run_tests(stack.url, out)
+    else:
+        return run_tests(args.gateway, out)
 
 
 if __name__ == "__main__":

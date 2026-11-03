@@ -65,6 +65,23 @@ global.fetch = async () => ({ ok: false, status: 401, json: async () => ({}) });
 const app = require("./app.js");
 
 describe("Provider health through Gateway", () => {
+  it("distinguishes missing models from an offline Ollama service", async () => {
+    const previousFetch = global.fetch;
+    try {
+      global.fetch = async () => ({ ok: true, json: async () => ({ provider_ok: false,
+        provider: { provider: "ollama", reachable: true, model_available: false,
+          configured_model: "qwen2.5:0.5b", error: "model_missing" } }) });
+      await app.checkProviderHealth();
+      assert.match(elements.providerStatus.textContent, /đang chạy nhưng chưa có model qwen2\.5:0\.5b/);
+      global.fetch = async () => ({ ok: true, json: async () => ({ provider_ok: false,
+        provider: { provider: "ollama", reachable: false, error: "unreachable" } }) });
+      await app.checkProviderHealth();
+      assert.match(elements.providerStatus.textContent, /Không kết nối được Ollama/);
+      assert.doesNotMatch(elements.providerStatus.textContent, /chưa có model/);
+    } finally {
+      global.fetch = previousFetch;
+    }
+  });
   it("reads AI health rather than Gateway liveness", async () => {
     const previousFetch = global.fetch;
     let requested;

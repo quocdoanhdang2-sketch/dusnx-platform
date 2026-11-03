@@ -7,12 +7,25 @@
  * - User cannot supply arbitrary linkedUserId to read other users' memory
  */
 
-const GATEWAY = window.DUSNX_GATEWAY || (window.location?.port === "8080" || window.location?.port === "3000" ? "" : "http://localhost:8080");
+const GATEWAY = window.DUSNX_GATEWAY || (window.location?.protocol?.startsWith("http") ? "" : "http://localhost:8080");
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let authToken = sessionStorage.getItem("dusnx_token") || null;
+let authGeneration = 0;
 let currentUser = null;
 let currentSessionId = null;
+let historyGeneration = 0;
+let nextMessageBefore = null;
+let historyLoading = false;
+
+function resetMessageHistory() {
+  historyGeneration += 1;
+  nextMessageBefore = null;
+  historyLoading = false;
+  el("olderMessagesBtn").hidden = true;
+  el("olderMessagesBtn").disabled = false;
+  el("sendBtn").disabled = isSending;
+}
 let allMemories = [];
 let allProjects = [];
 let nextTimelineCursor = null;
@@ -42,20 +55,28 @@ async function apiFetch(path, options = {}) {
   // Use explicit DUSNX_GATEWAY if set, otherwise relative "" so requests route through
   // Gateway (:8080) in native mode or Nginx (:3000) in Docker Compose mode.
   const base = window.DUSNX_GATEWAY || "";
+  const generation = authGeneration;
+  const requestToken = authToken;
+  const assertCurrentSession = () => {
+    if (generation !== authGeneration || requestToken !== authToken) {
+      const error = new Error("Phiên đăng nhập đã thay đổi; bỏ qua phản hồi cũ.");
+      error.name = "SessionChangedError";
+      throw error;
+    }
+  };
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
   let resp;
   try {
     resp = await fetch(`${base}${path}`, { ...options, headers });
   } catch (err) {
-    throw new Error(`Không thể kết nối Gateway (${err.message}). Vui lòng đảm bảo Gateway đang chạy tại http://localhost:8080.`);
+    assertCurrentSession();
+    throw new Error(`Không thể kết nối Gateway (${err.message}). Vui lòng đảm bảo Gateway đang chạy tại ${GATEWAY || window.location?.origin || "http://localhost:8080"}.`);
   }
+  assertCurrentSession();
   if (!resp.ok) {
     if (resp.status === 401 && authToken) {
-      authToken = null;
-      currentUser = null;
-      sessionStorage.removeItem("dusnx_token");
-      showScreen("authScreen");
+      clearAuthentication();
       el("loginError").textContent = "Phiên đăng nhập đã hết hạn. Đăng nhập lại để tiếp tục; nội dung chưa gửi vẫn được giữ.";
       el("loginError").hidden = false;
       throw new Error("Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
@@ -67,13 +88,16 @@ async function apiFetch(path, options = {}) {
         const body = await resp.json();
         msg = body.detail || body.message || msg;
       } else if (resp.status === 404) {
-        msg = `HTTP 404: Đường dẫn '${path}' không tồn tại trên máy chủ này. Nếu bạn đang chạy 'python -m http.server 3000' mà không có proxy, vui lòng mở Web qua Gateway: http://localhost:8080 (Native) hoặc http://localhost:3000 (Docker Compose).`;
+        msg = `HTTP 404: Đường dẫn '${path}' không tồn tại trên máy chủ này. Nếu bạn đang chạy 'python -m http.server 3000' mà không có proxy, vui lòng mở Web qua Gateway: ${window.location?.origin || "http://localhost:8080"} (Native) hoặc http://localhost:3000 (Docker Compose).`;
       }
     } catch {}
+    assertCurrentSession();
     throw new Error(msg);
   }
   if (resp.status === 204) return null;
-  return resp.json();
+  const data = await resp.json();
+  assertCurrentSession();
+  return data;
 }
 
 
@@ -104,10 +128,12 @@ async function handleLogin(event) {
         password: el("loginPassword").value,
       }),
     });
+    authGeneration += 1;
     authToken = data.token;
     sessionStorage.setItem("dusnx_token", authToken);
     await enterApp();
   } catch (err) {
+    if (err.name === "SessionChangedError") return;
     errorEl.textContent = err.message;
     errorEl.hidden = false;
   } finally {
@@ -139,10 +165,12 @@ async function handleRegister(event) {
         password: el("regPassword").value,
       }),
     });
+    authGeneration += 1;
     authToken = data.token;
     sessionStorage.setItem("dusnx_token", authToken);
     await enterApp();
   } catch (err) {
+    if (err.name === "SessionChangedError") return;
     errorEl.textContent = err.message;
     errorEl.hidden = false;
   } finally {
@@ -151,15 +179,48 @@ async function handleRegister(event) {
   }
 }
 
-async function handleLogout() {
-  try { await apiFetch("/v1/auth/logout", { method: "POST" }); } catch {}
+function clearAuthentication() {
+  authGeneration += 1;
   authToken = null;
   currentUser = null;
+  currentSessionId = null;
+  failedRequest = null;
+  allMemories = [];
+  allProjects = [];
+  nextTimelineCursor = null;
+  isSending = false;
+  isResolving = false;
+  isCreatingSession = false;
+  resetMessageHistory();
+  hideStatus();
+  hideError();
+  el("projectSelect").disabled = false;
+  for (const id of ["messageList", "sessionList", "memoryList", "projectList",
+                    "projectDecisions", "projectHistory", "timelineList"]) {
+    el(id)?.replaceChildren();
+  }
+  renderPendingBanner(null);
   sessionStorage.removeItem("dusnx_token");
   showScreen("authScreen");
 }
 
+async function handleLogout() {
+  const previousToken = authToken;
+  clearAuthentication();
+  if (!previousToken) return;
+  // Revoke the captured token after clearing local state. A late response must
+  // never clear or restore a different login that started in the meantime.
+  try {
+    await fetch(`${window.DUSNX_GATEWAY || ""}/v1/auth/logout`, {
+      method: "POST", headers: { Authorization: `Bearer ${previousToken}` },
+    });
+  } catch {
+    // Local logout remains effective when the network is unavailable.
+  }
+}
+
 async function enterApp() {
+  const generation = authGeneration;
   currentUser = await apiFetch("/v1/auth/me");
   showScreen("appScreen");
   if (el("languageSelect")) {
@@ -171,6 +232,7 @@ async function enterApp() {
     };
   }
   await Promise.all([loadSessions(), loadProjects(), checkProviderHealth()]);
+  if (generation !== authGeneration) return;
   showView("chat");
   await startNewSession();
 }
@@ -244,7 +306,13 @@ async function checkProviderHealth() {
     } else {
       const pName = provider.provider || "none";
       const err = provider.error ? `: ${provider.error.slice(0, 45)}` : "";
-      statusEl.textContent = `✕ LLM không khả dụng (${pName}${err})`;
+      if (pName === "ollama" && provider.reachable && provider.model_available === false) {
+        statusEl.textContent = `✕ Ollama đang chạy nhưng chưa có model ${provider.configured_model || "được cấu hình"}`;
+      } else if (pName === "ollama" && provider.error === "unreachable") {
+        statusEl.textContent = "✕ Không kết nối được Ollama; kiểm tra dịch vụ và địa chỉ kết nối";
+      } else {
+        statusEl.textContent = `✕ LLM không khả dụng (${pName}${err})`;
+      }
       statusEl.className = "provider-status err";
     }
   } catch (err) {
@@ -288,6 +356,7 @@ function renderSessionList(sessions) {
 
 async function startNewSession() {
   if (isSending || isResolving || isCreatingSession) return;
+  const generation = authGeneration;
   isCreatingSession = true;
   try {
     const sess = await apiFetch("/v1/sessions", {
@@ -295,29 +364,37 @@ async function startNewSession() {
       body: JSON.stringify({ title: "Phiên chat mới" }),
     });
     currentSessionId = sess.session_id;
+    resetMessageHistory();
     el("messageList").replaceChildren();
     el("welcomeState").style.display = "";
     el("chatTitle").textContent = "Phiên chat mới";
     el("chatMeta").textContent = "";
     el("mobileTitle").textContent = "DUSN-X";
     await loadSessions();
+    if (generation !== authGeneration) return;
     renderPendingBanner(null);
     showView("chat");
     el("messageInput").focus();
   } catch (err) {
+    if (err.name === "SessionChangedError") return;
     showError(`Không tạo được phiên mới: ${err.message}`);
   } finally {
-    isCreatingSession = false;
+    if (generation === authGeneration) isCreatingSession = false;
   }
 }
 
 async function openSession(sessionId, title) {
   if (isSending || isResolving) return;
   currentSessionId = sessionId;
+  resetMessageHistory();
+  const generation = historyGeneration;
+  historyLoading = true;
+  el("sendBtn").disabled = true;
   el("chatTitle").textContent = title || "Phiên chat";
   el("mobileTitle").textContent = title || "DUSN-X";
   el("welcomeState").style.display = "none";
   el("messageList").replaceChildren();
+  renderPendingBanner(null);
   showView("chat");
   // Close mobile sidebar
   el("sidebar").classList.remove("open");
@@ -327,7 +404,9 @@ async function openSession(sessionId, title) {
   });
   // Load history
   try {
-    const messages = await apiFetch(`/v1/sessions/${sessionId}/messages`);
+    const page = await apiFetch(`/v1/sessions/${sessionId}/messages/page`);
+    if (generation !== historyGeneration) return;
+    const messages = page.messages;
     for (const msg of messages) {
       appendMessageBubble(msg.role, msg.content, {
         memory_ids_used: msg.memory_ids_used,
@@ -336,10 +415,54 @@ async function openSession(sessionId, title) {
       });
     }
     if (messages.length > 0) el("welcomeState").style.display = "none";
+    nextMessageBefore = page.next_before;
+    el("olderMessagesBtn").hidden = !nextMessageBefore;
     scrollToBottom();
     await checkPendingDecisions();
   } catch (err) {
-    showError(`Không tải được lịch sử: ${err.message}`);
+    if (generation === historyGeneration) showError(`Không tải được lịch sử: ${err.message}`);
+  } finally {
+    if (generation === historyGeneration) {
+      historyLoading = false;
+      el("sendBtn").disabled = isSending;
+    }
+  }
+}
+
+async function loadOlderMessages() {
+  if (!nextMessageBefore || historyLoading) return;
+  const generation = historyGeneration;
+  const sessionId = currentSessionId;
+  const button = el("olderMessagesBtn");
+  historyLoading = true;
+  button.disabled = true;
+  el("sendBtn").disabled = true;
+  try {
+    const page = await apiFetch(`/v1/sessions/${sessionId}/messages/page?before=${encodeURIComponent(nextMessageBefore)}`);
+    if (generation !== historyGeneration) return;
+    const list = el("messageList");
+    const previousHeight = list.scrollHeight;
+    const previousTop = list.scrollTop;
+    const fragment = document.createDocumentFragment();
+    for (const msg of page.messages) {
+      fragment.appendChild(appendMessageBubble(msg.role, msg.content, {
+        memory_ids_used: msg.memory_ids_used,
+        state_version: msg.state_version,
+        created_at: msg.created_at,
+      }, false));
+    }
+    list.prepend(fragment);
+    list.scrollTop = previousTop + list.scrollHeight - previousHeight;
+    nextMessageBefore = page.next_before;
+    button.hidden = !nextMessageBefore;
+  } catch (err) {
+    if (generation === historyGeneration) showError(`Không tải được tin nhắn cũ: ${err.message}`);
+  } finally {
+    if (generation === historyGeneration) {
+      historyLoading = false;
+      button.disabled = false;
+      el("sendBtn").disabled = isSending;
+    }
   }
 }
 
@@ -368,11 +491,13 @@ function useHint(btn) {
 
 async function checkPendingDecisions() {
   if (!currentSessionId) return;
+  const generation = historyGeneration;
   try {
     const pendings = await apiFetch(`/v1/pending-decisions?session_id=${encodeURIComponent(currentSessionId)}`);
+    if (generation !== historyGeneration) return;
     renderPendingBanner(pendings && pendings.length > 0 ? pendings[0] : null);
   } catch {
-    renderPendingBanner(null);
+    if (generation === historyGeneration) renderPendingBanner(null);
   }
 }
 
@@ -442,6 +567,7 @@ function renderPendingBanner(pending) {
 
 async function resolvePending(pendingId, accepted) {
   if (isResolving || isSending) return;
+  const generation = authGeneration;
   isResolving = true;
   const buttons = el("pendingDecisionBanner")?.querySelectorAll("button") || [];
   buttons.forEach(b => { b.disabled = true; });
@@ -467,17 +593,21 @@ async function resolvePending(pendingId, accepted) {
     await loadMemories();
     scrollToBottom();
   } catch (err) {
+    if (err.name === "SessionChangedError") return;
     hideStatus();
     showError(`Lỗi xử lý quyết định: ${err.message}. Kiểm tra trí nhớ trước khi thử lại.`);
     await checkPendingDecisions();
   } finally {
-    isResolving = false;
-    buttons.forEach(b => { b.disabled = false; });
+    if (generation === authGeneration) {
+      isResolving = false;
+      buttons.forEach(b => { b.disabled = false; });
+    }
   }
 }
 
 async function sendMessage(overrideText = null, { isRetry = false, retryRequest = null } = {}) {
-  if (isSending || isResolving) return;
+  if (isSending || isResolving || historyLoading) return;
+  const generation = authGeneration;
   const input = el("messageInput");
   const text = (overrideText !== null ? overrideText : input.value).trim();
   if (!text) return;
@@ -489,6 +619,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
     await startNewSession();
   }
 
+  if (generation !== authGeneration) return;
   if (!currentSessionId) return;
   const previous = retryRequest || (failedRequest && failedRequest.text === text && failedRequest.sessionId === currentSessionId && failedRequest.projectId === (el("projectSelect").value || null) ? failedRequest : null);
   isRetry = isRetry || !!previous;
@@ -561,15 +692,18 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
     // Update session title in sidebar
     await loadSessions();
   } catch (err) {
+    if (err.name === "SessionChangedError") return;
     hideStatus();
     if (!input.value.trim()) input.value = text;
     appendProviderErrorCard(`Lỗi gửi tin: ${err.message}`, null, text, submission);
     showError(`Lỗi gửi tin: ${err.message}`);
   } finally {
-    isSending = false;
-    el("sendBtn").disabled = false;
-    el("projectSelect").disabled = false;
-    el("messageInput").focus();
+    if (generation === authGeneration) {
+      isSending = false;
+      el("sendBtn").disabled = false;
+      el("projectSelect").disabled = false;
+      el("messageInput").focus();
+    }
   }
 }
 
@@ -609,7 +743,7 @@ function appendProviderErrorCard(errorText, providerName, failedMessage, request
   list.appendChild(card);
 }
 
-function appendMessageBubble(role, content, meta = {}) {
+function appendMessageBubble(role, content, meta = {}, append = true) {
   const list = el("messageList");
   const wrapper = document.createElement("div");
   wrapper.className = `message ${role}`;
@@ -690,7 +824,8 @@ function appendMessageBubble(role, content, meta = {}) {
   col.appendChild(metaEl);
   wrapper.appendChild(avatar);
   wrapper.appendChild(col);
-  list.appendChild(wrapper);
+  if (append) list.appendChild(wrapper);
+  return wrapper;
 }
 
 
@@ -1233,7 +1368,8 @@ function renderTimelineItem(item) {
   if (authToken) {
     try {
       await enterApp();
-    } catch {
+    } catch (err) {
+      if (err.name === "SessionChangedError") return;
       authToken = null;
       sessionStorage.removeItem("dusnx_token");
       showScreen("authScreen");

@@ -131,11 +131,14 @@ Không overwrite/xóa DB gốc hoặc commit backups. Runbook không tự chạy
 $env:PYTHONPATH='python/src;python;.;scripts'
 $py='python/.venv/Scripts/python.exe' # hoặc .venv/Scripts/python.exe
 & $py -m pytest python/tests -q --tb=short
-node --test web-ui/app.test.js
+node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js
 dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release
 dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release
 ./scripts/tests/local-health.tests.ps1
-# Dùng DB test riêng; output phải mới. Không dùng DB người thật.
+# Các harness kiểm chứng thực tế (dùng DB test riêng, output mới, không chứa bí mật):
+& $py scripts/verify_bilingual_generation.py --output-dir runtime/bilingual-generation
+& $py scripts/verify_sqlite_backup_restore.py --output-dir runtime/sqlite-backup-restore
+& $py scripts/verify_router_diagnostic.py --output-dir runtime/router-diagnostic
 & $py scripts/verify_week4_runtime.py --data-dir runtime/week4-native-ai --output-dir runtime/week4-new-run
 & $py scripts/verify_week4_web.py --output-dir runtime/week4-new-browser
 git diff --check

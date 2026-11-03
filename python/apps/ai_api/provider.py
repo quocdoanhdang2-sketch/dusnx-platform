@@ -63,13 +63,16 @@ def check_ollama_health() -> dict:
                 raise ValueError("invalid_schema")
             models = [m["name"] for m in data["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
             available = target_model in models
-            return {
+            health = {
                 "reachable": True,
                 "available": available,
                 "models_available": models,
                 "configured_model": target_model,
                 "model_available": available,
             }
+            if not available:
+                health["error"] = "model_missing"
+            return health
     except Exception as exc:
         return {"reachable": False, "available": False, "error": ollama_error(exc), "model_available": False, "configured_model": target_model}
 
@@ -240,9 +243,13 @@ def generate_response(
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
-    language_rule = ("Reply in English, concisely and accurately. Preserve names, IDs, URLs and code verbatim."
-                     if response_language == "en" else
-                     "Bạn trả lời bằng tiếng Việt, ngắn gọn, chính xác. Giữ nguyên tên riêng, ID, URL và code.")
+    if response_language == "en":
+        language_rule = "MANDATORY: Reply in English, concisely and accurately. Preserve names, IDs, URLs and code verbatim."
+        language_bullet = "- Bắt buộc trả lời bằng tiếng Anh (English)."
+    else:
+        language_rule = "BẮT BUỘC: Bạn PHẢI trả lời bằng tiếng Việt, ngắn gọn, chính xác. Giữ nguyên tên riêng, ID, URL và code."
+        language_bullet = "- Bắt buộc trả lời bằng tiếng Việt, không dùng tiếng Anh."
+
     system_prompt = f"""Bạn là DUSN-X, trợ lý AI cá nhân hóa thích ứng.
 {language_rule}
 
@@ -251,6 +258,7 @@ def generate_response(
 
 Quan trọng:
 - Trả lời trực tiếp câu hỏi của người dùng dựa trên thông tin trí nhớ đang hiệu lực ở trên.
+{language_bullet}
 - Tuyệt đối không nhắc lại các quyết định đã bị thay thế hoặc thông tin không có trong danh sách.
 - Nếu không có thông tin liên quan, hãy nói rõ là chưa biết.
 - Câu hỏi, giả định và tin đồn của người dùng không phải sự kiện đã được lưu.
