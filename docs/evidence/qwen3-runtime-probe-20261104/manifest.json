@@ -167,9 +167,9 @@
     {
       "path": "README.md",
       "source_path": "authored evidence README",
-      "source_sha256": "2e179dc805b67bccd3ebd85181798ecf45c2a131cc3b908884627e44c9e59641",
-      "packaged_source_bytes_sha256": "2e179dc805b67bccd3ebd85181798ecf45c2a131cc3b908884627e44c9e59641",
-      "git_blob_sha1": "07d6f18ff1020ac64a0cc32f30f7ad1666400317",
+      "source_sha256": "3ee46aee4b1edb03c26be26595dfef136a6a73e8838b24edffb308ef886ddb8e",
+      "packaged_source_bytes_sha256": "3ee46aee4b1edb03c26be26595dfef136a6a73e8838b24edffb308ef886ddb8e",
+      "git_blob_sha1": "238c482f9f73dab92485614de4558b622a51fdd6",
       "normalization": "UTF-8 LF; SHA-256 records exact packaged bytes; Git blob recorded after staging",
       "observed_at_utc": "2026-11-03T18:36:17Z"
     },
@@ -309,7 +309,6 @@
   "manifest_self_hash": "not included",
   "live_gateway_and_browser_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3",
   "post_live_report_harness_fix_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
-  "evidence_commit_pending": "Packaged in commit 7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a; this manifest does not embed its own containing commit SHA to avoid self-reference",
   "ci": {
     "pr": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4",
     "pr_head_sha": "965c544f604691fee0e71a8fbd28b85946f47277",
@@ -320,7 +319,13 @@
     "review_table_pr5": {
       "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
       "head_sha": "b9f81c0b5eda44c41bf51bb153bed1a2d9462b77",
-      "checks": "unknown; none returned at check time"
+      "checks": "unknown; none returned at check time",
+      "merged": true,
+      "merge_commit_sha": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+      "head_actions_run_id": 41696532438,
+      "head_actions_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41696532438",
+      "head_actions_conclusion": "success",
+      "merge_sha_status": "unknown; no status or workflow run returned"
     }
   },
   "live_results": {
@@ -354,7 +359,7 @@
     "not_rerun": "Strict live Qwen3 generation report; report-label-only change does not alter provider/generation behavior; prior live report remains on e89e57467fde95ed11d077033ecfbc23a30b7ff3",
     "observed_at_utc": "2026-11-03T18:39:41Z"
   },
-  "quality_branch_pushed_sha": "7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a",
+  "quality_branch_pushed_sha": "e7458682e4c1a1ec2b10def6bd42bb1b5d16ade9",
   "independent_main_harness_pr": {
     "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
     "base_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
@@ -362,6 +367,17 @@
     "focused_harness": "8 passed, exit 0",
     "full_python_suite": "260 passed, 1 skipped, exit 0",
     "github_checks": "no statuses or workflow runs returned at evidence update time; unknown",
-    "main_merged": false
-  }
+    "main_merged": false,
+    "merged": true,
+    "merge_commit_sha": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+    "main_after_sha": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+    "actions_run_id": 41696532438,
+    "actions_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41696532438",
+    "actions_conclusion": "success",
+    "merge_sha_ci": "unknown; no status or workflow run returned"
+  },
+  "main_review_table_after": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+  "evidence_package_commit": "7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a",
+  "evidence_manifest_update_commit": "This manifest update is recorded in its containing Git commit; not embedded to avoid self-reference",
+  "evidence_commit_note": "Evidence files were added in 7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a; this later manifest update commit is not embedded in its own contents."
 }
