@@ -1,0 +1,311 @@
+{
+  "title": "DUSN-X quality follow-up verification evidence",
+  "recorded_at_utc": "2026-11-03T12:46:42.769011+00:00",
+  "code_checked": {
+    "head_sha": "55c5737a77424207005ddda2f056e49bb7eeb64b",
+    "dirty_worktree_patch_sha256": "612ece8c45a6e80c50b1fd6891dff2ebbba45553c6c997a2d923fdde2f09eece",
+    "patch_algorithm": "SHA-256 over `git diff --binary HEAD` bytes; untracked evidence excluded",
+    "branch_at_verification": "fix/quality-context-evidence"
+  },
+  "historical_scope": "These artifacts are from verification runs performed before this documentation/evidence commit. They do not represent a run on the documentation commit.",
+  "model_comparison": {
+    "qwen": {
+      "name": "qwen2.5:0.5b",
+      "digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+      "strict_command": "python scripts/verify_bilingual_generation.py --output-dir runtime/quality-followup-20261103/final-qwen-r18 --expected-model qwen2.5:0.5b --expected-model-digest a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67 --strict-language --strict-quality",
+      "exit_code": 1,
+      "summary": {
+        "quality_flagged_cases": 0,
+        "total_cases": 22,
+        "contract_passed": 18,
+        "contract_failed": 4,
+        "real_llm_generations": 5,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 10,
+        "linguistic_matched": 7,
+        "linguistic_divergent": 3,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 0,
+        "task_failed": 1,
+        "task_uncertain": 8,
+        "completion_failed": 0,
+        "completion_uncertain": 0,
+        "execution_status": "completed"
+      }
+    },
+    "candidate": {
+      "name": "dusnx-vi-candidate",
+      "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "strict_command": "python scripts/verify_bilingual_generation.py --output-dir runtime/quality-followup-20261103/final-candidate-r19 --expected-model dusnx-vi-candidate --expected-model-digest bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3 --strict-language --strict-quality",
+      "exit_code": 1,
+      "summary": {
+        "quality_flagged_cases": 1,
+        "total_cases": 22,
+        "contract_passed": 21,
+        "contract_failed": 1,
+        "real_llm_generations": 8,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 10,
+        "linguistic_matched": 9,
+        "linguistic_divergent": 0,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 1,
+        "task_failed": 1,
+        "task_uncertain": 8,
+        "completion_failed": 0,
+        "completion_uncertain": 0,
+        "execution_status": "completed"
+      }
+    },
+    "promotion": "candidate not promoted; both strict runs fail."
+  },
+  "runs": [
+    {
+      "name": "Full Python suite",
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --basetemp runtime/quality-followup-20261103/pytest-final-verified-2",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "293 passed in 59.03s"
+    },
+    {
+      "name": "Node Web/auth/PowerPoint mock suite",
+      "command": "unknown; invocation not retained",
+      "exit_code": 0,
+      "result": "26 passed"
+    },
+    {
+      "name": ".NET Gateway build",
+      "command": "dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release",
+      "exit_code": 0,
+      "result": "build succeeded; 0 warnings, 0 errors"
+    },
+    {
+      "name": ".NET Gateway tests",
+      "command": "dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release",
+      "exit_code": 0,
+      "result": "7/7 passed"
+    },
+    {
+      "name": "PowerShell local health",
+      "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/local-health.tests.ps1",
+      "exit_code": 0,
+      "result": "6/6 passed"
+    },
+    {
+      "name": "Auth live Chromium",
+      "command": "unknown; invocation not retained",
+      "exit_code": 0,
+      "result": "5 checks passed; earlier sandbox attempt failed to spawn and is retained outside evidence"
+    },
+    {
+      "name": "History live Chromium",
+      "command": "unknown; invocation not retained",
+      "exit_code": 0,
+      "result": "6 checks passed; 205 messages ordered"
+    },
+    {
+      "name": "Memory live HTTP/SQLite/Chromium",
+      "command": "unknown; invocation not retained",
+      "exit_code": 0,
+      "result": "10 checks passed; no LLM generation verified; protected test not read"
+    },
+    {
+      "name": "Runtime harness",
+      "command": "python scripts/verify_week4_runtime.py --spawn-stack --data-dir runtime/quality-followup-20261103/final-live/runtime-data --output-dir runtime/quality-followup-20261103/final-live/runtime",
+      "exit_code": 0,
+      "result": "19 checks passed; checkpoint SHA in report"
+    },
+    {
+      "name": "Browser live generation",
+      "command": "unknown; invocation not retained (report confirms real Chromium, Gateway, Ollama)",
+      "exit_code": 0,
+      "result": "8/8 browser checks; real Ollama generation called; report preserves raw reply"
+    },
+    {
+      "name": "SQLite synthetic backup/restore",
+      "command": "python scripts/verify_sqlite_backup_restore.py --output-dir runtime/quality-followup-20261103/final-live/sqlite --protected-dir runtime/quality-followup-20261103/no-protected-data",
+      "exit_code": 0,
+      "result": "synthetic level 1 passed; protected-data level 2 skipped because directory absent"
+    },
+    {
+      "name": "Qwen chat provenance",
+      "command": "python scripts/verify_chat_provenance.py --spawn-stack --output runtime/quality-followup-20261103/final-live/provenance-qwen-r20.json --expected-model qwen2.5:0.5b --expected-model-digest a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+      "exit_code": 1,
+      "result": "status unverified; assertion failure; repeated output, done_reason=length; provider error recorded"
+    },
+    {
+      "name": "Candidate chat provenance",
+      "command": "python scripts/verify_chat_provenance.py --spawn-stack --output runtime/quality-followup-20261103/final-live/provenance-candidate-r21.json --expected-model dusnx-vi-candidate --expected-model-digest bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "exit_code": 1,
+      "result": "status unverified; assertion failure; provider health true does not certify content"
+    }
+  ],
+  "limitations": [
+    "Open-ended task/context outcomes remain uncertain and require human review; no human review is claimed.",
+    "Both final strict model runs failed; this is a release blocker.",
+    "Protected backup integrity was not checked because no protected directory was present; no personal database was opened.",
+    "A sandbox pytest attempt from repository root failed due wrong collection root; a correctly scoped venv run passed."
+  ],
+  "files": [
+    {
+      "path": "bilingual-qwen/report.json",
+      "source": "runtime/quality-followup-20261103/final-qwen-r18/report.json",
+      "source_time_utc": "2026-11-03T12:30:46.115878+00:00",
+      "source_sha256": "f91a712777b6d09bce2ce148e20fe492d8ff8fcfa5d933ff9f2cb0fc94c6bde1",
+      "evidence_copy_sha256": "f91a712777b6d09bce2ce148e20fe492d8ff8fcfa5d933ff9f2cb0fc94c6bde1",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "b16bf696b62a928eb708d7fc948ec88598fc1819419738da2e3d450173bb3b7f"
+    },
+    {
+      "path": "bilingual-qwen/review_table.md",
+      "source": "runtime/quality-followup-20261103/final-qwen-r18/review_table.md",
+      "source_time_utc": "2026-11-03T12:30:46.115878+00:00",
+      "source_sha256": "f59d4e37b8c0d098ea6cc0883174393d96d4986ae8019295b29bb314d664e39b",
+      "evidence_copy_sha256": "f59d4e37b8c0d098ea6cc0883174393d96d4986ae8019295b29bb314d664e39b",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "795bc17a4a73afb2f1b91c900b410bb98d0481123b8ed0829e0875b33b354e14"
+    },
+    {
+      "path": "bilingual-candidate/report.json",
+      "source": "runtime/quality-followup-20261103/final-candidate-r19/report.json",
+      "source_time_utc": "2026-11-03T12:32:29.176375+00:00",
+      "source_sha256": "f9e8c06e1498cd52b714d4da2aa1acf7c4307d0131a65f43f5a6dfc5ea9043be",
+      "evidence_copy_sha256": "f9e8c06e1498cd52b714d4da2aa1acf7c4307d0131a65f43f5a6dfc5ea9043be",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "de68aaa5ff15b731e8200b277d6d6da38c8a179992dd74d028bd5352d2575d1a"
+    },
+    {
+      "path": "bilingual-candidate/review_table.md",
+      "source": "runtime/quality-followup-20261103/final-candidate-r19/review_table.md",
+      "source_time_utc": "2026-11-03T12:32:29.176375+00:00",
+      "source_sha256": "662ec80655d9d7d4f64df7eeda05c90dd5716185d3bc0aec8f59c1e72c3cffe8",
+      "evidence_copy_sha256": "662ec80655d9d7d4f64df7eeda05c90dd5716185d3bc0aec8f59c1e72c3cffe8",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "3ac613488af4a911ff2e4b6e04ba4d262c2ab6d46e2853574ec80e42170eb4c5"
+    },
+    {
+      "path": "provenance/qwen.json",
+      "source": "runtime/quality-followup-20261103/final-live/provenance-qwen-r20.json",
+      "source_time_utc": "2026-11-03T12:39:37.618619+00:00",
+      "source_sha256": "44dd7689655ad25afb0eef309a1367a7cb55c339daa03cc419c84dbcc047d7f1",
+      "evidence_copy_sha256": "44dd7689655ad25afb0eef309a1367a7cb55c339daa03cc419c84dbcc047d7f1",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "843bb908684c832cb095e7f607a8744eb3576be8ebd83996c52e44788c4bdc69"
+    },
+    {
+      "path": "provenance/candidate.json",
+      "source": "runtime/quality-followup-20261103/final-live/provenance-candidate-r21.json",
+      "source_time_utc": "2026-11-03T12:41:01.077857+00:00",
+      "source_sha256": "917b12e5d7c4f75a0dad8e938c81d01d5cd1b3f60a3616931296fd19c7b6ed3b",
+      "evidence_copy_sha256": "917b12e5d7c4f75a0dad8e938c81d01d5cd1b3f60a3616931296fd19c7b6ed3b",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "9bc76adfc1ddad697cd06f43d4b1ba10e0a15a69359dc4ad3c177bf5e99ccbe3"
+    },
+    {
+      "path": "live-checks/auth.json",
+      "source": "runtime/quality-followup-20261103/final-live/auth-r2/report.json",
+      "source_time_utc": "2026-11-03T12:36:26.230287+00:00",
+      "source_sha256": "770c929fae7abda91421797f40aee4c3183dcf24f8b185c616265cd4fc8aa14b",
+      "evidence_copy_sha256": "770c929fae7abda91421797f40aee4c3183dcf24f8b185c616265cd4fc8aa14b",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "7dde89be137420964602b891a425514089b26e181ac7c922f7581117e6785be5"
+    },
+    {
+      "path": "live-checks/history.json",
+      "source": "runtime/quality-followup-20261103/final-live/history/report.json",
+      "source_time_utc": "2026-11-03T12:36:41.464981+00:00",
+      "source_sha256": "0d1e5aab4a4352571a66185ec545ca57544f957e68ecb4af78122d8eec248499",
+      "evidence_copy_sha256": "0d1e5aab4a4352571a66185ec545ca57544f957e68ecb4af78122d8eec248499",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "1182b2dc7a26280c2465d4ede5c919239983a2509b22608444449f13a867cde4"
+    },
+    {
+      "path": "live-checks/memory.json",
+      "source": "runtime/quality-followup-20261103/final-live/memory/report.json",
+      "source_time_utc": "2026-11-03T12:37:22.396253+00:00",
+      "source_sha256": "35d48cd5ce7850dc29281b91c71767a649e349c2c366d7a9e35e7bd12d753b09",
+      "evidence_copy_sha256": "35d48cd5ce7850dc29281b91c71767a649e349c2c366d7a9e35e7bd12d753b09",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "7aa64a5b846a0cf9759acd5b8c878688378db4776a673ab960ea15f94b4abe00"
+    },
+    {
+      "path": "live-checks/browser.json",
+      "source": "runtime/quality-followup-20261103/final-live/browser/browser.json",
+      "source_time_utc": "2026-11-03T12:38:57.016882+00:00",
+      "source_sha256": "f6772ef1c29a6b91a059f820551cb34a8e52c532e7b08074239ffd046d10af62",
+      "evidence_copy_sha256": "f6772ef1c29a6b91a059f820551cb34a8e52c532e7b08074239ffd046d10af62",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "a8cc90a1fa083d6772e33c78dafec48bf0cef2a3621a2687445c70140c47b22d"
+    },
+    {
+      "path": "live-checks/runtime.json",
+      "source": "runtime/quality-followup-20261103/final-live/runtime/runtime.json",
+      "source_time_utc": "2026-11-03T12:38:34.798822+00:00",
+      "source_sha256": "a6071db057f9057cb50c3f7c19512a2001b7b6b0b99c82ee1bf3ef06fbc9c591",
+      "evidence_copy_sha256": "a6071db057f9057cb50c3f7c19512a2001b7b6b0b99c82ee1bf3ef06fbc9c591",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "848c3b7da3108a76fda9cf183ff31653933a6cc37277726be7bb32676b8727d0"
+    },
+    {
+      "path": "live-checks/sqlite.json",
+      "source": "runtime/quality-followup-20261103/final-live/sqlite/report.json",
+      "source_time_utc": "2026-11-03T12:39:11.351840+00:00",
+      "source_sha256": "9a8565ded2cf662fb33854b0e94e8b8e305439d1e031900c5dfb5150e3b515a0",
+      "evidence_copy_sha256": "9a8565ded2cf662fb33854b0e94e8b8e305439d1e031900c5dfb5150e3b515a0",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "55ecf5078531cf8ebd7407db508b209b946fb9f7c3340353b8ee19236ae32ce2"
+    },
+    {
+      "path": "live-checks/node-tests.log",
+      "source": "runtime/quality-followup-20261103/final-recorded/node-tests-approved.log",
+      "source_time_utc": "2026-11-03T12:35:13.101755+00:00",
+      "source_sha256": "0486f737c9e5281fe74e6c22d0de38480358a96ae6d75166b55fbfb8712305e9",
+      "evidence_copy_sha256": "0486f737c9e5281fe74e6c22d0de38480358a96ae6d75166b55fbfb8712305e9",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "0486f737c9e5281fe74e6c22d0de38480358a96ae6d75166b55fbfb8712305e9"
+    },
+    {
+      "path": "live-checks/dotnet-build.log",
+      "source": "runtime/quality-followup-20261103/final-recorded/dotnet-build.log",
+      "source_time_utc": "2026-11-03T12:35:30.146235+00:00",
+      "source_sha256": "5107ed3f507cfa4494f2325ee7c185a1a9da4f68cd6e4ec911dde5f0afa2773a",
+      "evidence_copy_sha256": "5107ed3f507cfa4494f2325ee7c185a1a9da4f68cd6e4ec911dde5f0afa2773a",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "5107ed3f507cfa4494f2325ee7c185a1a9da4f68cd6e4ec911dde5f0afa2773a"
+    },
+    {
+      "path": "live-checks/dotnet-tests.log",
+      "source": "runtime/quality-followup-20261103/final-recorded/dotnet-gateway-tests.log",
+      "source_time_utc": "2026-11-03T12:35:33.077399+00:00",
+      "source_sha256": "583176b23804d406b15145365f9f9b59590fa9ec2817cbe54bbee4c991883909",
+      "evidence_copy_sha256": "583176b23804d406b15145365f9f9b59590fa9ec2817cbe54bbee4c991883909",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "583176b23804d406b15145365f9f9b59590fa9ec2817cbe54bbee4c991883909"
+    },
+    {
+      "path": "live-checks/powershell-health.log",
+      "source": "runtime/quality-followup-20261103/final-recorded/powershell-local-health.log",
+      "source_time_utc": "2026-11-03T12:35:47.491940+00:00",
+      "source_sha256": "258a6bf0fd2ab77d2c100a50dcf3c2ce26b2f3f3b6d69bc4864d8cec0443cc06",
+      "evidence_copy_sha256": "258a6bf0fd2ab77d2c100a50dcf3c2ce26b2f3f3b6d69bc4864d8cec0443cc06",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "258a6bf0fd2ab77d2c100a50dcf3c2ce26b2f3f3b6d69bc4864d8cec0443cc06"
+    },
+    {
+      "path": "live-checks/full-pytest.log",
+      "source": "runtime/quality-followup-20261103/final-recorded/full-pytest-final.log",
+      "source_time_utc": "2026-11-03T12:45:57.313326+00:00",
+      "source_sha256": "a7d0a9c209a964b2b38a46e72cf91896c81a198adf2bb31e85170e7ab491f202",
+      "evidence_copy_sha256": "a7d0a9c209a964b2b38a46e72cf91896c81a198adf2bb31e85170e7ab491f202",
+      "git_blob_sha256_after_stage": "recorded after staging; see manifest note",
+      "git_index_blob_sha256": "a7d0a9c209a964b2b38a46e72cf91896c81a198adf2bb31e85170e7ab491f202"
+    }
+  ],
+  "hash_notes": "Per-file source and evidence-copy SHA-256 values identify exact source and copied bytes. git_index_blob_sha256 is SHA-256 over the exact staged Git blob bytes (captures any line-ending normalization). This manifest does not hash itself."
+}

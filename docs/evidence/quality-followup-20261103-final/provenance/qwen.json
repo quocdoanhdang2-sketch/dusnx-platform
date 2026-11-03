@@ -1,0 +1,145 @@
+{
+  "timestamp_utc": "2026-11-03T12:39:24.751980+00:00",
+  "gateway": "http://127.0.0.1:56337",
+  "expected_model": "qwen2.5:0.5b",
+  "expected_model_digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+  "model_identity": {
+    "name": "qwen2.5:0.5b",
+    "digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+    "parameter_size": "494.03M",
+    "quantization_level": "Q4_K_M",
+    "size_bytes": 397821319
+  },
+  "status": "unverified",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "71bf10075fab04d39526e933ac462cf2",
+        "9248b039a36b216041d0711b8b3b9e0f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "71bf10075fab04d39526e933ac462cf2"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "9248b039a36b216041d0711b8b3b9e0f",
+        "71bf10075fab04d39526e933ac462cf2"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "9248b039a36b216041d0711b8b3b9e0f"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "71bf10075fab04d39526e933ac462cf2",
+        "9248b039a36b216041d0711b8b3b9e0f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "71bf10075fab04d39526e933ac462cf2",
+        "9248b039a36b216041d0711b8b3b9e0f"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "71bf10075fab04d39526e933ac462cf2",
+        "9248b039a36b216041d0711b8b3b9e0f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "llm": {
+      "reply": "[Provider output failed quality validation (repeated_lines)]",
+      "raw_provider_reply": "Lợi ích của việc đọc sách:\n\n1. Tạo ra sự hiểu biết sâu sắc: Reading books can help you understand complex topics better.\n\n2. Cải thiện khả năng tư duy logic và giải quyết vấn đề: Books often provide examples and solutions to problems, which helps improve your logical thinking skills.\n3. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n4. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí",
+      "provider_sanitized_reply": "Lợi ích của việc đọc sách:\n\n1. Tạo ra sự hiểu biết sâu sắc: Reading books can help you understand complex topics better.\n\n2. Cải thiện khả năng tư duy logic và giải quyết vấn đề: Books often provide examples and solutions to problems, which helps improve your logical thinking skills.\n3. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n4. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí tuệ tổng thể: Reading exposes readers to a wide range of ideas that stimulate their minds in various ways.\n2. Tạo sự hiểu biết sâu sắc về thế giới xung quanh: Through reading books about different subjects like history or science, you can gain insights into the world around us.\n\nLợi ích của việc đọc sách:\n\n1. Đào tạo trí",
+      "candidate_memory_ids": [
+        "71bf10075fab04d39526e933ac462cf2",
+        "9248b039a36b216041d0711b8b3b9e0f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "provider_call_count": 2,
+      "response_source": "provider_error",
+      "provider_ok": false,
+      "provider_used": "ollama",
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": "length",
+      "sanitizer_changed": false,
+      "raw_output_sha256": "ff9af6fa7babcbede4f94652ee74cad75d97aa90a14e346976b5633fcb4e099f",
+      "quality_status": "failed",
+      "provider_elapsed_ms": 8219.00000000096
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  },
+  "error": "AssertionError"
+}

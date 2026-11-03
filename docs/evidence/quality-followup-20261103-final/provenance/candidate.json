@@ -1,0 +1,145 @@
+{
+  "timestamp_utc": "2026-11-03T12:40:48.093555+00:00",
+  "gateway": "http://127.0.0.1:56377",
+  "expected_model": "dusnx-vi-candidate",
+  "expected_model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+  "model_identity": {
+    "name": "dusnx-vi-candidate:latest",
+    "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+    "parameter_size": "494.03M",
+    "quantization_level": "F16",
+    "size_bytes": 994169232
+  },
+  "status": "unverified",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "d274232117dd120405a382d5739659cf",
+        "4d19747a80ef3a76f6d4623d3ab537a1"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "d274232117dd120405a382d5739659cf"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "4d19747a80ef3a76f6d4623d3ab537a1",
+        "d274232117dd120405a382d5739659cf"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "4d19747a80ef3a76f6d4623d3ab537a1"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "d274232117dd120405a382d5739659cf",
+        "4d19747a80ef3a76f6d4623d3ab537a1"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "d274232117dd120405a382d5739659cf",
+        "4d19747a80ef3a76f6d4623d3ab537a1"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "d274232117dd120405a382d5739659cf",
+        "4d19747a80ef3a76f6d4623d3ab537a1"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0
+    },
+    "llm": {
+      "reply": "[Provider output failed quality validation (repeated_lines)]",
+      "raw_provider_reply": "Lợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra trải nghiệm văn hóa và kiến thức sâu sắc.\n2. Cải thiện khả năng tư duy, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n\n3. Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.\n\n4. Tạo ra cảm hứng để khám phá mới và tận hưởng cuộc sống một cách độc đáo hơn.\n\n5. Cải thiện khả năng tư duy logic, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n\n6. Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.\n\n7. Tạo ra cảm hứng để khám phá mới và tận hưởng cuộc sống một cách độc đáo hơn.\n\n8. Cải thiện khả năng tư duy logic, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n\n9. Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.\n\n10. Tạo ra cảm hứng để khám phá mới và tận hưởng cuộc sống một cách độc đáo hơn.\n\nLợi ích của việc đọc sách bao gồm:\n\n- Cải thiện khả năng tư duy logic, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n- Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.",
+      "provider_sanitized_reply": "Lợi ích của việc đọc sách bao gồm:\n\n1. Tạo ra trải nghiệm văn hóa và kiến thức sâu sắc.\n2. Cải thiện khả năng tư duy, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n\n3. Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.\n\n4. Tạo ra cảm hứng để khám phá mới và tận hưởng cuộc sống một cách độc đáo hơn.\n\n5. Cải thiện khả năng tư duy logic, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n\n6. Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.\n\n7. Tạo ra cảm hứng để khám phá mới và tận hưởng cuộc sống một cách độc đáo hơn.\n\n8. Cải thiện khả năng tư duy logic, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n\n9. Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.\n\n10. Tạo ra cảm hứng để khám phá mới và tận hưởng cuộc sống một cách độc đáo hơn.\n\nLợi ích của việc đọc sách bao gồm:\n\n- Cải thiện khả năng tư duy logic, giải quyết vấn đề và sáng tạo thông qua quá trình học tập từ các tác phẩm khác nhau.\n- Đảm bảo sự hiểu biết toàn diện về thế giới xung quanh bạn.",
+      "candidate_memory_ids": [
+        "d274232117dd120405a382d5739659cf",
+        "4d19747a80ef3a76f6d4623d3ab537a1"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "provider_call_count": 2,
+      "response_source": "provider_error",
+      "provider_ok": false,
+      "provider_used": "ollama",
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": "stop",
+      "sanitizer_changed": false,
+      "raw_output_sha256": "224e8e211b0ce9f09b64a9daaebbba32e37e1f32436979f6e5b820f2d8659d2a",
+      "quality_status": "failed",
+      "provider_elapsed_ms": 9284.040700000332
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  },
+  "error": "AssertionError"
+}

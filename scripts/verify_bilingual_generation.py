@@ -35,6 +35,7 @@ sys.path.insert(0, str(REPO_ROOT / "python"))
 from verify_week4_runtime import Stack, free_port
 from apps.ai_api.language import assess_response_language
 from apps.ai_api.provider import assess_entity_preservation
+from apps.ai_api.provider import get_ollama_url
 
 VI_DIACRITICS = re.compile(r"[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]", re.I)
 VI_COMMON_WORDS = {"bạn", "tôi", "mình", "là", "và", "không", "có", "hãy", "đang", "đã", "muốn", "trả", "lời", "bằng", "tiếng", "các", "những", "được", "cho", "của", "trong", "với", "này", "về", "giúp"}
@@ -82,8 +83,9 @@ def evaluate_text_language(text: str) -> dict:
     }
 
 
-def generation_contract(response: dict, expected_model: str = "qwen2.5:0.5b") -> bool:
+def generation_contract(response: dict, expected_model: str | None = None) -> bool:
     """The same live-generation contract is used by every generation case."""
+    expected_model = expected_model or os.getenv("DUSNX_EXPECTED_MODEL", "qwen2.5:0.5b")
     reply = response.get("reply")
     return (response.get("provider_ok") is True
             and response.get("provider_called") is True
@@ -91,6 +93,29 @@ def generation_contract(response: dict, expected_model: str = "qwen2.5:0.5b") ->
             and response.get("model_used") == expected_model
             and response.get("response_source") == "llm"
             and isinstance(reply, str) and bool(reply.strip()))
+
+
+def verify_ollama_model_identity(expected_model: str, expected_digest: str | None = None,
+                                base_url: str | None = None) -> dict:
+    """Preflight the exact local Ollama tag and pin its immutable digest for this run."""
+    response = httpx.get((base_url or get_ollama_url()).rstrip("/") + "/api/tags",
+                         timeout=5, trust_env=False)
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict) or not isinstance(payload.get("models"), list):
+        raise RuntimeError("invalid_ollama_tags_schema")
+    names = {expected_model, expected_model + ":latest" if ":" not in expected_model else expected_model}
+    matches = [item for item in payload["models"] if isinstance(item, dict)
+               and item.get("name") in names and isinstance(item.get("digest"), str)]
+    if len(matches) != 1:
+        raise RuntimeError("expected_ollama_model_missing_or_ambiguous")
+    model = matches[0]
+    if expected_digest and model["digest"].casefold() != expected_digest.casefold():
+        raise RuntimeError("expected_ollama_model_digest_mismatch")
+    return {"name": model["name"], "digest": model["digest"],
+            "parameter_size": model.get("details", {}).get("parameter_size"),
+            "quantization_level": model.get("details", {}).get("quantization_level"),
+            "size_bytes": model.get("size")}
 
 
 SYSTEM_INSTRUCTION_LEAK_PATTERNS = [
@@ -190,6 +215,7 @@ def compute_bilingual_summary(cases: dict) -> dict:
     linguistic_mixed = sum(c["linguistic_status"] == "mixed" for c in language_cases)
     evaluations = [c.get("evaluation", {}) for c in cases.values()]
 
+    formatting_cases = [c for c in cases.values() if c.get("case_type") == "application_formatting"]
     return {
         "quality_flagged_cases": sum(bool(c.get("quality_flags")) for c in cases.values()),
         "total_cases": total_cases,
@@ -197,6 +223,8 @@ def compute_bilingual_summary(cases: dict) -> dict:
         "contract_failed": contract_failed,
         "real_llm_generations": real_llm_generations,
         "template_recalls": template_recalls,
+        "application_formatting_cases": len(formatting_cases),
+        "application_formatting_passed": sum(c.get("contract_passed") is True for c in formatting_cases),
         "expected_provider_failures": expected_provider_failures,
         "eligible_language_cases": eligible_language_cases,
         "linguistic_matched": linguistic_matched,
@@ -229,6 +257,24 @@ def assess_completion(text: str, done_reason: str | None, tokens: int | None,
     return {"status": "passed", "reason": "no_provider_limit_or_obvious_open_clause", "done_reason": done_reason}
 
 
+def run_open_ended_coverage(text: str, task_rubric: dict) -> dict:
+    """Emit transparent concept signals; deliberately never claims semantic correctness."""
+    normalized = text.casefold()
+    evidence = []
+    for criterion in task_rubric.get("criteria", []):
+        terms = criterion.get("terms_any", [])
+        evidence.append({"criterion": criterion["id"],
+                         "signal_observed": any(term.casefold() in normalized for term in terms),
+                         "terms_checked": terms})
+    return {"status": "uncertain",
+            "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+            "rubric_id": task_rubric.get("rubric_id"),
+            "rubric_basis": task_rubric.get("basis"),
+            "automated_signals": evidence,
+            "review_required": True,
+            "review_status": "needs_human_review"}
+
+
 def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                          case_type: str, metadata: dict, task_rubric: dict | None = None) -> dict:
     language = assess_response_language(reply, expected_language)
@@ -249,6 +295,13 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
             task = {"status": "passed" if complete else "failed",
                     "method": "requires explicit uncertainty or clarification and rejects unsupported capability claims",
                     "disclaimer_or_question": disclaimer or question, "unsupported_product_claim": product_claim}
+        elif rubric_kind == "missing_config_value_clarification":
+            expected_key = task_rubric["key"]
+            asks = "?" in answer_without_echo and bool(re.search(r"(?i)(?:value|giá trị|nào|which)", answer_without_echo))
+            supplied = bool(re.search(rf"(?im)^\s*{re.escape(expected_key)}\s*=\s*\S+", answer_without_echo))
+            task = {"status": "passed" if asks and not supplied else "failed",
+                    "method": "requires clarification for a missing value and rejects invented assignment values",
+                    "key": expected_key, "asks_for_value": asks, "invented_value": supplied}
         elif rubric_kind == "context_subject":
             first_sentence = re.split(r"(?<=[.!?])\s+|\n", answer_without_echo, maxsplit=1)[0].casefold()
             subject_match = any(term.casefold() in first_sentence for term in task_rubric.get("subject_terms", []))
@@ -256,10 +309,12 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                                if term.casefold() in first_sentence]
             clarify = bool(re.search(r"(?i)(bạn muốn hỏi|could you clarify|do you mean|bạn đang hỏi)", answer_without_echo))
             complete = (subject_match or clarify) and not forbidden_match
-            task = {"status": "passed" if complete else "failed",
-                    "method": "checks first response sentence against the active topic or a clarification, and rejects stale/wrong subjects",
+            task = {"status": ("uncertain" if complete else "failed"),
+                    "method": "subject/clarification signals can reject obvious drift but cannot establish relevance or answer correctness; human review required",
                     "subject_match": subject_match, "clarification": clarify,
-                    "forbidden_subjects_found": forbidden_match}
+                    "forbidden_subjects_found": forbidden_match,
+                    "review_required": complete,
+                    "review_status": "needs_human_review" if complete else "not_applicable"}
         elif rubric_kind == "answer_count":
             number = task_rubric.get("number", 1)
             items = re.findall(r"(?m)^\s*(?:[-*]|\d+[.)])\s+\S+", answer_without_echo)
@@ -269,13 +324,31 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                     "method": "requires the requested number of list items or distinct named answers",
                     "requested_count": number, "observed_list_items": len(items),
                     "observed_distinct_named_answers": len(set(map(str.casefold, named)))}
+        elif rubric_kind == "open_ended_coverage":
+            task = run_open_ended_coverage(answer_without_echo, task_rubric)
         else:
-            complete = all(any(re.fullmatch(rf"\s*{re.escape(item)}\s*", line) for line in actual_lines)
-                           for item in expected_assignments)
+            def parse_expected(item):
+                match = re.fullmatch(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*", item)
+                return (match.group(1), match.group(2)) if match else (None, None)
+
+            env_lines = set()
+            for line in answer_without_echo.splitlines():
+                candidate = line.strip()
+                candidate = re.sub(r"^(?:[-*]\s+|\d+[.)]\s+)", "", candidate)
+                candidate = candidate.strip("`*_").strip()
+                match = re.fullmatch(
+                    r"(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:\"([^\"\r\n]*)\"|'([^'\r\n]*)'|([^\s#]+))(?:\s+#.*)?",
+                    candidate,
+                )
+                if match:
+                    value = next((value for value in match.groups()[1:] if value is not None), "")
+                    env_lines.add((match.group(1), value))
+            expected_pairs = [parse_expected(item) for item in expected_assignments]
+            complete = bool(expected_pairs) and all(pair in env_lines for pair in expected_pairs)
             complete = complete and bool(answer_without_echo)
             task = {"status": "passed" if complete else "failed",
-                    "method": "exact configuration-line rubric after removing copied prompt",
-                    "expected_lines": expected_assignments}
+                    "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+                    "expected_assignments": expected_pairs, "observed_env_assignments": sorted(env_lines)}
     elif case_type == "template_recall":
         task = {"status": "not_applicable", "method": "memory-template contract is evaluated separately"}
     else:
@@ -284,7 +357,7 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                                    metadata.get("token_budget", 512), metadata.get("provider_ok") is True)
     leak_flags = quality_flags(reply)
     return {
-        "transport": {"status": ("not_applicable" if metadata.get("response_source") == "clarification"
+        "transport": {"status": ("not_applicable" if metadata.get("response_source") in {"clarification", "application_formatter"}
                                    and metadata.get("provider_called") is False else
                                    ("passed" if metadata.get("provider_ok") and metadata.get("provider_called") else "failed")),
                       "provider_called": metadata.get("provider_called"),
@@ -292,6 +365,11 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                       "response_source": metadata.get("response_source")},
         "language": language,
         "task": task,
+        "content_quality": {"status": "uncertain" if task.get("status") == "uncertain" else "not_separately_scored",
+                            "reason": "No automated judgement is treated as semantic review."},
+        "factual_accuracy": {"status": "uncertain" if task.get("status") == "uncertain" else "not_separately_scored",
+                             "reason": "Requires source-based or human review; concept presence alone is insufficient."},
+        "context_relevance": {"status": "uncertain" if task.get("status") == "uncertain" else "not_separately_scored"},
         "entities": entities,
         "instruction_leak_and_repetition": {"status": "failed" if leak_flags else "passed", "flags": leak_flags},
         "completion": completion,
@@ -384,7 +462,11 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
         "working_directory": str(Path.cwd()),
         "tool_versions": {"python": platform.python_version()},
         "configuration": {"provider": os.getenv("DUSNX_PROVIDER", "ollama"),
-                          "model": os.getenv("DUSNX_OLLAMA_MODEL", "qwen2.5:0.5b"),
+                          "model": os.getenv("DUSNX_EXPECTED_MODEL", "qwen2.5:0.5b"),
+                          "expected_model": os.getenv("DUSNX_EXPECTED_MODEL", "qwen2.5:0.5b"),
+                          "expected_model_digest": os.getenv("DUSNX_EXPECTED_MODEL_DIGEST", "unknown"),
+                          "actual_model_tag": os.getenv("DUSNX_ACTUAL_MODEL_TAG", "unknown"),
+                          "actual_model_digest": os.getenv("DUSNX_ACTUAL_MODEL_DIGEST", "unknown"),
                           "token_budget": int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512")),
                           "checkpoint": os.getenv("DUSNX_CHECKPOINT", "project default"),
                           "raw_capture_enabled": os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1"},
@@ -423,6 +505,13 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "case_type": "llm_generation",
                 "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
                 "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "ci_benefits_v1",
+                    "basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+                    "criteria": [
+                        {"id": "integrate_changes", "terms_any": ["integrate code", "integrate changes", "shared repository", "merge changes"]},
+                        {"id": "automated_validation", "terms_any": ["automated test", "automated build", "build and test", "run tests"]},
+                        {"id": "early_feedback", "terms_any": ["early feedback", "catch bugs early", "detect issues early", "faster feedback"]},
+                    ]},
                 "preferred_language": "en",
                 "expected_response_lang": "en",
                 "is_llm": True,
@@ -432,6 +521,13 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "case_type": "llm_generation",
                 "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
                 "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "api_gateway_operation_v1",
+                    "basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+                    "criteria": [
+                        {"id": "intermediary", "terms_any": ["intermediary", "middle layer", "đứng giữa", "trung gian"]},
+                        {"id": "route_requests", "terms_any": ["route requests", "routes requests", "forward requests", "định tuyến", "chuyển tiếp yêu cầu"]},
+                        {"id": "backend_services", "terms_any": ["backend services", "back-end services", "dịch vụ phía sau", "các dịch vụ"]},
+                    ]},
                 "preferred_language": "en",
                 "expected_response_lang": "en",
                 "is_llm": True,
@@ -441,6 +537,13 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "case_type": "llm_generation",
                 "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
                 "prompt": "Briefly explain why database indexing improves query performance.",
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "database_indexing_v1",
+                    "basis": "The question asks for the performance mechanism; a valid short answer should connect an index to locating rows without scanning the full table. No single analogy or implementation is required.",
+                    "criteria": [
+                        {"id": "lookup_structure", "terms_any": ["index structure", "search structure", "b-tree", "b tree", "cấu trúc chỉ mục"]},
+                        {"id": "avoid_full_scan", "terms_any": ["full table scan", "scan every row", "avoid scanning", "không quét toàn bộ", "không cần duyệt toàn bộ"]},
+                        {"id": "faster_lookup", "terms_any": ["faster lookup", "reduce search time", "tăng tốc tìm kiếm", "giảm thời gian tìm"]},
+                    ]},
                 "preferred_language": "vi",
                 "expected_response_lang": "vi",
                 "is_llm": True,
@@ -450,6 +553,13 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "case_type": "llm_generation",
                 "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
                 "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "remote_focus_v1",
+                    "basis": "The prompt asks for practical ways to sustain focus while working remotely; the rubric looks for concrete attention management, work planning, and interruption control, not a fixed list.",
+                    "criteria": [
+                        {"id": "reduce_distractions", "terms_any": ["distractions", "notifications", "tránh xao nhãng", "tắt thông báo"]},
+                        {"id": "plan_work", "terms_any": ["schedule", "time block", "prioritize tasks", "lịch trình", "chia thời gian", "ưu tiên công việc"]},
+                        {"id": "breaks_or_workspace", "terms_any": ["break", "workspace", "nghỉ giải lao", "không gian làm việc"]},
+                    ]},
                 "preferred_language": "auto",
                 "expected_response_lang": "vi",
                 "is_llm": True,
@@ -459,41 +569,108 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "case_type": "llm_generation",
                 "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
                 "prompt": "How does public key cryptography secure internet communications?",
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "public_key_crypto_v1",
+                    "basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+                    "criteria": [
+                        {"id": "asymmetric_key_pair", "terms_any": ["public and private key", "public/private key pair", "asymmetric key pair"]},
+                        {"id": "valid_security_use", "terms_any": ["encrypt", "decryption", "digital signature", "authenticate", "authentication"]},
+                        {"id": "internet_protocol_context", "terms_any": ["tls", "https", "key exchange", "session key"]},
+                    ]},
                 "preferred_language": "auto",
                 "expected_response_lang": "en",
                 "is_llm": True,
             },
             {
                 "case_id": "CASE_07_VERBATIM_ENTITIES",
-                "case_type": "verbatim_entities",
-                "objective": "Bảo toàn tên riêng, ID, URL và mã cấu hình trong câu trả lời.",
+                "case_type": "application_formatting",
+                "objective": "Định dạng cấu hình .env từ các giá trị người dùng cung cấp; phân biệt formatter với generation.",
                 "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
                 "preferred_language": "vi",
                 "expected_response_lang": "vi",
-                "is_llm": True,
+                "is_llm": False,
+                "expected_source": "application_formatter",
                 "task_rubric": {"assignments": ["DUSNX_PORT=8088"]},
             },
             {
                 "case_id": "VARIANT_14_ENTITY_CONFIG_WEBHOOK",
-                "case_type": "verbatim_entities",
+                "case_type": "application_formatting",
                 "evaluation_label": "variation_locked_before_run",
                 "objective": "Tạo cấu hình .env, bảo toàn URL và assignment chính xác; không được chỉ chép prompt.",
                 "prompt": "Viết một đoạn cấu hình .env cho webhook, giữ URL https://hooks.example.net/v2/events và đặt WEBHOOK_RETRY_LIMIT=7. Giải thích ngắn gọn cách áp dụng.",
                 "preferred_language": "vi",
                 "expected_response_lang": "vi",
-                "is_llm": True,
+                "is_llm": False,
+                "expected_source": "application_formatter",
                 "task_rubric": {"assignments": ["WEBHOOK_RETRY_LIMIT=7"]},
             },
             {
                 "case_id": "VARIANT_15_ENTITY_CONFIG_QUERY_URL",
-                "case_type": "verbatim_entities",
+                "case_type": "application_formatting",
                 "evaluation_label": "variation_locked_before_run",
                 "objective": "Tạo cấu hình .env, giữ nguyên URL có query/punctuation và giá trị không bị đổi.",
                 "prompt": "Provide an example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast, and set CACHE_TTL_SECONDS=45; include one sentence explaining where to put it.",
                 "preferred_language": "en",
                 "expected_response_lang": "en",
-                "is_llm": True,
+                "is_llm": False,
+                "expected_source": "application_formatter",
                 "task_rubric": {"assignments": ["CACHE_TTL_SECONDS=45"]},
+            },
+            {
+                "case_id": "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION",
+                "case_type": "application_formatting",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Định dạng nhiều assignment đã cho, giữ giá trị có khoảng trắng và URL có query; không tạo biến từ query URL.",
+                "prompt": "Viết cấu hình .env với SERVICE_LABEL=\"orders api\", MAX_RETRIES = 3 và endpoint https://cfg.example.net/v1/run?mode=fast,.",
+                "preferred_language": "vi",
+                "expected_response_lang": "vi",
+                "is_llm": False,
+                "expected_source": "application_formatter",
+                "task_rubric": {"assignments": ["SERVICE_LABEL=orders api", "MAX_RETRIES=3"]},
+            },
+            {
+                "case_id": "VARIANT_20_ENV_VALUE_NOT_PROVIDED",
+                "case_type": "application_clarification",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Không tự tạo giá trị cấu hình; hỏi người dùng khi họ nêu key nhưng chưa chọn value.",
+                "prompt": "Create a .env setting named CACHE_TTL_SECONDS, but I have not chosen its value yet.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": False,
+                "expected_source": "application_clarification",
+                "task_rubric": {"kind": "missing_config_value_clarification", "key": "CACHE_TTL_SECONDS"},
+            },
+            {
+                "case_id": "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Câu tiếp nối sau topic switch mới phải dùng chủ đề mới, không chỉ đạt bằng nhắc keyword; nội dung semantic cần human review.",
+                "setup_history": [
+                    "Tôi đang so sánh monolith và microservices.",
+                    "Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC).",
+                ],
+                "prompt": "Nó có ưu điểm gì?",
+                "preferred_language": "auto",
+                "expected_response_lang": "vi",
+                "is_llm": True,
+                "task_rubric": {"kind": "context_subject",
+                    "subject_terms": ["elliptic-curve", "elliptic curve", "ECC", "đường cong elliptic"],
+                    "forbidden_terms": ["monolith", "microservices"]},
+            },
+            {
+                "case_id": "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT",
+                "case_type": "llm_generation",
+                "evaluation_label": "variation_locked_before_run",
+                "objective": "Yêu cầu tiếng Việt nhưng đặt response preference tiếng Anh; đánh giá riêng ngôn ngữ và tín hiệu nội dung.",
+                "prompt": "Nói ngắn gọn một lợi ích của API Gateway.",
+                "preferred_language": "en",
+                "expected_response_lang": "en",
+                "is_llm": True,
+                "task_rubric": {"kind": "open_ended_coverage", "rubric_id": "api_gateway_benefit_v1",
+                    "basis": "The request asks for one benefit; accepted concepts include simplified client access, centralized routing, or shared cross-cutting controls.",
+                    "criteria": [
+                        {"id": "simplified_access", "terms_any": ["single entry point", "simplifies client access", "one endpoint", "điểm truy cập"]},
+                        {"id": "routing_or_shared_controls", "terms_any": ["routing", "route requests", "authentication", "rate limiting", "định tuyến"]},
+                    ]},
             },
             {
                 "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
@@ -513,6 +690,8 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
             case_id = spec["case_id"]
             if spec.get("setup_prompt"):
                 client.chat(session_id, spec["setup_prompt"], preferred_language="auto")
+            for setup_turn in spec.get("setup_history", []):
+                client.chat(session_id, setup_turn, preferred_language="auto")
 
             res = client.chat(session_id, spec["prompt"], preferred_language=spec["preferred_language"])
             verbatim_reply = res.get("provider_sanitized_reply") or res.get("reply", "")
@@ -529,6 +708,10 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                     and res.get("response_source") == spec.get("expected_source")
                     and bool(verbatim_reply.strip())
                 )
+                if spec.get("expected_source") in {"application_formatter", "application_clarification"}:
+                    transport_ok = transport_ok and assess_response_language(
+                        verbatim_reply, spec["expected_response_lang"]
+                    )["status"] == "matched"
 
             # Substrings verification
             entities = assess_entity_preservation(spec["prompt"], verbatim_reply)
@@ -555,6 +738,9 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                 "prompt": spec["prompt"],
                 "input_preferred_language": spec["preferred_language"],
                 "expected_response_language": expected_lang,
+                "setup_history": (spec.get("setup_history") or
+                                  ([spec["setup_prompt"]] if spec.get("setup_prompt") else [])),
+                "task_rubric": spec.get("task_rubric"),
                 "metadata": {
                     "detected_language": res.get("detected_language"),
                     "response_language": meta_resp_lang,
@@ -567,6 +753,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                     "token_budget": res.get("token_budget", int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512"))),
                     "done_reason": res.get("done_reason"),
                     "provider_call_count": res.get("provider_call_count", int(bool(res.get("provider_called")))),
+                    "provider_elapsed_ms": res.get("provider_elapsed_ms", 0.0),
                     "provider_attempts": res.get("provider_attempts", []),
                     "sanitizer_changed": res.get("sanitizer_changed", False),
                     "raw_output_sha256": res.get("raw_output_sha256"),
@@ -584,7 +771,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                     spec["case_type"], res, spec.get("task_rubric")),
                 "notes": ("Application clarification for undocumented product facts; no Ollama call expected."
                           if spec["case_type"] == "application_clarification" else
-                          "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline."),
+                          f"Verified on real Gateway -> FastAPI -> Ollama {report['configuration']['expected_model']} pipeline."),
                 "evaluation_label": spec.get("evaluation_label", "development_regression"),
             }
 
@@ -957,17 +1144,31 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--gateway", default=None, help="Gateway URL (defaults to auto-spawning Stack)")
     p.add_argument("--output-dir", default="runtime/bilingual-generation")
+    p.add_argument("--expected-model", default=os.getenv("DUSNX_EXPECTED_MODEL", "qwen2.5:0.5b"),
+                   help="Exact Ollama model name expected in provider responses")
+    p.add_argument("--expected-model-digest", default=os.getenv("DUSNX_EXPECTED_MODEL_DIGEST"),
+                   help="Expected immutable digest from Ollama /api/tags")
     p.add_argument("--strict-quality", action="store_true", help="Fail on quality, task, or completion failures/uncertainty")
     p.add_argument("--strict-language", action="store_true", help="Fail on divergent, mixed, or uncertain prose language")
     args = p.parse_args()
+    if not args.expected_model.strip():
+        p.error("--expected-model must be a non-empty exact model name")
+    os.environ["DUSNX_EXPECTED_MODEL"] = args.expected_model
+    if args.expected_model_digest:
+        os.environ["DUSNX_EXPECTED_MODEL_DIGEST"] = args.expected_model_digest
     out = Path(args.output_dir).resolve()
     out.mkdir(parents=True, exist_ok=False)
     try:
         if not args.gateway:
+            identity = verify_ollama_model_identity(args.expected_model, args.expected_model_digest)
+            os.environ["DUSNX_ACTUAL_MODEL_TAG"] = identity["name"]
+            os.environ["DUSNX_ACTUAL_MODEL_DIGEST"] = identity["digest"]
+            os.environ["DUSNX_EXPECTED_MODEL_DIGEST"] = args.expected_model_digest or identity["digest"]
+            os.environ["DUSNX_EXPECTED_MODEL"] = args.expected_model
             old_capture = os.environ.get("DUSNX_CAPTURE_RAW_GENERATION")
             os.environ["DUSNX_CAPTURE_RAW_GENERATION"] = "1"
             try:
-                with Stack(out / "primary_stack") as stack:
+                with Stack(out / "primary_stack", DUSNX_OLLAMA_MODEL=args.expected_model) as stack:
                     report = run_evaluation(stack.url, out)
             finally:
                 if old_capture is None:

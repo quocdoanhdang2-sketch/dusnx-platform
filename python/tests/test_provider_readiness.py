@@ -29,3 +29,16 @@ def test_ollama_readiness_reports_offline_service(monkeypatch):
     assert health["reachable"] is False
     assert health["available"] is False
     assert health["error"] == "unreachable"
+
+
+def test_ollama_readiness_accepts_only_the_implicit_latest_tag(monkeypatch):
+    monkeypatch.setenv("DUSNX_OLLAMA_MODEL", "dusnx-vi-candidate")
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda *args, **kwargs:
+                        io.BytesIO(json.dumps({"models": [{"name": "dusnx-vi-candidate:latest"}]}).encode()))
+    health = provider.check_ollama_health()
+    assert health["model_available"] is True
+    assert health["configured_model"] == "dusnx-vi-candidate"
+
+    monkeypatch.setenv("DUSNX_OLLAMA_MODEL", "dusnx-vi-candidate:1.0")
+    health = provider.check_ollama_health()
+    assert health["model_available"] is False

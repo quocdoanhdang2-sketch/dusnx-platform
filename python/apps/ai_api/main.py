@@ -832,6 +832,7 @@ class ChatResponse(BaseModel):
     provider_called: bool = False
     provider_call_count: int = 0
     provider_attempts: list[dict] = Field(default_factory=list)
+    provider_elapsed_ms: float = 0.0
     done_reason: Optional[str] = None
     sanitizer_changed: bool = False
     raw_output_sha256: Optional[str] = None
@@ -878,9 +879,10 @@ def chat(req: ChatRequest, user: CurrentUser):
                     "original_provenance": {k: previous.get(k) for k in
                         ("response_source", "provider_called", "provider_call_count", "provider_used", "model_used",
                          "tokens_generated", "done_reason", "sanitizer_changed", "raw_output_sha256", "quality_status",
-                         "provider_attempts")},
+                         "provider_attempts", "provider_elapsed_ms")},
                     "response_source": "replay", "provider_called": False,
-                    "provider_call_count": 0, "provider_attempts": [], "done_reason": None, "sanitizer_changed": False,
+                    "provider_call_count": 0, "provider_attempts": [], "provider_elapsed_ms": 0.0,
+                    "done_reason": None, "sanitizer_changed": False,
                     "raw_provider_reply": None, "provider_sanitized_reply": None,
                     "provider_used": None, "model_used": None, "tokens_generated": None})
         else:
@@ -1312,6 +1314,7 @@ def _chat_impl(req: ChatRequest, user: dict):
     provider_called = False
     provider_call_count = 0
     provider_attempts = []
+    provider_elapsed_ms = 0.0
     done_reason = None
     sanitizer_changed = False
     raw_output_sha256 = None
@@ -1338,13 +1341,17 @@ def _chat_impl(req: ChatRequest, user: dict):
         provider_called = getattr(generated, "provider_called", False)
         provider_call_count = getattr(generated, "provider_call_count", int(provider_called))
         provider_attempts = getattr(generated, "provider_attempts", [])
+        provider_elapsed_ms = getattr(generated, "provider_elapsed_ms", 0.0)
         done_reason = getattr(generated, "done_reason", None)
         sanitizer_changed = getattr(generated, "sanitizer_changed", False)
         raw_output_sha256 = getattr(generated, "raw_output_sha256", None)
         raw_provider_reply = getattr(generated, "raw_provider_reply", None)
         provider_sanitized_reply = getattr(generated, "sanitized_provider_reply", None)
         quality_status = getattr(generated, "quality_status", None)
-        response_source = ("llm" if provider_called else "mock") if provider_ok else "provider_error"
+        response_source = (getattr(generated, "response_source", None)
+                           or (("llm" if provider_called else "mock") if provider_ok else "provider_error"))
+        if not provider_ok:
+            response_source = "provider_error"
         if not provider_called:
             provider_used = model_used = tokens_generated = None
         # LLM citations are not measured. Prompt inclusion is reported separately;
@@ -1391,11 +1398,14 @@ def _chat_impl(req: ChatRequest, user: dict):
         session_id=req.session_id,
         model_used=model_used if provider_ok else None,
         tokens_generated=tokens_generated if provider_ok else None,
-        answer_source="active_memory_extract" if grounded_answer is not None else "provider",
+        answer_source=("active_memory_extract" if grounded_answer is not None else
+                       ("application_rule" if response_source in {"application_formatter", "application_clarification"}
+                        else "provider")),
         prompt_memory_ids=prompt_ids,
         provider_called=provider_called,
         provider_call_count=provider_call_count,
         provider_attempts=provider_attempts,
+        provider_elapsed_ms=provider_elapsed_ms,
         done_reason=done_reason,
         sanitizer_changed=sanitizer_changed,
         raw_output_sha256=raw_output_sha256,

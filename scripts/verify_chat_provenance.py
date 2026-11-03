@@ -13,12 +13,16 @@ import httpx
 import re
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
 sys.path.insert(0, str(REPO_ROOT / "python"))
 from apps.ai_api.language import assess_response_language
+from verify_bilingual_generation import verify_ollama_model_identity
 
 
-def verify(base,output):
-    report=dict(timestamp_utc=datetime.now(timezone.utc).isoformat(),gateway=base,status="unverified",responses={})
+def verify(base,output,expected_model="qwen2.5:0.5b",expected_model_digest=None):
+    report=dict(timestamp_utc=datetime.now(timezone.utc).isoformat(),gateway=base,
+                expected_model=expected_model,expected_model_digest=expected_model_digest or "unverified",
+                model_identity="unverified",status="unverified",responses={})
     headers={}
     with httpx.Client(base_url=base,timeout=120) as client:
         def call(method,path,**kwargs):
@@ -31,9 +35,12 @@ def verify(base,output):
             fields=("reply","raw_provider_reply","provider_sanitized_reply","candidate_memory_ids","prompt_memory_ids",
                     "memory_ids_used","provider_called","provider_call_count","response_source","provider_ok",
                     "provider_used","model_used","tokens_generated","done_reason","sanitizer_changed",
-                    "raw_output_sha256","quality_status")
+                    "raw_output_sha256","quality_status","provider_elapsed_ms")
             report["responses"][name]={k:r.get(k) for k in fields}
         try:
+            identity=verify_ollama_model_identity(expected_model,expected_model_digest)
+            report["model_identity"]=identity
+            report["expected_model_digest"]=expected_model_digest or identity["digest"]
             health=call("GET","/v1/health")
             report["health"]={k:health.get(k) for k in ("runtime_mode","checkpoint_loaded","model_version","provider_ok")}
             credentials={"username":"provenance_"+secrets.token_hex(8),"password":secrets.token_urlsafe(24)}
@@ -72,7 +79,7 @@ def verify(base,output):
             transport_passed = bool(generated["provider_called"] and generated["provider_ok"]
                 and generated.get("provider_call_count", 0) >= 1)
             assert generated["response_source"]=="llm" and generated["provider_used"]=="ollama"
-            assert generated["model_used"]=="qwen2.5:0.5b"
+            assert generated["model_used"]==expected_model
             reply=generated.get("provider_sanitized_reply") or generated.get("reply", "")
             language=assess_response_language(reply,"vi")
             sentences=[part for part in re.split(r"(?<=[.!?])\s+",reply.strip()) if part.strip()]
@@ -114,6 +121,10 @@ if __name__=="__main__":
     p.add_argument("--gateway",default=None,help="Gateway URL to test against")
     p.add_argument("--spawn-stack",action="store_true",help="Spawn an isolated local Stack automatically")
     p.add_argument("--output",default="runtime/chat-provenance.json")
+    p.add_argument("--expected-model",default=os.getenv("DUSNX_EXPECTED_MODEL","qwen2.5:0.5b"),
+                   help="Exact Ollama model name expected in generation provenance")
+    p.add_argument("--expected-model-digest",default=os.getenv("DUSNX_EXPECTED_MODEL_DIGEST"),
+                   help="Expected immutable digest from Ollama /api/tags")
     a=p.parse_args()
     if a.spawn_stack or not a.gateway:
         from verify_week4_runtime import Stack
@@ -121,10 +132,10 @@ if __name__=="__main__":
         old_capture = os.environ.get("DUSNX_CAPTURE_RAW_GENERATION")
         os.environ["DUSNX_CAPTURE_RAW_GENERATION"] = "1"
         try:
-            with Stack(stack_dir) as stack:
-                sys.exit(verify(stack.url, a.output))
+            with Stack(stack_dir,DUSNX_OLLAMA_MODEL=a.expected_model) as stack:
+                sys.exit(verify(stack.url, a.output,a.expected_model,a.expected_model_digest))
         finally:
             if old_capture is None:os.environ.pop("DUSNX_CAPTURE_RAW_GENERATION",None)
             else:os.environ["DUSNX_CAPTURE_RAW_GENERATION"]=old_capture
     else:
-        sys.exit(verify(a.gateway,a.output))
+        sys.exit(verify(a.gateway,a.output,a.expected_model,a.expected_model_digest))

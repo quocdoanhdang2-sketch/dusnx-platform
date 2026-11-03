@@ -12,19 +12,23 @@ import hashlib
 import os
 import re
 import socket
+import time
+from contextvars import ContextVar
 from difflib import SequenceMatcher
 from typing import Optional
 import urllib.request
 import urllib.error
 from .grounding import is_memory_question
-from .language import assess_response_language, detect_language
+from .language import assess_response_language
+
+_PROVIDER_CALL_TIMEOUT = ContextVar("provider_call_timeout", default=None)
 
 
 class ProviderResult(tuple):
     """Backward-compatible five values plus per-invocation transport metadata."""
     def __new__(cls, text, ok, provider, model, tokens, *, called=False, done_reason=None,
                 call_count=0, sanitizer_changed=False, raw_output_sha256=None, quality_status=None,
-                attempts=None):
+                attempts=None, elapsed_ms=0.0):
         result=super().__new__(cls,(text,ok,provider,model,tokens))
         result.provider_called=called
         result.done_reason=done_reason
@@ -33,8 +37,10 @@ class ProviderResult(tuple):
         result.raw_output_sha256=raw_output_sha256
         result.quality_status=quality_status
         result.provider_attempts=attempts or []
+        result.provider_elapsed_ms=elapsed_ms
         result.raw_provider_reply=None
         result.sanitized_provider_reply=text
+        result.response_source = "llm" if called and ok else ("provider_error" if not ok else "mock")
         return result
 
 
@@ -58,8 +64,37 @@ def get_ollama_model() -> str:
     return os.getenv("DUSNX_OLLAMA_MODEL", "qwen2.5:0.5b").strip()
 
 
+def _ollama_model_tag_matches(configured: str, available: str) -> bool:
+    return configured == available or (":" not in configured and available == configured + ":latest")
+
+
 def get_ollama_timeout() -> float:
-    return float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
+    configured = float(os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0"))
+    override = _PROVIDER_CALL_TIMEOUT.get()
+    return min(configured, override) if override is not None else configured
+
+
+def get_generation_total_timeout() -> float:
+    """Keep all attempts within the Gateway request deadline, with response margin."""
+    gateway_timeout = float(os.getenv("DUSNX_GATEWAY_TIMEOUT", "90"))
+    margin = max(1.0, float(os.getenv("DUSNX_GENERATION_TIMEOUT_MARGIN", "5")))
+    requested = float(os.getenv("DUSNX_GENERATION_TOTAL_TIMEOUT", str(gateway_timeout - margin)))
+    return max(0.1, min(requested, gateway_timeout - margin))
+
+
+def _provider_call_with_deadline(generate, system_prompt: str, user_message: str,
+                                 deadline: float) -> tuple[ProviderCall, float, bool]:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0.1:
+        return ProviderCall("[Provider generation deadline exceeded (timeout)]", False, None, None), 0.0, False
+    call_timeout = min(get_ollama_timeout(), remaining)
+    token = _PROVIDER_CALL_TIMEOUT.set(call_timeout)
+    started = time.monotonic()
+    try:
+        result = generate(system_prompt, user_message)
+    finally:
+        _PROVIDER_CALL_TIMEOUT.reset(token)
+    return result, (time.monotonic() - started) * 1000.0, True
 
 
 PROVIDER = get_current_provider()
@@ -84,7 +119,7 @@ def check_ollama_health() -> dict:
             if not isinstance(data, dict) or not isinstance(data.get("models"), list):
                 raise ValueError("invalid_schema")
             models = [m["name"] for m in data["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
-            available = target_model in models
+            available = any(_ollama_model_tag_matches(target_model, name) for name in models)
             health = {
                 "reachable": True,
                 "available": available,
@@ -191,7 +226,7 @@ def _openai_generate(system_prompt: str, user_message: str) -> ProviderCall:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=get_ollama_timeout()) as resp:
             data = json.loads(resp.read().decode())
             text = data["choices"][0]["message"]["content"].strip()
             model_used = data.get("model")
@@ -267,9 +302,79 @@ def extract_required_entities(text: str) -> dict[str, list[str]]:
     normalized = re.sub(r"(?<!\w)(?:\*\*|__)([^\n]+?)(?:\*\*|__)(?!\w)", r"\1", text)
     urls = [clean_url(value) for value in re.findall(r"https?://[^\s\"'>)]+", normalized)]
     without_urls = re.sub(r"https?://[^\s\"'>)]+", " ", normalized)
-    assignments = re.findall(r"(?<![\w])([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([^\s,;\]\[(){}]+)", without_urls)
+    assignments = extract_env_assignments(without_urls)
     return {"urls": list(dict.fromkeys(urls)),
             "assignments": list(dict.fromkeys((key, value.rstrip(".,!?*`~")) for key, value in assignments))}
+
+
+def extract_env_assignments(text: str) -> list[tuple[str, str]]:
+    """Read only user supplied KEY=VALUE literals; URL query parameters are not env keys."""
+    without_urls = re.sub(r"https?://[^\s\"'>)]+", " ", text or "")
+    found = []
+    pattern = re.compile(r"(?<![\w])([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:\"([^\"\r\n]*)\"|'([^'\r\n]*)'|([^\s,;`]+))")
+    for match in pattern.finditer(without_urls):
+        key = match.group(1)
+        quoted = match.group(2) if match.group(2) is not None else match.group(3)
+        value = ((f'"{quoted}"' if match.group(2) is not None else f"'{quoted}'")
+                 if quoted is not None else (match.group(4) or "").rstrip(".,!?*~"))
+        if value:
+            item = (key, value)
+            if item not in found:
+                found.append(item)
+    return found
+
+
+def _application_env_format(user_message: str, response_language: str) -> tuple[str, str] | None:
+    """Format explicit .env values, or clarify missing/contradictory values without inventing them."""
+    if re.search(r"(?i)\b(?:translate|translation|summarize|summary|dịch|tóm tắt)\b", user_message):
+        return None
+    if re.search(r"(?i)^\s*(?:how\b|explain\b|describe\b|hướng dẫn\b|giải thích\b)", user_message):
+        return None
+    if re.search(r"(?i)\b(?:script|program|python|powershell|write code|đoạn mã|viết mã)\b", user_message):
+        return None
+    if re.search(r"(?i)\b(?:don't|do not|không cần|không hãy)\b.{0,60}\b(?:create|write|configure|tạo|viết|cấu hình)\b", user_message):
+        return None
+    asks_for_env = bool(re.search(
+        r"(?i)(?:\.env|environment\s+(?:variable|file)|tệp\s+\.env|file\s+\.env)"
+        r".{0,100}(?:write|create|provide|example|set|configure|viết|tạo|cấu hình|đặt)|"
+        r"(?:write|create|provide|example|set|configure|viết|tạo|cấu hình|đặt)"
+        r".{0,100}(?:\.env|environment\s+(?:variable|file)|tệp\s+\.env|file\s+\.env)",
+        user_message,
+    ))
+    if not asks_for_env:
+        return None
+    assignments = extract_env_assignments(user_message)
+    if not assignments:
+        key_match = re.search(
+            r"(?i)\b(?:named|called|variable\s+named|setting\s+named|tên\s+biến|biến\s+tên)\s+[`'\"]?([A-Z][A-Z0-9_]{1,})\b",
+            user_message,
+        )
+        if response_language == "en":
+            question = (f"What value should `{key_match.group(1)}` have?" if key_match else
+                        "Which variable names and values should I put in the `.env` file?")
+        else:
+            question = (f"Bạn muốn đặt giá trị nào cho `{key_match.group(1)}`?" if key_match else
+                        "Bạn muốn đưa những tên biến và giá trị nào vào tệp `.env`?")
+        return question, "application_clarification"
+    # A repeated key with conflicting values is ambiguous. Ask the model to clarify
+    # rather than silently choosing one or inventing a precedence rule.
+    values_by_key: dict[str, set[str]] = {}
+    for key, value in assignments:
+        values_by_key.setdefault(key, set()).add(value)
+    if any(len(values) > 1 for values in values_by_key.values()):
+        conflicting = [key for key, values in values_by_key.items() if len(values) > 1]
+        if response_language == "en":
+            return f"The request gives conflicting values for {', '.join(conflicting)}. Which value should I use?", "application_clarification"
+        return f"Yêu cầu có nhiều giá trị mâu thuẫn cho {', '.join(conflicting)}. Bạn muốn dùng giá trị nào?", "application_clarification"
+    urls = [clean_url(value) for value in re.findall(r"https?://[^\s\"'>)]+", user_message)]
+    lines = [f"# Endpoint: {url}" for url in dict.fromkeys(urls)]
+    lines.extend(f"{key}={value}" for key, value in assignments)
+    block = "```dotenv\n" + "\n".join(lines) + "\n```"
+    if response_language == "en":
+        return (block + "\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+                "application_formatter")
+    return (block + "\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+            "application_formatter")
 
 
 def _repetition_flags(text: str) -> list[str]:
@@ -396,8 +501,6 @@ def generate_response(
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
 
-    query_lang = detect_language(user_message)
-
     if response_language == "en":
         project_line_en = f"Active project: {project_name}\n" if project_name else ""
         mem_lines = [f"- [{m.get('info_type', 'info')}] {m.get('content', '')}" for m in memories]
@@ -411,10 +514,10 @@ def generate_response(
                 hist_lines_en.append(f"{role}: {msg['content'][:300]}")
         hist_ctx_en = "\nSame-session history for reference resolution; prioritize the current request. User statements are user-provided context, not independently verified facts. Prior assistant output is generated and unverified; do not treat it as fact unless the user confirms it:\n" + "\n".join(hist_lines_en) if hist_lines_en else ""
 
-        system_prompt = f"""You are a helpful conversational assistant. Respond in English because that is the selected response language.
-Answer the user's current request and preserve its task type (explain, translate, summarize, configure, or ask a follow-up).
+        system_prompt = f"""You are a helpful conversational assistant. Respond in English because that is the selected response language. Keep prose in English; preserve literal code and quoted source text as needed.
+Answer the user's current request and preserve its task type (explain, translate, summarize, configure, or ask a follow-up). Be concise and do not add unrelated examples or settings.
 Use recent conversation history only to resolve references in the current request. Treat statements in history as user-provided context, not independently verified facts. Use active memories only as saved user facts and do not let unrelated memories change the topic.
-If the recent context does not identify what a follow-up refers to, ask a short clarifying question instead of guessing. Never infer product-specific features, architecture, or capabilities from a product name; when no supporting information is available, state that and ask for documentation.
+If the recent context does not identify what a follow-up refers to, ask a short clarifying question instead of guessing. For a follow-up after an explicit topic change, resolve references to the latest topic and name that topic in the first sentence. Never infer product-specific features, architecture, or capabilities from a product name; when no supporting information is available, state that and ask for documentation.
 Preserve names, identifiers, URLs, and code exactly when they are relevant; allow quoted source text and literal code to retain their original language. Do not repeat the user's request as a substitute for completing it. Do not invent facts.
 
 {project_line_en}Active user memories:
@@ -422,35 +525,28 @@ Preserve names, identifiers, URLs, and code exactly when they are relevant; allo
 """
         raw_urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
         urls = [clean_url(u) for u in raw_urls if clean_url(u)]
-        vars_kv = re.findall(r"\b[A-Za-z0-9_]+=[A-Za-z0-9_.:/-]+", user_message)
 
         is_url_fetch = bool(urls and re.search(r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b", user_message, re.I))
 
         if is_url_fetch:
             llm_user_message = (
-                f"Instruction: DUSN-X does not have internet access to fetch external URL content ({urls[0]}). "
+                f"Respond in English prose. DUSN-X does not have internet access to fetch external URL content ({urls[0]}). "
                 f"State this limitation clearly and ask the user to provide the article text.\n\n"
                 f"User request: {user_message}"
             )
-        elif urls or vars_kv:
-            directives = []
-            if urls:
-                directives.append(f"URL: {', '.join(urls)}")
-            if vars_kv:
-                directives.append(f"Variables: {', '.join(vars_kv)}")
-            prefix = ("Task: Complete the user's requested task. Preserve the following literal entities exactly in the answer; ")
-            prefix += "do not turn the task into a list of entities or repeat the request.\n- " + "\n- ".join(directives)
-            llm_user_message = f"{prefix}\n\nUser request:\n{user_message}"
-        elif query_lang == "vi":
-            llm_user_message = f"Translate and answer the following question strictly in English (use 'and', never 'và'): '{user_message}'. Answer in English:"
         else:
-            llm_user_message = user_message
+            llm_user_message = (
+                "Respond in English. Complete the request below without changing its task. "
+                "If the user asks to translate, follow the requested target language; otherwise keep explanatory prose in English. "
+                "Preserve code, URLs, names, and quoted source text when relevant.\n\n"
+                f"User request:\n{user_message}"
+            )
     else:
         project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
-        system_prompt = f"""Bạn là trợ lý hội thoại hữu ích. Hãy trả lời bằng tiếng Việt vì đây là ngôn ngữ phản hồi đã chọn.
-Hoàn thành đúng yêu cầu hiện tại và giữ nguyên loại tác vụ người dùng yêu cầu (giải thích, dịch, tóm tắt, cấu hình hoặc hỏi tiếp).
+        system_prompt = f"""Bạn là trợ lý hội thoại hữu ích. Hãy trả lời bằng tiếng Việt vì đây là ngôn ngữ phản hồi đã chọn. Giữ phần văn xuôi bằng tiếng Việt; bảo toàn code và trích dẫn gốc khi cần.
+Hoàn thành đúng yêu cầu hiện tại và giữ nguyên loại tác vụ người dùng yêu cầu (giải thích, dịch, tóm tắt, cấu hình hoặc hỏi tiếp). Trả lời ngắn gọn, không thêm ví dụ hoặc thiết lập không liên quan.
 Chỉ dùng lịch sử cùng phiên để hiểu đại từ hoặc câu hỏi tiếp nối; ưu tiên yêu cầu hiện tại. Phát biểu người dùng là bối cảnh do họ cung cấp, không phải sự kiện đã xác minh độc lập. Câu trả lời trợ lý trước đây là nội dung sinh, không dùng làm sự thật nếu người dùng chưa xác nhận. Chỉ dùng trí nhớ hiệu lực như thông tin đã lưu của người dùng; trí nhớ không liên quan không được đổi chủ đề.
-Nếu lịch sử gần đây không xác định được câu hỏi tiếp nối đang nói về điều gì, hãy hỏi ngắn gọn để làm rõ thay vì đoán. Không bao giờ suy ra tính năng, kiến trúc hoặc khả năng riêng của một sản phẩm chỉ từ tên sản phẩm; nếu không có thông tin hỗ trợ, hãy nêu rõ điều đó và yêu cầu tài liệu. Không bịa thông tin.
+Nếu lịch sử gần đây không xác định được câu hỏi tiếp nối đang nói về điều gì, hãy hỏi ngắn gọn để làm rõ thay vì đoán. Sau một lần đổi chủ đề rõ ràng, đại từ trong câu hỏi tiếp theo nói về chủ đề mới nhất; nêu tên chủ đề đó ở câu đầu. Không bao giờ suy ra tính năng, kiến trúc hoặc khả năng riêng của một sản phẩm chỉ từ tên sản phẩm; nếu không có thông tin hỗ trợ, hãy nêu rõ điều đó và yêu cầu tài liệu. Không bịa thông tin.
 Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù hợp. Trích dẫn và code được phép giữ nguyên ngôn ngữ gốc. Không lặp lại yêu cầu của người dùng thay cho việc hoàn thành tác vụ.
 
 {project_line}Trí nhớ hiệu lực:
@@ -458,28 +554,31 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
 """
         raw_urls = re.findall(r"https?://[^\s\"'>)]+", user_message)
         urls = [clean_url(u) for u in raw_urls if clean_url(u)]
-        vars_kv = re.findall(r"\b[A-Za-z0-9_]+=[A-Za-z0-9_.:/-]+", user_message)
-
         is_url_fetch = bool(urls and re.search(r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b", user_message, re.I))
 
         if is_url_fetch:
             llm_user_message = (
-                f"Chỉ dẫn: DUSN-X hiện chưa có tính năng duyệt web để đọc trực tiếp URL ngoài ({urls[0]}). "
+                f"Hãy trả lời bằng tiếng Việt. DUSN-X hiện chưa có tính năng duyệt web để đọc trực tiếp URL ngoài ({urls[0]}). "
                 f"Hãy nêu rõ giới hạn này và yêu cầu người dùng gửi trực tiếp nội dung văn bản để xử lý.\n\n"
                 f"Yêu cầu của người dùng: {user_message}"
             )
-        elif urls or vars_kv:
-            directives = []
-            if urls:
-                directives.append(f"URL: {', '.join(urls)}")
-            if vars_kv:
-                directives.append(f"Biến: {', '.join(vars_kv)}")
-            prefix = "Tác vụ: Hoàn thành đúng việc người dùng yêu cầu. Giữ nguyên chính xác các thực thể sau; không đổi tác vụ thành liệt kê thực thể và không lặp lại yêu cầu.\n- " + "\n- ".join(directives)
-            llm_user_message = f"{prefix}\n\nYêu cầu của người dùng:\n{user_message}"
-        elif query_lang == "en":
-            llm_user_message = f"Dịch và trả lời câu hỏi sau hoàn toàn bằng TIẾNG VIỆT (dùng 'và', không dùng từ tiếng Anh): '{user_message}'. Trả lời bằng tiếng Việt:"
         else:
-            llm_user_message = user_message
+            llm_user_message = (
+                "Hãy trả lời bằng tiếng Việt. Hoàn thành yêu cầu bên dưới, không tự đổi loại tác vụ. "
+                "Nếu người dùng yêu cầu dịch, hãy dùng đúng ngôn ngữ đích; nếu không, giữ văn xuôi giải thích bằng tiếng Việt. "
+                "Giữ nguyên code, URL, tên riêng và trích dẫn khi phù hợp.\n\n"
+                f"Yêu cầu người dùng:\n{user_message}"
+            )
+
+    formatted_config = _application_env_format(user_message, response_language)
+    if formatted_config is not None:
+        formatted_text, formatted_source = formatted_config
+        result = ProviderResult(formatted_text, True, None, None, None, called=False,
+                                quality_status=None, attempts=[])
+        result.response_source = formatted_source
+        result.raw_provider_reply = None
+        result.sanitized_provider_reply = None
+        return result
 
     done_reason = None
     call_count = 0
@@ -489,13 +588,16 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
     quality_status = None
     sanitized_provider_reply = None
     provider_attempts = []
+    provider_started = time.monotonic()
+    provider_deadline = provider_started + get_generation_total_timeout()
     if p in ("ollama", "openai"):
         generate = _ollama_generate if p == "ollama" else _openai_generate
         called = p == "ollama" or bool(OPENAI_API_KEY)
         provider_used = p
         attempt_prompt = llm_user_message
-        result = generate(system_prompt, attempt_prompt)
-        call_count = 1 if called else 0
+        result, attempt_elapsed_ms, did_call = _provider_call_with_deadline(
+            generate, system_prompt, attempt_prompt, provider_deadline)
+        call_count = 1 if called and did_call else 0
         raw_provider_reply, ok, model_used, tokens_generated = result
         done_reason = getattr(result, "done_reason", None)
         sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
@@ -506,6 +608,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
         if ok:
             assessment = _quality_assessment(entity_prompt, text, response_language)
             provider_attempts.append({"attempt": 1, "done_reason": done_reason,
+                "elapsed_ms": round(attempt_elapsed_ms, 2),
                 "tokens_generated": tokens_generated, "sanitizer_changed": sanitizer_changed,
                 "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                 "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
@@ -517,34 +620,38 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
             if not assessment["passed"] and call_count:
                 issue = assessment["entities"]["status"]
                 language_issue = assessment["language"]["status"]
-                correction = (
-                    "\n\nCorrection required: the previous draft did not satisfy the response checks. "
-                    "Complete the original task without repeating its prompt. Use only the selected response language "
-                    "for prose, while preserving quoted source text, code, URLs, and identifiers. "
-                    "Correct literal mismatches and answer from the recent conversation context."
-                )
+                correction = ("\n\nCorrection required: attempt 1 failed response checks. "
+                    "Write a fresh, concise answer to the original user request. Do not quote or copy the failed draft. "
+                    "Use the selected response language for prose, preserve code/URLs/identifiers, and follow the latest topic context.")
+                if language_issue in {"divergent", "mixed"}:
+                    correction += " The prior prose used the wrong or mixed language; use only the selected prose language."
                 if issue in ("missing", "mutated", "echo_only"):
                     entities = extract_required_entities(entity_prompt)
                     literals = [*entities["urls"], *(f"{key}={value}" for key, value in entities["assignments"])]
                     correction += " Exact required literals: " + "; ".join(literals)
                 if assessment["repetition_flags"]:
                     correction += " Remove repeated lines and answer each point once."
-                correction += "\nPrior draft (for correction only):\n" + text
-                result = generate(system_prompt, attempt_prompt + correction)
-                call_count += 1
-                raw_provider_reply, ok, model_used, tokens_generated = result
-                done_reason = getattr(result, "done_reason", None)
-                sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
-                text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
-                assessment = _quality_assessment(entity_prompt, text, response_language) if ok else assessment
-                provider_attempts.append({"attempt": 2, "done_reason": done_reason,
-                    "tokens_generated": tokens_generated, "sanitizer_changed": sanitizer_changed,
-                    "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
-                    "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
-                    "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
-                    "quality_status": assessment["language"]["status"] if ok else None,
-                    "entity_status": assessment["entities"]["status"] if ok else None,
-                    "repetition_flags": assessment["repetition_flags"] if ok else []})
+                retry_result, retry_elapsed_ms, retry_called = _provider_call_with_deadline(
+                    generate, system_prompt, attempt_prompt + correction, provider_deadline)
+                if retry_called:
+                    call_count += 1
+                    raw_provider_reply, ok, model_used, tokens_generated = retry_result
+                    done_reason = getattr(retry_result, "done_reason", None)
+                    sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
+                    text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
+                    assessment = _quality_assessment(entity_prompt, text, response_language) if ok else assessment
+                    provider_attempts.append({"attempt": 2, "elapsed_ms": round(retry_elapsed_ms, 2), "called": True,
+                        "done_reason": done_reason, "tokens_generated": tokens_generated,
+                        "sanitizer_changed": sanitizer_changed,
+                        "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
+                        "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                        "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
+                        "quality_status": assessment["language"]["status"] if ok else None,
+                        "entity_status": assessment["entities"]["status"] if ok else None,
+                        "repetition_flags": assessment["repetition_flags"] if ok else []})
+                else:
+                    provider_attempts.append({"attempt": 2, "called": False,
+                        "skip_reason": "total_generation_timeout_budget_exhausted", "elapsed_ms": 0.0})
             sanitized_provider_reply = text
             quality_status = assessment["language"]["status"] if assessment["passed"] else "failed"
             if ok and not assessment["passed"]:
@@ -560,6 +667,7 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
                 model_used = tokens_generated = None
         else:
             provider_attempts.append({"attempt": 1, "done_reason": done_reason,
+                "elapsed_ms": round(attempt_elapsed_ms, 2), "called": did_call,
                 "tokens_generated": tokens_generated, "sanitizer_changed": False,
                 "raw_output_sha256": hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest(),
                 "raw_provider_reply": raw_provider_reply if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
@@ -594,10 +702,11 @@ Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù h
         ok = False
         model_used = tokens_generated = None
 
-    result = ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called,
+    result = ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called and call_count > 0,
                             done_reason=done_reason, call_count=call_count,
                             sanitizer_changed=sanitizer_changed, raw_output_sha256=raw_output_sha256,
-                            quality_status=quality_status, attempts=provider_attempts)
+                            quality_status=quality_status, attempts=provider_attempts,
+                            elapsed_ms=(time.monotonic() - provider_started) * 1000.0 if call_count else 0.0)
     if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" and called:
         result.raw_provider_reply = raw_provider_reply
         result.sanitized_provider_reply = sanitized_provider_reply if sanitized_provider_reply is not None else text

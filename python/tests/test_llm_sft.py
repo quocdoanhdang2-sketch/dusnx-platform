@@ -110,9 +110,10 @@ def test_protected_paths_fail_before_read(tmp_path):
     with pytest.raises(ValueError,match='Protected'):read_sft(tmp_path/'holdout_v3_DO_NOT_READ.jsonl','train')
 
 
-def test_locked_manifest_can_start_full_training():
+def test_development_manifest_cannot_start_full_training():
     manifest=json.loads((DATA/'manifest.json').read_text(encoding='utf-8'))
-    verify_full_training_gate(DATA,manifest)
+    manifest['status']='human_review_complete_pending_lock'
+    with pytest.raises(ValueError,match='human-attested'):verify_full_training_gate(DATA,manifest)
 
 
 def test_same_person_cannot_author_and_review_test(tmp_path):
