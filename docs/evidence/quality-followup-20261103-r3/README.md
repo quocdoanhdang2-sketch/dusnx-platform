@@ -17,4 +17,10 @@ The Qwen3 runs are kept separately: `r1` predates the evaluator correction; `r2`
 
 Candidate output quality is still not accepted. The strict run has task uncertainties and provider/application failures. The ticket is intentionally open; no independent human review is claimed. No candidate was promoted and the default model was not changed.
 
+## Model/configuration comparison
+
+Both live runs used the same 27 locked cases, `num_ctx=4096`, `num_predict=512`, temperature `0.1`, repeat penalty `1.25`, and repeat-last-N `64` on an RTX 3050 Laptop GPU with 4 GiB VRAM. Qwen3 4B is a 2.497 GB Q4_K_M model; the existing candidate is a 994 MB F16 model. Across the 12 case requests that called a provider, the report's per-request `provider_elapsed_ms` had median/p90 of 27.36/30.06 seconds for Qwen3 and 4.05/7.94 seconds for the candidate. Successful requests alone had medians of 23.50 and 3.21 seconds, respectively. These are harness request timings, not a controlled throughput benchmark. A live GPU snapshot during Qwen3 execution read 2319 MiB used of 4096 MiB; comparable candidate peak VRAM was not captured, so no candidate VRAM claim is made.
+
+The existing candidate completed more contract cases and was faster under these settings, but still had five contract failures, three quality flags, nine task uncertainties, and unreviewed factual risk. This comparison does not justify promotion.
+
 See `manifest.json` for exact commands, environment, exit codes, timestamps, source and copied artifact hashes, model digests, and dirty-tree identity. Reports contain synthetic prompts, histories, and responses only; no credentials, databases, model files, or personal logs are included.

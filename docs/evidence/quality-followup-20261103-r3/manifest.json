@@ -219,7 +219,22 @@
         "completion_uncertain": 0,
         "execution_status": "completed"
       },
-      "note": "Final evaluator; strict failure from contract/task/completion gates"
+      "note": "Final evaluator; strict failure from contract/task/completion gates",
+      "latency_observation": {
+        "method": "per-case provider_elapsed_ms reported by the harness; includes corrective retry time",
+        "provider_called_case_requests": 12,
+        "provider_attempts_total": 14,
+        "all_requests_ms": {
+          "mean": 26723.7,
+          "median": 27359.0,
+          "p90_nearest_rank": 30062.0
+        },
+        "successful_requests_ms": {
+          "count": 4,
+          "mean": 22886.7,
+          "median": 23500.0
+        }
+      }
     },
     {
       "name": "candidate-r20-final.json",
@@ -280,7 +295,22 @@
         "completion_uncertain": 0,
         "execution_status": "completed"
       },
-      "note": "Existing candidate; strict failure from contract/quality/task uncertainty gates"
+      "note": "Existing candidate; strict failure from contract/quality/task uncertainty gates",
+      "latency_observation": {
+        "method": "per-case provider_elapsed_ms reported by the harness; includes corrective retry time",
+        "provider_called_case_requests": 12,
+        "provider_attempts_total": 19,
+        "all_requests_ms": {
+          "mean": 4859.2,
+          "median": 4046.5,
+          "p90_nearest_rank": 7938.0
+        },
+        "successful_requests_ms": {
+          "count": 8,
+          "mean": 3802.5,
+          "median": 3211.0
+        }
+      }
     },
     {
       "name": "provenance-qwen3-4b-r2.json",
@@ -467,11 +497,11 @@
     {
       "path": "README.md",
       "source_path": "generated from this verification run",
-      "source_mtime_utc": "2026-11-03T15:18:35.773575+00:00",
-      "source_sha256": "120f1463fc4908c49c577ab7462cab9f960b8e783267b29d465e65ab8353817a",
-      "evidence_file_sha256": "120f1463fc4908c49c577ab7462cab9f960b8e783267b29d465e65ab8353817a",
+      "source_mtime_utc": "2026-11-03T15:30:18.816361+00:00",
+      "source_sha256": "edbaeccdbf211cfa5d7f6553975bbd117d2b3f2e0b2a0fb9dc74d809636ce1b1",
+      "evidence_file_sha256": "edbaeccdbf211cfa5d7f6553975bbd117d2b3f2e0b2a0fb9dc74d809636ce1b1",
       "same_bytes_as_source": true,
-      "git_blob_oid_sha1": "987cb468aec1dfd6ced1b305be95d4bd0a65ff1c"
+      "git_blob_oid_sha1": "b88714853f048b70616a0f720005bf44b1efb5d5"
     },
     {
       "path": "human-review-ticket.md",
@@ -485,5 +515,15 @@
   ],
   "review_status": "No independent human review performed; human-review-ticket.md is open with decisions blank.",
   "privacy": "Synthetic prompts/history/accounts only. No credentials, database files, model weights, or private logs copied.",
-  "normalization": "Source and evidence working-file SHA-256 values are kept distinct. Pytest transcripts were converted from UTF-16LE to UTF-8. Git blob object IDs (SHA-1) record the staged, normalized bytes for each artifact except this manifest, whose self-hash is intentionally omitted. README/review Markdown line endings may be normalized by Git."
+  "normalization": "Artifact hashes describe original source/evidence bytes. Pytest transcripts were converted from UTF-16LE to UTF-8. Git blob object IDs (SHA-1) record staged normalized bytes for artifacts except this manifest, whose self-hash is omitted. README/review Markdown line endings may be normalized by Git.",
+  "resource_observations": {
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB VRAM",
+    "qwen3_live_snapshot": "nvidia-smi observed 2319 MiB used / 1644 MiB free while Qwen3 run was active; exact snapshot timestamp was not captured",
+    "candidate_peak_vram": "unknown; no comparable peak sample was captured",
+    "model_disk_sizes_bytes": {
+      "qwen3:4b": 2497293931,
+      "dusnx-vi-candidate:latest": 994169232
+    },
+    "limits": "Latency is case-request timing, not throughput; GPU memory comparison is incomplete."
+  }
 }
