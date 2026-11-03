@@ -5,7 +5,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion
+from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget
 from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -104,12 +104,34 @@ def test_language_evaluator_uncertain_does_not_assume_english():
 
 
 def test_completion_uses_finish_reason_and_output_shape_not_budget_alone():
-    assert assess_completion("A complete answer.", "stop", 544, 512)["status"] == "passed"
+    at_budget = assess_completion("A complete answer.", "stop", 512, 512)
+    assert at_budget["status"] == "uncertain"
+    assert at_budget["reason"] == "token_budget_reached_without_proof_of_truncation"
+    assert assess_completion("A complete answer.", "stop", 511, 512)["status"] == "passed"
     limited_complete = assess_completion("A useful short list item", "length", 512, 512)
     assert limited_complete["status"] == "uncertain"
     assert limited_complete["reason"] == "provider_limit_without_clear_truncation"
     assert assess_completion("This helps in", "length", 512, 512)["status"] == "failed"
     assert assess_completion("```python\nprint(1)", "stop", 512, 512)["reason"] == "unclosed_code_fence"
+
+
+def test_completion_uses_budget_from_actual_provider_attempt_not_harness_default():
+    response = {
+        "provider_ok": True, "provider_called": True, "response_source": "llm",
+        "tokens_generated": 967, "done_reason": "stop",
+        "provider_attempts": [{"provider_diagnostics": {"num_predict": 1024}}],
+    }
+    assert resolve_token_budget(response) == 1024
+    completion = evaluate_case_output("Explain a gateway.", "A complete answer.", "en",
+        "llm_generation", response)["completion"]
+    assert completion["status"] == "passed"
+    assert completion["reason"] == "no_provider_limit_or_obvious_open_clause"
+
+    response.update(tokens_generated=1024, done_reason="length")
+    completion = evaluate_case_output("Explain a gateway.", "A complete answer.", "en",
+        "llm_generation", response)["completion"]
+    assert completion["status"] == "uncertain"
+    assert completion["token_budget"] == 1024
 
 
 def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):

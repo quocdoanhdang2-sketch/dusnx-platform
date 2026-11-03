@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 sys.path.insert(0, str(REPO_ROOT / "python"))
 from apps.ai_api.language import assess_response_language
-from verify_bilingual_generation import assess_completion, verify_ollama_model_identity
+from verify_bilingual_generation import assess_completion, resolve_token_budget, verify_ollama_model_identity
 
 
 def assess_generation_provenance(response, expected_model, expected_language="vi"):
@@ -44,7 +44,7 @@ def assess_generation_provenance(response, expected_model, expected_language="vi
         response.get("done_reason") or last_attempt.get("done_reason"),
         response.get("tokens_generated") if response.get("tokens_generated") is not None
         else last_attempt.get("tokens_generated"),
-        response.get("token_budget", 512),
+        resolve_token_budget(response),
         provider_ok=response.get("provider_ok") is True,
     ) if called_attempts else {"status": "not_applicable", "reason": "provider_not_called"}
     if not transport_ok:

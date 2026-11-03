@@ -241,7 +241,7 @@ def compute_bilingual_summary(cases: dict) -> dict:
 
 
 def assess_completion(text: str, done_reason: str | None, tokens: int | None,
-                      token_budget: int = 512, provider_ok: bool = True) -> dict:
+                      token_budget: int | None = 512, provider_ok: bool = True) -> dict:
     if not provider_ok:
         return {"status": "not_applicable", "reason": "provider_not_successful"}
     if text.count("```") % 2:
@@ -253,13 +253,27 @@ def assess_completion(text: str, done_reason: str | None, tokens: int | None,
     if done_reason in {"length", "max_tokens"}:
         return {"status": "uncertain", "reason": "provider_limit_without_clear_truncation",
                 "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
-    if tokens is not None and tokens >= token_budget and done_reason != "stop":
+    if token_budget is not None and tokens is not None and tokens >= token_budget:
         return {"status": "uncertain", "reason": "token_budget_reached_without_proof_of_truncation",
                 "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
-    if tokens is not None and tokens >= token_budget:
-        return {"status": "passed", "reason": "provider_reported_stop_at_or_above_token_budget",
-                "tokens_generated": tokens, "token_budget": token_budget, "done_reason": done_reason}
     return {"status": "passed", "reason": "no_provider_limit_or_obvious_open_clause", "done_reason": done_reason}
+
+
+def resolve_token_budget(metadata: dict) -> int | None:
+    """Prefer the budget recorded by the provider call; unknown is not 512 by assumption."""
+    direct = metadata.get("token_budget")
+    if type(direct) is int and direct > 0:
+        return direct
+    attempts = metadata.get("provider_attempts")
+    if isinstance(attempts, list):
+        for attempt in reversed(attempts):
+            if not isinstance(attempt, dict):
+                continue
+            diagnostics = attempt.get("provider_diagnostics")
+            budget = diagnostics.get("num_predict") if isinstance(diagnostics, dict) else None
+            if type(budget) is int and budget > 0:
+                return budget
+    return None
 
 
 def run_open_ended_coverage(text: str, task_rubric: dict) -> dict:
@@ -386,7 +400,7 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
     else:
         task = {"status": "uncertain", "method": "no deterministic semantic rubric; human review required"}
     completion = assess_completion(reply, metadata.get("done_reason"), metadata.get("tokens_generated"),
-                                   metadata.get("token_budget", 512), metadata.get("provider_ok") is True)
+                                   resolve_token_budget(metadata), metadata.get("provider_ok") is True)
     leak_flags = quality_flags(reply)
     return {
         "transport": {"status": ("not_applicable" if metadata.get("response_source") in {"clarification", "application_formatter"}
@@ -875,7 +889,7 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
                     "provider_used": res.get("provider_used"),
                     "model_used": res.get("model_used"),
                     "tokens_generated": res.get("tokens_generated"),
-                    "token_budget": res.get("token_budget", int(os.getenv("DUSNX_OLLAMA_NUM_PREDICT", "512"))),
+                    "token_budget": resolve_token_budget(res),
                     "done_reason": res.get("done_reason"),
                     "provider_call_count": res.get("provider_call_count", int(bool(res.get("provider_called")))),
                     "provider_elapsed_ms": res.get("provider_elapsed_ms", 0.0),
