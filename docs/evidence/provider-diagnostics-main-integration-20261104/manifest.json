@@ -1,0 +1,43 @@
+{
+  "evidence_kind": "prior verification run; no run was performed on the documentation commit",
+  "code_base_sha": "937dc3c80a97f1cb2e5539fcab6bc3f15322013d",
+  "code_test_patch_sha256": "301ac9d63b1a59315979acb57713bd4aa779a5b74d6eba8a9ad99ad954d0d500",
+  "patch_scope": [
+    "python/apps/ai_api/provider.py",
+    "python/apps/ai_api/main.py",
+    "python/tests/test_week4_integration.py"
+  ],
+  "environment": {
+    "os": "Windows",
+    "python": "3.14.7",
+    "environment": "python/.venv"
+  },
+  "runs": [
+    {
+      "source": "local pytest console output",
+      "time_local": "2026-11-04 Asia/Saigon; exact invocation time unknown",
+      "working_directory": "python",
+      "command": ".\\.venv\\Scripts\\python.exe -m pytest -q --basetemp ..\\test-output-provider-diagnostics-20261104\\pytest-full-final",
+      "exit_code": 0,
+      "result": "258 passed, 1 skipped"
+    },
+    {
+      "source": "first full-suite attempt console output",
+      "time_local": "2026-11-04 Asia/Saigon; exact invocation time unknown",
+      "working_directory": "python",
+      "command": "full pytest on an earlier patch before tuple compatibility fix",
+      "exit_code": 1,
+      "result": "249 passed, 1 skipped, 8 failed; the failures showed mock tuple compatibility issue; fixed and final full suite passed"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "source": "authored from this session run records",
+      "time_local": "2026-11-04 Asia/Saigon",
+      "sha256": "5da9ea2b67ffc61e43e5eaa8900d56a76ca254a5a9505edb9193005dcbb832d8"
+    }
+  ],
+  "manifest_self_hash": "not included; hashing a manifest within itself is recursive",
+  "limitations": "No live model quality assertion, human review, production model change, or semantic-quality pass is claimed."
+}
