@@ -1,0 +1,28 @@
+{
+  "evidence_kind": "sanitized direct Ollama diagnostic from a prior run; no rerun on this evidence commit",
+  "code_sha": "002f5a8959625b0012d8526eb6a241efd8b2e7c0",
+  "model": {
+    "name": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7"
+  },
+  "run_source": "direct local Ollama native API response observed during this session",
+  "run_time_local": "2026-11-04 Asia/Saigon; exact invocation time unknown",
+  "command": "PowerShell here-string piped to python/.venv/Scripts/python.exe - (inline urllib request); see probe.json for request settings and exit code",
+  "exit_code": 0,
+  "artifacts": [
+    {
+      "path": "probe.json",
+      "source": "sanitized record of the local Ollama probe",
+      "time_local": "2026-11-04 Asia/Saigon",
+      "sha256": "76acee8d025b0b6e287cfa77aec73a8e17e21b17e960e564af5d733d850157aa"
+    },
+    {
+      "path": "README.md",
+      "source": "authored summary of probe.json",
+      "time_local": "2026-11-04 Asia/Saigon",
+      "sha256": "ae0c46fb9855e54bf4c847cbd7989b00f92f0bb0433a3d317a0607ec9debfb3d"
+    }
+  ],
+  "manifest_self_hash": "not included; recursive",
+  "secrets_review": "synthetic prompt only; raw generated content omitted; no credentials, user data, DB, logs, or model files included."
+}

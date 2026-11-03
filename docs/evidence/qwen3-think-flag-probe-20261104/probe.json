@@ -1,0 +1,57 @@
+{
+  "probe_id": "QWEN3_THINK_FALSE_DIRECT_SYNTHETIC_01",
+  "source": "direct local Ollama native API response observed in this session; raw response content intentionally omitted",
+  "observed_at_local": "2026-11-04 Asia/Saigon; exact invocation time unknown",
+  "code_sha": "002f5a8959625b0012d8526eb6a241efd8b2e7c0",
+  "execution": {
+    "working_directory": "python",
+    "command": "PowerShell here-string piped to python/.venv/Scripts/python.exe - (inline urllib request)",
+    "exit_code": 0,
+    "transport": "direct HTTP POST to http://127.0.0.1:11434/api/chat; bypassed Gateway/application"
+  },
+  "identity": {
+    "ollama_version": "0.40.14",
+    "model": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "quantization": "Q4_K_M"
+  },
+  "request": {
+    "think": false,
+    "stream": false,
+    "num_predict": 512,
+    "num_ctx": 4096,
+    "temperature": 0.1,
+    "system_task": "one concise sentence explaining an API Gateway",
+    "user_task": "In one concise sentence, explain what an API Gateway does."
+  },
+  "response": {
+    "http_status": 200,
+    "elapsed_seconds": 16.234,
+    "model": "qwen3:4b",
+    "done": true,
+    "done_reason": "stop",
+    "eval_count": 242,
+    "prompt_eval_count": 44,
+    "content_chars": 1378,
+    "thinking_field_chars": null,
+    "final_answer_present": true,
+    "pre_answer_analysis_in_content": true,
+    "raw_content_included": false
+  },
+  "comparison": {
+    "source_artifact": "docs/evidence/qwen3-invalid-schema-followup-20261104/direct-ollama-native-diagnostics-r1.json",
+    "trial_id": "default_512",
+    "http_status": 200,
+    "elapsed_ms": 14191.46,
+    "done_reason": "stop",
+    "eval_count": 367,
+    "content_chars": 175,
+    "thinking_chars": 1895,
+    "task_and_prompt": "same synthetic task and system instruction; think field omitted"
+  },
+  "assessment": {
+    "status": "candidate_not_adopted",
+    "reason": "think=false produced a successful transport and a final sentence, but put extensive pre-answer analysis into content rather than returning the concise final alone. This does not establish suppression of thinking or application-level quality improvement. The app/default config was not changed."
+  },
+  "limitations": "One direct synthetic probe, not Gateway or browser generation; not an independent human review; only one run, so no quality rate is inferred."
+}
