@@ -364,7 +364,7 @@
       "source_path": "authored evidence README, updated with R2 probe findings",
       "source_sha256": "unverified",
       "packaged_source_bytes_sha256": "99d68899db09d27f886046a27b039d103f00b3df7e32168629d0e12d84ab6c90",
-      "git_blob_sha1": "e1b1610d8dbfa86f124b8cd75a0643f71a818b24",
+      "git_blob_sha1": "3862c2cebafbb8cb7b17fa39a787fb44ef8f1d06",
       "normalization": "UTF-8 LF; SHA-256 records exact packaged bytes; Git blob recorded separately",
       "observed_at_utc": "2026-11-03T18:36:17Z",
       "previous_manifest_source_sha256_claim": "fc4bcc71825f326d24812d3dcb8ed6658e4cb2b8fe04f41bafed7dfe9903d514",
@@ -397,7 +397,8 @@
         "logical_lf_count": 80
       },
       "previous_manifest_packaged_sha256_claim": "d41ebd4dad14d3bc82cefebb0ad1aa9cb95a1f04cbdb7f45d21a514f18d1ff91",
-      "committed_blob_oid_after_errata": "3862c2cebafbb8cb7b17fa39a787fb44ef8f1d06"
+      "committed_blob_oid_after_errata": "3862c2cebafbb8cb7b17fa39a787fb44ef8f1d06",
+      "previous_manifest_git_blob_sha1_claim": "e1b1610d8dbfa86f124b8cd75a0643f71a818b24"
     },
     {
       "path": "ollama-capabilities.json",
