@@ -10,7 +10,7 @@
   "probe_execution_status": "completed",
   "probe_trial_count": 12,
   "probe_shell_exit_code": "unknown (not captured; JSON execution_status=completed and contains 12 trials)",
-  "current_quality_branch_code_sha": "7cfc2a4 (full SHA recorded after push verification)",
+  "current_quality_branch_code_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
   "main_before": "7980e71350d9c3512aff897af3a1fa7fc13982df",
   "main_after": "953d62efa5bf874b9852f6a02fcb7844258ec317",
   "main_diagnostic_change": "PR https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4 merged normally; main workflow status for merge SHA was not returned; PR-head run success on 965c544f604691fee0e71a8fbd28b85946f47277",
@@ -309,14 +309,19 @@
   "manifest_self_hash": "not included",
   "live_gateway_and_browser_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3",
   "post_live_report_harness_fix_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
-  "evidence_commit_pending": "Evidence package will be committed after manifest blob hashes are finalized",
+  "evidence_commit_pending": "Packaged in commit 7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a; this manifest does not embed its own containing commit SHA to avoid self-reference",
   "ci": {
     "pr": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4",
     "pr_head_sha": "965c544f604691fee0e71a8fbd28b85946f47277",
     "pr_head_workflow_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41689664607",
     "pr_head_conclusion": "success",
     "merged_main_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
-    "merged_sha_workflow_status": "unknown; no workflow run/status returned"
+    "merged_sha_workflow_status": "unknown; no workflow run/status returned",
+    "review_table_pr5": {
+      "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
+      "head_sha": "b9f81c0b5eda44c41bf51bb153bed1a2d9462b77",
+      "checks": "unknown; none returned at check time"
+    }
   },
   "live_results": {
     "chat_provenance_exit": 1,
@@ -348,5 +353,15 @@
     "failed": 0,
     "not_rerun": "Strict live Qwen3 generation report; report-label-only change does not alter provider/generation behavior; prior live report remains on e89e57467fde95ed11d077033ecfbc23a30b7ff3",
     "observed_at_utc": "2026-11-03T18:39:41Z"
+  },
+  "quality_branch_pushed_sha": "7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a",
+  "independent_main_harness_pr": {
+    "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
+    "base_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
+    "head_sha": "b9f81c0b5eda44c41bf51bb153bed1a2d9462b77",
+    "focused_harness": "8 passed, exit 0",
+    "full_python_suite": "260 passed, 1 skipped, exit 0",
+    "github_checks": "no statuses or workflow runs returned at evidence update time; unknown",
+    "main_merged": false
   }
 }
