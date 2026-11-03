@@ -916,6 +916,10 @@ def _chat_impl(req: ChatRequest, user: dict):
     if language_change:
         content = f"language:{language_change}"
         existing_mem = db.get_active_language_preference_memory(user_id, project_id=req.project_id)
+        # Reading may fall back to the global preference; writing must only
+        # supersede a preference in the exact scope selected by this request.
+        if existing_mem and (existing_mem.get("project_id") or None) != (req.project_id or None):
+            existing_mem = None
         if existing_mem:
             new_mem = (existing_mem if existing_mem["content"] == content else
                        db.update_memory(user_id, existing_mem["memory_id"], content,

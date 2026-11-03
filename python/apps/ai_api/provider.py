@@ -395,4 +395,11 @@ Thông tin hệ thống DUSN-X:
         model_used = None
         tokens_generated = None
 
+    # Sanitization can remove the entire response after transport validation.
+    # Preserve that a call happened, but never save an empty reply as success.
+    if ok and not text.strip():
+        text = "[Provider trả về nội dung rỗng sau xử lý (empty_response)]"
+        ok = False
+        model_used = tokens_generated = None
+
     return ProviderResult(text, ok, provider_used, model_used, tokens_generated, called=called)
