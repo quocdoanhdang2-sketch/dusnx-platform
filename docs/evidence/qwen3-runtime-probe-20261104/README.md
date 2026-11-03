@@ -64,3 +64,12 @@ The historical `live-gateway-bilingual-review-qwen3-r1.md` was copied unchanged 
 ## Independent main integration
 
 The review-table reporting correction was tested in an isolated worktree based on main `953d62efa5bf874b9852f6a02fcb7844258ec317`, then merged through [PR #5](https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5). The exact PR head `b9f81c0b5eda44c41bf51bb153bed1a2d9462b77` had focused harness **8 passed**, full Python **260 passed, 1 skipped**, and GitHub Actions run [41696532438](https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41696532438) success. Remote main is now `5dd1052d9052da4ffbd0418b629e238a957a61eb`. No workflow or status was returned for that merge SHA itself; that status is unknown. This integration only corrects future review-table model provenance and does not resolve or promote generation quality.
+
+
+## Installed DUSNX VI candidate probe (direct Ollama)
+
+A small same-prompt comparison also used the already installed `dusnx-vi-candidate:latest` (digest `bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3`, Qwen2 family, 494.03M parameters, F16, template SHA-256 `eb4402837c7829a690fa845de4d7f3fd842c2adee476d5341da8a46ea9255175`) on Ollama `0.40.14`. It used two repetitions each of the same synthetic translation/entity and Vietnamese Gateway-benefit prompts, `num_predict=512`, temperature 0.1, `num_ctx=4096`, repeat penalty 1.25, and no `think` field. This was direct `/api/chat`, outside the application stack; it does not establish Gateway behavior.
+
+- Saved-script run R2 completed four requests, exit 0, in 0.28?0.66 seconds after warm-up. Translation was English in 2/2 but changed the exact URL scheme from `https://` to `http://` in both outputs, so entity preservation failed. Gateway-benefit outputs were concise and finished with `stop`; one of two mixed Vietnamese with Chinese. No independent factual review was done.
+- The earlier exploratory R1 run is also retained, not replaced: both translation outputs stayed Vietnamese; both Gateway-benefit responses were around 2,000 characters and ended at `length`/512 tokens. Its exact inline script was not saved, so its command source is recorded as unknown; the tool returned exit 0 and the report records all four trials.
+- This small probe is insufficient to promote the candidate. The model/default remains unchanged. The candidate demonstrates observed task/entity/language failures, not a quality pass.

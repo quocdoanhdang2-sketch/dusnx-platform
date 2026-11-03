@@ -32,6 +32,15 @@
       "digest": "b8a53a0db98c2ea8d910b367482828188e7cab1724e9faa72e2d11582009d0d8",
       "quantization": "Q4_K_M",
       "change": "template-only; no default change"
+    },
+    "installed_dusnx_vi_candidate": {
+      "tag": "dusnx-vi-candidate:latest",
+      "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "family": "qwen2",
+      "parameter_size": "494.03M",
+      "quantization": "F16",
+      "template_sha256": "eb4402837c7829a690fa845de4d7f3fd842c2adee476d5341da8a46ea9255175",
+      "promoted": false
     }
   },
   "commands": [
@@ -166,11 +175,11 @@
     },
     {
       "path": "README.md",
-      "source_path": "authored evidence README",
-      "source_sha256": "3ee46aee4b1edb03c26be26595dfef136a6a73e8838b24edffb308ef886ddb8e",
-      "packaged_source_bytes_sha256": "3ee46aee4b1edb03c26be26595dfef136a6a73e8838b24edffb308ef886ddb8e",
-      "git_blob_sha1": "238c482f9f73dab92485614de4558b622a51fdd6",
-      "normalization": "UTF-8 LF; SHA-256 records exact packaged bytes; Git blob recorded after staging",
+      "source_path": "authored evidence README, updated with R2 probe findings",
+      "source_sha256": "fc4bcc71825f326d24812d3dcb8ed6658e4cb2b8fe04f41bafed7dfe9903d514",
+      "packaged_source_bytes_sha256": "fc4bcc71825f326d24812d3dcb8ed6658e4cb2b8fe04f41bafed7dfe9903d514",
+      "git_blob_sha1": "e1b1610d8dbfa86f124b8cd75a0643f71a818b24",
+      "normalization": "UTF-8 LF; SHA-256 records exact packaged bytes; Git blob recorded separately",
       "observed_at_utc": "2026-11-03T18:36:17Z"
     },
     {
@@ -304,6 +313,50 @@
       "working_directory": "D:/Projects/dusnx-platform",
       "exit_code": 0,
       "result": "11 passed"
+    },
+    {
+      "path": "dusnx-vi-candidate-direct-r1-exploratory.json",
+      "source_path": "runtime/ollama-candidate-compare-20261104-r1/candidate-compare-report.json",
+      "source_sha256": "518ec49cf550ff024e805bcf151e51b91b39b8869e4452af3cf65180ba17a00c",
+      "packaged_source_bytes_sha256": "518ec49cf550ff024e805bcf151e51b91b39b8869e4452af3cf65180ba17a00c",
+      "git_blob_sha1": "9e1d600d99decbda6fe3bb5223c46c1ab8dc6227",
+      "normalization": "exact source bytes copied; UTF-8 content retained",
+      "observed_at_utc": "2026-11-03T18:48:23.295797+00:00",
+      "completed_at_utc": "2026-11-03T18:48:38.962391+00:00",
+      "command_or_source_note": "inline script source not saved; command source unknown; process returned exit 0",
+      "transport": "direct Ollama /api/chat; bypasses Gateway/FastAPI/browser",
+      "execution_status": "completed",
+      "trial_count": 4,
+      "model_tag": "dusnx-vi-candidate:latest",
+      "model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3"
+    },
+    {
+      "path": "dusnx-vi-candidate-direct-r2-report.json",
+      "source_path": "runtime/ollama-candidate-compare-20261104-r2/candidate-compare-report.json",
+      "source_sha256": "9c626ba394d3812e45c3e8214e52d2e2a8d0d9fd6319fd470492af251ea40c31",
+      "packaged_source_bytes_sha256": "9c626ba394d3812e45c3e8214e52d2e2a8d0d9fd6319fd470492af251ea40c31",
+      "git_blob_sha1": "e5733daf994a7e0453f12fef77aa9b7710f4a272",
+      "normalization": "exact source bytes copied; UTF-8 content retained",
+      "observed_at_utc": "2026-11-03T18:49:01.843738+00:00",
+      "completed_at_utc": "2026-11-03T18:49:03.990690+00:00",
+      "command_or_source_note": "python runtime/run-dusnxvi-candidate-compare-r2.py; exit 0",
+      "transport": "direct Ollama /api/chat; bypasses Gateway/FastAPI/browser",
+      "execution_status": "completed",
+      "trial_count": 4,
+      "model_tag": "dusnx-vi-candidate:latest",
+      "model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3"
+    },
+    {
+      "path": "run-dusnx-vi-candidate-compare-r2.py",
+      "source_path": "runtime/run-dusnxvi-candidate-compare-r2.py",
+      "source_sha256": "462ec6953d5028777adfb1438975b9d7d1a433fd63c1b186494e4341a6db1e74",
+      "packaged_source_bytes_sha256": "462ec6953d5028777adfb1438975b9d7d1a433fd63c1b186494e4341a6db1e74",
+      "git_blob_sha1": "aeac794a7f3aab9de9810490c6cde45d1fe0b2e9",
+      "normalization": "exact source bytes copied; UTF-8 content retained",
+      "observed_at_utc": "2026-11-03T18:49:01.843738+00:00",
+      "completed_at_utc": "2026-11-03T18:49:03.990690+00:00",
+      "command_or_source_note": "source script used for the R2 direct probe",
+      "transport": "direct Ollama /api/chat; bypasses Gateway/FastAPI/browser"
     }
   ],
   "manifest_self_hash": "not included",
@@ -340,13 +393,34 @@
     "qwen3_1024_translation_empty": "2/2",
     "qwen3_1024_vietnamese_gateway_benefit_content": "2/2",
     "qwen25_512_translation_wrong_language": "2/2",
-    "qwen25_512_gateway_benefit_overlong_repetitive": "2/2"
+    "qwen25_512_gateway_benefit_overlong_repetitive": "2/2",
+    "dusnx_vi_candidate_r2": {
+      "transport": "direct Ollama; not application stack",
+      "trials": 4,
+      "exit_code": 0,
+      "translation_english": 2,
+      "translation_url_scheme_changed": 2,
+      "gateway_benefit_done_stop": 2,
+      "gateway_benefit_mixed_language": 1,
+      "task_quality_review": "not independently reviewed",
+      "decision": "not promoted"
+    },
+    "dusnx_vi_candidate_r1_exploratory": {
+      "transport": "direct Ollama; not application stack",
+      "trials": 4,
+      "exit_code": 0,
+      "translation_not_english": 2,
+      "gateway_benefit_done_reason_length": 2,
+      "gateway_benefit_eval_count": 512,
+      "command_source": "unknown; exploratory inline code was not saved"
+    }
   },
   "not_run_this_turn": [
     "Full strict bilingual was not rerun after reporting-only harness fix e8be1f5; prior report remains unchanged and code fix is covered by unit/full pytest",
     "No independent human quality review",
     "No main merge-SHA CI result (unknown)",
-    "No live generation rerun after review-table label-only harness fix; prior strict Qwen3 report is preserved unchanged"
+    "No live generation rerun after review-table label-only harness fix; prior strict Qwen3 report is preserved unchanged",
+    "No broader cross-topic candidate quality suite or independent human content review; candidate R2 tested only two synthetic prompts with two repetitions each"
   ],
   "harness_followup": {
     "tested_code_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
