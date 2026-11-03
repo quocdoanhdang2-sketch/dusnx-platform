@@ -11,6 +11,7 @@ from verify_bilingual_generation import (
     evaluate_text_language,
     review_model_label,
     response_language_status,
+    create_isolated_case_session,
 )
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -124,3 +125,19 @@ def test_review_model_label_uses_only_recorded_configuration():
     assert review_model_label({"configuration": {"expected_model": "qwen3:4b"}}) == "qwen3:4b"
     assert review_model_label({"configuration": {"expected_model": "  "}}) == "unknown model"
     assert review_model_label({}) == "unknown model"
+
+
+def test_standalone_matrix_cases_receive_distinct_sessions():
+    class SessionRecorder:
+        def __init__(self):
+            self.titles = []
+
+        def create_session(self, title):
+            self.titles.append(title)
+            return f"session-{len(self.titles)}"
+
+    client = SessionRecorder()
+    first = create_isolated_case_session(client, "CASE_A")
+    second = create_isolated_case_session(client, "CASE_B")
+    assert first != second
+    assert client.titles == ["Bilingual CASE_A", "Bilingual CASE_B"]

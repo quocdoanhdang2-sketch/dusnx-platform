@@ -267,6 +267,11 @@ def review_model_label(report: dict) -> str:
     return model.strip() if isinstance(model, str) and model.strip() else "unknown model"
 
 
+def create_isolated_case_session(client: GatewayClient, case_id: str) -> str:
+    """Give each standalone matrix case a fresh session; setup turns stay case-local."""
+    return client.create_session(f"Bilingual {case_id}")
+
+
 def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     report = {
@@ -280,7 +285,6 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
     client = GatewayClient(gateway_url)
     try:
         client.register_and_login("eval_user_")
-        session_id = client.create_session("Bilingual Main Suite")
 
         test_cases_spec = [
             {
@@ -363,10 +367,11 @@ def run_evaluation(gateway_url: str, output_dir: Path) -> dict:
 
         for spec in test_cases_spec:
             case_id = spec["case_id"]
+            case_session_id = create_isolated_case_session(client, case_id)
             if spec.get("setup_prompt"):
-                client.chat(session_id, spec["setup_prompt"], preferred_language="auto")
+                client.chat(case_session_id, spec["setup_prompt"], preferred_language="auto")
 
-            res = client.chat(session_id, spec["prompt"], preferred_language=spec["preferred_language"])
+            res = client.chat(case_session_id, spec["prompt"], preferred_language=spec["preferred_language"])
             verbatim_reply = res.get("reply", "")
             heuristic = evaluate_text_language(verbatim_reply)
 
