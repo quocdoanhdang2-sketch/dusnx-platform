@@ -1,0 +1,145 @@
+{
+  "evidence_kind": "historical_local_direct_provider_probe",
+  "repository": "quocdoanhdang2-sketch/dusnx-platform",
+  "working_directory": "D:/Projects/dusnx-platform",
+  "branch_during_probe": "fix/quality-context-evidence",
+  "code_tested_full_sha": "ccbad152f600eba97349ca8a7b11d1c8a03e1f80",
+  "tracked_worktree_status_at_probe": "clean; preexisting untracked local logs/output directories were preserved",
+  "probe_started_at_utc": "2026-11-03T17:52:53.114099+00:00",
+  "probe_completed_at_utc": "2026-11-03T17:56:58.913306+00:00",
+  "probe_execution_status": "completed",
+  "probe_trial_count": 12,
+  "probe_shell_exit_code": "unknown (not captured; JSON execution_status=completed and contains 12 trials)",
+  "current_quality_branch_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3",
+  "main_before": "7980e71350d9c3512aff897af3a1fa7fc13982df",
+  "main_after": "953d62efa5bf874b9852f6a02fcb7844258ec317",
+  "main_diagnostic_change": "PR https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4 merged normally; main workflow status for merge SHA was not returned; PR-head run success on 965c544f604691fee0e71a8fbd28b85946f47277",
+  "not_run_on_documentation_commit_or_later_code": true,
+  "tools": {
+    "ollama": "0.40.14",
+    "python": "3.12.10",
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU (4 GB)",
+    "cpu_ram": "unknown; telemetry access denied"
+  },
+  "models": {
+    "base": {
+      "tag": "qwen3:4b",
+      "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "quantization": "Q4_K_M"
+    },
+    "candidate": {
+      "tag": "dusnx-qwen3-4b-no-think-template-probe-20261104:latest",
+      "digest": "b8a53a0db98c2ea8d910b367482828188e7cab1724e9faa72e2d11582009d0d8",
+      "quantization": "Q4_K_M",
+      "change": "template-only; no default change"
+    }
+  },
+  "commands": [
+    {
+      "command": "python -m py_compile runtime/qwen3-template-probe-20261104/run-paired-probe.py",
+      "working_directory": ".",
+      "exit_code": "unknown (not captured)"
+    },
+    {
+      "command": "python runtime/qwen3-template-probe-20261104/run-paired-probe.py",
+      "working_directory": ".",
+      "exit_code": "unknown (not captured); report completed 12 trials"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_week4_integration.py python/tests/test_response_quality.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-qwen-diagnostics-20261104-r3",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "56 passed in 7.79s"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-full-qwen-diagnostics-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "303 passed in 74.50s",
+      "tested_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest runtime/main-provider-diagnostic-check-20261104/python/tests/test_week4_integration.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-main-provider-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "15 passed in 5.70s",
+      "tested_base_sha": "7980e71350d9c3512aff897af3a1fa7fc13982df",
+      "branch_commit": "965c544f604691fee0e71a8fbd28b85946f47277",
+      "pr": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4"
+    },
+    {
+      "command": "Focused suite before fixing fixture expectation",
+      "working_directory": ".",
+      "exit_code": 1,
+      "result": "55 passed, 1 failed; fixture eval_count was set to 512 but expected not_reached; fixture expectation corrected and full affected suite rerun successfully"
+    }
+  ],
+  "scope_limits": [
+    "direct native Ollama only; not Gateway/FastAPI/Browser",
+    "no raw thinking saved; only lengths and hashes",
+    "synthetic prompts and outputs only",
+    "model/default unchanged",
+    "semantic quality on empty answers fails; no human quality review claimed",
+    "Node, .NET, PowerShell health, Gateway, browser/runtime, memory/backup and strict bilingual harness were not run this turn",
+    "main merge SHA CI status unknown; only PR-head workflow run success was observed"
+  ],
+  "artifacts": [
+    {
+      "path": "direct-ollama-qwen3-template-paired-r1.json",
+      "source_path": "runtime/qwen3-template-probe-20261104/paired-probe-report.json",
+      "source_sha256": "d242c46801ec45ea802905e599f68d42bc58620fa6024f9ea817fb96d76c5374",
+      "packaged_source_bytes_sha256": "d242c46801ec45ea802905e599f68d42bc58620fa6024f9ea817fb96d76c5374",
+      "git_blob_sha1": "345dd7c1d28ae481bc6983626ef4c4ad9ac9c17a",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "candidate-template-metadata.json",
+      "source_path": "runtime/qwen3-template-probe-20261104/candidate-meta.json",
+      "source_sha256": "c0d043c891ca27bf6993cee0ffab90d782af517c728b30e7c514ff235dac1db1",
+      "packaged_source_bytes_sha256": "c0d043c891ca27bf6993cee0ffab90d782af517c728b30e7c514ff235dac1db1",
+      "git_blob_sha1": "ae3bf1ea16f606ee2e8a460cc536becacdfed430",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "candidate-Modelfile.txt",
+      "source_path": "runtime/qwen3-template-probe-20261104/Modelfile",
+      "source_sha256": "29ee65a4f2cce94ff772733dbc41dd47fe36d72b3a1b32912904c1004b13708d",
+      "packaged_source_bytes_sha256": "29ee65a4f2cce94ff772733dbc41dd47fe36d72b3a1b32912904c1004b13708d",
+      "git_blob_sha1": "efa612423372eb035429a6bf45e4384baac738b3",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "run-paired-probe.py",
+      "source_path": "runtime/qwen3-template-probe-20261104/run-paired-probe.py",
+      "source_sha256": "e39a776666054f1d2ad872bdf1ff7f33db5bb74e32450524c63179e8e76d135a",
+      "packaged_source_bytes_sha256": "e39a776666054f1d2ad872bdf1ff7f33db5bb74e32450524c63179e8e76d135a",
+      "git_blob_sha1": "9d1d01d74cf5ea5e4f21d62fa9c838099338db35",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "full-pytest-output.txt",
+      "source_path": "runtime/pytest-full-qwen-diagnostics-20261104.log",
+      "source_sha256": "50907811ac1e74940a4f499bdf41c90c3dcd90ad9d150056a914214112ac4915",
+      "packaged_source_bytes_sha256": "b1aa986a088f0a5167caecf7e5c3835746d09613472d69e13c186bba99e5be78",
+      "git_blob_sha1": "56a1a70e3ecb6ad4e17f2fe4ef404a022f67d32f",
+      "normalization": "UTF-16LE source log converted to UTF-8; text content retained; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "README.md",
+      "source_path": "authored evidence packaging file",
+      "source_sha256": "8153c930ca74017d0d5b383289fdfeb43560a41d36de9159d47189678544f204",
+      "packaged_source_bytes_sha256": "f11d9ac84b8b2f3beadaf2c0c737535a0dd19817f474a734d300322eeeaed0a6",
+      "git_blob_sha1": "85c156b55b0eabb46f853223d24e4001664b46eb",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    },
+    {
+      "path": "ollama-capabilities.json",
+      "source_path": "authored evidence packaging file",
+      "source_sha256": "6756c9b1162554a44525c703541d013d01d792880c2ef0572f4c48cb189daf4b",
+      "packaged_source_bytes_sha256": "6756c9b1162554a44525c703541d013d01d792880c2ef0572f4c48cb189daf4b",
+      "git_blob_sha1": "5054db36b94ad2ff36e650ffe66ee065b83daa0f",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately"
+    }
+  ],
+  "manifest_self_hash": "not included"
+}

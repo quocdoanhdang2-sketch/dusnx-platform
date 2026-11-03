@@ -1,0 +1,10 @@
+{
+  "base_tag": "qwen3:4b",
+  "base_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+  "ollama_version": "0.40.14",
+  "source_template_sha256": "2d54db2b9bb29ce7db54fea63a891f5859603813c555b1f88b5e0994652897f9",
+  "candidate_template_sha256": "c48a2711656636928e670a9998a7c1d4dc0013a6498d0fbd7ebdbcc90e889ae4",
+  "modelfile_sha256": "57208c275ced355c2f4f02e2b1f12c6a166fe1200d1842467f44960e59f547c7",
+  "change": "remove only final assistant <think> prefix from prompt template; preserve all other template bytes and model parameters",
+  "candidate_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104"
+}

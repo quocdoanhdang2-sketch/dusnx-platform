@@ -1,0 +1,22 @@
+﻿{
+  "observed_at_local": "2026-11-04 Asia/Saigon",
+  "ollama_version": "0.40.14",
+  "endpoint_scope": "local native Ollama API",
+  "base_model": {
+    "tag": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "quantization": "Q4_K_M",
+    "parameter_size": "4.0B",
+    "thinking_values": [true],
+    "thinking_default": true
+  },
+  "candidate_model": {
+    "tag": "dusnx-qwen3-4b-no-think-template-probe-20261104:latest",
+    "digest": "b8a53a0db98c2ea8d910b367482828188e7cab1724e9faa72e2d11582009d0d8",
+    "parent_model": "qwen3:4b",
+    "quantization": "Q4_K_M",
+    "template_change_only": "Remove final assistant <think> prefix; see candidate-Modelfile.txt and metadata SHA-256s"
+  },
+  "default_model_changed": false,
+  "private_weights_or_modelfile_source_paths_included": false
+}
