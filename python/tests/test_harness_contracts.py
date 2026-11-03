@@ -9,6 +9,7 @@ from verify_bilingual_generation import (
     aggregate_language_status,
     compute_bilingual_summary,
     evaluate_text_language,
+    review_model_label,
     response_language_status,
 )
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
@@ -117,3 +118,9 @@ def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):
     assert res["reason"] == "protected_dir_not_found"
     assert "integrity_passed" in res
     assert res["integrity_passed"] is None
+
+
+def test_review_model_label_uses_only_recorded_configuration():
+    assert review_model_label({"configuration": {"expected_model": "qwen3:4b"}}) == "qwen3:4b"
+    assert review_model_label({"configuration": {"expected_model": "  "}}) == "unknown model"
+    assert review_model_label({}) == "unknown model"
