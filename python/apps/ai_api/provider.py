@@ -213,6 +213,13 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
                     diagnostics[key] = value
             message = data.get("message")
             if isinstance(message, dict):
+                content_value = message.get("content")
+                thinking_value = message.get("thinking")
+                if isinstance(content_value, str) and not content_value.strip():
+                    if isinstance(thinking_value, str) and thinking_value.strip() and data.get("done_reason") == "length":
+                        diagnostics["response_classification"] = "thinking_only_budget_exhausted"
+                    else:
+                        diagnostics["response_classification"] = "empty_content"
                 for key in ("content", "thinking"):
                     value = message.get(key)
                     if isinstance(value, str):
@@ -220,6 +227,13 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
                         diagnostics[key + "_sha256"] = hashlib.sha256(value.encode("utf-8")).hexdigest()
                         if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1":
                             diagnostics[key] = value
+            eval_count = data.get("eval_count")
+            budget = options["num_predict"]
+            diagnostics["token_budget_status"] = (
+                "reached" if type(eval_count) is int and eval_count >= budget
+                else "not_reached" if type(eval_count) is int
+                else "unknown"
+            )
         text, model, tokens, done_reason = validate_ollama_response(data)
         diagnostics["validation"] = "passed"
         return ProviderCall(text, True, model, tokens, done_reason=done_reason, diagnostics=diagnostics)

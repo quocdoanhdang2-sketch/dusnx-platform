@@ -28,19 +28,30 @@ def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, cate
 
 def test_qwen_thinking_only_response_is_empty_content_with_metadata(monkeypatch):
     raw = json.dumps({"done": True, "done_reason": "length", "model": "qwen3:4b",
-                      "eval_count": 128, "prompt_eval_count": 42,
+                      "eval_count": 512, "prompt_eval_count": 42,
                       "message": {"role": "assistant", "content": "", "thinking": "private reasoning"}}).encode()
     monkeypatch.delenv("DUSNX_CAPTURE_RAW_GENERATION", raising=False)
     monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
     result = provider._ollama_generate("system", "user")
     assert not result[1] and "empty_content" in result[0]
-    assert result[2:] == ("qwen3:4b", 128)
+    assert result[2:] == ("qwen3:4b", 512)
     assert result.done_reason == "length"
     assert "n\u1ed9i dung r\u1ed7ng" in result[0]
     assert result.diagnostics["thinking_chars"] == len("private reasoning")
     assert "private reasoning" not in result.diagnostics
     assert result.diagnostics["num_predict"] == 512
     assert result.diagnostics["response_sha256"]
+    assert result.diagnostics["response_classification"] == "thinking_only_budget_exhausted"
+    assert result.diagnostics["token_budget_status"] == "reached"
+
+
+def test_provider_budget_diagnostic_is_unknown_without_eval_metadata(monkeypatch):
+    raw = json.dumps({"done": True, "done_reason": "stop", "model": "qwen3:4b",
+                      "message": {"content": "Answer."}}).encode()
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
+    result = provider._ollama_generate("system", "user")
+    assert result[1] is True
+    assert result.diagnostics["token_budget_status"] == "unknown"
 
 
 def test_qwen_content_and_thinking_raw_capture_is_explicit(monkeypatch):
