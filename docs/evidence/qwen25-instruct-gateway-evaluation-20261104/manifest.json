@@ -1,0 +1,78 @@
+{
+  "evidence_kind": "synthetic_live_gateway_quality_evaluation_and_application_regression",
+  "created_at_local": "2026-11-04",
+  "repository": "quocdoanhdang2-sketch/dusnx-platform",
+  "code_tested_full_sha": "d3e863e2210be83cd6bde66062b8179df9c4205f",
+  "bilingual_generation_run_head_sha": "780e340e32dd3445372707a39d80ee7ac6b29d4a",
+  "bilingual_generation_effective_code_patch_sha256": "2bf8d70bab32a34132375fc341d771c6f0683f39e49ee61e95800df9c9b4464d",
+  "bilingual_generation_code_content_committed_as": "d3e863e2210be83cd6bde66062b8179df9c4205f",
+  "test_worktree_status": "The app-code patch was uncommitted during strict generation but byte-for-byte matches the subsequently committed d3e863e code diff; only evidence-manifest files were additionally dirty.",
+  "transport_scope": "Real isolated Gateway -> FastAPI -> Ollama; synthetic accounts/data; no public Ollama binding.",
+  "model": {
+    "tag": "qwen2.5:1.5b-instruct",
+    "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+    "quantization": "Q4_K_M",
+    "size_bytes": 986061892,
+    "expected_model_explicit": true,
+    "default_changed": false
+  },
+  "commands": [
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_bilingual_generation.py --expected-model qwen2.5:1.5b-instruct --expected-model-digest 65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b --strict-language --strict-quality --output-dir runtime/qwen25-1p5-bilingual-entity-guard-20261104",
+      "working_directory": "D:/Projects/dusnx-platform",
+      "exit_code": 1,
+      "exit_code_basis": "Strict exit evaluation returns 1 when contract_failed > 0; report records 7 contract failures.",
+      "result": "30 cases completed; 23 contract passed, 7 failed; 10 real LLM generations; 1 template recall; 4 application formatting cases; 2 expected provider failures; 12/12 language eligible matched; 2 task failed; 8 task uncertain; 1 completion failed; 2 completion uncertain; quality_flagged_cases=1. Not a quality pass."
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_chat_provenance.py --spawn-stack --output runtime/qwen25-1p5-provenance-d3e863e-r1/chat-provenance.json --expected-model qwen2.5:1.5b-instruct --expected-model-digest 65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+      "working_directory": "D:/Projects/dusnx-platform",
+      "exit_code": 0,
+      "result": "transport and VI language passed, task unverified; one real provider call; done_reason=stop."
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-qwen25-followup-final-20261104",
+      "working_directory": "D:/Projects/dusnx-platform",
+      "exit_code": 0,
+      "result": "308 passed in 60.11s."
+    }
+  ],
+  "regressions": {
+    "focus": "pytest python/tests/test_response_quality.py python/tests/test_chat_provenance.py",
+    "exit_code": 0,
+    "result": "49 passed in 5.14s",
+    "VARIANT_28_before_fix": "Misclassified to clarification because URL ? and Vietnamese verb; no provider call.",
+    "VARIANT_28_after_memory_fix": "Provider called through stack; still failed translation and was incorrectly accepted due URL scope=read disabling entity checks.",
+    "VARIANT_28_after_entity_guard": "provider_error, provider_ok=false, two bounded calls, literal validation missing/mutated; no successful assistant message."
+  },
+  "model_decision": "Candidate remains unpromoted. The non-thinking instruct model fits the 4 GiB GPU, but actual strict bilingual task/completion quality failed. Existing default remains qwen2.5:0.5b.",
+  "artifacts": [
+    {
+      "path": "strict-bilingual-qwen25-1p5-entity-guard-report.json",
+      "source_path": "runtime/qwen25-1p5-bilingual-entity-guard-20261104/report.json",
+      "source_bytes_sha256": "1f689b8db11ff896bcd82524a389bc1ed3a379ef208ee5fe185d4f709b9bbc5a",
+      "packaged_bytes_sha256": "1f689b8db11ff896bcd82524a389bc1ed3a379ef208ee5fe185d4f709b9bbc5a",
+      "encoding": "UTF-8 no BOM",
+      "newline_note": "source and package bytes copied exactly; newline convention recorded in hash",
+      "sensitive_data_review": "synthetic prompts, accounts, and outputs; no bearer/API/password credential pattern found"
+    },
+    {
+      "path": "strict-bilingual-qwen25-1p5-entity-guard-review.md",
+      "source_path": "runtime/qwen25-1p5-bilingual-entity-guard-20261104/review_table.md",
+      "source_bytes_sha256": "0d38ef88e85af9c297b09d7a21222d127c3be22f3189632f4f3bc9086f88c38c",
+      "packaged_bytes_sha256": "0d38ef88e85af9c297b09d7a21222d127c3be22f3189632f4f3bc9086f88c38c",
+      "encoding": "UTF-8 no BOM",
+      "newline_note": "source and package bytes copied exactly; newline convention recorded in hash",
+      "sensitive_data_review": "synthetic prompts, accounts, and outputs; no bearer/API/password credential pattern found"
+    },
+    {
+      "path": "chat-provenance-qwen25-1p5-final-code.json",
+      "source_path": "runtime/qwen25-1p5-provenance-d3e863e-r1/chat-provenance.json",
+      "source_bytes_sha256": "4b82b9f05dd027ffa1ded9a71b2e4e6a429f91e4f7ab3a583e1e3f02ac426a21",
+      "packaged_bytes_sha256": "4b82b9f05dd027ffa1ded9a71b2e4e6a429f91e4f7ab3a583e1e3f02ac426a21",
+      "encoding": "UTF-8 no BOM",
+      "newline_note": "source and package bytes copied exactly; newline convention recorded in hash",
+      "sensitive_data_review": "synthetic prompts, accounts, and outputs; no bearer/API/password credential pattern found"
+    }
+  ]
+}

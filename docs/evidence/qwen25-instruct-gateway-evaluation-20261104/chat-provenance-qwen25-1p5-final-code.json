@@ -1,0 +1,218 @@
+{
+  "timestamp_utc": "2026-11-03T20:34:10.828805+00:00",
+  "gateway": "http://127.0.0.1:50763",
+  "expected_model": "qwen2.5:1.5b-instruct",
+  "expected_model_digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+  "model_identity": {
+    "name": "qwen2.5:1.5b-instruct",
+    "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+    "parameter_size": "1.5B",
+    "quantization_level": "Q4_K_M",
+    "size_bytes": 986061892
+  },
+  "status": "transport_and_language_passed_task_unverified",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "58d13ca32b696deeeaa12301e376103d",
+        "a1e8dfc656cc7d06033e3234cada8c8f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "58d13ca32b696deeeaa12301e376103d"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "a1e8dfc656cc7d06033e3234cada8c8f",
+        "58d13ca32b696deeeaa12301e376103d"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "a1e8dfc656cc7d06033e3234cada8c8f"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "58d13ca32b696deeeaa12301e376103d",
+        "a1e8dfc656cc7d06033e3234cada8c8f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "58d13ca32b696deeeaa12301e376103d",
+        "a1e8dfc656cc7d06033e3234cada8c8f"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "58d13ca32b696deeeaa12301e376103d",
+        "a1e8dfc656cc7d06033e3234cada8c8f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "llm": {
+      "reply": "Đọc sách mang lại nhiều lợi ích tuyệt vời cho cuộc sống:\n\n1) Tăng hiểu biết: Sách giúp mở rộng kiến thức bạn có được, đưa ra những thông tin mới và quan trọng.\n\n2) Phát triển kỹ năng tư duy logic: Việc đọc sách đòi hỏi suy nghĩ cẩn thận về nội dung đã học. Điều này thúc đẩy khả năng phân tích và lý giải vấn đề một cách hiệu quả hơn.\n   \n3) Tăng cường cảm xúc xã hội: Sách thường chứa nhiều câu chuyện, tình huống nhân vật giúp bạn hiểu rõ thêm những trải nghiệm của người khác trong cuộc sống.\n\n4) Giúp giảm căng thẳng: Việc đọc sách có thể làm dịu tâm trạng và tạo ra một không gian yên tĩnh cho suy nghĩ.",
+      "raw_provider_reply": "Đọc sách mang lại nhiều lợi ích tuyệt vời cho cuộc sống:\n\n1) Tăng hiểu biết: Sách giúp mở rộng kiến thức bạn có được, đưa ra những thông tin mới và quan trọng.\n\n2) Phát triển kỹ năng tư duy logic: Việc đọc sách đòi hỏi suy nghĩ cẩn thận về nội dung đã học. Điều này thúc đẩy khả năng phân tích và lý giải vấn đề một cách hiệu quả hơn.\n   \n3) Tăng cường cảm xúc xã hội: Sách thường chứa nhiều câu chuyện, tình huống nhân vật giúp bạn hiểu rõ thêm những trải nghiệm của người khác trong cuộc sống.\n\n4) Giúp giảm căng thẳng: Việc đọc sách có thể làm dịu tâm trạng và tạo ra một không gian yên tĩnh cho suy nghĩ.",
+      "provider_sanitized_reply": "Đọc sách mang lại nhiều lợi ích tuyệt vời cho cuộc sống:\n\n1) Tăng hiểu biết: Sách giúp mở rộng kiến thức bạn có được, đưa ra những thông tin mới và quan trọng.\n\n2) Phát triển kỹ năng tư duy logic: Việc đọc sách đòi hỏi suy nghĩ cẩn thận về nội dung đã học. Điều này thúc đẩy khả năng phân tích và lý giải vấn đề một cách hiệu quả hơn.\n   \n3) Tăng cường cảm xúc xã hội: Sách thường chứa nhiều câu chuyện, tình huống nhân vật giúp bạn hiểu rõ thêm những trải nghiệm của người khác trong cuộc sống.\n\n4) Giúp giảm căng thẳng: Việc đọc sách có thể làm dịu tâm trạng và tạo ra một không gian yên tĩnh cho suy nghĩ.",
+      "candidate_memory_ids": [
+        "58d13ca32b696deeeaa12301e376103d",
+        "a1e8dfc656cc7d06033e3234cada8c8f"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "provider_call_count": 1,
+      "response_source": "llm",
+      "provider_ok": true,
+      "provider_used": "ollama",
+      "model_used": "qwen2.5:1.5b-instruct",
+      "tokens_generated": 162,
+      "done_reason": "stop",
+      "sanitizer_changed": false,
+      "raw_output_sha256": "88faa6e14f344518215d60d742c7328d3ab5b7c5b0c927dcc51de446568de7a9",
+      "quality_status": "matched",
+      "provider_elapsed_ms": 7110.000000000582,
+      "provider_attempts": [
+        {
+          "attempt": 1,
+          "done_reason": "stop",
+          "model_used": "qwen2.5:1.5b-instruct",
+          "elapsed_ms": 7094.0,
+          "tokens_generated": 162,
+          "sanitizer_changed": false,
+          "provider_diagnostics": {
+            "configured_model": "qwen2.5:1.5b-instruct",
+            "num_predict": 512,
+            "call_timeout_seconds": 60.0,
+            "response_bytes": 1146,
+            "response_sha256": "5438f06bdd4073eb1010e6b124accc8f9586848d47c1eb30c2219692898104c3",
+            "model": "qwen2.5:1.5b-instruct",
+            "done": true,
+            "done_reason": "stop",
+            "prompt_eval_count": 480,
+            "eval_count": 162,
+            "total_duration": 5038584500,
+            "load_duration": 3406792000,
+            "prompt_eval_duration": 193014000,
+            "eval_duration": 1428500000,
+            "content_chars": 608,
+            "content_sha256": "88faa6e14f344518215d60d742c7328d3ab5b7c5b0c927dcc51de446568de7a9",
+            "content": "Đọc sách mang lại nhiều lợi ích tuyệt vời cho cuộc sống:\n\n1) Tăng hiểu biết: Sách giúp mở rộng kiến thức bạn có được, đưa ra những thông tin mới và quan trọng.\n\n2) Phát triển kỹ năng tư duy logic: Việc đọc sách đòi hỏi suy nghĩ cẩn thận về nội dung đã học. Điều này thúc đẩy khả năng phân tích và lý giải vấn đề một cách hiệu quả hơn.\n   \n3) Tăng cường cảm xúc xã hội: Sách thường chứa nhiều câu chuyện, tình huống nhân vật giúp bạn hiểu rõ thêm những trải nghiệm của người khác trong cuộc sống.\n\n4) Giúp giảm căng thẳng: Việc đọc sách có thể làm dịu tâm trạng và tạo ra một không gian yên tĩnh cho suy nghĩ.",
+            "token_budget_status": "not_reached",
+            "validation": "passed"
+          },
+          "raw_output_sha256": "88faa6e14f344518215d60d742c7328d3ab5b7c5b0c927dcc51de446568de7a9",
+          "raw_provider_reply": "Đọc sách mang lại nhiều lợi ích tuyệt vời cho cuộc sống:\n\n1) Tăng hiểu biết: Sách giúp mở rộng kiến thức bạn có được, đưa ra những thông tin mới và quan trọng.\n\n2) Phát triển kỹ năng tư duy logic: Việc đọc sách đòi hỏi suy nghĩ cẩn thận về nội dung đã học. Điều này thúc đẩy khả năng phân tích và lý giải vấn đề một cách hiệu quả hơn.\n   \n3) Tăng cường cảm xúc xã hội: Sách thường chứa nhiều câu chuyện, tình huống nhân vật giúp bạn hiểu rõ thêm những trải nghiệm của người khác trong cuộc sống.\n\n4) Giúp giảm căng thẳng: Việc đọc sách có thể làm dịu tâm trạng và tạo ra một không gian yên tĩnh cho suy nghĩ.",
+          "sanitized_output": "Đọc sách mang lại nhiều lợi ích tuyệt vời cho cuộc sống:\n\n1) Tăng hiểu biết: Sách giúp mở rộng kiến thức bạn có được, đưa ra những thông tin mới và quan trọng.\n\n2) Phát triển kỹ năng tư duy logic: Việc đọc sách đòi hỏi suy nghĩ cẩn thận về nội dung đã học. Điều này thúc đẩy khả năng phân tích và lý giải vấn đề một cách hiệu quả hơn.\n   \n3) Tăng cường cảm xúc xã hội: Sách thường chứa nhiều câu chuyện, tình huống nhân vật giúp bạn hiểu rõ thêm những trải nghiệm của người khác trong cuộc sống.\n\n4) Giúp giảm căng thẳng: Việc đọc sách có thể làm dịu tâm trạng và tạo ra một không gian yên tĩnh cho suy nghĩ.",
+          "quality_status": "matched",
+          "entity_status": "not_applicable",
+          "repetition_flags": []
+        }
+      ],
+      "token_budget": null
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  },
+  "generation_evaluation": {
+    "status": "transport_and_language_passed_task_unverified",
+    "transport_status": "passed",
+    "actual_model": "qwen2.5:1.5b-instruct",
+    "language_evaluation": {
+      "status": "matched",
+      "actual_language": "vi",
+      "expected_language": "vi",
+      "unsupported_script_counts": {},
+      "mixed_language_segments": 0,
+      "method": "lexical_and_unicode_script_heuristic",
+      "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+    },
+    "language_status": "matched",
+    "completion_evaluation": {
+      "status": "passed",
+      "reason": "no_provider_limit_or_obvious_open_clause",
+      "done_reason": "stop"
+    },
+    "task_status": "uncertain",
+    "task_review": "not_evaluated",
+    "application_quality_status": "accepted",
+    "provider_call_count": 1
+  },
+  "transport_status": "passed",
+  "language_status": "matched",
+  "completion_status": "passed",
+  "task_status": "uncertain"
+}
