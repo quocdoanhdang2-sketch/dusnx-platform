@@ -1,0 +1,13 @@
+{
+  "threshold": 0.82,
+  "cross_split_pair_count": 0,
+  "within_split_pair_count": 0,
+  "max_within_split_similarity": 0.0,
+  "max_cross_split_similarity": 0.8157,
+  "impacted_records": 0,
+  "split_pair_counts": {},
+  "clusters": [],
+  "cross_split_gate_passed": true,
+  "human_diversity_review_required": false,
+  "note": "Machine audit only; blank rewrite fields require a real author/reviewer."
+}

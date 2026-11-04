@@ -1,0 +1,102 @@
+{
+  "base_sha": "48c0ec82949b27779de04bbdce80027b90d8c3f3",
+  "tested_code_note": "main base plus local patch; per-source hashes below; readiness report also records tracked patch and harness hash at execution time",
+  "source_sha256": {
+    "gateway-dotnet/Program.cs": "a515df37ba1cff7d2b66f5062fa1645e3e5ddc6abfb972d31659093c04dda770",
+    "web-ui/app.js": "f950534326146e2d29bfbcc1ca2fb522e7465a09695c51420b7e04373c2d6542",
+    "web-ui/index.html": "ff490385b8846d7a86dbb0156ca96ff5f550c361f9a17817a754ff7e10add43f",
+    "python/pyproject.toml": "68ef085d6ba643e4e9d26e463c2889952b789e2230c2e6bf59e75ee0b62df721",
+    "scripts/verify_local_readiness.py": "2a9fc3fe60ff40bdc3307c2de650fd998aa627ea9a3c7df0b4f9ad2309c0a540",
+    "scripts/plan_retention.py": "384a9e7aab661fbff8bc1192f0c2cca4bf7352923c436c2b50853080bf8a1c25"
+  },
+  "artifacts_sha256": {
+    "backup-restore-report.json": "3b2bf048c97aaab53ca46a24c18f15852053d516c554a36ce80e1e149a0f0c66",
+    "readiness-report.json": "4d95fcca3955d3f72098a10add413764c05a10af5387c5a788e39d065e5e4639",
+    "v2-near-duplicate-summary.json": "150e9a05d2decd58d05abc80395fc7c2fcd0f6418e2bc4fe2bc6e297e7203ac6",
+    "python-cve-after.json": "5b9ab37b547759d0644decda2c053121b960fd4c60bcfe992a068864fcbbf51d",
+    "python-cve-before.json": "a4d849c1a63fd05224d1ea36ccc4302e53d644244beb2befd21d326bdd1399a2",
+    "retention-dry-run.json": "9ce6e38af4da62ab31d439237164b2c2988edbef13ba6e757c955722b20f3819",
+    "memory-runtime-report.json": "5f49630c0fa5505640f7a6661214cd9de5a1c92c0dfe12a9af4cdca9d87525cd",
+    "retention-boundary-report.json": "ac2fc9c0bb03e1e89face9a806f9c1bb0e958e8c79d4d848046ca84d9a998b29",
+    "nuget-cve-audit.json": "ab56b75936d6227a849391a197f2df591b931eff045731efc2a78b7ab7d1feb4",
+    "v2-human-review/review.md": "71fe5c8f10ae676af2462f543dc80157a1697c892ec29b571bb2fc6f0212870d",
+    "v2-human-review/review_manifest.json": "bbdb4cb5d4ab64913f71c25ea6e5a2e58702b3438518ab4c21164a5cf9fd816f",
+    "v2-human-review/review.csv": "82a223bf6311e3b2ea265a7e75a305c6c7fc5fc52a41e4a66a84ff4e1cb5a467"
+  },
+  "scope": "Linux cloud, isolated local child processes, synthetic DBs only",
+  "generation_verified": false,
+  "production_ready": false,
+  "human_review_completed": false,
+  "default_model_changed": false,
+  "retention_deletion_performed": false,
+  "protected_backup_status": "skipped: directory absent",
+  "checks": {
+    "readiness_http_chromium_csp_rate_limit": {
+      "exit_code": 0
+    },
+    "existing_memory_runtime_harness": {
+      "exit_code": 0,
+      "check_groups": 10
+    },
+    "existing_backup_restore_harness": {
+      "exit_code": 0,
+      "messages_verified": 205
+    },
+    "v2_export": {
+      "exit_code": 0,
+      "unsigned_rows": 124
+    },
+    "v2_near_duplicate_audit": {
+      "exit_code": 0,
+      "cross_split_pairs_above_0_82": 0
+    },
+    "node_existing_files": {
+      "exit_code": 0,
+      "file_count": 3
+    },
+    "gateway_build": {
+      "exit_code": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    "retention_real_sqlite_fixture": {
+      "exit_code": 0,
+      "old_boundary_invalid_cases_verified": true,
+      "database_bytes_unchanged": true
+    },
+    "python_cve_before": {
+      "exit_code": 1,
+      "advisory_records": 17,
+      "packages_with_records": 2,
+      "note": "records include duplicate advisory IDs; not 17 distinct CVEs"
+    },
+    "python_cve_after": {
+      "exit_code": 0,
+      "dependency_entries": 50,
+      "skipped": [
+        "dusnx-platform",
+        "torch 2.8.0+cpu"
+      ]
+    },
+    "nuget_package_audit": {
+      "exit_code": 0,
+      "shared_runtime_and_os_not_audited": true
+    },
+    "wheel_build": {
+      "exit_code": 0
+    },
+    "python_full_suite": {
+      "exit_code": 0,
+      "passed": 263,
+      "elapsed_seconds": 30.73,
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python/.venv/bin/python -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp /tmp/dusnx-completion-20261104/pytest-with-runtime-access",
+      "prior_sandbox_run": "stalled during TestClient fixture startup; terminated exit 143; not counted as pass"
+    }
+  },
+  "limitations": [
+    "Not a sustained/concurrent-user/generation load test",
+    "Human dataset/test review and receipt remain outstanding",
+    "Office Desktop/Windows/tenant/OA not available in cloud",
+    "Old reports and output not edited; no review signatures fabricated"
+  ]
+}

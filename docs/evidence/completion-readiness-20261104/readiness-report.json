@@ -1,0 +1,85 @@
+{
+  "timestamp_utc": "2026-11-04T05:39:17.171955+00:00",
+  "code": {
+    "head_sha": "48c0ec82949b27779de04bbdce80027b90d8c3f3",
+    "tracked_dirty": true,
+    "tracked_patch_sha256": "fab87ca7ffff684f1f4d433cac904ea0cbad32f65020393d848d5b9e845a6ccc",
+    "harness_sha256": "2a9fc3fe60ff40bdc3307c2de650fd998aa627ea9a3c7df0b4f9ad2309c0a540"
+  },
+  "scope": "isolated_local_http_reads_and_browser_csp",
+  "llm_generation_verified": false,
+  "production_capacity_verified": false,
+  "protected_data_accessed": false,
+  "runtime": {
+    "service": "dusnx-ai-api",
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "provider_ok": false
+  },
+  "workloads": {
+    "gateway_health": {
+      "requests": 20,
+      "concurrency": 4,
+      "wall_seconds": 0.04115287700551562,
+      "p50_ms": 5.678315996192396,
+      "p95_ms": 13.641306999488734,
+      "requests_per_second": 485.9927532483196,
+      "statuses": {
+        "200": 20
+      },
+      "all_http_200": true
+    },
+    "authenticated_memories": {
+      "requests": 20,
+      "concurrency": 4,
+      "wall_seconds": 0.130653642998368,
+      "p50_ms": 15.43071699416032,
+      "p95_ms": 52.72064799646614,
+      "requests_per_second": 153.07648176522576,
+      "statuses": {
+        "200": 20
+      },
+      "all_http_200": true
+    },
+    "authenticated_history": {
+      "requests": 20,
+      "concurrency": 4,
+      "wall_seconds": 0.06673942600173177,
+      "p50_ms": 10.993367999617476,
+      "p95_ms": 19.373006995010655,
+      "requests_per_second": 299.6729399422919,
+      "statuses": {
+        "200": 20
+      },
+      "all_http_200": true
+    }
+  },
+  "csp": {
+    "script_policy": "script-src 'self' https://appsforoffice.microsoft.com",
+    "unsafe_inline_script_allowed": false,
+    "inline_attributes_denied": true,
+    "browser": {
+      "external_actions_work": true,
+      "inline_execution_blocked": true,
+      "blocked_script": true,
+      "blocked_handler": true
+    }
+  },
+  "rate_limit": {
+    "configured_requests_per_minute": 6,
+    "observed_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      429,
+      429,
+      429,
+      429,
+      429
+    ],
+    "http_429_observed": true
+  },
+  "status": "passed"
+}

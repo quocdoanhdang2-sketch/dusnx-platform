@@ -1,0 +1,57 @@
+{
+  "status": "dry_run_only",
+  "as_of_utc": "2026-11-04T05:40:58.482616+00:00",
+  "policy": {
+    "chat_event_days": 90,
+    "backup_days": 30,
+    "event_age_basis": "server created_at, not client-supplied event_time_utc",
+    "apply_requires_user_review": true
+  },
+  "deletion_performed": false,
+  "apply_supported": false,
+  "chat_event_cutoff_exclusive": "2026-08-06T05:40:58.482616+00:00",
+  "memory_db": {
+    "status": "read_only_inventory",
+    "tables": {
+      "chat_messages": {
+        "total": 211,
+        "older_than_cutoff": 0,
+        "invalid_timestamp": 0,
+        "age_basis": "created_at",
+        "status": "inventoried"
+      },
+      "user_events": {
+        "total": 3,
+        "older_than_cutoff": 0,
+        "invalid_timestamp": 0,
+        "age_basis": "created_at",
+        "status": "inventoried"
+      }
+    },
+    "excluded_tables": [
+      "chat_receipts",
+      "chat_sessions",
+      "dusnx_state",
+      "memories",
+      "pending_decision_updates",
+      "projects"
+    ],
+    "complete": true
+  },
+  "backups": {
+    "status": "mtime_estimate_only",
+    "complete": false,
+    "direct_regular_files": 4,
+    "older_than_cutoff_estimate": 0,
+    "older_bytes_estimate": 0,
+    "nested_directories": 0,
+    "warning": "mtime is not a verified backup creation date; nested backups/legal holds not evaluated"
+  },
+  "unresolved_before_apply": [
+    "chat_receipts contain copied response data but have no creation timestamp",
+    "memory versions, pending decisions, session titles and hidden state are not covered by this age policy",
+    "legacy Gateway JSON state/events and external logs require separate inventory",
+    "account purge, legal holds and deletion from backup generations are not implemented",
+    "do not apply an age-based deletion or restore old data without an approved lifecycle policy"
+  ]
+}
