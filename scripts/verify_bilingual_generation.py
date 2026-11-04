@@ -84,6 +84,35 @@ def evaluate_text_language(text: str) -> dict:
     }
 
 
+def response_language_status(text: str, expected_language: str, *, is_generation: bool,
+                            provider_ok: bool) -> str:
+    """Score language only when a provider produced a successful answer."""
+    if not is_generation or provider_ok is not True:
+        return "not_applicable"
+    actual = evaluate_text_language(text)["actual_language"]
+    if actual == expected_language:
+        return "matched"
+    if actual == "uncertain":
+        return "uncertain"
+    return "divergent"
+
+
+def aggregate_language_status(statuses: list[str]) -> str:
+    """Combine evaluated outputs without scoring provider failures as language results."""
+    eligible = [status for status in statuses if status != "not_applicable"]
+    if not eligible:
+        return "not_applicable"
+    if len(eligible) == 1:
+        return eligible[0]
+    if all(status == "matched" for status in eligible):
+        return "matched"
+    if "uncertain" in eligible:
+        return "uncertain"
+    if "matched" in eligible and any(status == "divergent" for status in eligible):
+        return "mixed"
+    return "divergent"
+
+
 def generation_contract(response: dict, expected_model: str | None = None) -> bool:
     """The same live-generation contract is used by every generation case."""
     expected_model = expected_model or os.getenv("DUSNX_EXPECTED_MODEL", "qwen2.5:0.5b")
@@ -358,10 +387,13 @@ def evaluate_case_output(prompt: str, reply: str, expected_language: str,
                     "method": "requires clarification for a missing value and rejects invented assignment values",
                     "key": expected_key, "asks_for_value": asks, "invented_value": supplied}
         elif rubric_kind == "context_subject":
-            first_sentence = re.split(r"(?<=[.!?])\s+|\n", answer_without_echo, maxsplit=1)[0].casefold()
-            subject_match = any(term.casefold() in first_sentence for term in task_rubric.get("subject_terms", []))
+            # Replies sometimes start with a brief apology before answering.
+            # Inspect the opening paragraph, but keep keyword evidence uncertain;
+            # finding a subject term never means the follow-up was answered.
+            opening_paragraph = answer_without_echo.split("\n\n", 1)[0].casefold()
+            subject_match = any(term.casefold() in opening_paragraph for term in task_rubric.get("subject_terms", []))
             forbidden_match = [term for term in task_rubric.get("forbidden_terms", [])
-                               if term.casefold() in first_sentence]
+                               if term.casefold() in opening_paragraph]
             clarify = bool(re.search(r"(?i)(bạn muốn hỏi|could you clarify|do you mean|bạn đang hỏi)", answer_without_echo))
             clarification_contract = (clarify
                                       and metadata.get("response_source") == "clarification"

@@ -43,6 +43,9 @@ def test_qwen_thinking_only_response_is_empty_content_with_metadata(monkeypatch)
     assert result.diagnostics["response_sha256"]
     assert result.diagnostics["response_classification"] == "thinking_only_budget_exhausted"
     assert result.diagnostics["token_budget_status"] == "reached"
+    assert result.diagnostics["schema_valid"] is True
+    assert result.diagnostics["http_completed"] is True
+    assert result.diagnostics["error_category"] == "empty_content"
 
 
 def test_provider_budget_diagnostic_is_unknown_without_eval_metadata(monkeypatch):
@@ -52,6 +55,20 @@ def test_provider_budget_diagnostic_is_unknown_without_eval_metadata(monkeypatch
     result = provider._ollama_generate("system", "user")
     assert result[1] is True
     assert result.diagnostics["token_budget_status"] == "unknown"
+
+
+@pytest.mark.parametrize("error", [
+    TimeoutError("http://user:password@host/?token=secret"),
+    urllib.error.URLError(TimeoutError("http://user:password@host/?token=secret")),
+])
+def test_provider_diagnostics_mark_direct_and_wrapped_timeout_without_exception_details(monkeypatch, error):
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: (_ for _ in ()).throw(error))
+    result = provider._ollama_generate("synthetic system", "synthetic request")
+    assert result.diagnostics["error_category"] == "timeout"
+    assert result.diagnostics["validation"] == "timeout"
+    assert result.diagnostics["http_completed"] is False
+    serialized = json.dumps(result.diagnostics)
+    assert "password" not in serialized and "secret" not in serialized
 
 
 def test_qwen_content_and_thinking_raw_capture_is_explicit(monkeypatch):

@@ -550,6 +550,20 @@ def test_context_keyword_alone_stays_uncertain_and_predeclared_false_claim_fails
     assert false_claim["task"]["factual_red_flags"] == ["direct_password_encryption"]
 
 
+def test_context_subject_after_brief_apology_is_uncertain_not_false_failed_or_passed():
+    result = evaluate_case_output(
+        "Nó có ưu điểm gì?",
+        "Xin lỗi vì nhầm lẫn trước đó. Bạn đang học về mật mã đường cong elliptic (ECC), đúng không?\n\n"
+        "ECC thường được dùng cho trao đổi khóa và chữ ký số.",
+        "vi", "llm_generation", {"provider_called": True, "provider_ok": True},
+        {"kind": "context_subject", "subject_terms": ["ECC", "đường cong elliptic"],
+         "forbidden_terms": ["monolith", "microservices"]},
+    )
+    assert result["task"]["subject_match"] is True
+    assert result["task"]["status"] == "uncertain"
+    assert result["task"]["review_required"] is True
+
+
 def test_provenance_separates_provider_transport_language_and_application_quality():
     rejected = assess_generation_provenance({
         "provider_called": True, "provider_call_count": 2, "provider_used": "ollama",

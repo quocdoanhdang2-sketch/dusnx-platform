@@ -167,7 +167,9 @@ def ollama_error(exc: Exception) -> str:
         return "invalid_json"
     if isinstance(exc, ValueError):
         return str(exc) if str(exc) in {"invalid_schema", "empty_content", "incomplete_response"} else "invalid_schema"
-    if isinstance(exc, (TimeoutError, socket.timeout)):
+    if isinstance(exc, (TimeoutError, socket.timeout)) or (
+        isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, (TimeoutError, socket.timeout))
+    ):
         return "timeout"
     if isinstance(exc, urllib.error.URLError):
         return "unreachable"
@@ -197,11 +199,14 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
     }).encode("utf-8")
     request = urllib.request.Request(get_ollama_url() + "/api/chat", data=payload,
                                      headers={"Content-Type": "application/json"}, method="POST")
+    started = time.monotonic()
     diagnostics = {"configured_model": get_ollama_model(), "num_predict": options["num_predict"],
-                   "call_timeout_seconds": get_ollama_timeout()}
+                   "call_timeout_seconds": get_ollama_timeout(), "http_completed": False,
+                   "schema_valid": None, "error_category": None}
     try:
         with urllib.request.urlopen(request, timeout=get_ollama_timeout()) as response:
             raw_body = response.read()
+        diagnostics["http_completed"] = True
         diagnostics["response_bytes"] = len(raw_body)
         diagnostics["response_sha256"] = hashlib.sha256(raw_body).hexdigest()
         data = json.loads(raw_body.decode("utf-8"))
@@ -236,10 +241,20 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
             )
         text, model, tokens, done_reason = validate_ollama_response(data)
         diagnostics["validation"] = "passed"
+        diagnostics["schema_valid"] = True
+        diagnostics["latency_ms"] = round((time.monotonic() - started) * 1000, 1)
         return ProviderCall(text, True, model, tokens, done_reason=done_reason, diagnostics=diagnostics)
     except Exception as exc:
         category = ollama_error(exc)
         diagnostics["validation"] = category
+        diagnostics["error_category"] = category
+        diagnostics["schema_valid"] = (False if category in {"invalid_json", "invalid_schema", "incomplete_response"}
+                                       else True if category == "empty_content" else None)
+        diagnostics["http_completed"] = diagnostics["http_completed"] or not isinstance(
+            exc, (TimeoutError, socket.timeout, urllib.error.URLError)
+        )
+        diagnostics["exception_type"] = type(exc).__name__
+        diagnostics["latency_ms"] = round((time.monotonic() - started) * 1000, 1)
         descriptions = {
             "model_missing": "Model c\u1ea5u h\u00ecnh kh\u00f4ng t\u1ed3n t\u1ea1i trong Ollama",
             "unreachable": "Kh\u00f4ng k\u1ebft n\u1ed1i \u0111\u01b0\u1ee3c Ollama",

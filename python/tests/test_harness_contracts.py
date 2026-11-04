@@ -5,7 +5,10 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import evaluate_text_language, compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget, provider_attempt_metadata, review_model_label, create_isolated_case_session
+from verify_bilingual_generation import (aggregate_language_status, evaluate_text_language,
+    compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget,
+    provider_attempt_metadata, review_model_label, create_isolated_case_session,
+    response_language_status)
 from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
@@ -47,6 +50,16 @@ def test_provider_offline_not_counted_as_generation_or_language_match():
     assert summary["eligible_language_cases"] == 0
     assert summary["linguistic_matched"] == 0
     assert summary["linguistic_divergent"] == 0
+
+
+def test_provider_error_is_not_scored_as_generated_language():
+    status = response_language_status(
+        "Ollama không kết nối được", "en", is_generation=True, provider_ok=False,
+    )
+    assert status == "not_applicable"
+    assert aggregate_language_status(["not_applicable", "not_applicable"]) == "not_applicable"
+    assert aggregate_language_status(["matched", "not_applicable"]) == "matched"
+    assert aggregate_language_status(["matched", "divergent"]) == "mixed"
 
 
 def test_template_recall_not_in_language_denominator():
