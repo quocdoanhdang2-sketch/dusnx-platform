@@ -1,0 +1,123 @@
+{
+  "evidence_id": "quality-sync-ed20d613-20261104",
+  "created_utc": "2026-11-04T04:10:00Z",
+  "code_sha_tested": "ed20d613be1a5d4b40895e9a0582b813f19b5c27",
+  "branch": "fix/quality-context-evidence",
+  "tracked_worktree_clean_at_test_commit": true,
+  "untracked_local_work_preserved": true,
+  "model": {
+    "name": "qwen2.5:1.5b-instruct",
+    "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+    "quantization": "Q4_K_M",
+    "size_bytes": 986061892,
+    "token_budget": 512,
+    "temperature": 0.1,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64,
+    "context_size": null,
+    "default_model_changed": false
+  },
+  "test_runs": [
+    {
+      "name": "focused_python",
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_week4_integration.py python/tests/test_response_quality.py python/tests/test_chat_provenance.py python/tests/test_harness_contracts.py python/tests/test_provider_readiness.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-main-sync-focused-final-20261104",
+      "exit_code": 0,
+      "result": "84 passed"
+    },
+    {
+      "name": "full_python",
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-main-sync-full-20261104",
+      "exit_code": 0,
+      "result": "312 passed"
+    },
+    {
+      "name": "gateway_fastapi_ollama_provenance",
+      "command": "python/.venv/Scripts/python.exe scripts/verify_chat_provenance.py --spawn-stack --output runtime/qwen25-1p5-provenance-ed20d613-20261104/chat-provenance.json --expected-model qwen2.5:1.5b-instruct --expected-model-digest 65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+      "exit_code": 0,
+      "reported_status": "transport_and_language_passed_task_unverified",
+      "actual_latency_ms": 11733.99999999674
+    },
+    {
+      "name": "strict_bilingual_gateway_fastapi_ollama",
+      "command": "python/.venv/Scripts/python.exe scripts/verify_bilingual_generation.py --expected-model qwen2.5:1.5b-instruct --expected-model-digest 65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b --strict-language --strict-quality --output-dir runtime/qwen25-1p5-bilingual-ed20d613-20261104",
+      "exit_code": 1,
+      "summary": {
+        "quality_flagged_cases": 1,
+        "total_cases": 30,
+        "contract_passed": 23,
+        "contract_failed": 7,
+        "real_llm_generations": 11,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 11,
+        "linguistic_matched": 11,
+        "linguistic_divergent": 0,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 0,
+        "task_failed": 1,
+        "task_uncertain": 9,
+        "completion_failed": 0,
+        "completion_uncertain": 0,
+        "execution_status": "completed"
+      },
+      "execution_status": "completed"
+    }
+  ],
+  "review_status": {
+    "human_review_claimed": false,
+    "review_form_decisions_blank": true,
+    "case_count": 30
+  },
+  "git_integration": {
+    "main_sha_verified": "48c0ec82949b27779de04bbdce80027b90d8c3f3",
+    "quality_sha": "ed20d613be1a5d4b40895e9a0582b813f19b5c27",
+    "pr_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/7",
+    "pr_open": true,
+    "pr_mergeable_after_sync": true,
+    "full_pr_merged": false,
+    "ci_run_id": 41771100089,
+    "ci_head_sha": "ed20d613be1a5d4b40895e9a0582b813f19b5c27",
+    "ci_status": "completed_success"
+  },
+  "limitations": [
+    "Strict generation gate failed; candidate model not promoted.",
+    "Task/factuality results marked uncertain require human/source-based review.",
+    "Reports contain synthetic prompts and outputs only.",
+    "Provenance transport/language success is not a task/factuality pass."
+  ],
+  "artifacts": [
+    {
+      "path": "bilingual-report.json",
+      "source_path": "runtime/qwen25-1p5-bilingual-ed20d613-20261104/report.json",
+      "source_sha256": "3a769d70a7aea00e0e28f09313c762f3da1fbd5bdbd667953bd446b847fb9d46",
+      "packaged_bytes_sha256": "3a769d70a7aea00e0e28f09313c762f3da1fbd5bdbd667953bd446b847fb9d46",
+      "git_clean_blob_oid_sha1": "85f30f03989afa3b4c4fac52d1c0f9721d996ae6",
+      "encoding": "UTF-8",
+      "newline": "source bytes preserved; see hash equality",
+      "source_equals_packaged_bytes": true
+    },
+    {
+      "path": "human-review-table.md",
+      "source_path": "runtime/qwen25-1p5-bilingual-ed20d613-20261104/review_table.md",
+      "source_sha256": "0e816d5f2285744328af6d2224fedac044f16d0ec21b17d1a3f134501d7a2147",
+      "packaged_bytes_sha256": "0e816d5f2285744328af6d2224fedac044f16d0ec21b17d1a3f134501d7a2147",
+      "git_clean_blob_oid_sha1": "8ac96caac8a65b298c9e0ae106041c8cd71899fc",
+      "encoding": "UTF-8",
+      "newline": "source bytes preserved; see hash equality",
+      "source_equals_packaged_bytes": true
+    },
+    {
+      "path": "chat-provenance.json",
+      "source_path": "runtime/qwen25-1p5-provenance-ed20d613-20261104/chat-provenance.json",
+      "source_sha256": "69f2186b2dfac30f8cdaaacc451730b77b4951b8c6e941bde110428b8b619400",
+      "packaged_bytes_sha256": "69f2186b2dfac30f8cdaaacc451730b77b4951b8c6e941bde110428b8b619400",
+      "git_clean_blob_oid_sha1": "f55410f1e2ba7ab4e558cc8981e7cd15cea6bf3a",
+      "encoding": "UTF-8",
+      "newline": "source bytes preserved; see hash equality",
+      "source_equals_packaged_bytes": true
+    }
+  ],
+  "encoding_notes": "JSON/Markdown copied as UTF-8 bytes without transformation. No BOM or newline conversion was applied; exact source/package SHA-256 equality recorded per artifact."
+}
