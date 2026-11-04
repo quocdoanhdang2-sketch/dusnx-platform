@@ -1362,6 +1362,35 @@ function renderTimelineItem(item) {
 }
 
 
+// Static HTML declares action names only; executable handlers live in this script.
+// Keep the dispatch allowlist explicit. Never evaluate attribute text as JavaScript.
+function bindStaticActions() {
+  const handlers = {
+    click: {
+      loginTab: () => switchTab("login"), registerTab: () => switchTab("register"),
+      toggleSidebar: () => toggleSidebar(), newSession: () => startNewSession(),
+      memoryView: () => showView("memory"), projectsView: () => showView("projects"),
+      timelineView: () => showView("timeline"), logout: () => handleLogout(),
+      hint: (_, node) => useHint(node), olderMessages: () => loadOlderMessages(),
+      send: () => sendMessage(), addMemory: () => showAddMemoryModal(),
+      addProject: () => showAddProjectModal(), closeProject: () => closeProjectDetail(),
+      timeline: () => loadTimeline(), closeModal: () => closeModal(),
+      modalContent: event => event.stopPropagation(),
+    },
+    submit: { login: event => handleLogin(event), register: event => handleRegister(event) },
+    keydown: { messageKey: event => handleInputKeydown(event) },
+    input: { resize: (_, node) => autoResizeTextarea(node), filterMemories: () => filterMemories() },
+    change: { filterMemories: () => filterMemories(), timeline: () => loadTimeline() },
+  };
+  for (const [eventName, actions] of Object.entries(handlers)) {
+    document.querySelectorAll(`[data-${eventName}]`).forEach(node => {
+      const handler = actions[node.getAttribute(`data-${eventName}`)];
+      if (typeof handler === "function") node.addEventListener(eventName, event => handler(event, node));
+    });
+  }
+}
+bindStaticActions();
+
 // ── Auto-login if token exists ─────────────────────────────────────────────────
 
 (async function init() {

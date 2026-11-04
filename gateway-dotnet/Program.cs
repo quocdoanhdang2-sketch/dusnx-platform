@@ -55,10 +55,8 @@ app.Use(async (context, next) => {
     context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
-    // The current static UI uses inline event attributes. Keep them functional while
-    // all untrusted content is rendered with textContent; move handlers to JS before
-    // removing unsafe-inline in a later CSP hardening pass.
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://appsforoffice.microsoft.com; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8080 https:; frame-ancestors 'self' https://*.officeapps.live.com https://*.office.com";
+    // Static UI actions are bound by app.js; reject inline script and event attributes.
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8080 https:; frame-ancestors 'self' https://*.officeapps.live.com https://*.office.com";
     await next();
 });
 

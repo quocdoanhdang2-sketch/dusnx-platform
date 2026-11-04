@@ -26,11 +26,11 @@
     <p class="auth-tagline">Trí tuệ cá nhân hóa thích ứng</p>
 
     <div class="tab-row" role="tablist">
-      <button id="tabLogin" class="tab active" role="tab" aria-selected="true" onclick="switchTab('login')">Đăng nhập</button>
-      <button id="tabRegister" class="tab" role="tab" aria-selected="false" onclick="switchTab('register')">Đăng ký</button>
+      <button id="tabLogin" class="tab active" role="tab" aria-selected="true" data-click="loginTab">Đăng nhập</button>
+      <button id="tabRegister" class="tab" role="tab" aria-selected="false" data-click="registerTab">Đăng ký</button>
     </div>
 
-    <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+    <form id="loginForm" class="auth-form" data-submit="login">
       <label for="loginUsername" class="field-label">Tên đăng nhập</label>
       <input id="loginUsername" class="field-input" type="text" autocomplete="username" placeholder="your_username" required />
       <label for="loginPassword" class="field-label">Mật khẩu</label>
@@ -39,7 +39,7 @@
       <button id="loginBtn" class="btn-primary" type="submit">Đăng nhập</button>
     </form>
 
-    <form id="registerForm" class="auth-form" hidden onsubmit="handleRegister(event)">
+    <form id="registerForm" class="auth-form" hidden data-submit="register">
       <label for="regUsername" class="field-label">Tên đăng nhập</label>
       <input id="regUsername" class="field-input" type="text" autocomplete="username" placeholder="Tối thiểu 3 ký tự" required />
       <label for="regPassword" class="field-label">Mật khẩu</label>
@@ -58,10 +58,10 @@
     <div class="sidebar-header">
       <span class="logo-icon small">⬡</span>
       <span class="sidebar-brand">DUSN-X</span>
-      <button class="icon-btn sidebar-toggle-mobile" onclick="toggleSidebar()" aria-label="Đóng menu">✕</button>
+      <button class="icon-btn sidebar-toggle-mobile" data-click="toggleSidebar" aria-label="Đóng menu">✕</button>
     </div>
 
-    <button id="newChatBtn" class="btn-new-chat" onclick="startNewSession()">
+    <button id="newChatBtn" class="btn-new-chat" data-click="newSession">
       <span>＋</span> Phiên chat mới
     </button>
 
@@ -71,16 +71,16 @@
     </nav>
 
     <div class="sidebar-footer">
-      <button class="sidebar-nav-item" onclick="showView('memory')" id="navMemory">
+      <button class="sidebar-nav-item" data-click="memoryView" id="navMemory">
         <span class="nav-icon">🧠</span> Trí nhớ của tôi
       </button>
-      <button class="sidebar-nav-item" onclick="showView('projects')" id="navProjects">
+      <button class="sidebar-nav-item" data-click="projectsView" id="navProjects">
         <span class="nav-icon">📁</span> Dự án
       </button>
-      <button class="sidebar-nav-item" onclick="showView('timeline')" id="navTimeline">
+      <button class="sidebar-nav-item" data-click="timelineView" id="navTimeline">
         <span class="nav-icon">📡</span> Quan sát hệ thống
       </button>
-      <button class="sidebar-nav-item logout-btn" onclick="handleLogout()">
+      <button class="sidebar-nav-item logout-btn" data-click="logout">
         <span class="nav-icon">↩</span> Đăng xuất
       </button>
     </div>
@@ -91,7 +91,7 @@
 
     <!-- Mobile header -->
     <header class="mobile-header">
-      <button class="icon-btn" onclick="toggleSidebar()" aria-label="Mở menu">☰</button>
+      <button class="icon-btn" data-click="toggleSidebar" aria-label="Mở menu">☰</button>
       <span class="mobile-title" id="mobileTitle">DUSN-X</span>
     </header>
 
@@ -108,13 +108,13 @@
         <h2 class="welcome-title">Xin chào! Tôi là DUSN-X</h2>
         <p class="welcome-sub">Trợ lý AI cá nhân hóa thích ứng của bạn. Tôi nhớ những gì bạn chia sẻ và học cách hỗ trợ bạn tốt hơn theo thời gian.</p>
         <div class="welcome-hints">
-          <button class="hint-chip" onclick="useHint(this)">Dự án tôi đang làm là gì?</button>
-          <button class="hint-chip" onclick="useHint(this)">Tóm tắt những gì tôi đã chia sẻ</button>
-          <button class="hint-chip" onclick="useHint(this)">Tôi đang ưu tiên gì?</button>
+          <button class="hint-chip" data-click="hint">Dự án tôi đang làm là gì?</button>
+          <button class="hint-chip" data-click="hint">Tóm tắt những gì tôi đã chia sẻ</button>
+          <button class="hint-chip" data-click="hint">Tôi đang ưu tiên gì?</button>
         </div>
       </div>
 
-      <button id="olderMessagesBtn" class="btn-secondary btn-sm" type="button" hidden onclick="loadOlderMessages()">Xem tin nhắn cũ hơn</button>
+      <button id="olderMessagesBtn" class="btn-secondary btn-sm" type="button" hidden data-click="olderMessages">Xem tin nhắn cũ hơn</button>
       <!-- Messages -->
       <div id="messageList" class="message-list" role="log" aria-live="polite" aria-label="Lịch sử chat"></div>
 
@@ -142,11 +142,11 @@
             class="message-input"
             placeholder="Nhập tin nhắn…"
             rows="1"
-            onkeydown="handleInputKeydown(event)"
-            oninput="autoResizeTextarea(this)"
+            data-keydown="messageKey"
+            data-input="resize"
             aria-label="Tin nhắn"
           ></textarea>
-          <button id="sendBtn" class="send-btn" onclick="sendMessage()" aria-label="Gửi">
+          <button id="sendBtn" class="send-btn" data-click="send" aria-label="Gửi">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M2 10L18 2L10 18L8 12L2 10Z" fill="currentColor"/>
             </svg>
@@ -163,12 +163,12 @@
     <div id="viewMemory" class="view">
       <div class="view-header">
         <h1 class="view-title">🧠 Trí nhớ của tôi</h1>
-        <button class="btn-secondary" onclick="showAddMemoryModal()">＋ Thêm trí nhớ</button>
+        <button class="btn-secondary" data-click="addMemory">＋ Thêm trí nhớ</button>
       </div>
       <div class="memory-controls">
-        <input id="memorySearch" class="field-input compact" type="search" placeholder="Tìm kiếm trí nhớ…" oninput="filterMemories()" aria-label="Tìm trí nhớ" />
+        <input id="memorySearch" class="field-input compact" type="search" placeholder="Tìm kiếm trí nhớ…" data-input="filterMemories" aria-label="Tìm trí nhớ" />
         <label class="toggle-label">
-          <input type="checkbox" id="showInactive" onchange="filterMemories()" />
+          <input type="checkbox" id="showInactive" data-change="filterMemories" />
           Hiện cả bản cũ (không hiệu lực)
         </label>
       </div>
@@ -179,13 +179,13 @@
     <div id="viewProjects" class="view">
       <div class="view-header">
         <h1 class="view-title">📁 Dự án của tôi</h1>
-        <button class="btn-secondary" onclick="showAddProjectModal()">＋ Tạo dự án</button>
+        <button class="btn-secondary" data-click="addProject">＋ Tạo dự án</button>
       </div>
       <div id="projectList" class="card-list" role="list"></div>
       <div id="projectDetail" hidden>
         <div class="view-header">
           <h2 class="view-title" id="projectDetailName"></h2>
-          <button class="btn-ghost" onclick="closeProjectDetail()">← Quay lại</button>
+          <button class="btn-ghost" data-click="closeProject">← Quay lại</button>
         </div>
         <p id="projectDetailDesc" class="project-desc"></p>
         <h3 class="section-label">Quyết định đang hiệu lực</h3>
@@ -202,13 +202,13 @@
         <span class="badge-note">Sự kiện đã xác thực qua Web và Client mô phỏng</span>
       </div>
       <div class="timeline-controls">
-        <select id="tlPlatformFilter" class="field-input compact" onchange="loadTimeline()" aria-label="Lọc theo nền tảng">
+        <select id="tlPlatformFilter" class="field-input compact" data-change="timeline" aria-label="Lọc theo nền tảng">
           <option value="">Tất cả nền tảng</option>
           <option value="web">Web</option>
           <option value="powerpoint">PowerPoint (mô phỏng)</option>
           <option value="zalo">Zalo (mô phỏng)</option>
         </select>
-        <button class="btn-secondary" onclick="loadTimeline()">🔄 Làm mới Timeline</button>
+        <button class="btn-secondary" data-click="timeline">🔄 Làm mới Timeline</button>
       </div>
       <div id="timelineStatus" class="status-text" role="status"></div>
       <div id="timelineList" class="timeline-list"></div>
@@ -223,11 +223,11 @@
 </div>
 
 <!-- ═══════════════════ MODALS ═══════════════════ -->
-<div id="modalOverlay" class="modal-overlay" hidden onclick="closeModal()">
-  <div class="modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true">
+<div id="modalOverlay" class="modal-overlay" hidden data-click="closeModal">
+  <div class="modal" data-click="modalContent" role="dialog" aria-modal="true">
     <div class="modal-header">
       <h2 class="modal-title" id="modalTitle">Modal</h2>
-      <button class="icon-btn" onclick="closeModal()" aria-label="Đóng">✕</button>
+      <button class="icon-btn" data-click="closeModal" aria-label="Đóng">✕</button>
     </div>
     <div id="modalBody" class="modal-body"></div>
   </div>
