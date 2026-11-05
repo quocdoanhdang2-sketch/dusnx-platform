@@ -12,7 +12,7 @@ def main():
     p.add_argument('--output',default='runtime/llm-audit')
     p.add_argument('--tokenizer-model',help='Optional exact tokenizer; requires the pinned SFT environment')
     p.add_argument('--tokenizer-revision')
-    p.add_argument('--max-length',type=int,default=512)
+    p.add_argument('--max-length',type=int,default=640)
     a=p.parse_args();root=Path(a.data);out=Path(a.output)
     lock=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
     verify_file_manifest(root,lock)
@@ -36,7 +36,7 @@ def main():
         item=report[split];tokens=item['token_length']
         token_text=(f"{tokens['min']}–{tokens['max']}–{tokens['mean']}" if tokens else 'chưa đo bằng tokenizer')
         lines.append(f"| {split} | {item['sequences']} | {item['assistant_pairs']} | {item['unique_prompts']} | {token_text} |")
-    lines.extend(['',f"- Trùng prompt chính xác: 0.",f"- Ngưỡng near-duplicate: {report['quality']['near_duplicate_threshold']}; tương đồng cross-split lớn nhất: {report['quality']['max_cross_split_similarity']}.",f"- Near-duplicate trong cùng split: {len(report['quality']['near_duplicate_pairs_within_split'])}; các cặp cùng chuỗi nhiều lượt được giữ để học tiếp nối.",'- Validator đã kiểm tra tiếng Việt, required fact có trong ngữ cảnh trước đó, obsolete/rejected fact không vào completion, future fact không lọt ngược và clarification có câu hỏi.','- Mọi record hiện vẫn `needs_human_review`; báo cáo máy không thay thế duyệt nội dung bởi người.',''])
+    lines.extend(['',f"- Trùng prompt chính xác: 0.",f"- Ngưỡng near-duplicate: {report['quality']['near_duplicate_threshold']}; tương đồng cross-split lớn nhất: {report['quality']['max_cross_split_similarity']}.",f"- Near-duplicate trong cùng split: {len(report['quality']['near_duplicate_pairs_within_split'])}; các cặp cùng chuỗi nhiều lượt được giữ để học tiếp nối.",'- Validator đã kiểm tra tiếng Việt, required fact có trong ngữ cảnh trước đó, obsolete/rejected fact không vào completion, future fact không lọt ngược và clarification có câu hỏi.','- Trạng thái duyệt được ghi trong `audit.json` tại `quality.human_review_complete`; báo cáo máy không thay thế duyệt nội dung bởi người.',''])
     (out/'audit.md').write_text('\n'.join(lines),encoding='utf-8',newline='\n')
     print(json.dumps(report,ensure_ascii=False,indent=2))
 
