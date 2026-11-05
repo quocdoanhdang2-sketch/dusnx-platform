@@ -14,6 +14,14 @@ from dusnx_core.llm_artifacts import pack
 
 def run(args):
     import torch
+    try:
+        return _run(args)
+    except torch.cuda.OutOfMemoryError as exc:
+        raise RuntimeError('CUDA ran out of VRAM during SFT. Choose explicit per-run batch/length/checkpointing settings; no settings or data were changed automatically.') from exc
+
+
+def _run(args):
+    import torch
     from datasets import Dataset
     from peft import LoraConfig
     from transformers import AutoModelForCausalLM, AutoTokenizer, EarlyStoppingCallback, TrainerCallback, set_seed
@@ -22,8 +30,27 @@ def run(args):
     required={'transformers':'4.56.2','trl':'0.23.1','peft':'0.17.1','accelerate':'1.10.1','datasets':'4.1.1','tokenizers':'0.22.0','huggingface-hub':'0.35.1'}
     if any(versions[k]!=v for k,v in required.items()) or versions['torch'].split('+')[0]!='2.8.0':raise ValueError('Install requirements/llm-sft.txt in a separate environment')
     cfg=yaml.safe_load(Path(args.config).read_text(encoding='utf-8'))
+    if not isinstance(cfg,dict):raise ValueError('SFT config must be a YAML mapping')
+    cfg=dict(cfg)
+    cfg.setdefault('eval_batch_size',1)
+    cfg.setdefault('gradient_checkpointing',True)
+    overrides={
+        'batch_size':args.per_device_train_batch_size,
+        'eval_batch_size':args.per_device_eval_batch_size,
+        'gradient_accumulation_steps':args.gradient_accumulation_steps,
+        'max_length':args.max_length,
+        'gradient_checkpointing':args.gradient_checkpointing,
+    }
+    if args.smoke and any(value is not None for value in overrides.values()):
+        raise ValueError('Per-run hardware overrides apply to full SFT; --smoke keeps its fixed CPU settings')
+    for key,value in overrides.items():
+        if value is not None:cfg[key]=value
+    for key in ('batch_size','eval_batch_size','gradient_accumulation_steps','max_length'):
+        if type(cfg.get(key)) is not int or cfg[key]<1:raise ValueError(f'SFT {key} must be a positive integer')
+    if type(cfg.get('gradient_checkpointing')) is not bool:raise ValueError('SFT gradient_checkpointing must be a boolean')
     if len(cfg['base_revision'])!=40:raise ValueError('Base revision must be immutable SHA')
     if not args.smoke and not torch.cuda.is_available():raise RuntimeError('Full SFT requires CUDA GPU; use --smoke on CPU')
+    if not args.smoke:torch.cuda.set_device(torch.cuda.current_device())
     data=Path(args.data)
     lock=json.loads((data/'manifest.json').read_text(encoding='utf-8'))
     # Test is hashed for freeze integrity; its content/labels are NEVER loaded by training.
@@ -33,7 +60,10 @@ def run(args):
     rows={s:read_sft(data/f'{s}.jsonl',s) for s in ('train','validation')}
     report=audit(rows)
     commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
-    contract=dict(config=cfg,data_hashes=lock['files'],smoke=args.smoke)
+    bf16=not args.smoke and torch.cuda.is_bf16_supported()
+    device_index=torch.cuda.current_device() if not args.smoke else None
+    runtime_contract=dict(device='cuda' if device_index is not None else 'cpu',mixed_precision='bf16' if bf16 else ('fp16' if not args.smoke else 'none'))
+    contract=dict(config=cfg,data_hashes=lock['files'],smoke=args.smoke,runtime=runtime_contract)
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     if args.resume:
         verify_file_manifest(out,json.loads((out/'artifact_manifest.json').read_text(encoding='utf-8')))
@@ -44,7 +74,6 @@ def run(args):
         if not checkpoint.is_relative_to(out.resolve()) or not (checkpoint/'trainer_state.json').is_file():raise ValueError('Invalid resume checkpoint')
     elif any(out.iterdir()):raise ValueError('Output already exists; use --resume or new output')
     set_seed(cfg['seed'])
-    bf16=not args.smoke and torch.cuda.is_bf16_supported()
     if args.smoke:
         from transformers import PreTrainedTokenizerFast, Qwen2Config, Qwen2ForCausalLM
         from tokenizers import Tokenizer
@@ -55,7 +84,16 @@ def run(args):
         tokenizer=PreTrainedTokenizerFast(tokenizer_object=t,pad_token='[PAD]',eos_token='<|im_end|>',unk_token='[UNK]')
         tokenizer.chat_template="{% for m in messages %}{{ '<|im_start|>' + m['role'] + '\\n' + m['content'] + '<|im_end|>\\n' }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\\n' }}{% endif %}"
         model=Qwen2ForCausalLM(Qwen2Config(vocab_size=len(tokenizer),hidden_size=32,intermediate_size=64,num_hidden_layers=1,num_attention_heads=2,num_key_value_heads=1,max_position_embeddings=1024,pad_token_id=0,eos_token_id=3))
-        rows={'train':[rows['train'][0],next(item for item in rows['train'] if len(item['messages'])>3)],'validation':rows['validation'][:2]}
+        # Smoke-only: tạo follow-up tạm từ train để kiểm tra masking nhiều lượt.
+        # Không sửa dataset trên đĩa và không đọc independent test.
+        base = json.loads(json.dumps(rows['train'][0], ensure_ascii=False))
+        prior_user = next(message for message in reversed(base['messages']) if message['role'] == 'user')
+        prior_assistant = next(message for message in reversed(base['messages']) if message['role'] == 'assistant')
+        base['messages'].extend([
+            {'role': 'user', 'content': prior_user['content']},
+            {'role': 'assistant', 'content': prior_assistant['content']},
+        ])
+        rows = {'train': [rows['train'][0], base], 'validation': rows['validation'][:2]}
     else:
         tokenizer=AutoTokenizer.from_pretrained(cfg['base_model'],revision=cfg['base_revision'],trust_remote_code=False)
         kwargs=dict(revision=cfg['base_revision'],trust_remote_code=False,torch_dtype=torch.bfloat16 if bf16 else torch.float16)
@@ -86,15 +124,16 @@ def run(args):
             pack(out,out.parent/f'{out.name}-step-{state.global_step}.zip')
             if args_outer.stop_after_epoch and state.epoch>=args_outer.stop_after_epoch:control.should_training_stop=True
     args_outer=args
-    manifest=dict(contract=contract,code_commit=commit,code_dirty=bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),versions=versions,seed=cfg['seed'],status='running',kind='offline_random_tiny_smoke' if args.smoke else 'pretrained_instruct_lora_sft',gpu=torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,audit=report,started_unix=time.time(),test_used_for_selection=False)
+    manifest=dict(contract=contract,code_commit=commit,code_dirty=bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),versions=versions,seed=cfg['seed'],status='running',kind='offline_random_tiny_smoke' if args.smoke else 'pretrained_instruct_lora_sft',device=f'cuda:{device_index}' if device_index is not None else 'cpu',gpu=torch.cuda.get_device_name(device_index) if device_index is not None else None,mixed_precision='bf16' if bf16 else ('fp16' if not args.smoke else 'none'),audit=report,started_unix=time.time(),test_used_for_selection=False)
     write_json(out/'training_manifest.json',manifest)
     early_stop=EarlyStoppingCallback(early_stopping_patience=cfg['early_stopping_patience'])
     callbacks=[StageBackup(),early_stop]
     trainer=SFTTrainer(model=model,processing_class=tokenizer,
-        args=SFTConfig(output_dir=str(out),num_train_epochs=2 if args.smoke else cfg['epochs'],per_device_train_batch_size=1 if args.smoke else cfg['batch_size'],per_device_eval_batch_size=1,gradient_accumulation_steps=1 if args.smoke else cfg['gradient_accumulation_steps'],learning_rate=cfg['learning_rate'],seed=cfg['seed'],data_seed=cfg['seed'],max_length=cfg['max_length'],completion_only_loss=True,assistant_only_loss=False,packing=False,bf16=bf16,fp16=not args.smoke and not bf16,use_cpu=args.smoke,gradient_checkpointing=not args.smoke,gradient_checkpointing_kwargs={'use_reentrant':False},eval_strategy='epoch',save_strategy='epoch',logging_strategy='steps',logging_steps=1,save_total_limit=2,load_best_model_at_end=True,metric_for_best_model='eval_loss',greater_is_better=False,report_to='none',dataloader_num_workers=0,save_safetensors=True),
+        args=SFTConfig(output_dir=str(out),num_train_epochs=2 if args.smoke else cfg['epochs'],per_device_train_batch_size=1 if args.smoke else cfg['batch_size'],per_device_eval_batch_size=1 if args.smoke else cfg['eval_batch_size'],gradient_accumulation_steps=1 if args.smoke else cfg['gradient_accumulation_steps'],learning_rate=cfg['learning_rate'],seed=cfg['seed'],data_seed=cfg['seed'],max_length=cfg['max_length'],completion_only_loss=True,assistant_only_loss=False,packing=False,bf16=bf16,fp16=not args.smoke and not bf16,use_cpu=args.smoke,gradient_checkpointing=False if args.smoke else cfg['gradient_checkpointing'],gradient_checkpointing_kwargs={'use_reentrant':False},eval_strategy='epoch',save_strategy='epoch',logging_strategy='steps',logging_steps=1,save_total_limit=2,load_best_model_at_end=True,metric_for_best_model='eval_loss',greater_is_better=False,report_to='none',dataloader_num_workers=0,save_safetensors=True),
         train_dataset=Dataset.from_list(pairs['train']),eval_dataset=Dataset.from_list(pairs['validation']),
         peft_config=LoraConfig(task_type='CAUSAL_LM',r=cfg['lora_r'],lora_alpha=cfg['lora_alpha'],lora_dropout=cfg['lora_dropout'],target_modules=cfg['target_modules']),callbacks=callbacks)
-    if not any(any(message['role']=='assistant' for message in pair['prompt']) for pair in pairs['train']):raise RuntimeError('Multi-turn completion masking was not exercised')
+    multi_turn_mask_exercised=any(any(message['role']=='assistant' for message in pair['prompt']) for pair in pairs['train'])
+    if args.smoke and not multi_turn_mask_exercised:raise RuntimeError('Multi-turn completion masking was not exercised')
     for example in trainer.train_dataset:
         mask=example.get('completion_mask')
         if mask is None or 0 not in mask or 1 not in mask:raise RuntimeError('Missing prompt/completion boundary')
@@ -111,7 +150,7 @@ def run(args):
     if not learned:raise RuntimeError('No LoRA update observed')
     active_early_stop=next(c for c in trainer.callback_handler.callbacks if isinstance(c,EarlyStoppingCallback))
     ended_early=active_early_stop.early_stopping_patience_counter>=cfg['early_stopping_patience']
-    manifest.update(status='smoke_complete' if args.smoke else ('stage_complete' if args.stop_after_epoch and trainer.state.epoch<cfg['epochs'] and not ended_early else 'training_complete'),metrics=result.metrics,best_checkpoint=trainer.state.best_model_checkpoint,epoch=trainer.state.epoch,completion_mask_verified=True,multi_turn_completion_mask_verified=True,lora_update_verified=learned,early_stopped=ended_early,data_manifest_status=lock.get('status'))
+    manifest.update(status='smoke_complete' if args.smoke else ('stage_complete' if args.stop_after_epoch and trainer.state.epoch<cfg['epochs'] and not ended_early else 'training_complete'),metrics=result.metrics,best_checkpoint=trainer.state.best_model_checkpoint,epoch=trainer.state.epoch,completion_mask_verified=True,multi_turn_completion_mask_verified=multi_turn_mask_exercised,lora_update_verified=learned,early_stopped=ended_early,data_manifest_status=lock.get('status'))
     write_json(out/'training_manifest.json',manifest)
     pack(out,out.parent/f'{out.name}.zip')
     print(json.dumps(dict(status=manifest['status'],output=str(out),epoch=trainer.state.epoch)))
@@ -121,4 +160,9 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--config',default='configs/llm_sft.yaml');p.add_argument('--data',default='datasets/llm_sft')
     p.add_argument('--output',required=True);p.add_argument('--smoke',action='store_true');p.add_argument('--resume');p.add_argument('--stop-after-epoch',type=int)
+    p.add_argument('--per-device-train-batch-size',type=int,default=None,help='Override batch_size for this full SFT run')
+    p.add_argument('--per-device-eval-batch-size',type=int,default=None,help='Override eval_batch_size for this full SFT run')
+    p.add_argument('--gradient-accumulation-steps',type=int,default=None,help='Override gradient accumulation for this full SFT run')
+    p.add_argument('--max-length',type=int,default=None,help='Override max_length for this full SFT run; examples longer than the limit still fail')
+    p.add_argument('--gradient-checkpointing',action=argparse.BooleanOptionalAction,default=None,help='Enable/disable gradient checkpointing for this full SFT run')
     run(p.parse_args())

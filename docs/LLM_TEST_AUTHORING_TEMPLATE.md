@@ -39,3 +39,5 @@ python/.venv/Scripts/python.exe python/scripts/lock_llm_data.py `
 ```
 
 Commit dữ liệu và manifest đã khóa. Dùng SHA commit đó trong notebook Colab. Không chạy script khóa nếu test vẫn là bản AI, reviewer chưa đọc từng dòng hoặc đã xem prediction.
+
+Receipt phải được tạo bởi `review_llm_data.py apply`; không tự soạn hoặc sửa `review_receipt.json`. Schema, cách tính `row_count` và cách xác nhận SHA-256 được mô tả trong [runbook LLM](WEEK3_LLM_TRAINING.md). `reviewer`, `reviewed_at`, quyết định và nội dung sửa phải do người duyệt nhập sau khi đọc từng dòng. Với `independent_test`, tác giả test phải nhập danh tính và thời điểm thật khi export; người duyệt phải khác tác giả. Receipt sinh từ fixture/test có `test_only=true`, không dùng để khóa dữ liệu thật.

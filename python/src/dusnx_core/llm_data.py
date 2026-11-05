@@ -13,7 +13,7 @@ REVIEW_STATES = {"needs_human_review", "human_reviewed"}
 SOURCES = {"synthetic_designed", "human_designed"}
 RESPONSE_MODES = {"answer", "clarify", "acknowledge"}
 VI_MARKERS = {"bạn", "mình", "tôi", "là", "và", "đã", "đang", "chưa", "không", "cần", "theo", "hiện", "được", "với", "của", "cho", "hãy", "vẫn", "này", "để"}
-EN_MARKERS = {"the", "is", "are", "you", "your", "please", "what", "which", "how", "current", "saved", "answer", "decision"}
+EN_MARKERS = {"the", "is", "are", "you", "your", "please", "what", "which", "how", "current", "saved", "answer", "decision", "returned", "timeout", "operation", "confirmed", "successful"}
 
 
 def digest(path):
@@ -32,6 +32,31 @@ def write_json(path, value):
 
 def normalized(value):
     return " ".join(unicodedata.normalize("NFC", value).casefold().split())
+
+_NEGATION_MARKER = re.compile(
+    r"\b(?:không|chưa|chẳng|chớ|not|never|no|without|cannot|can't|"
+    r"didn't|doesn't|hasn't|haven't|isn't|aren't|wasn't|weren't)\b"
+)
+_NEGATION_CLAUSE_BOUNDARY = re.compile(
+    r"[.!?;:\n]|\b(?:nhưng|tuy nhiên|song|but|however)\b"
+)
+
+
+def _forbidden_fact_is_asserted(answer, fact):
+    """Treat a forbidden phrase in an explicit denial as a mention, not a claim."""
+    start = 0
+    while True:
+        index = answer.find(fact, start)
+        if index < 0:
+            return False
+        preceding = answer[max(0, index - 120):index]
+        clause = _NEGATION_CLAUSE_BOUNDARY.split(preceding)[-1]
+        if re.search(r"\b(?:không\s+chỉ|not\s+only)\b", clause):
+            start = index + len(fact)
+            continue
+        if not _NEGATION_MARKER.search(clause):
+            return True
+        start = index + len(fact)
 
 
 def _words(value):
@@ -144,7 +169,7 @@ def validate(rows, split):
                     raise ValueError(f"{row['id']} turn {turn_number}: required fact is unsupported or missing: {fact}")
             for fact in contract["forbidden_facts"]:
                 fact = normalized(fact)
-                if fact not in prefix or fact in answer:
+                if _forbidden_fact_is_asserted(answer, fact):
                     raise ValueError(f"{row['id']} turn {turn_number}: obsolete/rejected fact leaked: {fact}")
             for fact in contract["future_facts"]:
                 fact = normalized(fact)
@@ -241,17 +266,41 @@ def verify_file_manifest(root, manifest):
 def verify_full_training_gate(root, manifest):
     """Verify the human-only release gate without reading frozen test examples."""
     root = Path(root)
-    if manifest.get("status") != "human_attested_locked_before_training":
+    if not isinstance(manifest, dict) or (
+        type(manifest.get("schema_version")) is not int
+        or manifest.get("schema_version") != 4
+        or manifest.get("status") != "human_attested_locked_before_training"
+        or manifest.get("locked") is not True
+    ):
         raise ValueError("Full SFT requires the human-attested locked manifest")
+    files = manifest.get("files")
+    row_counts = manifest.get("row_counts")
+    expected_file_names = {
+        "train.jsonl", "validation.jsonl", "test.jsonl",
+        "train_validation_review_receipt.json", "independent_test_review_receipt.json",
+    }
+    if (
+        not isinstance(files, dict)
+        or set(files) != expected_file_names
+        or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value) for value in files.values())
+        or not isinstance(row_counts, dict)
+        or set(row_counts) != {"train", "validation", "test"}
+        or any(type(value) is not int or value <= 0 for value in row_counts.values())
+    ):
+        raise ValueError("Invalid locked data manifest schema")
     attestation_path = root / "human_test_attestation.json"
     if not attestation_path.is_file():
         raise ValueError("Full SFT requires a human test attestation")
     attestation = json.loads(attestation_path.read_text(encoding="utf-8"))
-    author = str(attestation.get("human_author", "")).strip()
-    reviewer = str(attestation.get("reviewer", "")).strip()
-    expected_test_hash = manifest.get("files", {}).get("test.jsonl")
-    train_receipt_hash = str(attestation.get("train_review_receipt_sha256", ""))
-    test_receipt_hash = str(attestation.get("test_review_receipt_sha256", ""))
+    if not isinstance(attestation, dict):
+        raise ValueError("Invalid independent human data attestation")
+    author_value = attestation.get("human_author")
+    reviewer_value = attestation.get("reviewer")
+    if not isinstance(author_value, str) or not isinstance(reviewer_value, str):
+        raise ValueError("Invalid independent human data attestation")
+    author = author_value.strip()
+    reviewer = reviewer_value.strip()
+    expected_test_hash = files["test.jsonl"]
     if (
         not author
         or not reviewer
@@ -260,8 +309,48 @@ def verify_full_training_gate(root, manifest):
         or attestation.get("locked_before_training") is not True
         or not expected_test_hash
         or attestation.get("test_sha256") != expected_test_hash
-        or not re.fullmatch(r"[0-9a-f]{64}", train_receipt_hash)
-        or not re.fullmatch(r"[0-9a-f]{64}", test_receipt_hash)
     ):
         raise ValueError("Invalid independent human data attestation")
+    receipt_specs = (
+        ("train_validation_review_receipt.json", "train_review_receipt_sha256", "train_validation", {name: files[name] for name in ("train.jsonl", "validation.jsonl")}, row_counts["train"] + row_counts["validation"]),
+        ("independent_test_review_receipt.json", "test_review_receipt_sha256", "independent_test", {"test.jsonl": expected_test_hash}, row_counts["test"]),
+    )
+    for name, attestation_key, review_type, result_files, expected_rows in receipt_specs:
+        receipt_path = root / name
+        receipt_hash = str(attestation.get(attestation_key, ""))
+        if not re.fullmatch(r"[0-9a-f]{64}", receipt_hash) or files.get(name) != receipt_hash:
+            raise ValueError("Missing or invalid human review receipt")
+        try:
+            receipt_raw = receipt_path.read_bytes()
+            if hashlib.sha256(receipt_raw).hexdigest() != receipt_hash:
+                raise ValueError("Missing or invalid human review receipt")
+            receipt = json.loads(receipt_raw.decode("utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("Missing or invalid human review receipt") from exc
+        if not isinstance(receipt, dict):
+            raise ValueError("Missing or invalid human review receipt")
+        reviewers = receipt.get("reviewers")
+        reviewed_at = receipt.get("reviewed_at")
+        if (
+            type(receipt.get("schema_version")) is not int
+            or receipt.get("schema_version") != 1
+            or receipt.get("review_type") != review_type
+            or receipt.get("test_only") is not False
+            or receipt.get("result_files") != result_files
+            or type(receipt.get("row_count")) is not int
+            or receipt["row_count"] != expected_rows
+            or not isinstance(reviewers, list)
+            or not reviewers
+            or any(not isinstance(value, str) or not value.strip() for value in reviewers)
+            or not isinstance(reviewed_at, list)
+            or not reviewed_at
+            or any(not isinstance(value, str) or not value.strip() for value in reviewed_at)
+        ):
+            raise ValueError("Missing or invalid human review receipt")
+        if reviewer not in reviewers:
+            raise ValueError("Review receipt reviewer does not match human attestation")
+        if review_type == "independent_test" and (
+            receipt.get("human_author") != author or reviewer == author
+        ):
+            raise ValueError("Invalid independent human data attestation")
     return True
