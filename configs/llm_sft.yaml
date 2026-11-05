@@ -5,8 +5,10 @@ seed: 20260930
 epochs: 3
 learning_rate: 0.0001
 batch_size: 1
+eval_batch_size: 1
 gradient_accumulation_steps: 8
-max_length: 512
+max_length: 640
+gradient_checkpointing: true
 lora_r: 8
 lora_alpha: 16
 lora_dropout: 0.05

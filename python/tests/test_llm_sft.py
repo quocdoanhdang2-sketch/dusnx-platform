@@ -117,10 +117,109 @@ def test_development_manifest_cannot_start_full_training():
 
 
 def test_same_person_cannot_author_and_review_test(tmp_path):
-    manifest={'status':'human_attested_locked_before_training','files':{'test.jsonl':'abc'}}
-    attestation={'human_author':'reviewer-a','reviewer':'reviewer-a','training_reviewed':True,'locked_before_training':True,'test_sha256':'abc'}
+    manifest=_locked_gate_fixture(tmp_path)
+    attestation=json.loads((tmp_path/'human_test_attestation.json').read_text(encoding='utf-8'))
+    attestation['human_author']='reviewer-b'
     (tmp_path/'human_test_attestation.json').write_text(json.dumps(attestation),encoding='utf-8')
     with pytest.raises(ValueError,match='independent'):verify_full_training_gate(tmp_path,manifest)
+
+
+def _locked_gate_fixture(tmp_path):
+    files={}
+    for name in ('train.jsonl','validation.jsonl','test.jsonl'):
+        path=tmp_path/name;path.write_text('{}\n',encoding='utf-8');files[name]=digest(path)
+    train_receipt={'schema_version':1,'review_type':'train_validation','test_only':False,'result_files':{'train.jsonl':files['train.jsonl'],'validation.jsonl':files['validation.jsonl']},'row_count':2,'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}
+    test_receipt={'schema_version':1,'review_type':'independent_test','test_only':False,'human_author':'author-a','result_files':{'test.jsonl':files['test.jsonl']},'row_count':1,'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}
+    for name,receipt in (('train_validation_review_receipt.json',train_receipt),('independent_test_review_receipt.json',test_receipt)):
+        path=tmp_path/name;path.write_text(json.dumps(receipt),encoding='utf-8');files[name]=digest(path)
+    manifest={'schema_version':4,'status':'human_attested_locked_before_training','locked':True,'row_counts':{'train':1,'validation':1,'test':1},'files':files}
+    attestation={'human_author':'author-a','reviewer':'reviewer-b','training_reviewed':True,'locked_before_training':True,'test_sha256':files['test.jsonl'],'train_review_receipt_sha256':files['train_validation_review_receipt.json'],'test_review_receipt_sha256':files['independent_test_review_receipt.json']}
+    (tmp_path/'human_test_attestation.json').write_text(json.dumps(attestation),encoding='utf-8')
+    return manifest
+
+
+def test_full_training_gate_requires_persisted_review_receipts(tmp_path):
+    manifest=_locked_gate_fixture(tmp_path)
+    assert verify_full_training_gate(tmp_path,manifest) is True
+
+
+@pytest.mark.parametrize('fault',['missing_receipt','tampered_receipt','wrong_result_hash'])
+def test_full_training_gate_rejects_missing_or_wrong_review_receipts(tmp_path,fault):
+    manifest=_locked_gate_fixture(tmp_path)
+    receipt_path=tmp_path/'independent_test_review_receipt.json'
+    if fault=='missing_receipt':
+        receipt_path.unlink()
+    elif fault=='tampered_receipt':
+        receipt_path.write_text('{}',encoding='utf-8')
+    else:
+        receipt=json.loads(receipt_path.read_text(encoding='utf-8'));receipt['result_files']['test.jsonl']='0'*64
+        receipt_path.write_text(json.dumps(receipt),encoding='utf-8')
+        manifest['files'][receipt_path.name]=digest(receipt_path)
+        attestation=json.loads((tmp_path/'human_test_attestation.json').read_text(encoding='utf-8'))
+        attestation['test_review_receipt_sha256']=digest(receipt_path)
+        (tmp_path/'human_test_attestation.json').write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='receipt'):
+        verify_full_training_gate(tmp_path,manifest)
+
+
+@pytest.mark.parametrize('split',['train','test'])
+def test_full_training_gate_rejects_receipt_row_count_mismatch_even_when_rehashed(tmp_path,split):
+    manifest=_locked_gate_fixture(tmp_path)
+    filename='train_validation_review_receipt.json' if split=='train' else 'independent_test_review_receipt.json'
+    path=tmp_path/filename;receipt=json.loads(path.read_text(encoding='utf-8'))
+    receipt['row_count']+=1;path.write_text(json.dumps(receipt),encoding='utf-8')
+    manifest['files'][filename]=digest(path)
+    attestation_path=tmp_path/'human_test_attestation.json';attestation=json.loads(attestation_path.read_text(encoding='utf-8'))
+    attestation['train_review_receipt_sha256' if split=='train' else 'test_review_receipt_sha256']=digest(path)
+    attestation_path.write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='receipt'):
+        verify_full_training_gate(tmp_path,manifest)
+
+
+@pytest.mark.parametrize('bad_count',[True,-1,None])
+def test_full_training_gate_rejects_invalid_row_count_types(tmp_path,bad_count):
+    manifest=_locked_gate_fixture(tmp_path)
+    path=tmp_path/'independent_test_review_receipt.json';receipt=json.loads(path.read_text(encoding='utf-8'))
+    if bad_count is None:del receipt['row_count']
+    else:receipt['row_count']=bad_count
+    path.write_text(json.dumps(receipt),encoding='utf-8')
+    manifest['files'][path.name]=digest(path)
+    attestation_path=tmp_path/'human_test_attestation.json';attestation=json.loads(attestation_path.read_text(encoding='utf-8'))
+    attestation['test_review_receipt_sha256']=digest(path);attestation_path.write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='receipt'):
+        verify_full_training_gate(tmp_path,manifest)
+
+
+def test_full_training_gate_requires_attested_reviewer_in_both_receipts(tmp_path):
+    manifest=_locked_gate_fixture(tmp_path)
+    attestation_path=tmp_path/'human_test_attestation.json';attestation=json.loads(attestation_path.read_text(encoding='utf-8'))
+    attestation['reviewer']='reviewer-c';attestation_path.write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='reviewer'):
+        verify_full_training_gate(tmp_path,manifest)
+
+
+@pytest.mark.parametrize('fault',['missing','bool','negative'])
+def test_full_training_gate_rejects_invalid_manifest_row_counts(tmp_path,fault):
+    manifest=_locked_gate_fixture(tmp_path)
+    if fault=='missing':manifest.pop('row_counts')
+    elif fault=='bool':manifest['row_counts']['train']=True
+    else:manifest['row_counts']['test']=-1
+    with pytest.raises(ValueError,match='manifest schema'):
+        verify_full_training_gate(tmp_path,manifest)
+
+
+def test_full_training_gate_rejects_boolean_schema_version(tmp_path):
+    manifest=_locked_gate_fixture(tmp_path);manifest['schema_version']=True
+    with pytest.raises(ValueError,match='human-attested'):
+        verify_full_training_gate(tmp_path,manifest)
+    manifest=_locked_gate_fixture(tmp_path)
+    path=tmp_path/'independent_test_review_receipt.json';receipt=json.loads(path.read_text(encoding='utf-8'))
+    receipt['schema_version']=True;path.write_text(json.dumps(receipt),encoding='utf-8')
+    manifest['files'][path.name]=digest(path)
+    attestation_path=tmp_path/'human_test_attestation.json';attestation=json.loads(attestation_path.read_text(encoding='utf-8'))
+    attestation['test_review_receipt_sha256']=digest(path);attestation_path.write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='receipt'):
+        verify_full_training_gate(tmp_path,manifest)
 
 
 def test_lock_command_rejects_same_author_and_reviewer(monkeypatch):
@@ -129,6 +228,95 @@ def test_lock_command_rejects_same_author_and_reviewer(monkeypatch):
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--human-author','person-a','--reviewer','person-a','--train-review-receipt','missing-train.json','--test-review-receipt','missing-test.json','--attest-authored-reviewed-before-predictions'])
     with pytest.raises(ValueError,match='different people'):module.main()
+
+
+def test_lock_command_persists_and_manifests_receipts(tmp_path,monkeypatch):
+    data=_copy_sft(tmp_path);rows={s:read_sft(data/f'{s}.jsonl',s) for s in ('train','validation','test')}
+    train_files={f'{s}.jsonl':digest(data/f'{s}.jsonl') for s in ('train','validation')}
+    test_files={'test.jsonl':digest(data/'test.jsonl')}
+    receipts=[]
+    for filename,receipt in (
+        ('train-receipt.json',{'schema_version':1,'review_type':'train_validation','test_only':False,'result_files':train_files,'row_count':sum(len(completion_rows(rows[s])) for s in ('train','validation')),'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}),
+        ('test-receipt.json',{'schema_version':1,'review_type':'independent_test','test_only':False,'human_author':'author-a','result_files':test_files,'row_count':len(completion_rows(rows['test'])),'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}),
+    ):
+        path=tmp_path/filename;raw=json.dumps(receipt,indent=2).encode('utf-8');path.write_bytes(raw);receipts.append((path,raw))
+    script=ROOT/'python/scripts/lock_llm_data.py'
+    spec=importlib.util.spec_from_file_location('lock_llm_data_for_test',script)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--data',str(data),'--human-author','author-a','--reviewer','reviewer-b','--train-review-receipt',str(receipts[0][0]),'--test-review-receipt',str(receipts[1][0]),'--attest-authored-reviewed-before-predictions'])
+    original_persist=module._persist_receipt
+    changed_train_receipt=json.loads(receipts[0][1]);changed_train_receipt['reviewed_at']=['2026-10-02T10:00:00+00:00']
+    changed_train_raw=json.dumps(changed_train_receipt,indent=2).encode('utf-8')
+    changed_source=False
+    def mutate_source_after_validation(raw,root,name):
+        nonlocal changed_source
+        if name=='train_validation_review_receipt.json' and not changed_source:
+            receipts[0][0].write_bytes(changed_train_raw)
+            changed_source=True
+        return original_persist(raw,root,name)
+    monkeypatch.setattr(module,'_persist_receipt',mutate_source_after_validation)
+    module.main()
+    manifest=json.loads((data/'manifest.json').read_text(encoding='utf-8'))
+    assert manifest['locked'] is True
+    assert manifest['schema_version']==4
+    assert manifest['row_counts']=={s:len(completion_rows(rows[s])) for s in ('train','validation','test')}
+    for source,raw in receipts:
+        target=data/('train_validation_review_receipt.json' if source.name.startswith('train-') else 'independent_test_review_receipt.json')
+        assert target.read_bytes()==raw
+        assert manifest['files'][target.name]==digest(target)
+    assert verify_file_manifest(data,manifest)
+    assert verify_full_training_gate(data,manifest)
+    with pytest.raises(ValueError,match='Existing frozen receipt differs'):
+        module.main()
+    assert (data/'train_validation_review_receipt.json').read_bytes()==receipts[0][1]
+    assert verify_full_training_gate(data,json.loads((data/'manifest.json').read_text(encoding='utf-8')))
+
+
+def test_lock_command_requires_reviewer_in_train_validation_receipt(tmp_path,monkeypatch):
+    data=_copy_sft(tmp_path);rows={s:read_sft(data/f'{s}.jsonl',s) for s in ('train','validation','test')}
+    train_files={f'{s}.jsonl':digest(data/f'{s}.jsonl') for s in ('train','validation')}
+    test_files={'test.jsonl':digest(data/'test.jsonl')}
+    receipts=[]
+    for filename,receipt in (
+        ('train-receipt.json',{'schema_version':1,'review_type':'train_validation','test_only':False,'result_files':train_files,'row_count':sum(len(completion_rows(rows[s])) for s in ('train','validation')),'reviewers':['reviewer-c'],'reviewed_at':['2026-10-01T10:00:00+00:00']}),
+        ('test-receipt.json',{'schema_version':1,'review_type':'independent_test','test_only':False,'human_author':'author-a','result_files':test_files,'row_count':len(completion_rows(rows['test'])),'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}),
+    ):
+        path=tmp_path/filename;path.write_text(json.dumps(receipt),encoding='utf-8');receipts.append(path)
+    script=ROOT/'python/scripts/lock_llm_data.py'
+    spec=importlib.util.spec_from_file_location('lock_llm_data_reviewer_test',script)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--data',str(data),'--human-author','author-a','--reviewer','reviewer-b','--train-review-receipt',str(receipts[0]),'--test-review-receipt',str(receipts[1]),'--attest-authored-reviewed-before-predictions'])
+    with pytest.raises(ValueError,match='train/validation'):
+        module.main()
+    assert not (data/'train_validation_review_receipt.json').exists()
+
+
+def test_lock_command_partial_receipt_write_does_not_lock_data(tmp_path,monkeypatch):
+    data=_copy_sft(tmp_path);rows={s:read_sft(data/f'{s}.jsonl',s) for s in ('train','validation','test')}
+    train_files={f'{s}.jsonl':digest(data/f'{s}.jsonl') for s in ('train','validation')}
+    test_files={'test.jsonl':digest(data/'test.jsonl')}
+    receipts=[]
+    for filename,receipt in (
+        ('train-receipt.json',{'schema_version':1,'review_type':'train_validation','test_only':False,'result_files':train_files,'row_count':sum(len(completion_rows(rows[s])) for s in ('train','validation')),'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}),
+        ('test-receipt.json',{'schema_version':1,'review_type':'independent_test','test_only':False,'human_author':'author-a','result_files':test_files,'row_count':len(completion_rows(rows['test'])),'reviewers':['reviewer-b'],'reviewed_at':['2026-10-01T10:00:00+00:00']}),
+    ):
+        path=tmp_path/filename;path.write_text(json.dumps(receipt),encoding='utf-8');receipts.append(path)
+    script=ROOT/'python/scripts/lock_llm_data.py'
+    spec=importlib.util.spec_from_file_location('lock_llm_data_partial_write_test',script)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    monkeypatch.setattr(sys,'argv',['lock_llm_data.py','--data',str(data),'--human-author','author-a','--reviewer','reviewer-b','--train-review-receipt',str(receipts[0]),'--test-review-receipt',str(receipts[1]),'--attest-authored-reviewed-before-predictions'])
+    original_persist=module._persist_receipt;calls=0
+    def fail_on_test_receipt(raw,root,name):
+        nonlocal calls
+        calls+=1
+        if calls==2:raise OSError('simulated write failure')
+        return original_persist(raw,root,name)
+    monkeypatch.setattr(module,'_persist_receipt',fail_on_test_receipt)
+    with pytest.raises(OSError,match='simulated write failure'):
+        module.main()
+    manifest=json.loads((data/'manifest.json').read_text(encoding='utf-8'))
+    with pytest.raises(ValueError,match='human-attested'):
+        verify_full_training_gate(data,manifest)
 
 
 def _copy_sft(tmp_path):
@@ -149,9 +337,28 @@ def test_review_package_round_trip_and_receipt_is_test_only(tmp_path):
     assert 'train:train-001:1' in (package/'review.md').read_text(encoding='utf-8')
     _complete_review_csv(package/'review.csv')
     receipt=apply_package(data,package,allow_test_identities=True)
+    assert set(receipt)=={'schema_version','review_type','test_only','human_author','human_authored_at','reviewers','reviewed_at','row_count','result_files'}
+    assert receipt['schema_version']==1 and receipt['review_type']=='train_validation'
     assert receipt['test_only'] is True and receipt['row_count']==61
+    assert receipt['human_author'] is None
+    assert receipt['reviewers']==['test-only-reviewer']
+    assert receipt['reviewed_at']==['2026-09-30T10:00:00+07:00']
+    assert receipt['result_files']=={s+'.jsonl':digest(data/(s+'.jsonl')) for s in ('train','validation')}
     assert all(row['review_status']=='human_reviewed' for split in ('train','validation') for row in read_sft(data/f'{split}.jsonl',split))
     assert json.loads((data/'manifest.json').read_text())['status']=='human_review_complete_pending_lock'
+
+
+def test_review_package_round_trip_receipt_uses_default_non_test_mode(tmp_path):
+    data=_copy_sft(tmp_path);package=tmp_path/'package-normal-review-fixture'
+    assert export_package(data,package,('train','validation'))==61
+    _complete_review_csv(package/'review.csv',reviewer='fixture-reviewer-1',timestamp='2026-10-01T10:00:00+00:00')
+    receipt=apply_package(data,package)
+    assert receipt['test_only'] is False
+    assert receipt['schema_version']==1 and receipt['review_type']=='train_validation'
+    assert receipt['row_count']==61
+    assert receipt['reviewers']==['fixture-reviewer-1']
+    assert receipt['reviewed_at']==['2026-10-01T10:00:00+00:00']
+    assert receipt['result_files']=={s+'.jsonl':digest(data/(s+'.jsonl')) for s in ('train','validation')}
 
 
 def test_review_package_rejects_missing_duplicate_stale_and_bad_timestamp(tmp_path):
@@ -219,6 +426,19 @@ def test_independent_test_requires_independent_reviewer_and_full_adjudication(tm
         writer.writeheader();writer.writerows(rows)
     with pytest.raises(ValueError,match='decision=approve or revise'):
         apply_package(data,package,allow_test_identities=True)
+    for row in rows:
+        row['decision']='approve';row['reviewer']='test-only-independent-reviewer'
+    with (package/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(rows[0]))
+        writer.writeheader();writer.writerows(rows)
+    receipt=apply_package(data,package,allow_test_identities=True)
+    assert receipt['schema_version']==1 and receipt['review_type']=='independent_test'
+    assert receipt['test_only'] is True and receipt['human_author']=='human-author-a'
+    assert receipt['human_authored_at']=='2026-09-30T10:00:00+07:00'
+    assert receipt['reviewers']==['test-only-independent-reviewer']
+    assert receipt['reviewed_at']==['2026-09-30T10:00:00+07:00']
+    assert receipt['row_count']==len(rows)
+    assert receipt['result_files']=={'test.jsonl':digest(test_path)}
 
 
 def test_artifact_tamper_and_traversal(tmp_path):

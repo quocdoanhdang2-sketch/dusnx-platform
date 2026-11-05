@@ -62,13 +62,30 @@ Start-Process runtime/llm-review-train-validation/review.csv
 
 Tool từ chối thiếu/trùng dòng, cột nguồn bị sửa, timestamp thiếu múi giờ, reviewer test trùng tác giả, nguồn thay đổi sau lúc export, hoặc nội dung không qua schema/audit. Receipt của test tự động có `test_only=true` và không thể dùng để lock thật. Gói review nằm trong `runtime/`, không commit tên người duyệt hoặc ghi chú riêng tư.
 
+### Receipt schema, row_count và SHA-256
+
+Chỉ dùng `review_receipt.json` do lệnh `review_llm_data.py apply` sinh sau khi người thật hoàn tất `review.csv`. Không tự tạo receipt, sửa `test_only`, điền reviewer/thời điểm thay người duyệt, hoặc chép giá trị từ một lượt review khác. Receipt schema v1 có `schema_version: 1`, `review_type` (`train_validation` hoặc `independent_test`), `test_only: false` cho lần apply thật, `result_files`, `row_count`, `reviewers` và `reviewed_at`; receipt `independent_test` còn có `human_author` và `human_authored_at`. Tác giả test và reviewer phải khác nhau. Định danh reviewer truyền cho `lock_llm_data.py --reviewer` phải xuất hiện trong cả hai receipt.
+
+`row_count` đếm completion/review row, không đếm số record JSONL. Dùng đúng phép tính của lock tool: `len(completion_rows(read_sft(file, split)))` cho từng split; receipt train/validation là tổng hai split, receipt test là riêng test. Sau khi apply, có thể kiểm tra số đếm và SHA trên dữ liệu đã được người duyệt cập nhật:
+
+```powershell
+$env:PYTHONPATH='python/src'
+$py='python/.venv/Scripts/python.exe'
+& $py -c "from pathlib import Path; from dusnx_core.llm_data import completion_rows, read_sft; root=Path('datasets/llm_sft'); print({s: len(completion_rows(read_sft(root / (s + '.jsonl'), s))) for s in ('train','validation','test')})"
+Get-FileHash datasets/llm_sft/train.jsonl,datasets/llm_sft/validation.jsonl,datasets/llm_sft/test.jsonl -Algorithm SHA256 | Format-Table Path,Hash
+```
+
+`result_files` của `train_validation` phải chứa đúng `train.jsonl` và `validation.jsonl`; loại `independent_test` chỉ chứa `test.jsonl`. Mỗi giá trị là SHA-256 của **byte nguyên gốc** trong file tương ứng (PowerShell `Get-FileHash` dùng đúng byte đó; không hash JSON đã parse hoặc đã serialize lại). Lệnh apply tự tạo các hash này. Nếu dữ liệu đổi sau review/export, xuất và review lại đúng nguồn trước khi khóa.
+
+Sau khi hai receipt thật khớp, `lock_llm_data.py` mới ghi manifest schema v4 gồm `row_counts` theo split và hash của từng receipt đã lưu. Không tự sửa manifest hoặc receipt để làm cho gate đạt.
+
 3. Audit exact tokenizer, rồi khóa **trước train và prediction** bằng hai receipt thật:
 
 ```powershell
 runtime/llm-venv/Scripts/python.exe python/scripts/prepare_llm_data.py `
   --tokenizer-model Qwen/Qwen2.5-0.5B-Instruct `
   --tokenizer-revision 7ae557604adf67be50417f59c2c2f167def9a775 `
-  --max-length 512 --output runtime/llm-audit-reviewed
+  --max-length 640 --output runtime/llm-audit-reviewed
 & $py python/scripts/lock_llm_data.py --human-author AUTHOR_ID --reviewer REVIEWER_ID `
   --train-review-receipt runtime/llm-review-train-validation/review_receipt.json `
   --test-review-receipt runtime/llm-review-test/review_receipt.json `
@@ -83,13 +100,22 @@ Lệnh đầu chỉ dành cho người xác nhận thật; kiểm tra schema/spl
 2. **File → Save a copy in Drive** chỉ lưu notebook; không cần mount Drive cho train. **Runtime → Change runtime type → T4 GPU → Save**. Không có GPU vẫn chạy smoke CPU được, full train báo lỗi rõ.
 3. Ô đầu cố ý dừng ở `REPLACE_WITH_REVIEWED_DATA_COMMIT`. Dán SHA 40 ký tự của commit chứa dữ liệu đã duyệt và manifest đã khóa; notebook không cho dùng nhánh động như `main`. Không dùng token trong notebook.
 4. Chạy ô cài pinned packages trong venv riêng `/content/dusnx-llm-env`, rồi kiểm tra Python/PyTorch/GPU thật qua interpreter đó. Python 3.11–3.13, torch 2.8.0, Transformers 4.56.2, TRL 0.23.1, PEFT 0.17.1. Kernel Colab giữ thư viện download; môi trường train không dùng torchvision/torchaudio có sẵn. Không khẳng định bộ này đã chạy GPU Colab chỉ vì smoke CPU đạt.
-5. Chạy audit; notebook dùng đúng tokenizer/revision và chặn sample vượt 512 token. Đọc `/content/llm-audit/audit.json`, `audit.md`, `human_review_sample.json`. Smoke CPU không tải pretrained weights; kiểm tra hai epoch qua save/resume. Không gọi loss smoke là chất lượng base.
+5. Chạy audit; notebook dùng đúng tokenizer/revision và chặn sample vượt 640 token. Đọc `/content/llm-audit/audit.json`, `audit.md`, `human_review_sample.json`. Smoke CPU không tải pretrained weights; kiểm tra hai epoch qua save/resume. Không gọi loss smoke là chất lượng base.
 6. Sau duyệt/khóa, bật `RUN_FULL=True`. Chạy chặng epoch 1. Tải **`dusnx-llm-run.zip` và `.zip.sha256`** ngay, kiểm tra trong Downloads.
 7. Chạy ô `NEXT_EPOCH=2`, tải ZIP/SHA. Đổi thành 3 rồi chạy và tải lần nữa. Giữ backup trước đó. Mỗi epoch cũng tạo `*-step-N.zip`; `/content` mất khi runtime ngắt, file chưa tải không được bảo toàn. Drive mount là tùy chọn sau mỗi chặng.
 8. Nếu ngắt: runtime mới checkout **cùng commit**, cài **cùng versions**, upload ZIP + SHA, bật `RESTORE=True`, giải nén vào RUN trống. Bật RUN_FULL rồi chạy ô NEXT_EPOCH còn lại, **không chạy ô train chặng 1**. Resume giữ optimizer/scheduler/RNG và từ chối config/data/base/library/code đổi.
 9. Sau `training_complete`, bật `RUN_EXPORT=True`; merge CPU đúng base revision và convert F16 GGUF. Tải `dusnx-llm-export.zip` + SHA. Tùy chọn `RUN_HF_EVAL=True` sinh cùng prompt cho base/adapter, tải comparison ZIP. Không dùng kết quả để quay lại tune test.
 
-Config `configs/llm_sft.yaml`: 3 epochs, LR 1e-4, batch 1, accumulation 8, length 512, r8/alpha16/dropout0.05, seed20260930, validation loss/early stopping patience2. Loss chỉ trên completion assistant; không train user/system. Full train tải **model công khai** theo revision pin, không tải CSConDa/MASSIVE. CPU merge cần vài GB RAM ngoài môi trường; thiếu RAM dừng export và báo lỗi. OOM train: dùng config mới, giảm length chỉ khi mọi sample vẫn vừa, hoặc bật QLoRA và cài `requirements/llm-qlora.txt` (CUDA + bitsandbytes0.47.0); nhánh QLoRA chưa được kiểm chứng GPU ở máy bàn giao. Không âm thầm chuyển cấu hình khi resume.
+Config `configs/llm_sft.yaml`: 3 epochs, LR 1e-4, batch train/eval 1/1, accumulation 8, length 640, gradient checkpointing bật, r8/alpha16/dropout0.05, seed20260930, validation loss/early stopping patience2. Loss chỉ trên completion assistant; không train user/system. Full train tải **model công khai** theo revision pin, không tải CSConDa/MASSIVE. CPU merge cần vài GB RAM ngoài môi trường; thiếu RAM dừng export và báo lỗi.
+
+Full SFT tự dùng CUDA khi có; dùng BF16 nếu GPU báo hỗ trợ, nếu không thì FP16. Thiếu CUDA sẽ dừng với lỗi rõ ràng. Có thể ghi đè tham số riêng cho một lần chạy mà không sửa config hoặc dữ liệu:
+Resume phải dùng cùng effective config và cùng runtime precision (BF16/FP16); script ghi precision vào contract để từ chối resume nếu precision khác.
+
+```powershell
+& $py python/scripts/finetune_llm.py --output runtime/sft-run --per-device-train-batch-size 1 --per-device-eval-batch-size 1 --gradient-accumulation-steps 8 --max-length 640 --gradient-checkpointing
+```
+
+Các cờ trên nhận giá trị cho lần chạy đó; bỏ cờ để giữ giá trị trong config (mặc định `max_length: 640`). `--no-gradient-checkpointing` tắt checkpointing tường minh. Nếu hết VRAM, lệnh báo lỗi và dừng; người vận hành có thể chạy lại với batch nhỏ hơn, accumulation khác, checkpointing hoặc max_length do mình chọn. Script không tự giảm length, bật QLoRA hay thay đổi dữ liệu. QLoRA vẫn tắt theo config mặc định; không đổi cấu hình model chỉ để né OOM. Resume yêu cầu cùng effective config, dữ liệu, commit và thư viện như lần chạy ban đầu.
 
 ## Artifact và đưa về Windows
 
