@@ -1,0 +1,215 @@
+{
+  "timestamp_utc": "2026-11-03T18:07:31.306602+00:00",
+  "gateway": "http://127.0.0.1:8187",
+  "expected_model": "qwen3:4b",
+  "expected_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+  "model_identity": {
+    "name": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "parameter_size": "4.0B",
+    "quantization_level": "Q4_K_M",
+    "size_bytes": 2497293931
+  },
+  "status": "provider_quality_rejected",
+  "responses": {
+    "infrastructure": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "b099a18fdf80d49efe32e98861d2a704",
+        "7a9fabb02896beedcd45eed8ccd5c841"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "b099a18fdf80d49efe32e98861d2a704"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "database": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "7a9fabb02896beedcd45eed8ccd5c841",
+        "b099a18fdf80d49efe32e98861d2a704"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "7a9fabb02896beedcd45eed8ccd5c841"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "both": {
+      "reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn AWS cho dự án hạ tầng đám mây năm 2026.\nTheo trí nhớ đang hiệu lực: chúng tôi chọn PostgreSQL làm hệ thống cơ sở dữ liệu chính.",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "b099a18fdf80d49efe32e98861d2a704",
+        "7a9fabb02896beedcd45eed8ccd5c841"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [
+        "b099a18fdf80d49efe32e98861d2a704",
+        "7a9fabb02896beedcd45eed8ccd5c841"
+      ],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "grounded_template",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "ambiguous": {
+      "reply": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "b099a18fdf80d49efe32e98861d2a704",
+        "7a9fabb02896beedcd45eed8ccd5c841"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": false,
+      "provider_call_count": 0,
+      "response_source": "clarification",
+      "provider_ok": true,
+      "provider_used": null,
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": null,
+      "sanitizer_changed": false,
+      "raw_output_sha256": null,
+      "quality_status": null,
+      "provider_elapsed_ms": 0.0,
+      "provider_attempts": [],
+      "token_budget": null
+    },
+    "llm": {
+      "reply": "[Ollama trả nội dung rỗng (empty_content)]",
+      "raw_provider_reply": null,
+      "provider_sanitized_reply": null,
+      "candidate_memory_ids": [
+        "b099a18fdf80d49efe32e98861d2a704",
+        "7a9fabb02896beedcd45eed8ccd5c841"
+      ],
+      "prompt_memory_ids": [],
+      "memory_ids_used": [],
+      "provider_called": true,
+      "provider_call_count": 1,
+      "response_source": "provider_error",
+      "provider_ok": false,
+      "provider_used": "ollama",
+      "model_used": null,
+      "tokens_generated": null,
+      "done_reason": "length",
+      "sanitizer_changed": false,
+      "raw_output_sha256": "6cb8750fe439df3f356d62490e3631d849487c8d24ea2496ec92a3bc27b439a3",
+      "quality_status": null,
+      "provider_elapsed_ms": 37280.99999999904,
+      "provider_attempts": [
+        {
+          "attempt": 1,
+          "done_reason": "length",
+          "elapsed_ms": 37281.0,
+          "called": true,
+          "model_used": "qwen3:4b",
+          "tokens_generated": 512,
+          "sanitizer_changed": false,
+          "provider_diagnostics": {
+            "configured_model": "qwen3:4b",
+            "num_predict": 512,
+            "call_timeout_seconds": 60.0,
+            "response_bytes": 2826,
+            "response_sha256": "7ae7bc5703eabd6b58fb48e3e3ea613077f792cc9b2ea371d52f05b64e841725",
+            "model": "qwen3:4b",
+            "done": true,
+            "done_reason": "length",
+            "prompt_eval_count": 482,
+            "eval_count": 512,
+            "total_duration": 37285103400,
+            "load_duration": 7690414800,
+            "prompt_eval_duration": 469907000,
+            "eval_duration": 29099511000,
+            "response_classification": "thinking_only_budget_exhausted",
+            "content_chars": 0,
+            "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "thinking_chars": 2174,
+            "thinking_sha256": "d89d02ee64c4ff43a8f193e9519fe8b337435ed5d248f8566bf2184129b863f1",
+            "token_budget_status": "reached",
+            "validation": "empty_content"
+          },
+          "raw_output_sha256": "6cb8750fe439df3f356d62490e3631d849487c8d24ea2496ec92a3bc27b439a3",
+          "raw_provider_reply": null,
+          "sanitized_output": null,
+          "quality_status": null,
+          "entity_status": null,
+          "repetition_flags": []
+        }
+      ],
+      "token_budget": null
+    }
+  },
+  "health": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "model_version": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+    "provider_ok": true
+  },
+  "generation_evaluation": {
+    "status": "provider_quality_rejected",
+    "transport_status": "passed",
+    "actual_model": "qwen3:4b",
+    "language_evaluation": {
+      "status": "not_applicable",
+      "reason": "provider_not_successful"
+    },
+    "language_status": "not_applicable",
+    "completion_evaluation": {
+      "status": "not_applicable",
+      "reason": "provider_not_successful"
+    },
+    "task_status": "uncertain",
+    "task_review": "not_evaluated",
+    "application_quality_status": "not_successful",
+    "provider_call_count": 1
+  },
+  "transport_status": "passed",
+  "language_status": "not_applicable",
+  "completion_status": "not_applicable",
+  "task_status": "uncertain"
+}

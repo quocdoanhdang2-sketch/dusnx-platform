@@ -31,11 +31,14 @@ def test_ollama_readiness_reports_offline_service(monkeypatch):
     assert health["error"] == "unreachable"
 
 
-def test_ollama_readiness_accepts_implicit_latest_but_not_other_explicit_tag(monkeypatch):
+def test_ollama_readiness_accepts_only_the_implicit_latest_tag(monkeypatch):
     monkeypatch.setenv("DUSNX_OLLAMA_MODEL", "dusnx-vi-candidate")
     monkeypatch.setattr(provider.urllib.request, "urlopen", lambda *args, **kwargs:
                         io.BytesIO(json.dumps({"models": [{"name": "dusnx-vi-candidate:latest"}]}).encode()))
-    assert provider.check_ollama_health()["model_available"] is True
+    health = provider.check_ollama_health()
+    assert health["model_available"] is True
+    assert health["configured_model"] == "dusnx-vi-candidate"
 
     monkeypatch.setenv("DUSNX_OLLAMA_MODEL", "dusnx-vi-candidate:1.0")
-    assert provider.check_ollama_health()["model_available"] is False
+    health = provider.check_ollama_health()
+    assert health["model_available"] is False

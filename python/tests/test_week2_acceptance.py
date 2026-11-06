@@ -545,7 +545,8 @@ class TestUnproxiedStaticServer:
         t = threading.Thread(target=server.serve_forever, daemon=True)
         t.start()
         try:
-            r = httpx.post(f"http://127.0.0.1:{port}/v1/auth/login", json={"username": "a", "password": "b"}, timeout=3)
+            r = httpx.post(f"http://127.0.0.1:{port}/v1/auth/login", json={"username": "a", "password": "b"},
+                           timeout=3, trust_env=False)
             # Static server returns 404 or 501 for unhandled POST /v1 route
             assert r.status_code in (404, 501), "Raw http.server must fail to handle /v1 API routes without proxy"
         except (httpx.ReadError, httpx.ConnectError):

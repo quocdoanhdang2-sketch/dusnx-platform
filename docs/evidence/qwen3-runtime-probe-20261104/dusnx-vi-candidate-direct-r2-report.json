@@ -1,0 +1,140 @@
+{
+  "probe_id": "DUSNX_VI_CANDIDATE_DIRECT_TASK_COMPARISON_R2",
+  "created_at_utc": "2026-11-03T18:49:01.843738+00:00",
+  "transport": "direct Ollama /api/chat; not Gateway or browser",
+  "model_tag": "dusnx-vi-candidate:latest",
+  "model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+  "ollama_version": "0.40.14",
+  "model_metadata": {
+    "details": {
+      "parent_model": "dusnx-vi-v1-f16.gguf",
+      "format": "gguf",
+      "family": "qwen2",
+      "families": [
+        "qwen2"
+      ],
+      "parameter_size": "494.03M",
+      "quantization_level": "F16"
+    },
+    "parameters": null,
+    "architecture": "qwen2",
+    "parameter_count": 494032768,
+    "quantization": 1,
+    "template_sha256": "eb4402837c7829a690fa845de4d7f3fd842c2adee476d5341da8a46ea9255175",
+    "raw_modelfile_or_template_saved": false
+  },
+  "fixed_settings": {
+    "temperature": 0.1,
+    "num_predict": 512,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64,
+    "num_ctx": 4096,
+    "timeout_seconds": 65,
+    "stream": false,
+    "think_field": "omitted"
+  },
+  "cases": [
+    {
+      "id": "TRANSLATE_ENTITIES_EN",
+      "system": "Translate the user request into English. Preserve exact URLs and KEY=VALUE literals. Do not include analysis.",
+      "user": "Translate this sentence to English: Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối."
+    },
+    {
+      "id": "API_GATEWAY_BENEFIT_VI",
+      "system": "Trả lời ngắn gọn bằng tiếng Việt. Không lặp lại hướng dẫn hoặc nêu phân tích.",
+      "user": "Nêu một lợi ích cụ thể của API Gateway trong kiến trúc microservices."
+    }
+  ],
+  "trials": [
+    {
+      "case_id": "TRANSLATE_ENTITIES_EN",
+      "repeat": 1,
+      "budget": 512,
+      "request_sha256": "b6084eccc6f2bf2fbcfadcabcc6b4809c74b859bedf1eaedd8bb639ab28fdfd3",
+      "started_at_utc": "2026-11-03T18:49:01.844589+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 27,
+      "prompt_eval_count": 65,
+      "content_chars": 108,
+      "content_sha256": "54934d0c5c3a0c9f78c0f9f9a548baf8f2ee6cabfb8c8ea839871527478ad08c",
+      "content": "The service at http://service.example.net/v2 uses the variable DUSNX_PORT=8188 for establishing connections.",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 580923500,
+      "load_duration_ns": 3971900,
+      "elapsed_seconds": 0.583
+    },
+    {
+      "case_id": "TRANSLATE_ENTITIES_EN",
+      "repeat": 2,
+      "budget": 512,
+      "request_sha256": "b6084eccc6f2bf2fbcfadcabcc6b4809c74b859bedf1eaedd8bb639ab28fdfd3",
+      "started_at_utc": "2026-11-03T18:49:02.430019+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 27,
+      "prompt_eval_count": 65,
+      "content_chars": 108,
+      "content_sha256": "54934d0c5c3a0c9f78c0f9f9a548baf8f2ee6cabfb8c8ea839871527478ad08c",
+      "content": "The service at http://service.example.net/v2 uses the variable DUSNX_PORT=8188 for establishing connections.",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 276062000,
+      "load_duration_ns": 7356100,
+      "elapsed_seconds": 0.28
+    },
+    {
+      "case_id": "API_GATEWAY_BENEFIT_VI",
+      "repeat": 1,
+      "budget": 512,
+      "request_sha256": "294352aed7a5118f26c95035fdfd526c6c1f6464a902e3ca07b37de04e0daed4",
+      "started_at_utc": "2026-11-03T18:49:02.711476+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 63,
+      "prompt_eval_count": 50,
+      "content_chars": 256,
+      "content_sha256": "d5ab9d224e56093c6340c86076c22f4c17a79e5eaae9d3cd5074fae4ce06b383",
+      "content": "API Gateway giúp duy trì sự ổn định và hiệu quả giữa các dịch vụ, ngăn chặn truy cập không chính xác từ nhiều nguồn khác nhau vào một dịch vụ nhất định. Nó cũng hỗ trợ việc phân phối dữ liệu theo yêu cầu cụ thể của khách hàng trong từng dịch vụ riêng biệt.",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 655432000,
+      "load_duration_ns": 6286500,
+      "elapsed_seconds": 0.658
+    },
+    {
+      "case_id": "API_GATEWAY_BENEFIT_VI",
+      "repeat": 2,
+      "budget": 512,
+      "request_sha256": "294352aed7a5118f26c95035fdfd526c6c1f6464a902e3ca07b37de04e0daed4",
+      "started_at_utc": "2026-11-03T18:49:03.370339+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 59,
+      "prompt_eval_count": 50,
+      "content_chars": 168,
+      "content_sha256": "436c49f28bfb74d3296cbfbd9bd079f6a373bfbd14918b45b34de2567c45cfca",
+      "content": "API Gateway giúp duy trì sự ổn định và bảo mật giữa các dịch vụ, ngăn chặn việc truy cập không chính xác từ nhiều nguồn khác nhau.它允許不同服務之間的互聯互通，提供了一個安全、可靠和可管理的方式來分發請求。",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 602418000,
+      "load_duration_ns": 10192800,
+      "elapsed_seconds": 0.619
+    }
+  ],
+  "execution_status": "completed",
+  "completed_at_utc": "2026-11-03T18:49:03.990690+00:00"
+}

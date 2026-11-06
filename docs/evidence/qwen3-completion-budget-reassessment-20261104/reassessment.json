@@ -1,0 +1,286 @@
+{
+  "kind": "post-hoc evaluator comparison over saved synthetic report; no generation rerun and original report unchanged",
+  "source_report": "docs/evidence/qwen3-invalid-schema-followup-20261104/gateway-qwen3-num-predict-1024-final-report.json",
+  "source_report_sha256": "ff1329444d3182e22a8441565b805ac16b1eefa2414d14997c5181653b03a825",
+  "source_run_code_sha": "3747cbdaf4af9d8ea0ba7920c18c8bebf118cbe4",
+  "reassessment_base_code_sha": "77580a00441d56ff084891112a7e8e7c08cbf63e",
+  "dirty_harness_patch_sha256": "1295909f82aad538af3066838840e83c24cbe6287adaae9570e81cd0b37350c0",
+  "reassessment_method": "Recompute completion only for each saved llm_generation case using current evaluator and its recorded token_budget/provider_attempt metadata. Do not alter task/language/contract result or any historical response.",
+  "results": [
+    {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "tokens_generated": 470,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "tokens_generated": 967,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 967,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "tokens_generated": 609,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 609,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "CASE_05_AUTO_VI",
+      "tokens_generated": 1024,
+      "provider_budget": 1024,
+      "done_reason": "length",
+      "old_completion": {
+        "status": "uncertain",
+        "reason": "provider_limit_without_clear_truncation",
+        "tokens_generated": 1024,
+        "token_budget": 512,
+        "done_reason": "length"
+      },
+      "reassessed_completion": {
+        "status": "uncertain",
+        "reason": "provider_limit_without_clear_truncation",
+        "tokens_generated": 1024,
+        "token_budget": 1024,
+        "done_reason": "length"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "CASE_06_AUTO_EN",
+      "tokens_generated": 549,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 549,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP",
+      "tokens_generated": 955,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 955,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT",
+      "tokens_generated": 1023,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 1023,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_23_TOPIC_SHIFT_TLS_FOLLOWUP",
+      "tokens_generated": 651,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 651,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_24_ECC_STANDARD_USE",
+      "tokens_generated": 427,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_25_TRANSLATE_PRESERVE_LITERAL",
+      "tokens_generated": null,
+      "provider_budget": 1024,
+      "done_reason": "length",
+      "old_completion": {
+        "status": "not_applicable",
+        "reason": "provider_not_successful"
+      },
+      "reassessed_completion": {
+        "status": "not_applicable",
+        "reason": "provider_not_successful"
+      },
+      "contract_passed_before": false,
+      "task_status_unchanged": "not_applicable"
+    },
+    {
+      "case_id": "VARIANT_26_CROSS_LANGUAGE_PASSWORD_SALT",
+      "tokens_generated": 537,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 537,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_27_HTTP_IDEMPOTENCY_EXPLANATION",
+      "tokens_generated": 723,
+      "provider_budget": 1024,
+      "done_reason": "stop",
+      "old_completion": {
+        "status": "passed",
+        "reason": "provider_reported_stop_at_or_above_token_budget",
+        "tokens_generated": 723,
+        "token_budget": 512,
+        "done_reason": "stop"
+      },
+      "reassessed_completion": {
+        "status": "passed",
+        "reason": "no_provider_limit_or_obvious_open_clause",
+        "done_reason": "stop"
+      },
+      "contract_passed_before": true,
+      "task_status_unchanged": "uncertain"
+    },
+    {
+      "case_id": "VARIANT_16_TOPIC_SHIFT_FOLLOWUP",
+      "tokens_generated": null,
+      "provider_budget": null,
+      "done_reason": "length",
+      "old_completion": {
+        "status": "not_applicable",
+        "reason": "provider_not_successful"
+      },
+      "reassessed_completion": {
+        "status": "not_applicable",
+        "reason": "provider_not_successful"
+      },
+      "contract_passed_before": false,
+      "task_status_unchanged": "not_applicable"
+    },
+    {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "tokens_generated": null,
+      "provider_budget": null,
+      "done_reason": "length",
+      "old_completion": {
+        "status": "not_applicable",
+        "reason": "provider_not_successful"
+      },
+      "reassessed_completion": {
+        "status": "not_applicable",
+        "reason": "provider_not_successful"
+      },
+      "contract_passed_before": false,
+      "task_status_unchanged": "not_applicable"
+    }
+  ],
+  "summary": {
+    "reassessed_llm_cases": 14,
+    "task_failed_count_preserved": 0,
+    "task_uncertain_count_preserved": 11,
+    "historical_contract_summary_preserved": {
+      "passed": 23,
+      "failed": 4
+    }
+  }
+}

@@ -1,0 +1,3455 @@
+{
+  "timestamp_utc": "2026-11-03T14:31:07.331484+00:00",
+  "gateway_url": "http://127.0.0.1:60903",
+  "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
+  "execution_status": "completed",
+  "command": [
+    "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+    "scripts/verify_bilingual_generation.py",
+    "--output-dir",
+    "runtime/quality-work-20261103/strict-qwen3-4b-r1",
+    "--expected-model",
+    "qwen3:4b",
+    "--expected-model-digest",
+    "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "--strict-language",
+    "--strict-quality"
+  ],
+  "working_directory": "D:\\Projects\\dusnx-platform",
+  "tool_versions": {
+    "python": "3.12.10"
+  },
+  "configuration": {
+    "provider": "ollama",
+    "model": "qwen3:4b",
+    "expected_model": "qwen3:4b",
+    "expected_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "actual_model_tag": "qwen3:4b",
+    "actual_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "token_budget": 512,
+    "context_size": 4096,
+    "temperature": 0.1,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64,
+    "checkpoint": "project default",
+    "raw_capture_enabled": true
+  },
+  "cases": {
+    "CASE_01_VI_PREF_VI": {
+      "case_id": "CASE_01_VI_PREF_VI",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi về tính năng sản phẩm nội bộ không có tài liệu grounding phải được làm rõ thay vì tự sinh thông tin.",
+      "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "unknown_product_clarification"
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 26,
+        "vi_words": 7,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires explicit uncertainty or clarification and rejects unsupported capability claims",
+          "disclaimer_or_question": true,
+          "unsupported_product_claim": false
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_02_EN_PREF_EN": {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
+      "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "ci_benefits_v1",
+        "basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+        "criteria": [
+          {
+            "id": "integrate_changes",
+            "terms_any": [
+              "integrate code",
+              "integrate changes",
+              "shared repository",
+              "merge changes"
+            ]
+          },
+          {
+            "id": "automated_validation",
+            "terms_any": [
+              "automated test",
+              "automated build",
+              "build and test",
+              "run tests"
+            ]
+          },
+          {
+            "id": "early_feedback",
+            "terms_any": [
+              "early feedback",
+              "catch bugs early",
+              "detect issues early",
+              "faster feedback"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 451,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 50094.00000000096,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 50079.0,
+            "tokens_generated": 451,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "01ee2929da5a9e9ea3acd869edf212e081be2efdab587cc2211d08b21f45cc24",
+            "raw_provider_reply": "Continuous integration (CI) provides several key benefits in modern software engineering practice:\n\n1. **Early bug detection**: Automated testing runs with every code commit, identifying issues before they propagate through the development pipeline.\n\n2. **Faster feedback cycles**: Developers receive immediate results from their changes, reducing debugging time and accelerating iterative progress.\n\n3. **More reliable builds**: Consistent integration practices minimize build failures by ensuring all components work together in a shared environment.\n\n4. **Improved collaboration**: Shared pipelines create transparency between teams (e.g., frontend/backend), enabling smoother cross-functional development workflows.\n\nThese benefits collectively enhance software quality, reduce release risks, and support agile delivery while maintaining robustness through automation.",
+            "sanitized_output": "Continuous integration (CI) provides several key benefits in modern software engineering practice:\n\n1. **Early bug detection**: Automated testing runs with every code commit, identifying issues before they propagate through the development pipeline.\n\n2. **Faster feedback cycles**: Developers receive immediate results from their changes, reducing debugging time and accelerating iterative progress.\n\n3. **More reliable builds**: Consistent integration practices minimize build failures by ensuring all components work together in a shared environment.\n\n4. **Improved collaboration**: Shared pipelines create transparency between teams (e.g., frontend/backend), enabling smoother cross-functional development workflows.\n\nThese benefits collectively enhance software quality, reduce release risks, and support agile delivery while maintaining robustness through automation.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "01ee2929da5a9e9ea3acd869edf212e081be2efdab587cc2211d08b21f45cc24",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Continuous integration (CI) provides several key benefits in modern software engineering practice:\n\n1. **Early bug detection**: Automated testing runs with every code commit, identifying issues before they propagate through the development pipeline.\n\n2. **Faster feedback cycles**: Developers receive immediate results from their changes, reducing debugging time and accelerating iterative progress.\n\n3. **More reliable builds**: Consistent integration practices minimize build failures by ensuring all components work together in a shared environment.\n\n4. **Improved collaboration**: Shared pipelines create transparency between teams (e.g., frontend/backend), enabling smoother cross-functional development workflows.\n\nThese benefits collectively enhance software quality, reduce release risks, and support agile delivery while maintaining robustness through automation.",
+      "raw_provider_reply": "Continuous integration (CI) provides several key benefits in modern software engineering practice:\n\n1. **Early bug detection**: Automated testing runs with every code commit, identifying issues before they propagate through the development pipeline.\n\n2. **Faster feedback cycles**: Developers receive immediate results from their changes, reducing debugging time and accelerating iterative progress.\n\n3. **More reliable builds**: Consistent integration practices minimize build failures by ensuring all components work together in a shared environment.\n\n4. **Improved collaboration**: Shared pipelines create transparency between teams (e.g., frontend/backend), enabling smoother cross-functional development workflows.\n\nThese benefits collectively enhance software quality, reduce release risks, and support agile delivery while maintaining robustness through automation.",
+      "sanitized_provider_output": "Continuous integration (CI) provides several key benefits in modern software engineering practice:\n\n1. **Early bug detection**: Automated testing runs with every code commit, identifying issues before they propagate through the development pipeline.\n\n2. **Faster feedback cycles**: Developers receive immediate results from their changes, reducing debugging time and accelerating iterative progress.\n\n3. **More reliable builds**: Consistent integration practices minimize build failures by ensuring all components work together in a shared environment.\n\n4. **Improved collaboration**: Shared pipelines create transparency between teams (e.g., frontend/backend), enabling smoother cross-functional development workflows.\n\nThese benefits collectively enhance software quality, reduce release risks, and support agile delivery while maintaining robustness through automation.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 4,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "ci_benefits_v1",
+          "rubric_basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+          "automated_signals": [
+            {
+              "criterion": "integrate_changes",
+              "signal_observed": false,
+              "terms_checked": [
+                "integrate code",
+                "integrate changes",
+                "shared repository",
+                "merge changes"
+              ]
+            },
+            {
+              "criterion": "automated_validation",
+              "signal_observed": true,
+              "terms_checked": [
+                "automated test",
+                "automated build",
+                "build and test",
+                "run tests"
+              ]
+            },
+            {
+              "criterion": "early_feedback",
+              "signal_observed": true,
+              "terms_checked": [
+                "early feedback",
+                "catch bugs early",
+                "detect issues early",
+                "faster feedback"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_03_VI_PREF_EN": {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
+      "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "api_gateway_operation_v1",
+        "basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+        "criteria": [
+          {
+            "id": "intermediary",
+            "terms_any": [
+              "intermediary",
+              "middle layer",
+              "đứng giữa",
+              "trung gian"
+            ]
+          },
+          {
+            "id": "route_requests",
+            "terms_any": [
+              "route requests",
+              "routes requests",
+              "forward requests",
+              "định tuyến",
+              "chuyển tiếp yêu cầu"
+            ]
+          },
+          {
+            "id": "backend_services",
+            "terms_any": [
+              "backend services",
+              "back-end services",
+              "dịch vụ phía sau",
+              "các dịch vụ"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 24109.00000000038,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 24109.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "api_gateway_operation_v1",
+          "rubric_basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+          "automated_signals": [
+            {
+              "criterion": "intermediary",
+              "signal_observed": false,
+              "terms_checked": [
+                "intermediary",
+                "middle layer",
+                "đứng giữa",
+                "trung gian"
+              ]
+            },
+            {
+              "criterion": "route_requests",
+              "signal_observed": false,
+              "terms_checked": [
+                "route requests",
+                "routes requests",
+                "forward requests",
+                "định tuyến",
+                "chuyển tiếp yêu cầu"
+              ]
+            },
+            {
+              "criterion": "backend_services",
+              "signal_observed": false,
+              "terms_checked": [
+                "backend services",
+                "back-end services",
+                "dịch vụ phía sau",
+                "các dịch vụ"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_04_EN_PREF_VI": {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
+      "prompt": "Briefly explain why database indexing improves query performance.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "database_indexing_v1",
+        "basis": "The question asks for the performance mechanism; a valid short answer should connect an index to locating rows without scanning the full table. No single analogy or implementation is required.",
+        "criteria": [
+          {
+            "id": "lookup_structure",
+            "terms_any": [
+              "index structure",
+              "search structure",
+              "b-tree",
+              "b tree",
+              "cấu trúc chỉ mục"
+            ]
+          },
+          {
+            "id": "avoid_full_scan",
+            "terms_any": [
+              "full table scan",
+              "scan every row",
+              "avoid scanning",
+              "không quét toàn bộ",
+              "không cần duyệt toàn bộ"
+            ]
+          },
+          {
+            "id": "faster_lookup",
+            "terms_any": [
+              "faster lookup",
+              "reduce search time",
+              "tăng tốc tìm kiếm",
+              "giảm thời gian tìm"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25031.000000002678,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 25031.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "database_indexing_v1",
+          "rubric_basis": "The question asks for the performance mechanism; a valid short answer should connect an index to locating rows without scanning the full table. No single analogy or implementation is required.",
+          "automated_signals": [
+            {
+              "criterion": "lookup_structure",
+              "signal_observed": false,
+              "terms_checked": [
+                "index structure",
+                "search structure",
+                "b-tree",
+                "b tree",
+                "cấu trúc chỉ mục"
+              ]
+            },
+            {
+              "criterion": "avoid_full_scan",
+              "signal_observed": false,
+              "terms_checked": [
+                "full table scan",
+                "scan every row",
+                "avoid scanning",
+                "không quét toàn bộ",
+                "không cần duyệt toàn bộ"
+              ]
+            },
+            {
+              "criterion": "faster_lookup",
+              "signal_observed": false,
+              "terms_checked": [
+                "faster lookup",
+                "reduce search time",
+                "tăng tốc tìm kiếm",
+                "giảm thời gian tìm"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_05_AUTO_VI": {
+      "case_id": "CASE_05_AUTO_VI",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
+      "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "remote_focus_v1",
+        "basis": "The prompt asks for practical ways to sustain focus while working remotely; the rubric looks for concrete attention management, work planning, and interruption control, not a fixed list.",
+        "criteria": [
+          {
+            "id": "reduce_distractions",
+            "terms_any": [
+              "distractions",
+              "notifications",
+              "tránh xao nhãng",
+              "tắt thông báo"
+            ]
+          },
+          {
+            "id": "plan_work",
+            "terms_any": [
+              "schedule",
+              "time block",
+              "prioritize tasks",
+              "lịch trình",
+              "chia thời gian",
+              "ưu tiên công việc"
+            ]
+          },
+          {
+            "id": "breaks_or_workspace",
+            "terms_any": [
+              "break",
+              "workspace",
+              "nghỉ giải lao",
+              "không gian làm việc"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25311.99999999808,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 25312.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "remote_focus_v1",
+          "rubric_basis": "The prompt asks for practical ways to sustain focus while working remotely; the rubric looks for concrete attention management, work planning, and interruption control, not a fixed list.",
+          "automated_signals": [
+            {
+              "criterion": "reduce_distractions",
+              "signal_observed": false,
+              "terms_checked": [
+                "distractions",
+                "notifications",
+                "tránh xao nhãng",
+                "tắt thông báo"
+              ]
+            },
+            {
+              "criterion": "plan_work",
+              "signal_observed": false,
+              "terms_checked": [
+                "schedule",
+                "time block",
+                "prioritize tasks",
+                "lịch trình",
+                "chia thời gian",
+                "ưu tiên công việc"
+              ]
+            },
+            {
+              "criterion": "breaks_or_workspace",
+              "signal_observed": false,
+              "terms_checked": [
+                "break",
+                "workspace",
+                "nghỉ giải lao",
+                "không gian làm việc"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_06_AUTO_EN": {
+      "case_id": "CASE_06_AUTO_EN",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
+      "prompt": "How does public key cryptography secure internet communications?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "public_key_crypto_v1",
+        "basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+        "criteria": [
+          {
+            "id": "asymmetric_key_pair",
+            "terms_any": [
+              "public and private key",
+              "public/private key pair",
+              "asymmetric key pair"
+            ]
+          },
+          {
+            "id": "valid_security_use",
+            "terms_any": [
+              "encrypt",
+              "decryption",
+              "digital signature",
+              "authenticate",
+              "authentication"
+            ]
+          },
+          {
+            "id": "internet_protocol_context",
+            "terms_any": [
+              "tls",
+              "https",
+              "key exchange",
+              "session key"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 512,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 24860.000000000582,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 24860.0,
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "779c8fb33f52509933a66a66df957859728dbde8efa084dfe5c0e98e63cfa7ba",
+            "raw_provider_reply": "Public key cryptography secures internet communications through asymmetric encryption, where each participant generates a pair of mathematically linked keys: a **public key** (shared openly) and a **private key** (kept secret). Here’s how this ensures security:\n\n1. **Encryption**: Data sent over the network is encrypted using the recipient's *public key*. Only their corresponding private key can decrypt it, preventing eavesdroppers from reading intercepted messages.\n2. **Authentication & Integrity**: Digital signatures use a sender's *private key* to sign data (e.g., for HTTPS). Anyone with the public key verifies this signature, confirming the message hasn’t been tampered with and originates from the claimed source.\n3. **Trust Establishment**: Public keys are",
+            "sanitized_output": "Public key cryptography secures internet communications through asymmetric encryption, where each participant generates a pair of mathematically linked keys: a **public key** (shared openly) and a **private key** (kept secret). Here’s how this ensures security:\n\n1. **Encryption**: Data sent over the network is encrypted using the recipient's *public key*. Only their corresponding private key can decrypt it, preventing eavesdroppers from reading intercepted messages.\n2. **Authentication & Integrity**: Digital signatures use a sender's *private key* to sign data (e.g., for HTTPS). Anyone with the public key verifies this signature, confirming the message hasn’t been tampered with and originates from the claimed source.\n3. **Trust Establishment**: Public keys are",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "779c8fb33f52509933a66a66df957859728dbde8efa084dfe5c0e98e63cfa7ba",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Public key cryptography secures internet communications through asymmetric encryption, where each participant generates a pair of mathematically linked keys: a **public key** (shared openly) and a **private key** (kept secret). Here’s how this ensures security:\n\n1. **Encryption**: Data sent over the network is encrypted using the recipient's *public key*. Only their corresponding private key can decrypt it, preventing eavesdroppers from reading intercepted messages.\n2. **Authentication & Integrity**: Digital signatures use a sender's *private key* to sign data (e.g., for HTTPS). Anyone with the public key verifies this signature, confirming the message hasn’t been tampered with and originates from the claimed source.\n3. **Trust Establishment**: Public keys are",
+      "raw_provider_reply": "Public key cryptography secures internet communications through asymmetric encryption, where each participant generates a pair of mathematically linked keys: a **public key** (shared openly) and a **private key** (kept secret). Here’s how this ensures security:\n\n1. **Encryption**: Data sent over the network is encrypted using the recipient's *public key*. Only their corresponding private key can decrypt it, preventing eavesdroppers from reading intercepted messages.\n2. **Authentication & Integrity**: Digital signatures use a sender's *private key* to sign data (e.g., for HTTPS). Anyone with the public key verifies this signature, confirming the message hasn’t been tampered with and originates from the claimed source.\n3. **Trust Establishment**: Public keys are",
+      "sanitized_provider_output": "Public key cryptography secures internet communications through asymmetric encryption, where each participant generates a pair of mathematically linked keys: a **public key** (shared openly) and a **private key** (kept secret). Here’s how this ensures security:\n\n1. **Encryption**: Data sent over the network is encrypted using the recipient's *public key*. Only their corresponding private key can decrypt it, preventing eavesdroppers from reading intercepted messages.\n2. **Authentication & Integrity**: Digital signatures use a sender's *private key* to sign data (e.g., for HTTPS). Anyone with the public key verifies this signature, confirming the message hasn’t been tampered with and originates from the claimed source.\n3. **Trust Establishment**: Public keys are",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 11,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "public_key_crypto_v1",
+          "rubric_basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+          "automated_signals": [
+            {
+              "criterion": "asymmetric_key_pair",
+              "signal_observed": false,
+              "terms_checked": [
+                "public and private key",
+                "public/private key pair",
+                "asymmetric key pair"
+              ]
+            },
+            {
+              "criterion": "valid_security_use",
+              "signal_observed": true,
+              "terms_checked": [
+                "encrypt",
+                "decryption",
+                "digital signature",
+                "authenticate",
+                "authentication"
+              ]
+            },
+            {
+              "criterion": "internet_protocol_context",
+              "signal_observed": true,
+              "terms_checked": [
+                "tls",
+                "https",
+                "key exchange",
+                "session key"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "failed",
+          "reason": "provider_reported_token_limit",
+          "done_reason": "length"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_07_VERBATIM_ENTITIES": {
+      "case_id": "CASE_07_VERBATIM_ENTITIES",
+      "case_type": "application_formatting",
+      "objective": "Định dạng cấu hình .env từ các giá trị người dùng cung cấp; phân biệt formatter với generation.",
+      "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "DUSNX_PORT=8088"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://api.dusnx.org/v1/auth\nDUSNX_PORT=8088\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://api.dusnx.org/v1/auth\nDUSNX_PORT=8088\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "DUSNX_PORT",
+              "8088"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "DUSNX_PORT",
+              "8088"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "VARIANT_14_ENTITY_CONFIG_WEBHOOK": {
+      "case_id": "VARIANT_14_ENTITY_CONFIG_WEBHOOK",
+      "case_type": "application_formatting",
+      "objective": "Tạo cấu hình .env, bảo toàn URL và assignment chính xác; không được chỉ chép prompt.",
+      "prompt": "Viết một đoạn cấu hình .env cho webhook, giữ URL https://hooks.example.net/v2/events và đặt WEBHOOK_RETRY_LIMIT=7. Giải thích ngắn gọn cách áp dụng.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "WEBHOOK_RETRY_LIMIT=7"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://hooks.example.net/v2/events\nWEBHOOK_RETRY_LIMIT=7\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://hooks.example.net/v2/events\nWEBHOOK_RETRY_LIMIT=7\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "WEBHOOK_RETRY_LIMIT",
+              "7"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "WEBHOOK_RETRY_LIMIT",
+              "7"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_15_ENTITY_CONFIG_QUERY_URL": {
+      "case_id": "VARIANT_15_ENTITY_CONFIG_QUERY_URL",
+      "case_type": "application_formatting",
+      "objective": "Tạo cấu hình .env, giữ nguyên URL có query/punctuation và giá trị không bị đổi.",
+      "prompt": "Provide an example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast, and set CACHE_TTL_SECONDS=45; include one sentence explaining where to put it.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "CACHE_TTL_SECONDS=45"
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://edge.example.org/api/v3?mode=fast\nCACHE_TTL_SECONDS=45\n```\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://edge.example.org/api/v3?mode=fast\nCACHE_TTL_SECONDS=45\n```\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 2,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "CACHE_TTL_SECONDS",
+              "45"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "CACHE_TTL_SECONDS",
+              "45"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION": {
+      "case_id": "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION",
+      "case_type": "application_formatting",
+      "objective": "Định dạng nhiều assignment đã cho, giữ giá trị có khoảng trắng và URL có query; không tạo biến từ query URL.",
+      "prompt": "Viết cấu hình .env với SERVICE_LABEL=\"orders api\", MAX_RETRIES = 3 và endpoint https://cfg.example.net/v1/run?mode=fast,.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "SERVICE_LABEL=orders api",
+          "MAX_RETRIES=3"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://cfg.example.net/v1/run?mode=fast\nSERVICE_LABEL=\"orders api\"\nMAX_RETRIES=3\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://cfg.example.net/v1/run?mode=fast\nSERVICE_LABEL=\"orders api\"\nMAX_RETRIES=3\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "SERVICE_LABEL",
+              "orders api"
+            ],
+            [
+              "MAX_RETRIES",
+              "3"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "MAX_RETRIES",
+              "3"
+            ],
+            [
+              "SERVICE_LABEL",
+              "orders api"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_20_ENV_VALUE_NOT_PROVIDED": {
+      "case_id": "VARIANT_20_ENV_VALUE_NOT_PROVIDED",
+      "case_type": "application_clarification",
+      "objective": "Không tự tạo giá trị cấu hình; hỏi người dùng khi họ nêu key nhưng chưa chọn value.",
+      "prompt": "Create a .env setting named CACHE_TTL_SECONDS, but I have not chosen its value yet.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "missing_config_value_clarification",
+        "key": "CACHE_TTL_SECONDS"
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "application_clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "What value should `CACHE_TTL_SECONDS` have?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "What value should `CACHE_TTL_SECONDS` have?",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 1,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires clarification for a missing value and rejects invented assignment values",
+          "key": "CACHE_TTL_SECONDS",
+          "asks_for_value": true,
+          "invented_value": false
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP": {
+      "case_id": "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau topic switch mới phải dùng chủ đề mới, không chỉ đạt bằng nhắc keyword; nội dung semantic cần human review.",
+      "prompt": "Nó có ưu điểm gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [
+        "Tôi đang so sánh monolith và microservices.",
+        "Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC)."
+      ],
+      "task_rubric": {
+        "kind": "context_subject",
+        "subject_terms": [
+          "elliptic-curve",
+          "elliptic curve",
+          "ECC",
+          "đường cong elliptic"
+        ],
+        "forbidden_terms": [
+          "monolith",
+          "microservices"
+        ],
+        "factual_red_flags": [
+          {
+            "id": "passwords_misrepresented_as_direct_ecc_encryption",
+            "pattern": "(?i)(?:(?:encrypt(?:ing|ion)?|encryption method).{0,30}passwords?|mã hóa.{0,20}mật khẩu)"
+          },
+          {
+            "id": "elliptic_curve_misrepresented_as_linear",
+            "pattern": "(?i)(?:linear equation|phương trình (?:số )?tuyến tính)"
+          },
+          {
+            "id": "unqualified_ecc_superiority_over_rsa",
+            "pattern": "(?i)(?:more secure than RSA|bảo mật tốt hơn (?:so với )?thuật toán RSA)"
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25359.00000000038,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 25359.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "failed",
+          "method": "subject keyword does not establish relevance or answer correctness; human review required",
+          "subject_match": false,
+          "clarification": false,
+          "topic_answered": false,
+          "factual_red_flags": [],
+          "forbidden_subjects_found": [],
+          "review_required": false,
+          "review_status": "not_applicable"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT": {
+      "case_id": "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT",
+      "case_type": "llm_generation",
+      "objective": "Yêu cầu tiếng Việt nhưng đặt response preference tiếng Anh; đánh giá riêng ngôn ngữ và tín hiệu nội dung.",
+      "prompt": "Nói ngắn gọn một lợi ích của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "api_gateway_benefit_v1",
+        "basis": "The request asks for one benefit; accepted concepts include simplified client access, centralized routing, or shared cross-cutting controls.",
+        "criteria": [
+          {
+            "id": "simplified_access",
+            "terms_any": [
+              "single entry point",
+              "simplifies client access",
+              "one endpoint",
+              "điểm truy cập"
+            ]
+          },
+          {
+            "id": "routing_or_shared_controls",
+            "terms_any": [
+              "routing",
+              "route requests",
+              "authentication",
+              "rate limiting",
+              "định tuyến"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25170.999999998457,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 25171.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "api_gateway_benefit_v1",
+          "rubric_basis": "The request asks for one benefit; accepted concepts include simplified client access, centralized routing, or shared cross-cutting controls.",
+          "automated_signals": [
+            {
+              "criterion": "simplified_access",
+              "signal_observed": false,
+              "terms_checked": [
+                "single entry point",
+                "simplifies client access",
+                "one endpoint",
+                "điểm truy cập"
+              ]
+            },
+            {
+              "criterion": "routing_or_shared_controls",
+              "signal_observed": false,
+              "terms_checked": [
+                "routing",
+                "route requests",
+                "authentication",
+                "rate limiting",
+                "định tuyến"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_23_TOPIC_SHIFT_TLS_FOLLOWUP": {
+      "case_id": "VARIANT_23_TOPIC_SHIFT_TLS_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "After an explicit topic switch, answer the short follow-up from the latest TLS certificate/hostname context; a topic keyword alone does not establish correctness.",
+      "prompt": "What risk does that check reduce?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [
+        "I am comparing PostgreSQL and MySQL for transaction-heavy applications.",
+        "Switching topics: I am learning how TLS validates a server certificate and hostname."
+      ],
+      "task_rubric": {
+        "kind": "context_subject",
+        "subject_terms": [
+          "TLS",
+          "certificate",
+          "hostname",
+          "man-in-the-middle"
+        ],
+        "forbidden_terms": [
+          "PostgreSQL",
+          "MySQL",
+          "database"
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25235.000000000582,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 25235.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "failed",
+          "method": "subject keyword does not establish relevance or answer correctness; human review required",
+          "subject_match": false,
+          "clarification": false,
+          "topic_answered": false,
+          "factual_red_flags": [],
+          "forbidden_subjects_found": [],
+          "review_required": false,
+          "review_status": "not_applicable"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_24_ECC_STANDARD_USE": {
+      "case_id": "VARIANT_24_ECC_STANDARD_USE",
+      "case_type": "llm_generation",
+      "objective": "State one standard use of elliptic-curve cryptography; automated concept signals do not establish factual correctness.",
+      "prompt": "Name one standard use of elliptic-curve cryptography in secure communications.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "ecc_standard_use_v1",
+        "basis": "A valid example should identify a standard cryptographic use; source/factual review remains required.",
+        "criteria": [
+          {
+            "id": "key_agreement",
+            "terms_any": [
+              "ECDH",
+              "key agreement",
+              "key exchange"
+            ]
+          },
+          {
+            "id": "digital_signature",
+            "terms_any": [
+              "ECDSA",
+              "digital signature",
+              "signatures"
+            ]
+          },
+          {
+            "id": "secure_protocol",
+            "terms_any": [
+              "TLS",
+              "secure channel",
+              "authenticate"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 229,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 12625.0,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 12625.0,
+            "tokens_generated": 229,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "380404806457b06cce31f5bc983fbca878a3fd1b7154a3b6c814f7c3486a4821",
+            "raw_provider_reply": "One standard use of elliptic-curve cryptography in secure communications is Elliptic Curve Diffie-Hellman (ECDH) key exchange, commonly implemented within TLS protocols for establishing shared secrets between parties.",
+            "sanitized_output": "One standard use of elliptic-curve cryptography in secure communications is Elliptic Curve Diffie-Hellman (ECDH) key exchange, commonly implemented within TLS protocols for establishing shared secrets between parties.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "380404806457b06cce31f5bc983fbca878a3fd1b7154a3b6c814f7c3486a4821",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "One standard use of elliptic-curve cryptography in secure communications is Elliptic Curve Diffie-Hellman (ECDH) key exchange, commonly implemented within TLS protocols for establishing shared secrets between parties.",
+      "raw_provider_reply": "One standard use of elliptic-curve cryptography in secure communications is Elliptic Curve Diffie-Hellman (ECDH) key exchange, commonly implemented within TLS protocols for establishing shared secrets between parties.",
+      "sanitized_provider_output": "One standard use of elliptic-curve cryptography in secure communications is Elliptic Curve Diffie-Hellman (ECDH) key exchange, commonly implemented within TLS protocols for establishing shared secrets between parties.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 2,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "ecc_standard_use_v1",
+          "rubric_basis": "A valid example should identify a standard cryptographic use; source/factual review remains required.",
+          "automated_signals": [
+            {
+              "criterion": "key_agreement",
+              "signal_observed": true,
+              "terms_checked": [
+                "ECDH",
+                "key agreement",
+                "key exchange"
+              ]
+            },
+            {
+              "criterion": "digital_signature",
+              "signal_observed": false,
+              "terms_checked": [
+                "ECDSA",
+                "digital signature",
+                "signatures"
+              ]
+            },
+            {
+              "criterion": "secure_protocol",
+              "signal_observed": true,
+              "terms_checked": [
+                "TLS",
+                "secure channel",
+                "authenticate"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_25_TRANSLATE_PRESERVE_LITERAL": {
+      "case_id": "VARIANT_25_TRANSLATE_PRESERVE_LITERAL",
+      "case_type": "llm_generation",
+      "objective": "Translate explanatory prose to English while preserving the user-supplied URL and KEY=VALUE literal exactly.",
+      "prompt": "Translate this sentence to English: Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "DUSNX_PORT=8188"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25594.00000000096,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 25594.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "failed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "DUSNX_PORT",
+              "8188"
+            ]
+          ],
+          "observed_env_assignments": []
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "missing",
+          "missing": [
+            "https://service.example.net/v2",
+            "DUSNX_PORT=8188"
+          ],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_26_CROSS_LANGUAGE_PASSWORD_SALT": {
+      "case_id": "VARIANT_26_CROSS_LANGUAGE_PASSWORD_SALT",
+      "case_type": "llm_generation",
+      "objective": "Answer an unseen Vietnamese prompt in the explicitly selected English response language; content quality remains separate.",
+      "prompt": "Hãy giải thích ngắn gọn vì sao cần salt khi băm mật khẩu.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "password_salt_v1",
+        "basis": "A useful explanation should describe per-password random salt and its role against precomputed hash attacks; human factual review remains required.",
+        "criteria": [
+          {
+            "id": "unique_random_salt",
+            "terms_any": [
+              "unique salt",
+              "random salt",
+              "different salt"
+            ]
+          },
+          {
+            "id": "precomputation_resistance",
+            "terms_any": [
+              "rainbow table",
+              "precomputed",
+              "pre-computed"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 26312.000000001717,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 26312.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "password_salt_v1",
+          "rubric_basis": "A useful explanation should describe per-password random salt and its role against precomputed hash attacks; human factual review remains required.",
+          "automated_signals": [
+            {
+              "criterion": "unique_random_salt",
+              "signal_observed": false,
+              "terms_checked": [
+                "unique salt",
+                "random salt",
+                "different salt"
+              ]
+            },
+            {
+              "criterion": "precomputation_resistance",
+              "signal_observed": false,
+              "terms_checked": [
+                "rainbow table",
+                "precomputed",
+                "pre-computed"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_27_HTTP_IDEMPOTENCY_EXPLANATION": {
+      "case_id": "VARIANT_27_HTTP_IDEMPOTENCY_EXPLANATION",
+      "case_type": "llm_generation",
+      "objective": "Give one concise, accurate explanation of idempotency in HTTP retries; concept signals do not claim semantic review.",
+      "prompt": "In one sentence, explain what idempotency means when an HTTP request is retried.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "http_idempotency_v1",
+        "basis": "A valid explanation should state that repeated equivalent requests have the same intended effect; factual/semantic review remains required.",
+        "criteria": [
+          {
+            "id": "repeat_effect",
+            "terms_any": [
+              "same effect",
+              "same result",
+              "same intended effect"
+            ]
+          },
+          {
+            "id": "repeated_request",
+            "terms_any": [
+              "repeated request",
+              "repeat the request",
+              "retry"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 26062.000000001717,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 26062.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "http_idempotency_v1",
+          "rubric_basis": "A valid explanation should state that repeated equivalent requests have the same intended effect; factual/semantic review remains required.",
+          "automated_signals": [
+            {
+              "criterion": "repeat_effect",
+              "signal_observed": false,
+              "terms_checked": [
+                "same effect",
+                "same result",
+                "same intended effect"
+              ]
+            },
+            {
+              "criterion": "repeated_request",
+              "signal_observed": false,
+              "terms_checked": [
+                "repeated request",
+                "repeat the request",
+                "retry"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_08_MEMORY_RECALL_TEMPLATE": {
+      "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+      "case_type": "template_recall",
+      "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
+      "prompt": "Cụm máy chủ chọn công nghệ gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [
+        "Hãy nhớ rằng chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026."
+      ],
+      "task_rubric": null,
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "grounded_template",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": [
+          "ae4e65ad4cdefc1f2758cf864b2bf1ef"
+        ]
+      },
+      "verbatim_reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 12,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "grounded_template"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "not_applicable",
+          "method": "memory-template contract is evaluated separately"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression"
+    },
+    "CASE_09_AUTO_SHORT_HISTORY": {
+      "case_id": "CASE_09_AUTO_SHORT_HISTORY",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi mơ hồ sau khi người dùng nêu hai chủ đề phải hỏi chọn chủ đề thay vì đoán.",
+      "prompt": "Ưu điểm là gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null
+      },
+      "verbatim_reply": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 17,
+        "vi_words": 5,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "application_clarification_contract",
+          "subject_match": false,
+          "clarification": true,
+          "topic_answered": false,
+          "factual_red_flags": [],
+          "forbidden_subjects_found": [],
+          "review_required": false,
+          "review_status": "not_applicable"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "setup_history": [
+        "Tôi đang tìm hiểu về kiến trúc microservices và distributed systems."
+      ],
+      "evaluation_label": "development_regression",
+      "notes": "Multiple topics are present in the latest user turn; clarification is expected, no provider call.",
+      "quality_flags": []
+    },
+    "VARIANT_16_TOPIC_SHIFT_FOLLOWUP": {
+      "case_id": "VARIANT_16_TOPIC_SHIFT_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau khi đổi chủ đề phải bám chủ đề gần nhất trong cùng session.",
+      "prompt": "Những rủi ro của nó là gì?",
+      "setup_history": [
+        "Tôi đang tìm hiểu ưu nhược điểm của kiến trúc microservices so với monolith.",
+        "Chuyển sang chủ đề khác: tôi đang học về public key cryptography."
+      ],
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_ok": false,
+        "response_source": "provider_error",
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": null,
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+        "response_language": "vi",
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 27078.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ]
+      },
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "failed",
+          "method": "subject keyword does not establish relevance or answer correctness; human review required",
+          "subject_match": false,
+          "clarification": false,
+          "topic_answered": false,
+          "factual_red_flags": [],
+          "forbidden_subjects_found": [],
+          "review_required": false,
+          "review_status": "not_applicable"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "notes": "Automated rubric cannot establish semantic topic alignment; human review required.",
+      "quality_flags": []
+    },
+    "VARIANT_17_AMBIGUOUS_NEW_SESSION": {
+      "case_id": "VARIANT_17_AMBIGUOUS_NEW_SESSION",
+      "case_type": "clarification",
+      "objective": "Không đoán chủ đề cho câu hỏi thiếu antecedent trong session mới.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "application clarification path for missing antecedent"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim factual or human content review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_10_DURABLE_MEMORY_PREF_CHANGE": {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "case_type": "llm_generation",
+      "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
+      "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": null,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 27063.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966"
+      },
+      "verbatim_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "sanitized_provider_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 7,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 1,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "failed",
+          "method": "requires the requested number of list items or distinct named answers",
+          "requested_count": 2,
+          "observed_list_items": 0,
+          "observed_distinct_named_answers": 0
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Memory preference superseded previous setting atomically.",
+      "quality_flags": []
+    },
+    "CASE_11_TWO_USERS_LANGUAGE_ISOLATION": {
+      "case_id": "CASE_11_TWO_USERS_LANGUAGE_ISOLATION",
+      "case_type": "user_preference_isolation",
+      "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+      "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+      "input_preferred_language": "auto",
+      "expected_response_language": "A:en, B:vi",
+      "user_a_provenance": {
+        "provider_ok": false,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 29859.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": null,
+        "response_source": "provider_error"
+      },
+      "user_b_provenance": {
+        "provider_ok": false,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": null,
+            "elapsed_ms": 27984.0,
+            "called": true,
+            "model_used": null,
+            "tokens_generated": null,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1e90a541df2b5d9e16471e2f222be5bcd189c509f10d1dec80e7aeb5d109b966",
+            "raw_provider_reply": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "sanitized_output": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": null,
+        "response_source": "provider_error"
+      },
+      "user_a_response_lang": "en",
+      "user_b_response_lang": "vi",
+      "verbatim_reply": "User A: [Ollama trả JSON không đúng hợp đồng (invalid_schema)]\n---\nUser B: [Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+      "raw_provider_reply": {
+        "user_a": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+        "user_b": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]"
+      },
+      "sanitized_provider_output": {
+        "user_a": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]",
+        "user_b": "[Ollama trả JSON không đúng hợp đồng (invalid_schema)]"
+      },
+      "heuristic_evaluation": {
+        "user_a": {
+          "actual_language": "vi",
+          "confidence": 1.0,
+          "vi_diacritics": 7,
+          "vi_words": 2,
+          "en_words": 0,
+          "method": "heuristic"
+        },
+        "user_b": {
+          "actual_language": "vi",
+          "confidence": 1.0,
+          "vi_diacritics": 7,
+          "vi_words": 2,
+          "en_words": 0,
+          "method": "heuristic"
+        }
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "user_a": {
+          "transport": {
+            "status": "failed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "provider_error"
+          },
+          "language": {
+            "status": "divergent",
+            "actual_language": "vi",
+            "expected_language": "en",
+            "unsupported_script_counts": {},
+            "mixed_language_segments": 1,
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "content_quality": {
+            "status": "uncertain",
+            "reason": "No automated judgement is treated as semantic review."
+          },
+          "factual_accuracy": {
+            "status": "uncertain",
+            "reason": "Requires source-based or human review; concept presence alone is insufficient."
+          },
+          "context_relevance": {
+            "status": "uncertain"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        },
+        "user_b": {
+          "transport": {
+            "status": "failed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "provider_error"
+          },
+          "language": {
+            "status": "matched",
+            "actual_language": "vi",
+            "expected_language": "vi",
+            "unsupported_script_counts": {},
+            "mixed_language_segments": 0,
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "content_quality": {
+            "status": "uncertain",
+            "reason": "No automated judgement is treated as semantic review."
+          },
+          "factual_accuracy": {
+            "status": "uncertain",
+            "reason": "Requires source-based or human review; concept presence alone is insufficient."
+          },
+          "context_relevance": {
+            "status": "uncertain"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        }
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Isolated per-user preference state verified via distinct tokens.",
+      "quality_flags": []
+    },
+    "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION": {
+      "case_id": "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION",
+      "case_type": "clarification",
+      "objective": "Không rò rỉ antecedent từ user A hoặc session khác sang session mới của user B.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify",
+        "preferred_language": "vi",
+        "response_language": "vi"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "fresh session clarification; provider must not receive other-user context"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim independent semantic review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_12_PROVIDER_OFFLINE": {
+      "case_id": "CASE_12_PROVIDER_OFFLINE",
+      "case_type": "expected_provider_error",
+      "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Không kết nối được Ollama (unreachable)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 6,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Offline error properly categorized and isolated. Not counted as generation."
+    },
+    "CASE_13_MODEL_MISSING": {
+      "case_id": "CASE_13_MODEL_MISSING",
+      "case_type": "expected_provider_error",
+      "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Model cấu hình không tồn tại trong Ollama (model_missing)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 5,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Missing model error cleanly caught. Not counted as generation."
+    }
+  },
+  "summary": {
+    "quality_flagged_cases": 0,
+    "total_cases": 27,
+    "contract_passed": 15,
+    "contract_failed": 12,
+    "real_llm_generations": 3,
+    "template_recalls": 1,
+    "application_formatting_cases": 4,
+    "application_formatting_passed": 4,
+    "expected_provider_failures": 2,
+    "eligible_language_cases": 14,
+    "linguistic_matched": 7,
+    "linguistic_divergent": 7,
+    "linguistic_uncertain": 0,
+    "linguistic_mixed": 0,
+    "task_failed": 5,
+    "task_uncertain": 9,
+    "completion_failed": 1,
+    "completion_uncertain": 0,
+    "execution_status": "completed"
+  },
+  "code_sha": "a2184b4530810e640c16e00b8d7ef89866f1372e",
+  "locked_case_specs_sha256": "1c7462c976ba59fab8d18c193f4788a0cabdf781c0dd1f476b607d06471fb899"
+}

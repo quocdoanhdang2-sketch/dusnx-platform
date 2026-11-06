@@ -1,0 +1,140 @@
+{
+  "probe_id": "DUSNX_VI_CANDIDATE_DIRECT_TASK_COMPARISON_R1",
+  "created_at_utc": "2026-11-03T18:48:23.295797+00:00",
+  "transport": "direct Ollama /api/chat; not Gateway or browser",
+  "model_tag": "dusnx-vi-candidate:latest",
+  "model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+  "ollama_version": "0.40.14",
+  "model_metadata": {
+    "details": {
+      "parent_model": "dusnx-vi-v1-f16.gguf",
+      "format": "gguf",
+      "family": "qwen2",
+      "families": [
+        "qwen2"
+      ],
+      "parameter_size": "494.03M",
+      "quantization_level": "F16"
+    },
+    "parameters": null,
+    "architecture": "qwen2",
+    "parameter_count": 494032768,
+    "quantization": 1,
+    "template_sha256": "eb4402837c7829a690fa845de4d7f3fd842c2adee476d5341da8a46ea9255175",
+    "raw_modelfile_or_template_saved": false
+  },
+  "fixed_settings": {
+    "temperature": 0.1,
+    "num_predict": 512,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64,
+    "num_ctx": 4096,
+    "timeout_seconds": 65,
+    "stream": false,
+    "think_field": "omitted"
+  },
+  "cases": [
+    {
+      "id": "TRANSLATE_ENTITIES_EN",
+      "system": "Translate the user request into English. Preserve exact URLs and KEY=VALUE literals. Do not include analysis.",
+      "user": "Translate this sentence to English: D?ch v? https://service.example.net/v2 d?ng bi?n DUSNX_PORT=8188 ?? nh?n k?t n?i."
+    },
+    {
+      "id": "API_GATEWAY_BENEFIT_VI",
+      "system": "Tr? l?i ng?n g?n b?ng ti?ng Vi?t. Kh?ng l?p l?i h??ng d?n ho?c n?u ph?n t?ch.",
+      "user": "N?u m?t l?i ?ch c? th? c?a API Gateway trong ki?n tr?c microservices."
+    }
+  ],
+  "trials": [
+    {
+      "case_id": "TRANSLATE_ENTITIES_EN",
+      "repeat": 1,
+      "budget": 512,
+      "request_sha256": "f70cd7b46d0880524c747c4a21ed355ac1efba3c70b2f0d901c3c7f5686af767",
+      "started_at_utc": "2026-11-03T18:48:23.296318+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 37,
+      "prompt_eval_count": 77,
+      "content_chars": 78,
+      "content_sha256": "82241c8fdacbac05a255dbd41fdd009d8d5e2b4f1a06cf04f518a30ab9a8060e",
+      "content": "D?ch v? https://service.example.net/v2, ng bi?n DUSNX_PORT=8188 ?nh?n k?t n?i.",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 5060498400,
+      "load_duration_ns": 4499845400,
+      "elapsed_seconds": 5.082
+    },
+    {
+      "case_id": "TRANSLATE_ENTITIES_EN",
+      "repeat": 2,
+      "budget": 512,
+      "request_sha256": "f70cd7b46d0880524c747c4a21ed355ac1efba3c70b2f0d901c3c7f5686af767",
+      "started_at_utc": "2026-11-03T18:48:28.380110+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 34,
+      "prompt_eval_count": 77,
+      "content_chars": 75,
+      "content_sha256": "6468c0f80bb7f5bf57a328942ce962c370124752421b314e9dafcd99d61a7145",
+      "content": "D?ch v? https://service.example.net/v2 dan DUSNX_PORT = 8188 ?nh?n k?t n?i.",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 303130900,
+      "load_duration_ns": 7681900,
+      "elapsed_seconds": 0.306
+    },
+    {
+      "case_id": "API_GATEWAY_BENEFIT_VI",
+      "repeat": 1,
+      "budget": 512,
+      "request_sha256": "637220fa4e3643c731ab6007ef9a950808a33b33093fb770d7c2b95ebf044d71",
+      "started_at_utc": "2026-11-03T18:48:28.687142+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "length",
+      "eval_count": 512,
+      "prompt_eval_count": 88,
+      "content_chars": 1983,
+      "content_sha256": "483af81663a345a8dd6f0469e1dfb622cf0eca0d4f39d1f8f4a6a16581ee9faa",
+      "content": "API Gateway là một công cụ mạnh mẽ giúp quản lý và phân phối các dịch vụ HTTP từ nhiều nguồn khác nhau, tạo ra một hệ thống toàn cầu cho việc giao tiếp giữa các ứng dụng hoặc dịch vụ.\n\nDưới đây là cách bạn có thể sử dụng API Gateway trong Kiến Trúc Microservices:\n\n1. **Mở rộng hệ thống**: API Gateway giúp mở rộng hệ thống của mình bằng cách phân phối và quản lý tất cả các gói HTTP từ nhiều nguồn khác nhau, bao gồm các ứng dụng hoặc dịch vụ.\n\n2. **Tạo một hệ thống toàn cầu**: API Gateway có thể tạo ra một hệ thống toàn cầu cho việc giao tiếp giữa các ứng dụng hoặc dịch vụ trong hệ thống của bạn.\n\n3. **Mở rộng và quản lý gói HTTP từ nhiều nguồn khác nhau**: Bạn có thể mở rộng hệ thống bằng cách thêm các gói HTTP mới, bao gồm cả những gói mà API Gateway không cung cấp.\n\n4. **Tạo một hệ thống toàn cầu cho việc giao tiếp giữa ứng dụng hoặc dịch vụ**: API Gateway giúp tạo ra một hệ thống toàn cầu cho việc giao tiếp giữa các ứng dụng hoặc dịch vụ trong hệ thống của bạn.\n\n5. **Mở rộng và quản lý gói HTTP từ nhiều nguồn khác nhau**: Bạn có thể mở rộng hệ thống bằng cách thêm các gói HTTP mới, bao gồm cả những gói mà API Gateway không cung cấp.\n\n6. **Tạo một hệ thống toàn cầu cho việc giao tiếp giữa ứng dụng hoặc dịch vụ**: API Gateway giúp tạo ra một hệ thống toàn cầu cho việc giao tiếp giữa các ứng dụng hoặc dịch vụ trong hệ thống của bạn.\n\n7. **Mở rộng và quản lý gói HTTP từ nhiều nguồn khác nhau**: Bạn có thể mở rộng hệ thống bằng cách thêm các gói HTTP mới, bao gồm cả những gói mà API Gateway không cung cấp.\n\n8. **Tạo một hệ thống toàn cầu cho việc giao tiếp giữa ứng dụng hoặc dịch vụ**: API Gateway giúp tạo ra một hệ thống toàn cầu cho việc giao tiếp giữa các ứng dụng hoặc dịch vụ trong hệ thống của bạn.\n\n9. **Mở rộng và quản lý gói HTTP từ nhiều nguồn khác nhau**: Bạn có thể mở rộng hệ thống bằng cách thêm các gói HTTP mới, bao gồm cả những gói mà API Gateway không cung cấp.\n\n10. **Tạo một hệ thống toàn cầu cho việc giao tiếp giữa ứng dụng hoặc dịch vụ",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 5112877700,
+      "load_duration_ns": 6666700,
+      "elapsed_seconds": 5.116
+    },
+    {
+      "case_id": "API_GATEWAY_BENEFIT_VI",
+      "repeat": 2,
+      "budget": 512,
+      "request_sha256": "637220fa4e3643c731ab6007ef9a950808a33b33093fb770d7c2b95ebf044d71",
+      "started_at_utc": "2026-11-03T18:48:33.803846+00:00",
+      "http_status": 200,
+      "model_returned": "dusnx-vi-candidate:latest",
+      "done": true,
+      "done_reason": "length",
+      "eval_count": 512,
+      "prompt_eval_count": 88,
+      "content_chars": 2007,
+      "content_sha256": "11bdcd008f0bf498d498dddca67397e1415dc10943d2808116097e0e81420dd6",
+      "content": "API Gateway là một công cụ mạnh mẽ giúp quản lý và phân phối các dịch vụ HTTP từ nhiều nguồn khác nhau, bao gồm cả các dịch vụ của khách hàng (microservice). Nó có thể được sử dụng để tạo ra một hệ thống API với các gói dịch vụ riêng biệt.\n\nDưới đây là cách bạn có thể kết hợp API Gateway vào trang web microservices:\n\n1. **Tạo gói dịch vụ**: Bạn cần tạo một gói dịch vụ trong API Gateway, nơi tất cả các gói dịch vụ của khách hàng sẽ được lưu trữ và phân phối.\n2. **Mở rộng gói dịch vụ**: Mỗi gói dịch vụ có thể mở rộng thêm với nhiều gói khác nhau (ví dụ: một gói dịch vụ cho việc giao tiếp giữa hai ứng dụng).\n3. **Tạo API Gateway từ trang web microservices**: Bạn cần tạo một trang web hoặc hệ thống quản lý API, nơi bạn sẽ đặt các gói dịch vụ và kết nối chúng với API Gateway.\n\nDưới đây là cách đơn giản để sử dụng API Gateway trong một số ví dụ:\n\n- Sử dụng HTTP POST để gửi dữ liệu đến API Gateway.\n  - Trong API Gateway:\n    ```json\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/data\",\n      \"body\": \"{\\\"key\\\":\\\"value\\\"}\",\n      \"headers\": {\"Content-Type\":\"application/json\"}\n    }\n    ```\n- Sử dụng HTTP GET để lấy dữ liệu từ API Gateway.\n  - Trong API Gateway:\n    ```json\n    {\n      \"method\": \"GET\",\n      \"path\": \"/api/v1/data\"\n    }\n    ```\n\nĐể kết nối các gói dịch vụ, bạn có thể sử dụng một số công cụ như:\n\n- **Spring Cloud Config**: Sử dụng để lưu trữ thông tin giữa các gói dịch vụ.\n  - Trong Spring Boot:\n    \n```java\n@Configuration\npublic class AppConfig {\n  \n   @Bean\n   public ServerHttpMessageConverter<Config> configServer() throws Exception{\n      return new GsonHttpMessageConverter();\n   }\n}\n```\n\n- **Spring Cloud Gateway**: Sử dụng để tạo một trang web API.\n  - Trong Spring Boot:\n    \n```java\n@Configuration\npublic class WebSecurityConfigurerAdapter implements WebSecurityConfigurerAdapter {\n  \n    @Override\n    public void configure(HttpSecurity http) throws Exception{\n        // ...\n    }\n}\n```\n\n- **Spring Cloud Gateway**: Sử dụng để tạo một trang web API.\n  - Trong",
+      "thinking_chars": 0,
+      "thinking_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_thinking_saved": false,
+      "total_duration_ns": 5143725700,
+      "load_duration_ns": 9078500,
+      "elapsed_seconds": 5.146
+    }
+  ],
+  "execution_status": "completed",
+  "completed_at_utc": "2026-11-03T18:48:38.962391+00:00"
+}

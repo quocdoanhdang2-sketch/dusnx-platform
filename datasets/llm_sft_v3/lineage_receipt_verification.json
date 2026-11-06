@@ -1,0 +1,23 @@
+{
+  "verified_at_utc": "2026-11-05T15:10:40.001299+00:00",
+  "scope": "train/validation lineage only; no test file opened",
+  "parent_manifest_sha256": "f81fa75516675657957d79327eb80d937c7de74691a4b395b40b0ebcc2a7f41a",
+  "parent_receipt_sha256": "fce55f7ae7dca210e41d0a27cb2c3767b8bf907afd33d9038a1636a5c91bfa03",
+  "supplement_receipt_sha256": "fe43cd2dfaf4af5dce84fc0f0b3d449f2241999765ee67d390c58c391b45d885",
+  "supplement_csv_sha256": "78c5d63fad32060e48bc1de369de8e12cbb831ec6ddab969521f3ed53471d00d",
+  "aggregate_receipt_sha256": "87faa92b63d175e2c310d772e744249374039646b48ca32a6c2f41f2cc4ee515",
+  "release_file_sha256": {
+    "train.jsonl": "1d5e1cb6e054c78b88dfaf366949818306245d2ab35ef4d9a18fa9f38fd479ed",
+    "validation.jsonl": "b769341de3bb75fab3ed1d9d6e8f71352b7e1b35b4b2c667b187f94b2bc694a4"
+  },
+  "completion_counts": {
+    "train": 108,
+    "validation": 32
+  },
+  "aggregate_row_count": 140,
+  "lineage_verifier": "passed",
+  "release_locked": false,
+  "training_allowed": false,
+  "official_evaluation_allowed": false,
+  "attestation_created": false
+}

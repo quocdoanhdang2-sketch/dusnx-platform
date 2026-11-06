@@ -5,14 +5,11 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from verify_bilingual_generation import (
-    aggregate_language_status,
-    compute_bilingual_summary,
-    evaluate_text_language,
-    review_model_label,
-    response_language_status,
-    create_isolated_case_session,
-)
+from verify_bilingual_generation import (aggregate_language_status, evaluate_text_language,
+    compute_bilingual_summary, assess_completion, evaluate_case_output, resolve_token_budget,
+    provider_attempt_metadata, review_model_label, create_isolated_case_session,
+    response_language_status)
+from verify_chat_provenance import provenance_stack_directory
 from verify_sqlite_backup_restore import verify_protected_backup_integrity
 
 
@@ -55,7 +52,7 @@ def test_provider_offline_not_counted_as_generation_or_language_match():
     assert summary["linguistic_divergent"] == 0
 
 
-def test_provider_error_fallback_is_not_scored_as_generated_language():
+def test_provider_error_is_not_scored_as_generated_language():
     status = response_language_status(
         "Ollama không kết nối được", "en", is_generation=True, provider_ok=False,
     )
@@ -78,6 +75,13 @@ def test_template_recall_not_in_language_denominator():
     assert summary["real_llm_generations"] == 0
     assert summary["eligible_language_cases"] == 0
     assert summary["linguistic_matched"] == 0
+
+
+def test_provenance_stack_directory_is_unique_per_report_name(tmp_path):
+    first = provenance_stack_directory(tmp_path / "provenance-r1.json")
+    second = provenance_stack_directory(tmp_path / "provenance-r2.json")
+    assert first.parent == second.parent == tmp_path
+    assert first != second
 
 
 def test_metadata_correct_but_output_divergent():
@@ -112,16 +116,52 @@ def test_language_evaluator_uncertain_does_not_assume_english():
     assert heur["en_words"] == 0
 
 
-def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):
-    missing_dir = tmp_path / "nonexistent_protected_backup"
-    res = verify_protected_backup_integrity(missing_dir)
-    assert res["status"] == "skipped"
-    assert res["reason"] == "protected_dir_not_found"
-    assert "integrity_passed" in res
-    assert res["integrity_passed"] is None
+def test_completion_uses_finish_reason_and_output_shape_not_budget_alone():
+    at_budget = assess_completion("A complete answer.", "stop", 512, 512)
+    assert at_budget["status"] == "uncertain"
+    assert at_budget["reason"] == "token_budget_reached_without_proof_of_truncation"
+    assert assess_completion("A complete answer.", "stop", 511, 512)["status"] == "passed"
+    limited_complete = assess_completion("A useful short list item", "length", 512, 512)
+    assert limited_complete["status"] == "uncertain"
+    assert limited_complete["reason"] == "provider_limit_without_clear_truncation"
+    assert assess_completion("This helps in", "length", 512, 512)["status"] == "failed"
+    assert assess_completion("```python\nprint(1)", "stop", 512, 512)["reason"] == "unclosed_code_fence"
 
 
-def test_review_model_label_uses_only_recorded_configuration():
+def test_completion_uses_budget_from_actual_provider_attempt_not_harness_default():
+    response = {
+        "provider_ok": True, "provider_called": True, "response_source": "llm",
+        "tokens_generated": 967, "done_reason": "stop",
+        "provider_attempts": [{"provider_diagnostics": {"num_predict": 1024}}],
+    }
+    assert resolve_token_budget(response) == 1024
+    completion = evaluate_case_output("Explain a gateway.", "A complete answer.", "en",
+        "llm_generation", response)["completion"]
+    assert completion["status"] == "passed"
+    assert completion["reason"] == "no_provider_limit_or_obvious_open_clause"
+
+    response.update(tokens_generated=1024, done_reason="length")
+    completion = evaluate_case_output("Explain a gateway.", "A complete answer.", "en",
+        "llm_generation", response)["completion"]
+    assert completion["status"] == "uncertain"
+    assert completion["token_budget"] == 1024
+
+
+def test_manual_case_provenance_carries_actual_attempt_budget_even_for_provider_errors():
+    response = {
+        "provider_called": True, "provider_ok": False, "response_source": "provider_error",
+        "done_reason": "length", "provider_attempts": [
+            {"attempt": 1, "provider_diagnostics": {"num_predict": 1024, "eval_count": 1024}}
+        ],
+    }
+    metadata = provider_attempt_metadata(response)
+    assert metadata["token_budget"] == 1024
+    assert metadata["provider_attempts"] == response["provider_attempts"]
+    unknown = provider_attempt_metadata({"provider_called": True, "provider_attempts": []})
+    assert unknown["token_budget"] is None
+
+
+def test_review_table_model_label_comes_from_run_configuration():
     assert review_model_label({"configuration": {"expected_model": "qwen3:4b"}}) == "qwen3:4b"
     assert review_model_label({"configuration": {"expected_model": "  "}}) == "unknown model"
     assert review_model_label({}) == "unknown model"
@@ -141,3 +181,12 @@ def test_standalone_matrix_cases_receive_distinct_sessions():
     second = create_isolated_case_session(client, "CASE_B")
     assert first != second
     assert client.titles == ["Bilingual CASE_A", "Bilingual CASE_B"]
+
+
+def test_missing_protected_dir_handles_safely_without_keyerror(tmp_path):
+    missing_dir = tmp_path / "nonexistent_protected_backup"
+    res = verify_protected_backup_integrity(missing_dir)
+    assert res["status"] == "skipped"
+    assert res["reason"] == "protected_dir_not_found"
+    assert "integrity_passed" in res
+    assert res["integrity_passed"] is None

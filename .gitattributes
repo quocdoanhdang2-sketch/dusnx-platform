@@ -9,3 +9,5 @@ datasets/llm_sft_v2/*.json text eol=lf
 docs/evidence/llm-sft/evaluation-01/*.json -text
 docs/evidence/week4/*.json text eol=lf
 docs/evidence/post-week4/*.json text eol=lf
+docs/evidence/qwen3-invalid-schema-followup-20261104/*.json text eol=lf
+docs/evidence/qwen3-invalid-schema-followup-20261104/*.md text eol=lf

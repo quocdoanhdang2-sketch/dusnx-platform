@@ -46,6 +46,13 @@ def automatic_checks(case,text):
     return {'required_fact_exact':all(normalized(value) in answer for value in contract['required_facts']),'forbidden_fact_exact':all(normalized(value) not in answer for value in contract['forbidden_facts']),'clarification_shape':contract['response_mode']!='clarify' or '?' in text,'no_false_save_heuristic':false_save_guard}
 
 
+def rating(value):
+    """Spreadsheet apps write integer ratings as 1.0; only exact 0/1 is valid."""
+    text=str(value).strip()
+    if text not in ('0','1','0.0','1.0'):raise ValueError('Rating must explicitly be 0 or 1')
+    return int(float(text))
+
+
 def promotion(rows,ratings,locked_human_test=False):
     by_id={r['output_id']:r for r in rows}
     if len(by_id)!=len(rows):raise ValueError('Duplicate output ID')
@@ -56,13 +63,12 @@ def promotion(rows,ratings,locked_human_test=False):
         if not r.get('reviewer','').strip() or not r.get('reviewed_at','').strip():raise ValueError('Human reviewer/date required')
         pred=by_id[r['output_id']]
         for c in CRITERIA:
-            if str(r[c]) not in ('0','1'):raise ValueError('Rating must explicitly be 0 or 1')
-            scores[pred['arm']][c].append(int(r[c]))
+            scores[pred['arm']][c].append(rating(r[c]))
         if not pred['provider_ok'] or pred['response_source']!='llm' or not pred['provider_called']:failures.append(pred['output_id'])
     means={m:{c:statistics.mean(v) if v else None for c,v in s.items()} for m,s in scores.items()}
     paired={}
     for r in ratings:paired.setdefault(by_id[r['output_id']]['case_id'],{})[by_id[r['output_id']]['arm']]=r
-    regressions=[{'case_id':case,'criterion':c} for case,arms in paired.items() if set(arms)=={'base','candidate'} for c in CRITERIA if int(arms['candidate'][c])<int(arms['base'][c])]
+    regressions=[{'case_id':case,'criterion':c} for case,arms in paired.items() if set(arms)=={'base','candidate'} for c in CRITERIA if rating(arms['candidate'][c])<rating(arms['base'][c])]
     complete=all(set(v)=={'base','candidate'} for v in paired.values()) and bool(paired)
     passed=complete and locked_human_test and not failures and not regressions and all(means['candidate'][c] is not None and means['candidate'][c]>=means['base'][c] for c in CRITERIA) and means['candidate']['vietnamese']>=.95 and all(means['candidate'][c]==1 for c in ('grounded','clarification','no_obsolete','no_false_save'))
     return dict(promote=passed,scores=means,regressions=regressions,provider_failures=failures,human_test_attested=locked_human_test,note='Small paired test; no statistical superiority claim. Default base is never changed automatically.')
@@ -89,9 +95,26 @@ def summarize(rows):
     return report
 
 
+def build_parser():
+    p=argparse.ArgumentParser()
+    p.add_argument('--gateway',default='http://localhost:8080')
+    p.add_argument('--data',default='datasets/llm_sft')
+    p.add_argument('--base',default='qwen2.5:0.5b')
+    p.add_argument('--candidate',help='Explicit candidate tag; required when generating a new evaluation')
+    p.add_argument('--output',required=True)
+    p.add_argument('--ratings')
+    p.add_argument('--dev-smoke',action='store_true')
+    return p
+
+
+def parse_args(argv=None):
+    p=build_parser();a=p.parse_args(argv)
+    if not a.ratings and not a.candidate:p.error('--candidate is required when generating a new evaluation')
+    return a
+
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--gateway',default='http://localhost:8080');p.add_argument('--data',default='datasets/llm_sft');p.add_argument('--base',default='qwen2.5:0.5b');p.add_argument('--candidate',default='dusnx-vi-candidate');p.add_argument('--output',required=True);p.add_argument('--ratings');p.add_argument('--dev-smoke',action='store_true')
-    a=p.parse_args();out=Path(a.output)
+    a=parse_args();out=Path(a.output)
     if a.ratings:
         run=json.loads((out/'run.json').read_text(encoding='utf-8'))
         predictions=json.loads((out/'raw_outputs.json').read_text(encoding='utf-8'))

@@ -1,0 +1,529 @@
+{
+  "title": "DUSN-X quality follow-up verification evidence",
+  "created_utc": "2026-11-03T15:19:10.125192+00:00",
+  "repo": "quocdoanhdang2-sketch/dusnx-platform",
+  "baseline": {
+    "branch": "fix/quality-context-evidence",
+    "head": "a2184b4530810e640c16e00b8d7ef89866f1372e",
+    "working_tree": "dirty; five tracked files modified at run time",
+    "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+    "patch_scope": "git diff --binary relative to HEAD; tracked changes only"
+  },
+  "main_at_baseline_check": "4d75b0f606476467fd5db385f7e52d789c94e1c4",
+  "tool_versions": {
+    "python": "3.12.10",
+    "pytest": "9.1.1",
+    "ollama": "0.40.14",
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB"
+  },
+  "model_trials": [
+    {
+      "name": "qwen3:4b",
+      "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "size_bytes": 2497293931,
+      "quantization": "Q4_K_M",
+      "parameter_size": "4.0B",
+      "context_size": 4096,
+      "default_changed": false
+    },
+    {
+      "name": "dusnx-vi-candidate:latest",
+      "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "size_bytes": 994169232,
+      "quantization": "F16",
+      "parameter_size": "494.03M",
+      "context_size": 4096,
+      "default_changed": false
+    }
+  ],
+  "checkpoint_identity": "checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98",
+  "runs": [
+    {
+      "name": "qwen3-4b-r1-before-evaluator-fix.json",
+      "kind": "bilingual_strict",
+      "started_utc": "2026-11-03T14:31:07.331484+00:00",
+      "finished_mtime_utc": "2026-11-03T14:41:36.209421+00:00",
+      "command": [
+        "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+        "scripts/verify_bilingual_generation.py",
+        "--output-dir",
+        "runtime/quality-work-20261103/strict-qwen3-4b-r1",
+        "--expected-model",
+        "qwen3:4b",
+        "--expected-model-digest",
+        "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "--strict-language",
+        "--strict-quality"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 1,
+      "exit_code_basis": "strict report completed with contract failures; earlier run diagnostics",
+      "code_sha_field": "a2184b4530810e640c16e00b8d7ef89866f1372e",
+      "dirty_patch_sha256": null,
+      "locked_case_specs_sha256": "1c7462c976ba59fab8d18c193f4788a0cabdf781c0dd1f476b607d06471fb899",
+      "configuration": {
+        "provider": "ollama",
+        "model": "qwen3:4b",
+        "expected_model": "qwen3:4b",
+        "expected_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "actual_model_tag": "qwen3:4b",
+        "actual_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "token_budget": 512,
+        "context_size": 4096,
+        "temperature": 0.1,
+        "repeat_penalty": 1.25,
+        "repeat_last_n": 64,
+        "checkpoint": "project default",
+        "raw_capture_enabled": true
+      },
+      "summary": {
+        "quality_flagged_cases": 0,
+        "total_cases": 27,
+        "contract_passed": 15,
+        "contract_failed": 12,
+        "real_llm_generations": 3,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 14,
+        "linguistic_matched": 7,
+        "linguistic_divergent": 7,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 0,
+        "task_failed": 5,
+        "task_uncertain": 9,
+        "completion_failed": 1,
+        "completion_uncertain": 0,
+        "execution_status": "completed"
+      },
+      "note": "Qwen3 r1; earlier evaluator; per-run dirty patch hash unknown"
+    },
+    {
+      "name": "qwen3-4b-r2-general-evaluator-fix.json",
+      "kind": "bilingual_strict",
+      "started_utc": "2026-11-03T14:47:46.666899+00:00",
+      "finished_mtime_utc": "2026-11-03T14:58:24.274771+00:00",
+      "command": [
+        "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+        "scripts/verify_bilingual_generation.py",
+        "--output-dir",
+        "runtime/quality-work-20261103/strict-qwen3-4b-r2",
+        "--expected-model",
+        "qwen3:4b",
+        "--expected-model-digest",
+        "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "--strict-language",
+        "--strict-quality"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 1,
+      "exit_code_basis": "strict report completed with contract failures; earlier run diagnostics",
+      "code_sha_field": "a2184b4530810e640c16e00b8d7ef89866f1372e",
+      "dirty_patch_sha256": null,
+      "locked_case_specs_sha256": "1c7462c976ba59fab8d18c193f4788a0cabdf781c0dd1f476b607d06471fb899",
+      "configuration": {
+        "provider": "ollama",
+        "model": "qwen3:4b",
+        "expected_model": "qwen3:4b",
+        "expected_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "actual_model_tag": "qwen3:4b",
+        "actual_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "token_budget": 512,
+        "context_size": 4096,
+        "temperature": 0.1,
+        "repeat_penalty": 1.25,
+        "repeat_last_n": 64,
+        "checkpoint": "project default",
+        "raw_capture_enabled": true
+      },
+      "summary": {
+        "quality_flagged_cases": 0,
+        "total_cases": 27,
+        "contract_passed": 15,
+        "contract_failed": 12,
+        "real_llm_generations": 3,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 5,
+        "linguistic_matched": 4,
+        "linguistic_divergent": 1,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 0,
+        "task_failed": 0,
+        "task_uncertain": 3,
+        "completion_failed": 1,
+        "completion_uncertain": 1,
+        "execution_status": "completed"
+      },
+      "note": "Qwen3 r2; manual case error scoring correction not yet applied; per-run dirty patch hash unknown"
+    },
+    {
+      "name": "qwen3-4b-r3-final.json",
+      "kind": "bilingual_strict",
+      "started_utc": "2026-11-03T14:59:35.382483+00:00",
+      "finished_mtime_utc": "2026-11-03T15:10:31.897707+00:00",
+      "command": [
+        "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+        "scripts/verify_bilingual_generation.py",
+        "--output-dir",
+        "runtime/quality-work-20261103/strict-qwen3-4b-r3",
+        "--expected-model",
+        "qwen3:4b",
+        "--expected-model-digest",
+        "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "--strict-language",
+        "--strict-quality"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 1,
+      "exit_code_basis": "strict evaluator rules; report summary contains contract/quality gates",
+      "code_sha_field": "a2184b4530810e640c16e00b8d7ef89866f1372e",
+      "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+      "locked_case_specs_sha256": "1c7462c976ba59fab8d18c193f4788a0cabdf781c0dd1f476b607d06471fb899",
+      "configuration": {
+        "provider": "ollama",
+        "model": "qwen3:4b",
+        "expected_model": "qwen3:4b",
+        "expected_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "actual_model_tag": "qwen3:4b",
+        "actual_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "token_budget": 512,
+        "context_size": 4096,
+        "temperature": 0.1,
+        "repeat_penalty": 1.25,
+        "repeat_last_n": 64,
+        "checkpoint": "project default",
+        "raw_capture_enabled": true
+      },
+      "summary": {
+        "quality_flagged_cases": 0,
+        "total_cases": 27,
+        "contract_passed": 16,
+        "contract_failed": 11,
+        "real_llm_generations": 4,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 4,
+        "linguistic_matched": 4,
+        "linguistic_divergent": 0,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 0,
+        "task_failed": 0,
+        "task_uncertain": 4,
+        "completion_failed": 2,
+        "completion_uncertain": 0,
+        "execution_status": "completed"
+      },
+      "note": "Final evaluator; strict failure from contract/task/completion gates",
+      "latency_observation": {
+        "method": "per-case provider_elapsed_ms reported by the harness; includes corrective retry time",
+        "provider_called_case_requests": 12,
+        "provider_attempts_total": 14,
+        "all_requests_ms": {
+          "mean": 26723.7,
+          "median": 27359.0,
+          "p90_nearest_rank": 30062.0
+        },
+        "successful_requests_ms": {
+          "count": 4,
+          "mean": 22886.7,
+          "median": 23500.0
+        }
+      }
+    },
+    {
+      "name": "candidate-r20-final.json",
+      "kind": "bilingual_strict",
+      "started_utc": "2026-11-03T15:12:33.992703+00:00",
+      "finished_mtime_utc": "2026-11-03T15:14:37.843210+00:00",
+      "command": [
+        "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+        "scripts/verify_bilingual_generation.py",
+        "--output-dir",
+        "runtime/quality-work-20261103/strict-candidate-r20",
+        "--expected-model",
+        "dusnx-vi-candidate:latest",
+        "--expected-model-digest",
+        "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+        "--strict-language",
+        "--strict-quality"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 1,
+      "exit_code_basis": "strict evaluator rules; report summary contains contract/quality gates",
+      "code_sha_field": "a2184b4530810e640c16e00b8d7ef89866f1372e",
+      "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+      "locked_case_specs_sha256": "1c7462c976ba59fab8d18c193f4788a0cabdf781c0dd1f476b607d06471fb899",
+      "configuration": {
+        "provider": "ollama",
+        "model": "dusnx-vi-candidate:latest",
+        "expected_model": "dusnx-vi-candidate:latest",
+        "expected_model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+        "actual_model_tag": "dusnx-vi-candidate:latest",
+        "actual_model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+        "token_budget": 512,
+        "context_size": 4096,
+        "temperature": 0.1,
+        "repeat_penalty": 1.25,
+        "repeat_last_n": 64,
+        "checkpoint": "project default",
+        "raw_capture_enabled": true
+      },
+      "summary": {
+        "quality_flagged_cases": 3,
+        "total_cases": 27,
+        "contract_passed": 22,
+        "contract_failed": 5,
+        "real_llm_generations": 9,
+        "template_recalls": 1,
+        "application_formatting_cases": 4,
+        "application_formatting_passed": 4,
+        "expected_provider_failures": 2,
+        "eligible_language_cases": 10,
+        "linguistic_matched": 10,
+        "linguistic_divergent": 0,
+        "linguistic_uncertain": 0,
+        "linguistic_mixed": 0,
+        "task_failed": 0,
+        "task_uncertain": 9,
+        "completion_failed": 0,
+        "completion_uncertain": 0,
+        "execution_status": "completed"
+      },
+      "note": "Existing candidate; strict failure from contract/quality/task uncertainty gates",
+      "latency_observation": {
+        "method": "per-case provider_elapsed_ms reported by the harness; includes corrective retry time",
+        "provider_called_case_requests": 12,
+        "provider_attempts_total": 19,
+        "all_requests_ms": {
+          "mean": 4859.2,
+          "median": 4046.5,
+          "p90_nearest_rank": 7938.0
+        },
+        "successful_requests_ms": {
+          "count": 8,
+          "mean": 3802.5,
+          "median": 3211.0
+        }
+      }
+    },
+    {
+      "name": "provenance-qwen3-4b-r2.json",
+      "kind": "chat_provenance",
+      "started_utc": "2026-11-03T15:11:16.067342+00:00",
+      "finished_mtime_utc": "2026-11-03T15:11:48.654150+00:00",
+      "command": [
+        "python/.venv/Scripts/python.exe",
+        "scripts/verify_chat_provenance.py",
+        "--spawn-stack",
+        "--expected-model",
+        "qwen3:4b",
+        "--expected-model-digest",
+        "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "--output",
+        "runtime/quality-work-20261103/provenance-qwen3-4b-r2.json"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 1,
+      "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+      "model_identity": {
+        "name": "qwen3:4b",
+        "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "parameter_size": "4.0B",
+        "quantization_level": "Q4_K_M",
+        "size_bytes": 2497293931
+      },
+      "status": "transport_failed_or_model_unverified",
+      "transport_status": "failed",
+      "language_status": "not_applicable",
+      "completion_status": "not_applicable",
+      "task_status": "uncertain",
+      "note": "Model identity verified; transport failed; content not evaluable"
+    },
+    {
+      "name": "provenance-candidate-r2.json",
+      "kind": "chat_provenance",
+      "started_utc": "2026-11-03T15:14:52.707209+00:00",
+      "finished_mtime_utc": "2026-11-03T15:15:08.070235+00:00",
+      "command": [
+        "python/.venv/Scripts/python.exe",
+        "scripts/verify_chat_provenance.py",
+        "--spawn-stack",
+        "--expected-model",
+        "dusnx-vi-candidate:latest",
+        "--expected-model-digest",
+        "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+        "--output",
+        "runtime/quality-work-20261103/provenance-candidate-r2.json"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 1,
+      "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+      "model_identity": {
+        "name": "dusnx-vi-candidate:latest",
+        "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+        "parameter_size": "494.03M",
+        "quantization_level": "F16",
+        "size_bytes": 994169232
+      },
+      "status": "provider_quality_rejected",
+      "transport_status": "passed",
+      "language_status": "not_applicable",
+      "completion_status": "not_applicable",
+      "task_status": "uncertain",
+      "note": "Transport passed; provider quality rejected; task unreviewed"
+    },
+    {
+      "name": "pytest-full-final.log",
+      "kind": "pytest_full",
+      "started_utc": null,
+      "finished_mtime_utc": "2026-11-03T15:17:34.385859+00:00",
+      "command": [
+        "python/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "python/tests",
+        "-q",
+        "--basetemp",
+        "runtime/quality-work-20261103/pytest-full-final-r3"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 0,
+      "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+      "note": "298 passed",
+      "captured_log": "pytest-full-final.log"
+    },
+    {
+      "name": "pytest-focused-final.log",
+      "kind": "pytest_focused",
+      "started_utc": null,
+      "finished_mtime_utc": "2026-11-03T15:18:06.475044+00:00",
+      "command": [
+        "python/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "python/tests/test_response_quality.py python/tests/test_harness_contracts.py python/tests/test_provider_readiness.py",
+        "-q",
+        "--basetemp",
+        "runtime/quality-work-20261103/pytest-focused-final-r6"
+      ],
+      "working_directory": "D:\\Projects\\dusnx-platform",
+      "exit_code": 0,
+      "dirty_patch_sha256": "3b1057be0c52d5c773e4be61ed3f6bf3433823ea09d1dba0b2caa01d00e6b15c",
+      "note": "54 passed",
+      "captured_log": "pytest-focused-final.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "qwen3-4b-r1-before-evaluator-fix.json",
+      "source_path": "runtime/quality-work-20261103/strict-qwen3-4b-r1/report.json",
+      "source_mtime_utc": "2026-11-03T14:41:36.209421+00:00",
+      "source_sha256": "6f228fc3285b455c422e3a341205bebfa41ca9a3d270ee73d0f2be008dc6ea01",
+      "evidence_file_sha256": "6f228fc3285b455c422e3a341205bebfa41ca9a3d270ee73d0f2be008dc6ea01",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "5021918a9a742336ebe15d976670319738a47efe"
+    },
+    {
+      "path": "qwen3-4b-r2-general-evaluator-fix.json",
+      "source_path": "runtime/quality-work-20261103/strict-qwen3-4b-r2/report.json",
+      "source_mtime_utc": "2026-11-03T14:58:24.274771+00:00",
+      "source_sha256": "4d4531223eab8734783c765fe8413b9ca4e82a35186c0a67847679133065d5fc",
+      "evidence_file_sha256": "4d4531223eab8734783c765fe8413b9ca4e82a35186c0a67847679133065d5fc",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "45c2d460c8ed725fb7b12957422055c53bac864c"
+    },
+    {
+      "path": "qwen3-4b-r3-final.json",
+      "source_path": "runtime/quality-work-20261103/strict-qwen3-4b-r3/report.json",
+      "source_mtime_utc": "2026-11-03T15:10:31.897707+00:00",
+      "source_sha256": "75253bc6b1bc929ecc0e184c86b08fe13a7feade5bb08f8208685968b8258fca",
+      "evidence_file_sha256": "75253bc6b1bc929ecc0e184c86b08fe13a7feade5bb08f8208685968b8258fca",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "035dcc304ad1a597aac90c46483376a316abc423"
+    },
+    {
+      "path": "candidate-r20-final.json",
+      "source_path": "runtime/quality-work-20261103/strict-candidate-r20/report.json",
+      "source_mtime_utc": "2026-11-03T15:14:37.843210+00:00",
+      "source_sha256": "ba63c07db9875654597bba26ebeac6d013da4cf4e759c0169dd6b63aae88d330",
+      "evidence_file_sha256": "ba63c07db9875654597bba26ebeac6d013da4cf4e759c0169dd6b63aae88d330",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "bc5205ea61a4c2eda579fd00f71fe2c6fc9bbfc0"
+    },
+    {
+      "path": "provenance-qwen3-4b-r2.json",
+      "source_path": "runtime/quality-work-20261103/provenance-qwen3-4b-r2.json",
+      "source_mtime_utc": "2026-11-03T15:11:48.654150+00:00",
+      "source_sha256": "1e1b4e5093f7ec76bee084bfc795a3aac530bb1d9f4feac1929dc16a85c1f57f",
+      "evidence_file_sha256": "1e1b4e5093f7ec76bee084bfc795a3aac530bb1d9f4feac1929dc16a85c1f57f",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "99230a3a358c812c79cfdf639cd1aa1aa328e011"
+    },
+    {
+      "path": "provenance-candidate-r2.json",
+      "source_path": "runtime/quality-work-20261103/provenance-candidate-r2.json",
+      "source_mtime_utc": "2026-11-03T15:15:08.070235+00:00",
+      "source_sha256": "a82793a8056bd97c03ec0a9d19054c7cf4ad80fa6c4206fe4197191bfebe4286",
+      "evidence_file_sha256": "a82793a8056bd97c03ec0a9d19054c7cf4ad80fa6c4206fe4197191bfebe4286",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "24d462c43e3c6ef7fadbcadeb0f480dc6275eedc"
+    },
+    {
+      "path": "pytest-full-final.log",
+      "source_path": "runtime/quality-work-20261103/pytest-full-final-r3.log",
+      "source_mtime_utc": "2026-11-03T15:17:34.385859+00:00",
+      "source_sha256": "112d78e610ebd1257d9eed2e1a6c76f7be1854c9edd24ee0f69b1d2aab4531c4",
+      "evidence_file_sha256": "1b7d175a6cfba7150bf01f42387a695ee4b6e64e76ed566d85ed063474927ac1",
+      "same_bytes_as_source": false,
+      "normalization": "UTF-16LE PowerShell transcript converted to UTF-8; displayed test output preserved.",
+      "git_blob_oid_sha1": "5a99b2d4be5b74ab3523beeedb630a05b0c20474"
+    },
+    {
+      "path": "pytest-focused-final.log",
+      "source_path": "runtime/quality-work-20261103/pytest-focused-final-r6.log",
+      "source_mtime_utc": "2026-11-03T15:18:06.475044+00:00",
+      "source_sha256": "bbc7b33874ba664efe0a43d8b210f7d8e8732276a823b912454d1b186129ab36",
+      "evidence_file_sha256": "4a46099f41e6df4ab8cf93b30519a59e677167024edd9407b4980cebe532504a",
+      "same_bytes_as_source": false,
+      "normalization": "UTF-16LE PowerShell transcript converted to UTF-8; displayed test output preserved.",
+      "git_blob_oid_sha1": "b1fb74d91c805fbec7796f60607a13b86fd7a194"
+    },
+    {
+      "path": "README.md",
+      "source_path": "generated from this verification run",
+      "source_mtime_utc": "2026-11-03T15:30:18.816361+00:00",
+      "source_sha256": "edbaeccdbf211cfa5d7f6553975bbd117d2b3f2e0b2a0fb9dc74d809636ce1b1",
+      "evidence_file_sha256": "edbaeccdbf211cfa5d7f6553975bbd117d2b3f2e0b2a0fb9dc74d809636ce1b1",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "b88714853f048b70616a0f720005bf44b1efb5d5"
+    },
+    {
+      "path": "human-review-ticket.md",
+      "source_path": "generated from this verification run",
+      "source_mtime_utc": "2026-11-03T15:18:28.703011+00:00",
+      "source_sha256": "57a744fa06c4edb9035af804d89cd3bb3ae98b2b1f5d75a1e1632d70bd5b0ffd",
+      "evidence_file_sha256": "57a744fa06c4edb9035af804d89cd3bb3ae98b2b1f5d75a1e1632d70bd5b0ffd",
+      "same_bytes_as_source": true,
+      "git_blob_oid_sha1": "45d228c12d3aaa237468bfdff3397a8e5bde12c8"
+    }
+  ],
+  "review_status": "No independent human review performed; human-review-ticket.md is open with decisions blank.",
+  "privacy": "Synthetic prompts/history/accounts only. No credentials, database files, model weights, or private logs copied.",
+  "normalization": "Artifact hashes describe original source/evidence bytes. Pytest transcripts were converted from UTF-16LE to UTF-8. Git blob object IDs (SHA-1) record staged normalized bytes for artifacts except this manifest, whose self-hash is omitted. README/review Markdown line endings may be normalized by Git.",
+  "resource_observations": {
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB VRAM",
+    "qwen3_live_snapshot": "nvidia-smi observed 2319 MiB used / 1644 MiB free while Qwen3 run was active; exact snapshot timestamp was not captured",
+    "candidate_peak_vram": "unknown; no comparable peak sample was captured",
+    "model_disk_sizes_bytes": {
+      "qwen3:4b": 2497293931,
+      "dusnx-vi-candidate:latest": 994169232
+    },
+    "limits": "Latency is case-request timing, not throughput; GPU memory comparison is incomplete."
+  }
+}

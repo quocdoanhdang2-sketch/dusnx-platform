@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-11-03T11:43:23.432212+00:00",
+  "checks": {
+    "uploaded_router_loaded": true,
+    "latest_100_then_all_205_in_order": true,
+    "delayed_history_does_not_cross_sessions": true,
+    "older_request_switch_and_button_reset": true,
+    "failed_page_retries_without_lost_or_duplicate_messages": true,
+    "logout_discards_inflight_history": true
+  },
+  "transport": "real_gateway_fastapi_sqlite_chromium",
+  "status": "passed"
+}

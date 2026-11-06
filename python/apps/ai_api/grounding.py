@@ -56,36 +56,55 @@ def is_memory_question(message: str) -> bool:
     return question and personal
 
 
-def format_memory_answer(content: str) -> str:
+_PREFIXES = {
+    "vi": "Theo trí nhớ đang hiệu lực:",
+    "en": "From active memory:",
+}
+_CLARIFICATIONS = {
+    "vi": "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?",
+    "en": "I don't have enough context to choose a relevant memory. Which decision or preference would you like to ask about?",
+}
+
+
+def _reply_language(language: str | None) -> str:
+    return language if language in _PREFIXES else "vi"
+
+
+def format_memory_answer(content: str, language: str = "vi") -> str:
     """Format memory answer without duplicate prefixes or doubled punctuation."""
+    language = _reply_language(language)
     c = content.strip()
-    prefix = "Theo trí nhớ đang hiệu lực:"
-    if c.lower().startswith(prefix.lower()):
-        c = c[len(prefix):].strip()
+    for existing in _PREFIXES.values():
+        if c.casefold().startswith(existing.casefold()):
+            c = c[len(existing):].strip()
+            break
     c = re.sub(r"[.?!,;:]+$", "", c).strip()
-    return f"{prefix} {c}."
+    return f"{_PREFIXES[language]} {c}."
 
 
-def memory_answer_with_selection(message: str, memories: list[dict]) -> tuple[str | None, list[dict]]:
+def memory_answer_with_selection(message: str, memories: list[dict], language: str = "vi") -> tuple[str | None, list[dict]]:
     """Return an attributed quotation and the matched memory dict.
 
-    Retrieval has already enforced user/project/activity. Multiple unrelated
-    candidates require clarification, not a fabricated single decision.
+    Retrieval has already enforced user/project/activity. The framing follows the
+    saved response language; the quoted memory text is never translated.
+    Multiple unrelated candidates require clarification, not a fabricated single
+    decision.
     """
+    language = _reply_language(language)
     if not is_memory_question(message):
         return None, []
     selected=select_memories(message,memories,recall=True)
     if selected:
-        return "\n".join(format_memory_answer(m["content"]) for m in selected), selected
-    return "Tôi chưa đủ bối cảnh để chọn thông tin phù hợp. Bạn muốn hỏi về quyết định hoặc sở thích cụ thể nào?", []
+        return "\n".join(format_memory_answer(m["content"], language) for m in selected), selected
+    return _CLARIFICATIONS[language], []
 
 
-def memory_answer_with_match(message: str, memories: list[dict]) -> tuple[str | None, dict | None]:
+def memory_answer_with_match(message: str, memories: list[dict], language: str = "vi") -> tuple[str | None, dict | None]:
     """Compatibility wrapper for callers that expect a single match."""
-    answer,selected=memory_answer_with_selection(message,memories)
+    answer,selected=memory_answer_with_selection(message,memories,language)
     return answer, selected[0] if len(selected)==1 else None
 
 
-def memory_answer(message: str, memories: list[dict]) -> str | None:
-    ans, _ = memory_answer_with_match(message, memories)
+def memory_answer(message: str, memories: list[dict], language: str = "vi") -> str | None:
+    ans, _ = memory_answer_with_match(message, memories, language)
     return ans

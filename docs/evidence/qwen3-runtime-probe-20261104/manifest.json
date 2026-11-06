@@ -1,0 +1,1278 @@
+{
+  "evidence_kind": "historical_local_direct_provider_probe",
+  "repository": "quocdoanhdang2-sketch/dusnx-platform",
+  "working_directory": "D:/Projects/dusnx-platform",
+  "branch_during_probe": "fix/quality-context-evidence",
+  "code_tested_full_sha": "ccbad152f600eba97349ca8a7b11d1c8a03e1f80",
+  "tracked_worktree_status_at_probe": "clean; preexisting untracked local logs/output directories were preserved",
+  "probe_started_at_utc": "2026-11-03T17:52:53.114099+00:00",
+  "probe_completed_at_utc": "2026-11-03T17:56:58.913306+00:00",
+  "probe_execution_status": "completed",
+  "probe_trial_count": 12,
+  "probe_shell_exit_code": "unknown (not captured; JSON execution_status=completed and contains 12 trials)",
+  "current_quality_branch_code_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
+  "main_before": "7980e71350d9c3512aff897af3a1fa7fc13982df",
+  "main_after": "953d62efa5bf874b9852f6a02fcb7844258ec317",
+  "main_diagnostic_change": "PR https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4 merged normally; main workflow status for merge SHA was not returned; PR-head run success on 965c544f604691fee0e71a8fbd28b85946f47277",
+  "not_run_on_documentation_commit_or_later_code": true,
+  "tools": {
+    "ollama": "0.40.14",
+    "python": "3.12.10",
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU (4 GB)",
+    "cpu_ram": "unknown; telemetry access denied"
+  },
+  "models": {
+    "base": {
+      "tag": "qwen3:4b",
+      "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "quantization": "Q4_K_M"
+    },
+    "candidate": {
+      "tag": "dusnx-qwen3-4b-no-think-template-probe-20261104:latest",
+      "digest": "b8a53a0db98c2ea8d910b367482828188e7cab1724e9faa72e2d11582009d0d8",
+      "quantization": "Q4_K_M",
+      "change": "template-only; no default change"
+    },
+    "installed_dusnx_vi_candidate": {
+      "tag": "dusnx-vi-candidate:latest",
+      "digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "family": "qwen2",
+      "parameter_size": "494.03M",
+      "quantization": "F16",
+      "template_sha256": "eb4402837c7829a690fa845de4d7f3fd842c2adee476d5341da8a46ea9255175",
+      "promoted": false
+    }
+  },
+  "commands": [
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_chat_provenance.py --gateway http://127.0.0.1:8187 --output runtime/quality-gateway-probe-20261104/chat-provenance-r1.json --expected-model qwen3:4b --expected-model-digest 359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "working_directory": ".",
+      "exit_code": 1,
+      "result": "provider_quality_rejected; thinking-only empty content, 512/512, done_reason=length; 37.281s"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_bilingual_generation.py --gateway http://127.0.0.1:8187 --output-dir runtime/quality-gateway-probe-20261104/bilingual-strict-r1 --expected-model qwen3:4b --expected-model-digest 359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7 --strict-language --strict-quality",
+      "working_directory": ".",
+      "exit_code": 1,
+      "result": "27 cases; contract 16/27; 11 failures; 4 successful real generations; 4 task uncertain"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_week4_web.py --spawn-stack --output-dir runtime/quality-gateway-probe-20261104/browser-r1",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "8 Chromium Web checks passed; one qwen2.5:0.5b generation"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_memory_reliability.py --output-dir runtime/quality-gateway-probe-20261104/memory-reliability-r1",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "10 synthetic HTTP/Chromium/SQLite checks passed; provider-offline fault injection, not generation"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe scripts/verify_sqlite_backup_restore.py --output-dir runtime/quality-gateway-probe-20261104/sqlite-backup-r1 --protected-dir runtime/nonexistent-protected-backup-for-probe-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "synthetic level 1 passed; 205 messages; protected data check skipped intentionally"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py python/tests/test_response_quality.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-harness-provenance-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "52 passed"
+    },
+    {
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-final-e8be1f-20261104",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "304 passed in 71.82s",
+      "tested_code_sha": "e8be1f593a49eab81c5dc3bd8f046a0c08ca46b5"
+    },
+    {
+      "command": "node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "26 passed"
+    },
+    {
+      "command": "dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release --nologo",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "0 warnings, 0 errors"
+    },
+    {
+      "command": "dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "7/7 Gateway history tests passed"
+    },
+    {
+      "command": "./scripts/tests/local-health.tests.ps1",
+      "working_directory": ".",
+      "exit_code": 0,
+      "result": "6/6 passed"
+    },
+    {
+      "command": "Initial focused pytest invocation using default temp directory",
+      "working_directory": ".",
+      "exit_code": "unknown; setup output had Windows PermissionError for D:/TMP/TMP/pytest-of-Admin; rerun with new workspace basetemp passed"
+    },
+    {
+      "command": "Intermediate focused pytest during fixture correction",
+      "working_directory": ".",
+      "exit_code": 1,
+      "result": "55 passed, 1 assertion failed; corrected fixture expected budget_reached; final focused/full passes recorded"
+    }
+  ],
+  "scope_limits": [
+    "direct native Ollama only; not Gateway/FastAPI/Browser",
+    "no raw thinking saved; only lengths and hashes",
+    "synthetic prompts and outputs only",
+    "model/default unchanged",
+    "semantic quality on empty answers fails; no human quality review claimed",
+    "Node, .NET, PowerShell health, Gateway, browser/runtime, memory/backup and strict bilingual harness were not run this turn",
+    "main merge SHA CI status unknown; only PR-head workflow run success was observed"
+  ],
+  "artifacts": [
+    {
+      "path": "direct-ollama-qwen3-template-paired-r1.json",
+      "source_path": "runtime/qwen3-template-probe-20261104/paired-probe-report.json",
+      "source_sha256": "d242c46801ec45ea802905e599f68d42bc58620fa6024f9ea817fb96d76c5374",
+      "packaged_source_bytes_sha256": "d242c46801ec45ea802905e599f68d42bc58620fa6024f9ea817fb96d76c5374",
+      "git_blob_sha1": "345dd7c1d28ae481bc6983626ef4c4ad9ac9c17a",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "d242c46801ec45ea802905e599f68d42bc58620fa6024f9ea817fb96d76c5374",
+      "packaged_bytes_sha256": "d242c46801ec45ea802905e599f68d42bc58620fa6024f9ea817fb96d76c5374",
+      "committed_blob_bytes_sha256": "4ffba70b2d6f302513ab5b2b8a9abf70ebf0a930ac13e534bec8166e49525125",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 438,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 438,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 438
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 438,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 438,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 438
+      }
+    },
+    {
+      "path": "candidate-template-metadata.json",
+      "source_path": "runtime/qwen3-template-probe-20261104/candidate-meta.json",
+      "source_sha256": "c0d043c891ca27bf6993cee0ffab90d782af517c728b30e7c514ff235dac1db1",
+      "packaged_source_bytes_sha256": "c0d043c891ca27bf6993cee0ffab90d782af517c728b30e7c514ff235dac1db1",
+      "git_blob_sha1": "ae3bf1ea16f606ee2e8a460cc536becacdfed430",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "c0d043c891ca27bf6993cee0ffab90d782af517c728b30e7c514ff235dac1db1",
+      "packaged_bytes_sha256": "c0d043c891ca27bf6993cee0ffab90d782af517c728b30e7c514ff235dac1db1",
+      "committed_blob_bytes_sha256": "1b506ea563e4ded65da3695480a08a2e6e0b60ba2fddc18194be7754d48a3145",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 10,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 10,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 10
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 10,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 10,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 10
+      }
+    },
+    {
+      "path": "candidate-Modelfile.txt",
+      "source_path": "runtime/qwen3-template-probe-20261104/Modelfile",
+      "source_sha256": "29ee65a4f2cce94ff772733dbc41dd47fe36d72b3a1b32912904c1004b13708d",
+      "packaged_source_bytes_sha256": "29ee65a4f2cce94ff772733dbc41dd47fe36d72b3a1b32912904c1004b13708d",
+      "git_blob_sha1": "efa612423372eb035429a6bf45e4384baac738b3",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "29ee65a4f2cce94ff772733dbc41dd47fe36d72b3a1b32912904c1004b13708d",
+      "packaged_bytes_sha256": "29ee65a4f2cce94ff772733dbc41dd47fe36d72b3a1b32912904c1004b13708d",
+      "committed_blob_bytes_sha256": "57208c275ced355c2f4f02e2b1f12c6a166fe1200d1842467f44960e59f547c7",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 58,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 58,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 58
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 58,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 58,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 58
+      }
+    },
+    {
+      "path": "run-paired-probe.py",
+      "source_path": "runtime/qwen3-template-probe-20261104/run-paired-probe.py",
+      "source_sha256": "e39a776666054f1d2ad872bdf1ff7f33db5bb74e32450524c63179e8e76d135a",
+      "packaged_source_bytes_sha256": "e39a776666054f1d2ad872bdf1ff7f33db5bb74e32450524c63179e8e76d135a",
+      "git_blob_sha1": "9d1d01d74cf5ea5e4f21d62fa9c838099338db35",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "e39a776666054f1d2ad872bdf1ff7f33db5bb74e32450524c63179e8e76d135a",
+      "packaged_bytes_sha256": "e39a776666054f1d2ad872bdf1ff7f33db5bb74e32450524c63179e8e76d135a",
+      "committed_blob_bytes_sha256": "4ac40c28420dc11f38ec8f7eeb291b4b6a55b1cd818ea9104301454e12904c33",
+      "source_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 44
+      },
+      "packaged_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 44
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 0,
+        "lf_count": 45
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 44
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 44
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 45
+      }
+    },
+    {
+      "path": "full-pytest-output.txt",
+      "source_path": "runtime/pytest-full-qwen-diagnostics-20261104.log",
+      "source_sha256": "50907811ac1e74940a4f499bdf41c90c3dcd90ad9d150056a914214112ac4915",
+      "packaged_source_bytes_sha256": "b1aa986a088f0a5167caecf7e5c3835746d09613472d69e13c186bba99e5be78",
+      "git_blob_sha1": "56a1a70e3ecb6ad4e17f2fe4ef404a022f67d32f",
+      "normalization": "UTF-16LE source log converted to UTF-8; text content retained; Git autocrlf blob recorded separately",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "50907811ac1e74940a4f499bdf41c90c3dcd90ad9d150056a914214112ac4915",
+      "packaged_bytes_sha256": "b1aa986a088f0a5167caecf7e5c3835746d09613472d69e13c186bba99e5be78",
+      "committed_blob_bytes_sha256": "14d57f0a58a97bb671f4dcb66bfa79d0e2d7284a10de97578f1fdf32dfd5e3a8",
+      "source_encoding_newlines": {
+        "bom": "UTF-16LE BOM",
+        "crlf_count": 0,
+        "lf_count": 6
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 6,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 6
+      },
+      "source_verification_status": "verified_transcode_UTF16LE_BOM_to_UTF8_no_BOM_bytes_otherwise_equal",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-16LE BOM",
+        "logical_crlf_count": 6,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 6,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 6
+      },
+      "conversion": "Decoded source UTF-16LE using BOM, encoded UTF-8 without BOM. Decoded text bytes equal packaged bytes, including CRLF line endings."
+    },
+    {
+      "path": "README.md",
+      "source_path": "authored evidence README, updated with R2 probe findings",
+      "source_sha256": "unverified",
+      "packaged_source_bytes_sha256": "99d68899db09d27f886046a27b039d103f00b3df7e32168629d0e12d84ab6c90",
+      "git_blob_sha1": "3862c2cebafbb8cb7b17fa39a787fb44ef8f1d06",
+      "normalization": "UTF-8 LF; SHA-256 records exact packaged bytes; Git blob recorded separately",
+      "observed_at_utc": "2026-11-03T18:36:17Z",
+      "previous_manifest_source_sha256_claim": "fc4bcc71825f326d24812d3dcb8ed6658e4cb2b8fe04f41bafed7dfe9903d514",
+      "source_bytes_sha256": "unverified",
+      "packaged_bytes_sha256": "99d68899db09d27f886046a27b039d103f00b3df7e32168629d0e12d84ab6c90",
+      "committed_blob_bytes_sha256": "99d68899db09d27f886046a27b039d103f00b3df7e32168629d0e12d84ab6c90",
+      "source_encoding_newlines": "unverified; source file not retained",
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 75
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 75
+      },
+      "source_verification_status": "unverified_source_not_retained",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": "unverified; separate source bytes not retained",
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 80
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 80
+      },
+      "previous_manifest_packaged_sha256_claim": "d41ebd4dad14d3bc82cefebb0ad1aa9cb95a1f04cbdb7f45d21a514f18d1ff91",
+      "committed_blob_oid_after_errata": "3862c2cebafbb8cb7b17fa39a787fb44ef8f1d06",
+      "previous_manifest_git_blob_sha1_claim": "e1b1610d8dbfa86f124b8cd75a0643f71a818b24"
+    },
+    {
+      "path": "ollama-capabilities.json",
+      "source_path": "authored evidence packaging file",
+      "source_sha256": "unverified",
+      "packaged_source_bytes_sha256": "6756c9b1162554a44525c703541d013d01d792880c2ef0572f4c48cb189daf4b",
+      "git_blob_sha1": "5054db36b94ad2ff36e650ffe66ee065b83daa0f",
+      "normalization": "No manual conversion; exact packaged-byte SHA recorded; Git autocrlf blob recorded separately",
+      "previous_manifest_source_sha256_claim": "6756c9b1162554a44525c703541d013d01d792880c2ef0572f4c48cb189daf4b",
+      "source_bytes_sha256": "unverified",
+      "packaged_bytes_sha256": "6756c9b1162554a44525c703541d013d01d792880c2ef0572f4c48cb189daf4b",
+      "committed_blob_bytes_sha256": "4fbe4477184f4a60357d76b71b8d9d4548e13b83952a6f759975c370e4099437",
+      "source_encoding_newlines": "unverified; source file not retained",
+      "packaged_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 21
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 0,
+        "lf_count": 22
+      },
+      "source_verification_status": "unverified_source_not_retained",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": "unverified; separate source bytes not retained",
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 21
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 22
+      }
+    },
+    {
+      "path": "live-gateway-chat-provenance-qwen3-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/chat-provenance-r1.json",
+      "source_sha256": "da89bb6f33698aae38f82de5e0635dd36dde0a639be59e7f34b4465379b1c58b",
+      "packaged_source_bytes_sha256": "da89bb6f33698aae38f82de5e0635dd36dde0a639be59e7f34b4465379b1c58b",
+      "git_blob_sha1": "216cbdd73042c376a8bffc9f8f23150eec8321f6",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:07:31.306602+00:00",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "da89bb6f33698aae38f82de5e0635dd36dde0a639be59e7f34b4465379b1c58b",
+      "packaged_bytes_sha256": "da89bb6f33698aae38f82de5e0635dd36dde0a639be59e7f34b4465379b1c58b",
+      "committed_blob_bytes_sha256": "4f2363abf8ee2f5408b611912b7b226c289e3685b99ed4f6d3aa7fe2025c9110",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 214,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 214,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 214
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 214,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 214,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 214
+      }
+    },
+    {
+      "path": "live-gateway-bilingual-strict-qwen3-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/bilingual-strict-r1/report.json",
+      "source_sha256": "5ddbe79ecad816320adbb9e78186db02aa83f6319c4027f639ab7071029c6339",
+      "packaged_source_bytes_sha256": "5ddbe79ecad816320adbb9e78186db02aa83f6319c4027f639ab7071029c6339",
+      "git_blob_sha1": "4530b2fb196505775fe15211918ec91bd4a4e643",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:08:28.096617+00:00",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "5ddbe79ecad816320adbb9e78186db02aa83f6319c4027f639ab7071029c6339",
+      "packaged_bytes_sha256": "5ddbe79ecad816320adbb9e78186db02aa83f6319c4027f639ab7071029c6339",
+      "committed_blob_bytes_sha256": "735be3439c9e1657a85eac1ef115cebf8b823f82d72dd5231ecd6a2be7021d95",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 3502,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 3502,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 3502
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 3502,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 3502,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 3502
+      }
+    },
+    {
+      "path": "live-gateway-bilingual-review-qwen3-r1.md",
+      "source_path": "runtime/quality-gateway-probe-20261104/bilingual-strict-r1/review_table.md",
+      "source_sha256": "8e3f05e9a783f58f900e81ed4c563028d37786bd4297f0aec9ac7735547398a5",
+      "packaged_source_bytes_sha256": "8e3f05e9a783f58f900e81ed4c563028d37786bd4297f0aec9ac7735547398a5",
+      "git_blob_sha1": "b569cadb14786e94b994972768f9e66a86a89717",
+      "normalization": "copied byte-for-byte from generated Markdown; Git autocrlf blob recorded separately",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "8e3f05e9a783f58f900e81ed4c563028d37786bd4297f0aec9ac7735547398a5",
+      "packaged_bytes_sha256": "8e3f05e9a783f58f900e81ed4c563028d37786bd4297f0aec9ac7735547398a5",
+      "committed_blob_bytes_sha256": "6b2693c7fe896a8151d95d4e24015608e509afca2de07b2a22c7863050b8c6d7",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 46,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 46,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 46
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 46,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 46,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 46
+      }
+    },
+    {
+      "path": "direct-qwen3-budget1024-followup-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/direct-budget1024-report.json",
+      "source_sha256": "49f78e5099657ca7d9595938764482ef846a0dc23162ff561e078edb0b5b6e05",
+      "packaged_source_bytes_sha256": "49f78e5099657ca7d9595938764482ef846a0dc23162ff561e078edb0b5b6e05",
+      "git_blob_sha1": "a6d1004e202e9c6a1e775af52e1cfb7414de2cbc",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:21:28.662804+00:00",
+      "completed_at_utc": "2026-11-03T18:25:01.775163+00:00",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "49f78e5099657ca7d9595938764482ef846a0dc23162ff561e078edb0b5b6e05",
+      "packaged_bytes_sha256": "49f78e5099657ca7d9595938764482ef846a0dc23162ff561e078edb0b5b6e05",
+      "committed_blob_bytes_sha256": "3c2afa7942f8f0c015b0040a50bd8890e6bb086aa7fdc5860ebced708a9b218e",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 124,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 124,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 124
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 124,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 124,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 124
+      }
+    },
+    {
+      "path": "run-qwen3-budget1024-probe.py",
+      "source_path": "runtime/quality-gateway-probe-20261104/run-budget1024-probe.py",
+      "source_sha256": "4b255a113014761ac5833b2cd41e0dc5d1054d91ae1b2464ec2b8f084ae9ec34",
+      "packaged_source_bytes_sha256": "4b255a113014761ac5833b2cd41e0dc5d1054d91ae1b2464ec2b8f084ae9ec34",
+      "git_blob_sha1": "301807bcb8f41376718db652b2298d4ba4d0d1cc",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "4b255a113014761ac5833b2cd41e0dc5d1054d91ae1b2464ec2b8f084ae9ec34",
+      "packaged_bytes_sha256": "4b255a113014761ac5833b2cd41e0dc5d1054d91ae1b2464ec2b8f084ae9ec34",
+      "committed_blob_bytes_sha256": "ce3d18e8083702055fd5033f55c2b47dbf05e2b72abdc09e0367bc440555aba8",
+      "source_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 20
+      },
+      "packaged_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 20
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 0,
+        "lf_count": 21
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 20
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 20
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 21
+      }
+    },
+    {
+      "path": "direct-qwen25-default-task-comparison-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/qwen25-baseline-report.json",
+      "source_sha256": "41ee8a7e2cad12a1858c11095141883fa423366682da4108c703b224796ffcbc",
+      "packaged_source_bytes_sha256": "41ee8a7e2cad12a1858c11095141883fa423366682da4108c703b224796ffcbc",
+      "git_blob_sha1": "4ce0219203bbab93479f79b9ea6d593085cecbc1",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:29:58.801126+00:00",
+      "completed_at_utc": "2026-11-03T18:30:02.890850+00:00",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "41ee8a7e2cad12a1858c11095141883fa423366682da4108c703b224796ffcbc",
+      "packaged_bytes_sha256": "41ee8a7e2cad12a1858c11095141883fa423366682da4108c703b224796ffcbc",
+      "committed_blob_bytes_sha256": "18f0e00aefb337e6caeabf138f4b440940d82705900efc74b9710506a377b98a",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 123,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 123,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 123
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 123,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 123,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 123
+      }
+    },
+    {
+      "path": "run-qwen25-baseline-probe.py",
+      "source_path": "runtime/quality-gateway-probe-20261104/run-qwen25-baseline-probe.py",
+      "source_sha256": "b4ef477661ba1d9b3f349a8a9aab671c99def1ba8fcd9c56052fa117f50e5885",
+      "packaged_source_bytes_sha256": "b4ef477661ba1d9b3f349a8a9aab671c99def1ba8fcd9c56052fa117f50e5885",
+      "git_blob_sha1": "6790801d00031e1bafa3b64ea0e3d5ea7c8b2027",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "b4ef477661ba1d9b3f349a8a9aab671c99def1ba8fcd9c56052fa117f50e5885",
+      "packaged_bytes_sha256": "b4ef477661ba1d9b3f349a8a9aab671c99def1ba8fcd9c56052fa117f50e5885",
+      "committed_blob_bytes_sha256": "82178f0d7e564f164eac1342d5104e06e0dfce0e218771e08ee6d784969c1463",
+      "source_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 16
+      },
+      "packaged_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 16
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 0,
+        "lf_count": 17
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 16
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 16
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 17
+      }
+    },
+    {
+      "path": "chromium-web-runtime-qwen25-default-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/browser-r1/browser.json",
+      "source_sha256": "b8bcd4107314f3f6958ad6c9980d31ea09923a4307c3d086e13663190cc4422e",
+      "packaged_source_bytes_sha256": "b8bcd4107314f3f6958ad6c9980d31ea09923a4307c3d086e13663190cc4422e",
+      "git_blob_sha1": "9db588d2ce5b1f22369596806e8fdadc989bc8b9",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:27:34.861972+00:00",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "b8bcd4107314f3f6958ad6c9980d31ea09923a4307c3d086e13663190cc4422e",
+      "packaged_bytes_sha256": "b8bcd4107314f3f6958ad6c9980d31ea09923a4307c3d086e13663190cc4422e",
+      "committed_blob_bytes_sha256": "826dfbf3d5536c52a83317405afb47271875f2b54451b91f7603c2e5d71475f7",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 21,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 21,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 21
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 21,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 21,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 21
+      }
+    },
+    {
+      "path": "memory-reliability-http-chromium-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/memory-reliability-r1/report.json",
+      "source_sha256": "c2605357cf3f7cc3da291ebd054f848b319b7dc368c88c98205cbd1f6774fc4e",
+      "packaged_source_bytes_sha256": "c2605357cf3f7cc3da291ebd054f848b319b7dc368c88c98205cbd1f6774fc4e",
+      "git_blob_sha1": "dc368e7dcb769d77dd6447bcafa2908eb13ac0ab",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:28:14.100656+00:00",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "c2605357cf3f7cc3da291ebd054f848b319b7dc368c88c98205cbd1f6774fc4e",
+      "packaged_bytes_sha256": "c2605357cf3f7cc3da291ebd054f848b319b7dc368c88c98205cbd1f6774fc4e",
+      "committed_blob_bytes_sha256": "7530b5ad66708a4d3ad81d18cf15293d3374cc99bb8cb4e2e9a9b2e30bd59ad0",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 24,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 24,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 24
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 24,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 24,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 24
+      }
+    },
+    {
+      "path": "sqlite-backup-restore-synthetic-r1.json",
+      "source_path": "runtime/quality-gateway-probe-20261104/sqlite-backup-r1/report.json",
+      "source_sha256": "1a0ede8adbc9585f6891a018ae412ed0fe8cd48f4ed68a1af3bf69f3b75d9431",
+      "packaged_source_bytes_sha256": "1a0ede8adbc9585f6891a018ae412ed0fe8cd48f4ed68a1af3bf69f3b75d9431",
+      "git_blob_sha1": "dc07d6aa7de44ff85b8b41dc6925838f5b783735",
+      "normalization": "no manual change; exact source/packaged byte hashes recorded",
+      "observed_at_utc": "2026-11-03T18:29:05.374396+00:00",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "1a0ede8adbc9585f6891a018ae412ed0fe8cd48f4ed68a1af3bf69f3b75d9431",
+      "packaged_bytes_sha256": "1a0ede8adbc9585f6891a018ae412ed0fe8cd48f4ed68a1af3bf69f3b75d9431",
+      "committed_blob_bytes_sha256": "7e3507b19bd5a0d1ec4f8725e3c51c657e029f0dc75a556e0eb025ebad038efd",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 24,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 24,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 24
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 24,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 24,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 24
+      }
+    },
+    {
+      "path": "full-pytest-final-304-output.txt",
+      "source_path": "runtime/pytest-final-e8be1f-20261104.log",
+      "source_sha256": "7c059bbe2a5f9df9a8aa9db89dfe0db243faf3711a633d88be0615057e6bb925",
+      "packaged_source_bytes_sha256": "44fe157aed1f44b5aa0374f5131a2d6200b170645dade6b7efea7138488eadfe",
+      "git_blob_sha1": "c4effe4ac3f842d18193b46ddab5d1d3b1d45512",
+      "normalization": "UTF-16LE PowerShell source log converted to UTF-8; output text retained; both source and packaged SHA-256 recorded",
+      "observed_at_utc": "unknown; see source report/log",
+      "completed_at_utc": "unknown; see source report/log",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "7c059bbe2a5f9df9a8aa9db89dfe0db243faf3711a633d88be0615057e6bb925",
+      "packaged_bytes_sha256": "44fe157aed1f44b5aa0374f5131a2d6200b170645dade6b7efea7138488eadfe",
+      "committed_blob_bytes_sha256": "4313b88207f010895125e48b090ce8c41a26041fe5d763e9b03f03d7b67b1f23",
+      "source_encoding_newlines": {
+        "bom": "UTF-16LE BOM",
+        "crlf_count": 0,
+        "lf_count": 6
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 6,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 6
+      },
+      "source_verification_status": "verified_transcode_UTF16LE_BOM_to_UTF8_no_BOM_bytes_otherwise_equal",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-16LE BOM",
+        "logical_crlf_count": 6,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 6,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 6
+      },
+      "conversion": "Decoded source UTF-16LE using BOM, encoded UTF-8 without BOM. Decoded text bytes equal packaged bytes, including CRLF line endings."
+    },
+    {
+      "path": "pytest-review-table-label-11-passed-output.txt",
+      "source_path": "runtime/pytest-review-label-final-20261104.log",
+      "source_sha256": "f2bddc0fbe1dda5d3f1b2a608c5ce8c1f7b60161f06e4a26f00d05fd12a98788",
+      "packaged_source_bytes_sha256": "9830e2c31919df7eb1d67205a5901773c68b58be9a8390c1ba2e280897d566e1",
+      "git_blob_sha1": "b72cfc4cca749447f01f59f461fd82e8d1d4797a",
+      "normalization": "PowerShell test output normalized to UTF-8 LF for packaging; output content preserved",
+      "observed_at_utc": "2026-11-03T18:39:41Z",
+      "completed_at_utc": "2026-11-03T18:39:42Z",
+      "command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-review-label-final-20261104",
+      "working_directory": "D:/Projects/dusnx-platform",
+      "exit_code": 0,
+      "result": "11 passed",
+      "previous_manifest_source_sha256_claim": "9830e2c31919df7eb1d67205a5901773c68b58be9a8390c1ba2e280897d566e1",
+      "source_bytes_sha256": "f2bddc0fbe1dda5d3f1b2a608c5ce8c1f7b60161f06e4a26f00d05fd12a98788",
+      "packaged_bytes_sha256": "9830e2c31919df7eb1d67205a5901773c68b58be9a8390c1ba2e280897d566e1",
+      "committed_blob_bytes_sha256": "a8499459c3449501a9554eac8ee286716ab4446a1e6c5d74db262b845e5ce3d8",
+      "source_encoding_newlines": {
+        "bom": "UTF-16LE BOM",
+        "crlf_count": 0,
+        "lf_count": 2
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 2,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 2
+      },
+      "source_verification_status": "verified_transcode_UTF16LE_BOM_to_UTF8_no_BOM_bytes_otherwise_equal",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-16LE BOM",
+        "logical_crlf_count": 2,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 2,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 2
+      },
+      "conversion": "Decoded source UTF-16LE using BOM, encoded UTF-8 without BOM. Decoded text bytes equal packaged bytes, including CRLF line endings."
+    },
+    {
+      "path": "dusnx-vi-candidate-direct-r1-exploratory.json",
+      "source_path": "runtime/ollama-candidate-compare-20261104-r1/candidate-compare-report.json",
+      "source_sha256": "518ec49cf550ff024e805bcf151e51b91b39b8869e4452af3cf65180ba17a00c",
+      "packaged_source_bytes_sha256": "518ec49cf550ff024e805bcf151e51b91b39b8869e4452af3cf65180ba17a00c",
+      "git_blob_sha1": "9e1d600d99decbda6fe3bb5223c46c1ab8dc6227",
+      "normalization": "exact source bytes copied; UTF-8 content retained",
+      "observed_at_utc": "2026-11-03T18:48:23.295797+00:00",
+      "completed_at_utc": "2026-11-03T18:48:38.962391+00:00",
+      "command_or_source_note": "inline script source not saved; command source unknown; process returned exit 0",
+      "transport": "direct Ollama /api/chat; bypasses Gateway/FastAPI/browser",
+      "execution_status": "completed",
+      "trial_count": 4,
+      "model_tag": "dusnx-vi-candidate:latest",
+      "model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "518ec49cf550ff024e805bcf151e51b91b39b8869e4452af3cf65180ba17a00c",
+      "packaged_bytes_sha256": "518ec49cf550ff024e805bcf151e51b91b39b8869e4452af3cf65180ba17a00c",
+      "committed_blob_bytes_sha256": "99f8e4b4f9789199505e0ddd19972484fc70bec092fb5d227a3d090bdea32c1a",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 140,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 140,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 140
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 140,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 140,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 140
+      }
+    },
+    {
+      "path": "dusnx-vi-candidate-direct-r2-report.json",
+      "source_path": "runtime/ollama-candidate-compare-20261104-r2/candidate-compare-report.json",
+      "source_sha256": "9c626ba394d3812e45c3e8214e52d2e2a8d0d9fd6319fd470492af251ea40c31",
+      "packaged_source_bytes_sha256": "9c626ba394d3812e45c3e8214e52d2e2a8d0d9fd6319fd470492af251ea40c31",
+      "git_blob_sha1": "e5733daf994a7e0453f12fef77aa9b7710f4a272",
+      "normalization": "exact source bytes copied; UTF-8 content retained",
+      "observed_at_utc": "2026-11-03T18:49:01.843738+00:00",
+      "completed_at_utc": "2026-11-03T18:49:03.990690+00:00",
+      "command_or_source_note": "python runtime/run-dusnxvi-candidate-compare-r2.py; exit 0",
+      "transport": "direct Ollama /api/chat; bypasses Gateway/FastAPI/browser",
+      "execution_status": "completed",
+      "trial_count": 4,
+      "model_tag": "dusnx-vi-candidate:latest",
+      "model_digest": "bd9ebfc9d9af8ce3f53224b3480e957e8d39a530ec2fba19ce12a54df4a1fbe3",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "9c626ba394d3812e45c3e8214e52d2e2a8d0d9fd6319fd470492af251ea40c31",
+      "packaged_bytes_sha256": "9c626ba394d3812e45c3e8214e52d2e2a8d0d9fd6319fd470492af251ea40c31",
+      "committed_blob_bytes_sha256": "a6495c87fe26f8824b0f59a3e99ed96e745af4dac7b53892d60df7ff1bae5c72",
+      "source_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 140,
+        "lf_count": 0
+      },
+      "packaged_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 140,
+        "lf_count": 0
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "no BOM",
+        "crlf_count": 0,
+        "lf_count": 140
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 140,
+        "logical_lf_count": 0
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 140,
+        "logical_lf_count": 0
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 no BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 140
+      }
+    },
+    {
+      "path": "run-dusnx-vi-candidate-compare-r2.py",
+      "source_path": "runtime/run-dusnxvi-candidate-compare-r2.py",
+      "source_sha256": "462ec6953d5028777adfb1438975b9d7d1a433fd63c1b186494e4341a6db1e74",
+      "packaged_source_bytes_sha256": "462ec6953d5028777adfb1438975b9d7d1a433fd63c1b186494e4341a6db1e74",
+      "git_blob_sha1": "aeac794a7f3aab9de9810490c6cde45d1fe0b2e9",
+      "normalization": "exact source bytes copied; UTF-8 content retained",
+      "observed_at_utc": "2026-11-03T18:49:01.843738+00:00",
+      "completed_at_utc": "2026-11-03T18:49:03.990690+00:00",
+      "command_or_source_note": "source script used for the R2 direct probe",
+      "transport": "direct Ollama /api/chat; bypasses Gateway/FastAPI/browser",
+      "previous_manifest_source_sha256_claim": null,
+      "source_bytes_sha256": "462ec6953d5028777adfb1438975b9d7d1a433fd63c1b186494e4341a6db1e74",
+      "packaged_bytes_sha256": "462ec6953d5028777adfb1438975b9d7d1a433fd63c1b186494e4341a6db1e74",
+      "committed_blob_bytes_sha256": "bd2ae3fff0b54c5cdd5ef2a651904175ed0e88e7f8f07c9e0eb740293f0d9abf",
+      "source_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 106
+      },
+      "packaged_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 1,
+        "lf_count": 106
+      },
+      "committed_blob_encoding_newlines": {
+        "bom": "UTF-8 BOM",
+        "crlf_count": 0,
+        "lf_count": 107
+      },
+      "source_verification_status": "verified_exact_source_equals_packaged_bytes",
+      "git_blob_oid_format": "SHA-1 Git blob object id; committed_blob_bytes_sha256 hashes exact git cat-file blob bytes.",
+      "packaging_note": "SHA-256 values are over unmodified raw bytes for each representation. Git blob bytes are measured separately from Windows worktree/package bytes.",
+      "source_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 106
+      },
+      "packaged_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 1,
+        "logical_lf_count": 106
+      },
+      "committed_blob_encoding_and_newlines": {
+        "encoding": "UTF-8 BOM",
+        "logical_crlf_count": 0,
+        "logical_lf_count": 107
+      }
+    }
+  ],
+  "manifest_self_hash": "not included",
+  "live_gateway_and_browser_code_sha": "e89e57467fde95ed11d077033ecfbc23a30b7ff3",
+  "post_live_report_harness_fix_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
+  "ci": {
+    "pr": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/4",
+    "pr_head_sha": "965c544f604691fee0e71a8fbd28b85946f47277",
+    "pr_head_workflow_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41689664607",
+    "pr_head_conclusion": "success",
+    "merged_main_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
+    "merged_sha_workflow_status": "unknown; no workflow run/status returned",
+    "review_table_pr5": {
+      "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
+      "head_sha": "b9f81c0b5eda44c41bf51bb153bed1a2d9462b77",
+      "checks": "unknown; none returned at check time",
+      "merged": true,
+      "merge_commit_sha": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+      "head_actions_run_id": 41696532438,
+      "head_actions_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41696532438",
+      "head_actions_conclusion": "success",
+      "merge_sha_status": "unknown; no status or workflow run returned"
+    }
+  },
+  "live_results": {
+    "chat_provenance_exit": 1,
+    "chat_provenance_status": "provider_quality_rejected",
+    "bilingual_strict_exit": 1,
+    "bilingual_cases": 27,
+    "bilingual_contract_passed": 16,
+    "bilingual_contract_failed": 11,
+    "bilingual_real_successful_generations": 4,
+    "bilingual_task_uncertain": 4,
+    "qwen3_1024_translation_empty": "2/2",
+    "qwen3_1024_vietnamese_gateway_benefit_content": "2/2",
+    "qwen25_512_translation_wrong_language": "2/2",
+    "qwen25_512_gateway_benefit_overlong_repetitive": "2/2",
+    "dusnx_vi_candidate_r2": {
+      "transport": "direct Ollama; not application stack",
+      "trials": 4,
+      "exit_code": 0,
+      "translation_english": 2,
+      "translation_url_scheme_changed": 2,
+      "gateway_benefit_done_stop": 2,
+      "gateway_benefit_mixed_language": 1,
+      "task_quality_review": "not independently reviewed",
+      "decision": "not promoted"
+    },
+    "dusnx_vi_candidate_r1_exploratory": {
+      "transport": "direct Ollama; not application stack",
+      "trials": 4,
+      "exit_code": 0,
+      "translation_not_english": 2,
+      "gateway_benefit_done_reason_length": 2,
+      "gateway_benefit_eval_count": 512,
+      "command_source": "unknown; exploratory inline code was not saved"
+    }
+  },
+  "not_run_this_turn": [
+    "Full strict bilingual was not rerun after reporting-only harness fix e8be1f5; prior report remains unchanged and code fix is covered by unit/full pytest",
+    "No independent human quality review",
+    "No main merge-SHA CI result (unknown)",
+    "No live generation rerun after review-table label-only harness fix; prior strict Qwen3 report is preserved unchanged",
+    "No broader cross-topic candidate quality suite or independent human content review; candidate R2 tested only two synthetic prompts with two repetitions each"
+  ],
+  "harness_followup": {
+    "tested_code_sha": "7cfc2a462e8fbf0e413b135bd29b7181f3de68e0",
+    "issue": "Historical review table heading hard-coded Qwen 2.5 0.5B although report configuration and live run were Qwen3 qwen3:4b",
+    "fix": "Future review table label reads configuration.expected_model; absent/invalid value renders unknown model",
+    "test_command": "python/.venv/Scripts/python.exe -m pytest python/tests/test_harness_contracts.py -q --tb=short -p no:cacheprovider --basetemp runtime/pytest-review-label-final-20261104",
+    "exit_code": 0,
+    "passed": 11,
+    "failed": 0,
+    "not_rerun": "Strict live Qwen3 generation report; report-label-only change does not alter provider/generation behavior; prior live report remains on e89e57467fde95ed11d077033ecfbc23a30b7ff3",
+    "observed_at_utc": "2026-11-03T18:39:41Z"
+  },
+  "independent_main_harness_pr": {
+    "url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/pull/5",
+    "base_sha": "953d62efa5bf874b9852f6a02fcb7844258ec317",
+    "head_sha": "b9f81c0b5eda44c41bf51bb153bed1a2d9462b77",
+    "focused_harness": "8 passed, exit 0",
+    "full_python_suite": "260 passed, 1 skipped, exit 0",
+    "github_checks": "no statuses or workflow runs returned at evidence update time; unknown",
+    "main_merged": true,
+    "merged": true,
+    "merge_commit_sha": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+    "main_after_sha": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+    "actions_run_id": 41696532438,
+    "actions_url": "https://github.com/quocdoanhdang2-sketch/dusnx-platform/actions/runs/41696532438",
+    "actions_conclusion": "success",
+    "merge_sha_ci": "unknown; no status or workflow run returned",
+    "merge_state_errata": "Earlier fields main_merged=false and merged=true contradicted each other. Remote main_after_sha and merge_commit_sha both identify the merged main commit; main_merged corrected to true. Merge-SHA CI remains unknown."
+  },
+  "main_review_table_after": "5dd1052d9052da4ffbd0418b629e238a957a61eb",
+  "evidence_package_commit": "7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a",
+  "evidence_manifest_update_commit": "This manifest update is recorded in its containing Git commit; not embedded to avoid self-reference",
+  "evidence_commit_note": "Evidence files were added in 7f8a493e2e525ff8bdf97e7a0f7b4b0cda2c234a; this later manifest update commit is not embedded in its own contents.",
+  "quality_branch_sha_before_manifest_update_commit": "e7458682e4c1a1ec2b10def6bd42bb1b5d16ade9",
+  "quality_branch_sha_note": "The final remote branch SHA is verified and reported separately; a manifest cannot embed the SHA of the commit that contains the same manifest without self-reference.",
+  "integrity_errata": [
+    {
+      "recorded_at": "2026-11-04",
+      "scope": "Append-only correction of artifact byte provenance and merge status; historical probe outputs/results were not modified.",
+      "method": "Re-read each retained source path as raw bytes, each packaged artifact as raw bytes, and each committed object via git cat-file blob using its recorded Git SHA-1 OID. SHA-256 hashes raw bytes. UTF-16LE files are decoded using BOM only to verify text transcoding; encoding and decoded CRLF/LF counts are reported separately.",
+      "findings": "Raw-byte audit of 22 artifacts: 17 have retained source bytes exactly equal to packaged bytes; 3 are verified UTF-16LE-BOM to UTF-8-no-BOM transcodes with decoded text bytes equal; 2 authored artifacts have no separate retained source and are marked unverified. All 22 committed Git blob OIDs match their recorded paths. The committed blob bytes are LF-normalized relative to CRLF Windows worktree artifacts; BOMs are retained where present. The earlier 1-direct/16-LF-to-CRLF/5-unexplained grouping was not reproduced by exact raw-byte comparison.",
+      "limitations": "Authored README.md and ollama-capabilities.json source byte hashes cannot be verified because their separate source files were not retained. Hashes are not inferred from the packaged files."
+    },
+    {
+      "recorded_at": "2026-11-04",
+      "scope": "Follow-up hash correction for authored README after the preceding errata paragraph was appended.",
+      "method": "Recomputed the packaged README SHA-256 from current worktree bytes and staged Git blob SHA-256 from the index object; separate authored source bytes remain unavailable.",
+      "finding": "The previous manifest values for the README package/blob referred to the pre-errata README. The previous claim is retained in previous_manifest_packaged_sha256_claim; current source remains unverified, and current packaged and staged blob hashes are recorded separately."
+    }
+  ]
+}

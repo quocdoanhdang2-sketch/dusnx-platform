@@ -9,11 +9,11 @@ import sys
 from playwright.sync_api import sync_playwright, expect
 
 
-def run_tests(gateway, out):
+def run_tests(gateway, out, chromium=None):
     report = dict(timestamp_utc=datetime.now(timezone.utc).isoformat(), transport="real_chromium_gateway_ollama",
                   status="unverified", checks={})
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True)
+        browser = pw.chromium.launch(executable_path=chromium, headless=True)
         try:
             context = browser.new_context(viewport={"width": 1280, "height": 900})
             page = context.new_page()
@@ -147,15 +147,16 @@ def main():
     p.add_argument("--gateway", default=None, help="Gateway URL (defaults to spawning isolated Stack)")
     p.add_argument("--spawn-stack", action="store_true", help="Spawn an isolated local Stack automatically")
     p.add_argument("--output-dir", required=True)
+    p.add_argument("--chromium", default=None, help="Chromium/Chrome executable (defaults to Playwright's bundled Chromium)")
     args = p.parse_args()
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=False)
     if args.spawn_stack or not args.gateway:
         from verify_week4_runtime import Stack
         with Stack(out / "stack") as stack:
-            return run_tests(stack.url, out)
+            return run_tests(stack.url, out, args.chromium)
     else:
-        return run_tests(args.gateway, out)
+        return run_tests(args.gateway, out, args.chromium)
 
 
 if __name__ == "__main__":

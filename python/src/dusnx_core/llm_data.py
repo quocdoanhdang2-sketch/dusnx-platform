@@ -1,12 +1,15 @@
 """Contracts and audits for the isolated LLM SFT dataset."""
 from collections import Counter
+import csv
 from difflib import SequenceMatcher
 import hashlib
+import io
 import json
 from pathlib import Path
 import re
 import statistics
 import unicodedata
+from datetime import datetime
 
 PROTECTED_PATH_PARTS = ("holdout", "reviewer", "submission", "benchmark", "training-results")
 REVIEW_STATES = {"needs_human_review", "human_reviewed"}
@@ -263,6 +266,244 @@ def verify_file_manifest(root, manifest):
     return True
 
 
+def verify_train_validation_lineage_receipt(root, receipt, expected_files, expected_rows):
+    """Verify a v2 aggregate receipt against its parent and approved supplement artifacts."""
+    root = Path(root).resolve()
+    lineage = receipt.get("lineage") if isinstance(receipt, dict) else None
+    expected_paths = {
+        "parent_manifest": "lineage_parent_manifest.json",
+        "parent_receipt": "lineage_parent_train_validation_review_receipt.json",
+        "parent_train": "lineage_parent_train.jsonl",
+        "parent_validation": "lineage_parent_validation.jsonl",
+        "supplement_receipt": "supplement_review_receipt.json",
+        "supplement_review_csv": "supplement_review.csv",
+    }
+
+    def read_artifact(key):
+        if not isinstance(lineage, dict) or lineage.get(f"{key}_path") != expected_paths[key]:
+            raise ValueError("Invalid train/validation receipt lineage path")
+        path = root / expected_paths[key]
+        if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(root):
+            raise ValueError("Missing or unsafe train/validation lineage artifact")
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != lineage.get(f"{key}_sha256"):
+            raise ValueError("Train/validation lineage artifact hash mismatch")
+        return raw
+
+    if (
+        receipt.get("schema_version") != 2
+        or receipt.get("receipt_kind") != "lineage_aggregate"
+        or receipt.get("review_type") != "train_validation"
+        or receipt.get("test_only") is not False
+        or receipt.get("result_files") != expected_files
+        or type(receipt.get("row_count")) is not int
+        or receipt.get("row_count") != expected_rows
+    ):
+        raise ValueError("Invalid lineage-aware train/validation receipt")
+
+    parent_manifest_raw = read_artifact("parent_manifest")
+    parent_receipt_raw = read_artifact("parent_receipt")
+    parent_train_raw = read_artifact("parent_train")
+    parent_validation_raw = read_artifact("parent_validation")
+    supplement_receipt_raw = read_artifact("supplement_receipt")
+    review_csv_raw = read_artifact("supplement_review_csv")
+    try:
+        parent_manifest = json.loads(parent_manifest_raw.decode("utf-8"))
+        parent_receipt = json.loads(parent_receipt_raw.decode("utf-8"))
+        supplement = json.loads(supplement_receipt_raw.decode("utf-8"))
+        final_train_raw = (root / "train.jsonl").read_bytes()
+        final_validation_raw = (root / "validation.jsonl").read_bytes()
+    except (UnicodeDecodeError, json.JSONDecodeError, OSError) as exc:
+        raise ValueError("Invalid train/validation lineage data") from exc
+
+    parent_files = {
+        "train.jsonl": hashlib.sha256(parent_train_raw).hexdigest(),
+        "validation.jsonl": hashlib.sha256(parent_validation_raw).hexdigest(),
+    }
+    counts = lineage.get("completion_counts") if isinstance(lineage, dict) else None
+    if (
+        not isinstance(parent_manifest, dict)
+        or parent_manifest.get("status") != "human_attested_locked_before_training"
+        or parent_manifest.get("locked") is not True
+        or any(parent_manifest.get("files", {}).get(name) != value for name, value in parent_files.items())
+        or not isinstance(parent_receipt, dict)
+        or type(parent_receipt.get("schema_version")) is not int
+        or parent_receipt.get("schema_version") != 1
+        or parent_receipt.get("review_type") != "train_validation"
+        or parent_receipt.get("test_only") is not False
+        or parent_receipt.get("result_files") != parent_files
+        or type(parent_receipt.get("row_count")) is not int
+        or not isinstance(supplement, dict)
+        or type(supplement.get("schema_version")) is not int
+        or supplement.get("schema_version") != 1
+        or supplement.get("receipt_type") != "train_validation_supplement_review"
+        or supplement.get("scope") != "supplemental completion rows only; does not attest the full release"
+        or supplement.get("not_a_full_release_receipt") is not True
+        or supplement.get("release_v3_sha256") != expected_files
+        or supplement.get("parent_manifest_sha256") != hashlib.sha256(parent_manifest_raw).hexdigest()
+        or supplement.get("parent_train_validation_receipt_sha256") != hashlib.sha256(parent_receipt_raw).hexdigest()
+        or supplement.get("parent_file_sha256") != parent_files
+        or not isinstance(counts, dict)
+        or counts.get("parent") != parent_receipt.get("row_count")
+        or counts.get("supplement") != supplement.get("covered_completion_rows")
+        or type(counts.get("total")) is not int
+        or counts["total"] != counts["parent"] + counts["supplement"]
+        or counts["total"] != expected_rows
+        or final_train_raw[:len(parent_train_raw)] != parent_train_raw
+        or final_validation_raw[:len(parent_validation_raw)] != parent_validation_raw
+    ):
+        raise ValueError("Train/validation receipt lineage does not match parent and supplement")
+
+    csv_hash = hashlib.sha256(review_csv_raw).hexdigest()
+    if supplement.get("review_csv_sha256") != csv_hash:
+        raise ValueError("Supplement review CSV hash mismatch")
+    expected_release_hashes = {
+        "train.jsonl": hashlib.sha256(final_train_raw).hexdigest(),
+        "validation.jsonl": hashlib.sha256(final_validation_raw).hexdigest(),
+    }
+    if expected_release_hashes != expected_files:
+        raise ValueError("Lineage receipt release hashes do not match current data")
+
+    try:
+        parent_train_rows = [json.loads(line) for line in parent_train_raw.decode("utf-8").splitlines() if line.strip()]
+        parent_validation_rows = [json.loads(line) for line in parent_validation_raw.decode("utf-8").splitlines() if line.strip()]
+        final_train_rows = [json.loads(line) for line in final_train_raw.decode("utf-8").splitlines() if line.strip()]
+        final_validation_rows = [json.loads(line) for line in final_validation_raw.decode("utf-8").splitlines() if line.strip()]
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Invalid JSONL in train/validation lineage") from exc
+    if any(
+        not isinstance(row, dict)
+        for rows in (parent_train_rows, parent_validation_rows, final_train_rows, final_validation_rows)
+        for row in rows
+    ):
+        raise ValueError("Invalid JSONL record in train/validation lineage")
+    additions = {
+        "train": final_train_rows[len(parent_train_rows):],
+        "validation": final_validation_rows[len(parent_validation_rows):],
+    }
+    def assistant_completion_count(rows):
+        total = 0
+        for record in rows:
+            messages = record.get("messages")
+            if not isinstance(messages, list):
+                continue
+            total += sum(
+                1
+                for message in messages
+                if isinstance(message, dict) and message.get("role") == "assistant"
+            )
+        return total
+
+    parent_completion_count = assistant_completion_count(parent_train_rows) + assistant_completion_count(parent_validation_rows)
+    added_completion_count = assistant_completion_count(additions["train"]) + assistant_completion_count(additions["validation"])
+    if (
+        type(parent_receipt.get("row_count")) is not int
+        or parent_receipt["row_count"] != parent_completion_count
+        or type(supplement.get("covered_completion_rows")) is not int
+        or supplement["covered_completion_rows"] != added_completion_count
+        or not isinstance(supplement.get("added_records"), dict)
+        or supplement["added_records"] != {split: len(rows) for split, rows in additions.items()}
+        or not isinstance(supplement.get("release_counts"), dict)
+        or supplement["release_counts"] != {
+            "train_records": len(final_train_rows),
+            "train_assistant_completions": assistant_completion_count(final_train_rows),
+            "validation_records": len(final_validation_rows),
+            "validation_assistant_completions": assistant_completion_count(final_validation_rows),
+        }
+    ):
+        raise ValueError("Train/validation lineage completion or record counts mismatch")
+    if (
+        len(final_train_rows) <= len(parent_train_rows)
+        or len(final_validation_rows) <= len(parent_validation_rows)
+        or any(old != new for old, new in zip(parent_train_rows, final_train_rows))
+        or any(old != new for old, new in zip(parent_validation_rows, final_validation_rows))
+        or any(row.get("review_status") != "human_reviewed" for rows in additions.values() for row in rows)
+    ):
+        raise ValueError("Parent train/validation rows changed or supplement rows are not reviewed")
+
+    expected_review = {}
+    try:
+        for split, rows in additions.items():
+            for record in rows:
+                messages = record["messages"]
+                if not isinstance(messages, list) or not isinstance(record["id"], str):
+                    raise ValueError("Invalid supplement record structure in lineage")
+                turn = 0
+                for index, message in enumerate(messages):
+                    if not isinstance(message, dict):
+                        raise ValueError("Invalid supplement record structure in lineage")
+                    if message.get("role") != "assistant":
+                        continue
+                    turn += 1
+                    expected_review[f"{split}:{record['id']}:{turn}"] = {
+                        "split": split,
+                        "record_id": record["id"],
+                        "assistant_turn": str(turn),
+                        "prefix_json": json.dumps(messages[:index], ensure_ascii=False, separators=(",", ":")),
+                        "reference_answer": message["content"],
+                        "quality_contract_json": json.dumps(record["quality_contracts"][turn - 1], ensure_ascii=False, separators=(",", ":")),
+                    }
+    except (KeyError, TypeError, IndexError) as exc:
+        raise ValueError("Invalid supplement record structure in lineage") from exc
+    covered_keys = supplement.get("covered_review_keys")
+    if (
+        not isinstance(covered_keys, list)
+        or any(not isinstance(key, str) for key in covered_keys)
+        or len(covered_keys) != len(set(covered_keys))
+        or set(covered_keys) != set(expected_review)
+    ):
+        raise ValueError("Supplement review keys do not match added completions")
+    try:
+        review_rows = list(csv.DictReader(io.StringIO(review_csv_raw.decode("utf-8-sig", errors="strict"))))
+    except (UnicodeDecodeError, csv.Error) as exc:
+        raise ValueError("Invalid supplement review CSV") from exc
+    supplement_reviewers = supplement.get("reviewers")
+    supplement_times = supplement.get("reviewed_at")
+    parent_reviewers = parent_receipt.get("reviewers")
+    parent_times = parent_receipt.get("reviewed_at")
+    if any(
+        not isinstance(values, list)
+        or not values
+        or any(not isinstance(value, str) or not value.strip() for value in values)
+        for values in (supplement_reviewers, supplement_times, parent_reviewers, parent_times)
+    ):
+        raise ValueError("Invalid lineage reviewer provenance")
+    review_by_key = {row.get("review_key", ""): row for row in review_rows}
+    if len(review_rows) != len(expected_review) or len(review_by_key) != len(expected_review) or set(review_by_key) != set(expected_review):
+        raise ValueError("Supplement review CSV keys do not match lineage receipt")
+    csv_reviewers = set()
+    csv_times = set()
+    for key, source in expected_review.items():
+        row = review_by_key[key]
+        if any(row.get(field) != value for field, value in source.items()):
+            raise ValueError("Supplement review CSV immutable source column changed")
+        if row.get("decision", "").strip().casefold() != "approve" or row.get("revised_answer", "").strip() or row.get("revised_quality_contract_json", "").strip():
+            raise ValueError("Supplement review CSV approval does not match reviewed release")
+        reviewer = row.get("reviewer", "").strip()
+        timestamp = row.get("reviewed_at", "").strip()
+        try:
+            parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("Invalid supplement review timestamp") from exc
+        if parsed.tzinfo is None or reviewer not in supplement_reviewers:
+            raise ValueError("Supplement reviewer or timestamp mismatch")
+        csv_reviewers.add(reviewer)
+        csv_times.add(timestamp)
+
+    if (
+        csv_reviewers != set(supplement_reviewers)
+        or csv_times != set(supplement_times)
+        or supplement.get("decisions") != {"approve": len(expected_review), "revise": 0}
+    ):
+        raise ValueError("Supplement receipt reviewer, timestamp, or decision summary mismatch")
+
+    expected_reviewers = sorted(set(parent_reviewers) | set(supplement_reviewers))
+    expected_times = sorted(set(parent_times) | set(supplement_times))
+    if receipt.get("reviewers") != expected_reviewers or receipt.get("reviewed_at") != expected_times:
+        raise ValueError("Aggregate reviewer provenance does not match its source receipts")
+    return True
+
+
 def verify_full_training_gate(root, manifest):
     """Verify the human-only release gate without reading frozen test examples."""
     root = Path(root)
@@ -329,11 +570,18 @@ def verify_full_training_gate(root, manifest):
             raise ValueError("Missing or invalid human review receipt") from exc
         if not isinstance(receipt, dict):
             raise ValueError("Missing or invalid human review receipt")
+        receipt_version = receipt.get("schema_version")
+        if review_type == "train_validation" and type(receipt_version) is int and receipt_version == 2:
+            try:
+                verify_train_validation_lineage_receipt(root, receipt, result_files, expected_rows)
+            except ValueError as exc:
+                raise ValueError("Missing or invalid lineage-aware train/validation receipt") from exc
         reviewers = receipt.get("reviewers")
         reviewed_at = receipt.get("reviewed_at")
         if (
-            type(receipt.get("schema_version")) is not int
-            or receipt.get("schema_version") != 1
+            type(receipt_version) is not int
+            or receipt_version not in (1, 2)
+            or (receipt_version == 2 and review_type != "train_validation")
             or receipt.get("review_type") != review_type
             or receipt.get("test_only") is not False
             or receipt.get("result_files") != result_files

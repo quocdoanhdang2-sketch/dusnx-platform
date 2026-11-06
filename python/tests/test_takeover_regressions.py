@@ -17,7 +17,9 @@ def test_provider_preserves_history_and_measures_only_reported_metadata(monkeypa
         "Câu hỏi", [], "chat", [{"role": "user", "content": "past context"}])
     assert (text, ok, source, model, count) == ("MongoDB", True, "ollama", "qwen-test", 9)
     assert "past context" in captured[0]["messages"][0]["content"]
-    assert captured[0]["messages"][1]["content"] == "Câu hỏi"
+    user_prompt = captured[0]["messages"][1]["content"]
+    assert user_prompt.startswith("Hãy trả lời bằng tiếng Việt.")
+    assert "Yêu cầu người dùng:\nCâu hỏi" in user_prompt
     monkeypatch.setattr(provider.urllib.request, "urlopen", lambda *a, **k: BytesIO(b'{"message":{"content":"ok"}}'))
     assert provider._ollama_generate("system", "user")[2:] == (None, None)
 

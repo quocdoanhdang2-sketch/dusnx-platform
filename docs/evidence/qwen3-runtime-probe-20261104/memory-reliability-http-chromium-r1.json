@@ -1,0 +1,24 @@
+{
+  "timestamp_utc": "2026-11-03T18:28:14.100656+00:00",
+  "transport": "real_local_http_gateway_fastapi_sqlite",
+  "checks": {
+    "active_superseded_user_project_provenance_history": true,
+    "confirmed_update_delete_and_missing_context": true,
+    "ambiguity_clarifies": true,
+    "provider_offline_retry_no_duplicate_no_error_as_answer": true,
+    "request_limits_legacy_origin_webhook_fail_closed": true,
+    "sqlite_write_failure_not_success": true,
+    "chromium_register_login_memory_provenance_provider_error_network_error": true,
+    "sqlite_backup_restore_new_directory_startup": true,
+    "invalid_checkpoint_honest_fallback": true,
+    "corrupt_database_startup_refused": true
+  },
+  "llm_generation_verified": false,
+  "protected_test_read": false,
+  "runtime": {
+    "runtime_mode": "trained_dusnx",
+    "checkpoint_loaded": true,
+    "provider_ok": false
+  },
+  "status": "passed"
+}

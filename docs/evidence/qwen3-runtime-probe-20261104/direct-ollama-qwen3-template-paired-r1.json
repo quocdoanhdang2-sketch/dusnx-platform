@@ -1,0 +1,438 @@
+{
+  "probe_id": "QWEN3_TEMPLATE_THINK_MODE_PAIRED_R1",
+  "created_at_utc": "2026-11-03T17:52:53.114099+00:00",
+  "transport": "direct Ollama /api/chat; not Gateway/application",
+  "ollama_version": "0.40.14",
+  "base_model": {
+    "tag": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7"
+  },
+  "candidate_model": {
+    "tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+    "change": "same base weights, same model parameters, only removes final <think> prompt-template prefix"
+  },
+  "settings": {
+    "temperature": 0.1,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64,
+    "num_ctx": 4096,
+    "budgets": [
+      512,
+      1024
+    ],
+    "api_think_field": "omitted because local /api/show advertises only true"
+  },
+  "cases": [
+    {
+      "id": "API_GATEWAY_EN",
+      "system": "Answer the user request in one concise sentence in English. Do not include analysis or repeat instructions.",
+      "user": "In one concise sentence, explain what an API Gateway does.",
+      "expected": "A concise explanation identifying an API Gateway as a client entry point and/or request router to backend services; content must not expose analysis."
+    },
+    {
+      "id": "TRANSLATE_ENTITIES_EN",
+      "system": "Translate the user request into English. Preserve exact URLs and KEY=VALUE literals. Do not include analysis.",
+      "user": "Translate this sentence to English: Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối.",
+      "expected": "English translation preserves https://service.example.net/v2 and DUSNX_PORT=8188 and keeps translation task."
+    },
+    {
+      "id": "API_GATEWAY_BENEFIT_VI",
+      "system": "Trả lời ngắn gọn bằng tiếng Việt. Không lặp lại hướng dẫn hoặc nêu phân tích.",
+      "user": "Nêu một lợi ích cụ thể của API Gateway trong kiến trúc microservices.",
+      "expected": "One relevant benefit in Vietnamese, such as centralized routing or shared auth/rate limiting; semantic review remains required."
+    }
+  ],
+  "trials": [
+    {
+      "model_tag": "qwen3:4b",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 512,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:52:53.114127+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "99b54bd39cc21765abb0cc2eec94921d434f70bca9cf85fac4f60bd300c6d81a",
+      "http_status": 200,
+      "model_returned": "qwen3:4b",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 248,
+      "prompt_eval_count": 46,
+      "total_duration_ns": 19491930400,
+      "load_duration_ns": 8300045500,
+      "eval_duration_ns": 10968458000,
+      "content_chars": 188,
+      "content_sha256": "29c406dba9d2312df8e6e379af4571550ba5a73d16f156c22651eb28021fba61",
+      "content": "An API Gateway acts as a single entry point that routes, secures, and aggregates client requests to backend services while managing authentication, rate limiting, and protocol translation.",
+      "thinking_chars": 1149,
+      "thinking_sha256": "0368bcedb681c75bc0b1e8d715782ac8524b4a4eaa6f10a7f6d59a99e971be37",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 19.614,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "qwen3:4b",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 512,
+      "repeat": 2,
+      "started_at_utc": "2026-11-03T17:53:12.732886+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "99b54bd39cc21765abb0cc2eec94921d434f70bca9cf85fac4f60bd300c6d81a",
+      "http_status": 200,
+      "model_returned": "qwen3:4b",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 256,
+      "prompt_eval_count": 46,
+      "total_duration_ns": 12321719300,
+      "load_duration_ns": 8317400,
+      "eval_duration_ns": 12241659000,
+      "content_chars": 158,
+      "content_sha256": "073272929b17b57f58231e11a19134ebdffeeebce5327664657354f17dd83d52",
+      "content": "An API Gateway acts as a single entry point that routes client requests to the appropriate backend services while handling security, scaling, and integration.",
+      "thinking_chars": 1266,
+      "thinking_sha256": "172b04792107f9e0f0a241d4bc82b39426b35504b68a1d2a6c53271dfdf822e7",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 12.325,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "qwen3:4b",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 1024,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:53:25.062313+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "22a6ccca710294cd9258c69873918bfca3cbf77e80975d053c79e7d0913d5126",
+      "http_status": 200,
+      "model_returned": "qwen3:4b",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 429,
+      "prompt_eval_count": 46,
+      "total_duration_ns": 24125835200,
+      "load_duration_ns": 7417500,
+      "eval_duration_ns": 24036749000,
+      "content_chars": 197,
+      "content_sha256": "de62136794513c2c78f5f36432fc643da6479a462df322b8c99808aeccb00525",
+      "content": "An API Gateway serves as a centralized entry point for clients to securely route requests to the correct backend services while managing authentication, rate limiting, and aggregation of responses.",
+      "thinking_chars": 2097,
+      "thinking_sha256": "abf2d8c5a8ccc15f67008728d156e38373cc683ef80a5df5f9475c0d5609e6cc",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 24.13,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "qwen3:4b",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 1024,
+      "repeat": 2,
+      "started_at_utc": "2026-11-03T17:53:49.196680+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "22a6ccca710294cd9258c69873918bfca3cbf77e80975d053c79e7d0913d5126",
+      "http_status": 200,
+      "model_returned": "qwen3:4b",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 399,
+      "prompt_eval_count": 46,
+      "total_duration_ns": 19915816800,
+      "load_duration_ns": 13085200,
+      "eval_duration_ns": 19785395000,
+      "content_chars": 205,
+      "content_sha256": "0fd5884057941ee2b5b70be8843fe516457ca6e79053d9ab165893a25f3d5401",
+      "content": "An API Gateway serves as a single entry point that routes client requests, enforces security policies like authentication and rate limiting, and securely connects frontend applications to backend services.",
+      "thinking_chars": 1849,
+      "thinking_sha256": "99e95595b3bdcd2a4fbc42004e3618a59cb81ec3b6aa0d60e218fe1ddce3dbb8",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 19.918,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "qwen3:4b",
+      "case_id": "TRANSLATE_ENTITIES_EN",
+      "budget": 512,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:54:09.119023+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "09e738587b9afd995d6f56d266d51d0f06c4b1c8380b3f38255edc3f4960a531",
+      "http_status": 200,
+      "model_returned": "qwen3:4b",
+      "done": true,
+      "done_reason": "length",
+      "eval_count": 512,
+      "prompt_eval_count": 67,
+      "total_duration_ns": 25712874800,
+      "load_duration_ns": 7142900,
+      "eval_duration_ns": 25519230000,
+      "content_chars": 0,
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": "",
+      "thinking_chars": 2018,
+      "thinking_sha256": "8bb0cb98923491ef031bed769ab7cbfc514be8969f063b40c0de69fca8ec6924",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 25.717,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "qwen3:4b",
+      "case_id": "API_GATEWAY_BENEFIT_VI",
+      "budget": 512,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:54:34.840826+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "346adc0a41814769958b5430601a4e4c46a49d2ab01b3a262b1c5afb508a8572",
+      "http_status": 200,
+      "model_returned": "qwen3:4b",
+      "done": true,
+      "done_reason": "length",
+      "eval_count": 512,
+      "prompt_eval_count": 52,
+      "total_duration_ns": 26901128800,
+      "load_duration_ns": 15190600,
+      "eval_duration_ns": 26650967000,
+      "content_chars": 0,
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": "",
+      "thinking_chars": 2783,
+      "thinking_sha256": "180f9e73ddd6fa9c3e153a3fdd73f20a50ddfed13e4f51b844b71b876cfc4fbe",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 26.911,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 512,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:55:01.755437+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "4ea525b1a479498b003261e8562462a5641973247250081c3bf90549049e197a",
+      "http_status": 200,
+      "model_returned": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 328,
+      "prompt_eval_count": 44,
+      "total_duration_ns": 16893790800,
+      "load_duration_ns": 6806400,
+      "eval_duration_ns": 16702374000,
+      "content_chars": 202,
+      "content_sha256": "5fccb7dff90602acb6a9fbf8b85cfb599ab8bb595465e513804fcd454c966116",
+      "content": "An API Gateway acts as a single entry point for client requests, securely routing them to the appropriate backend services while handling authentication, rate limiting, and other cross-cutting features.",
+      "thinking_chars": 1398,
+      "thinking_sha256": "07579ef68adf5ae569d364181e58a17ccc652fc9064a3ee62c99b4640de2b284",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 16.917,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 512,
+      "repeat": 2,
+      "started_at_utc": "2026-11-03T17:55:18.676533+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "4ea525b1a479498b003261e8562462a5641973247250081c3bf90549049e197a",
+      "http_status": 200,
+      "model_returned": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 235,
+      "prompt_eval_count": 44,
+      "total_duration_ns": 12091298700,
+      "load_duration_ns": 7023600,
+      "eval_duration_ns": 11984313000,
+      "content_chars": 177,
+      "content_sha256": "7f23379dd7b0ab1f956bc663b3b08295151db333ee2c370b608607da5eacb9d0",
+      "content": "An API Gateway acts as a single entry point for client requests to route them securely through authentication, rate limiting, and integration with backend microservices or APIs.",
+      "thinking_chars": 1056,
+      "thinking_sha256": "67899371d7eb4b45fb8426cd4483a82fc975a80022b64c565f50fe16c75e8880",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 12.094,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 1024,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:55:30.774410+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "a34853e754478d2de617233ec42bd0e2ce59bd02e69632140d79e9e59784fc70",
+      "http_status": 200,
+      "model_returned": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 296,
+      "prompt_eval_count": 44,
+      "total_duration_ns": 15485386200,
+      "load_duration_ns": 6465100,
+      "eval_duration_ns": 15391221000,
+      "content_chars": 179,
+      "content_sha256": "93d31d8dfc60d4ca114164154da5d3b40ee15e26e92e7774ae4d4d920b94dc2f",
+      "content": "An API Gateway serves as a single entry point for client applications to interact with multiple backend services while handling authentication, rate limiting, and request routing.",
+      "thinking_chars": 1366,
+      "thinking_sha256": "20107036e20030b992f24168fbf566edb6f94c03b1d6c76bf17cbd10844765a1",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 15.488,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "case_id": "API_GATEWAY_EN",
+      "budget": 1024,
+      "repeat": 2,
+      "started_at_utc": "2026-11-03T17:55:46.266572+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "a34853e754478d2de617233ec42bd0e2ce59bd02e69632140d79e9e59784fc70",
+      "http_status": 200,
+      "model_returned": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "done": true,
+      "done_reason": "stop",
+      "eval_count": 346,
+      "prompt_eval_count": 44,
+      "total_duration_ns": 17993514300,
+      "load_duration_ns": 7131000,
+      "eval_duration_ns": 17895333000,
+      "content_chars": 188,
+      "content_sha256": "9a9fcb4f003e5086dad4f4011e4e46cbd1c724466a4deac7e1f2e7a135e157e5",
+      "content": "An API Gateway acts as a centralized entry point that routes client requests to appropriate backend services while managing authentication, rate limiting, and other cross-cutting concerns.",
+      "thinking_chars": 1653,
+      "thinking_sha256": "ae706f04d368976d5541bdb8dbb2daf6b71681fbea6da50db9055eaaad71d0ed",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 17.997,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "case_id": "TRANSLATE_ENTITIES_EN",
+      "budget": 512,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:56:04.271892+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "35712a397d9adefd1425e755f841e997d6bc95751c586028a2372163b8d3fbf3",
+      "http_status": 200,
+      "model_returned": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "done": true,
+      "done_reason": "length",
+      "eval_count": 512,
+      "prompt_eval_count": 65,
+      "total_duration_ns": 26575768000,
+      "load_duration_ns": 6776400,
+      "eval_duration_ns": 26376273000,
+      "content_chars": 0,
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": "",
+      "thinking_chars": 2114,
+      "thinking_sha256": "fdf6076c87cbe315997e840cf6d8256d66a90e5e811864338a0f9135689e31db",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 26.584,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    },
+    {
+      "model_tag": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "case_id": "API_GATEWAY_BENEFIT_VI",
+      "budget": 512,
+      "repeat": 1,
+      "started_at_utc": "2026-11-03T17:56:30.859932+00:00",
+      "timeout_seconds": 65,
+      "request_sha256": "50b5a0734c2ce7090f1861f15f5736b40c1a9ef9f230432dec9d611ee13aff4e",
+      "http_status": 200,
+      "model_returned": "dusnx-qwen3-4b-no-think-template-probe-20261104",
+      "done": true,
+      "done_reason": "length",
+      "eval_count": 512,
+      "prompt_eval_count": 50,
+      "total_duration_ns": 28046608600,
+      "load_duration_ns": 8289300,
+      "eval_duration_ns": 27829248000,
+      "content_chars": 0,
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": "",
+      "thinking_chars": 2602,
+      "thinking_sha256": "e6e3301cf8c2e7c45eefbd842a52974286e771ce09ce25569aea8ecfdba666c8",
+      "raw_thinking_saved": false,
+      "elapsed_seconds": 28.049,
+      "loaded_models": [
+        {
+          "name": "qwen3:4b",
+          "size_vram": 2344636907,
+          "context_length": 4096
+        }
+      ]
+    }
+  ],
+  "execution_status": "completed",
+  "review": {
+    "decision": "",
+    "reviewer": "",
+    "notes": ""
+  },
+  "completed_at_utc": "2026-11-03T17:56:58.913306+00:00"
+}

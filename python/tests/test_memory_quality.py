@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 from apps.ai_api.main import app
 import apps.ai_api.auth as auth_mod
 import apps.ai_api.memory as mem_mod
-from apps.ai_api.grounding import format_memory_answer, memory_answer_with_match
+from apps.ai_api.grounding import format_memory_answer, memory_answer_with_match, memory_answer_with_selection
 
 
 @pytest.fixture(autouse=True)
@@ -302,6 +302,50 @@ def test_answer_formatting_no_double_punctuation_and_attribution():
     ans, matched = memory_answer_with_match("Quyết định của tôi là gì?", mems)
     assert ans == "Theo trí nhớ đang hiệu lực: Chọn AWS."
     assert matched is not None and matched["memory_id"] == "mem_123"
+
+
+def test_answer_formatting_follows_requested_reply_language():
+    assert format_memory_answer("AWS", language="en") == "From active memory: AWS."
+    assert format_memory_answer("Theo trí nhớ đang hiệu lực: AWS.", language="en") == "From active memory: AWS."
+    assert format_memory_answer("From active memory: AWS.", language="en") == "From active memory: AWS."
+
+    answer, selected = memory_answer_with_selection(
+        "Quyết định của tôi là gì?", [{"memory_id": "m1", "content": "Chọn AWS"}], language="en")
+    assert answer == "From active memory: Chọn AWS."
+    assert [m["memory_id"] for m in selected] == ["m1"]
+
+    clarification, none = memory_answer_with_selection(
+        "Quyết định của tôi là gì?", [{"content": "Tornado"}, {"content": "Linode"}], language="en")
+    assert clarification.startswith("I don't have enough context")
+    assert none == []
+
+
+def test_grounded_template_follows_saved_english_preference(client: TestClient):
+    _, token = _register_and_login(client, "test_grounding_english")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+
+    saved = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "Ghi nhớ quyết định: Chúng tôi chọn PostgreSQL cho cơ sở dữ liệu.",
+    })
+    assert saved.status_code == 200
+    pref = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "Từ giờ trả lời bằng tiếng Anh nhé",
+    })
+    assert pref.status_code == 200
+
+    answer = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "Quyết định PostgreSQL của tôi là gì?",
+    })
+    assert answer.status_code == 200
+    data = answer.json()
+    assert data["response_source"] == "grounded_template"
+    assert data["response_language"] == "en"
+    assert data["reply"].startswith("From active memory:")
+    assert "PostgreSQL" in data["reply"]
 
 
 def test_general_entities_non_cloud_substitution(client: TestClient):

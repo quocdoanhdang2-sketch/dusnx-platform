@@ -1,0 +1,1618 @@
+{
+  "timestamp_utc": "2026-11-03T11:45:58.693240+00:00",
+  "gateway_url": "http://127.0.0.1:50068",
+  "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
+  "execution_status": "completed",
+  "command": [
+    "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+    "scripts/verify_bilingual_generation.py",
+    "--output-dir",
+    "runtime/verification-final-20261103/bilingual-r9",
+    "--strict-language",
+    "--strict-quality"
+  ],
+  "working_directory": "D:\\Projects\\dusnx-platform",
+  "tool_versions": {
+    "python": "3.12.10"
+  },
+  "configuration": {
+    "provider": "ollama",
+    "model": "qwen2.5:0.5b",
+    "token_budget": 512,
+    "checkpoint": "project default",
+    "raw_capture_enabled": true
+  },
+  "cases": {
+    "CASE_01_VI_PREF_VI": {
+      "case_id": "CASE_01_VI_PREF_VI",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi về tính năng sản phẩm nội bộ không có tài liệu grounding phải được làm rõ thay vì tự sinh thông tin.",
+      "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 26,
+        "vi_words": 7,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires explicit uncertainty or clarification and rejects unsupported capability claims",
+          "disclaimer_or_question": true,
+          "unsupported_product_claim": false
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_02_EN_PREF_EN": {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
+      "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 367,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 367,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "df41ea6b1f9bd52cd009d541251407d70da8c81eea2a23c7ff30e2cb1acb7553",
+            "raw_provider_reply": "Continuous Integration (CI) is an approach where developers automatically integrate their code changes into a shared repository, and then test those changes as part of each build. This helps to catch bugs early on during development cycles.\n\nThe main advantages include:\n\n1. Faster feedback: Developers can quickly see the results of their work in real-time.\n2. Improved collaboration: It allows team members from different parts of the project to contribute code more easily and efficiently, leading to better teamwork.\n3. Better testing practices: CI helps ensure that changes are tested before they're merged into production.\n\n4. Reduced risk: By catching bugs early on during development cycles, teams can avoid costly rework later in the process when those issues become critical problems for customers or users.\n\n5. Continuous delivery: With continuous integration and deployment (CI/CD), developers don't need to wait until a build is complete before deploying changes.\n6. Better code quality: CI helps ensure that all parts of your application are tested, which can lead to better-quality software with fewer bugs in the long run.\n\n7. Improved communication: Developers work together more effectively and efficiently when they're able to see each other's contributions at regular intervals during development cycles.\n\n8. Faster feedback loops: Continuous integration allows developers to quickly identify issues that need fixing before a full release cycle is complete, which can lead to faster product releases.\n9. Better scalability: CI helps ensure that changes are integrated into the shared repository without causing delays in deployment or maintenance of other parts of your application.\n10. Improved project management: By automating many aspects of development and testing processes, continuous integration makes it easier for teams to manage their projects more effectively.\n\nThese benefits make Continuous Integration a key component of modern software engineering practices that can help improve the quality, reliability, efficiency, and scalability of applications over time.",
+            "sanitized_output": "Continuous Integration (CI) is an approach where developers automatically integrate their code changes into a shared repository, and then test those changes as part of each build. This helps to catch bugs early on during development cycles.\n\nThe main advantages include:\n\n1. Faster feedback: Developers can quickly see the results of their work in real-time.\n2. Improved collaboration: It allows team members from different parts of the project to contribute code more easily and efficiently, leading to better teamwork.\n3. Better testing practices: CI helps ensure that changes are tested before they're merged into production.\n\n4. Reduced risk: By catching bugs early on during development cycles, teams can avoid costly rework later in the process when those issues become critical problems for customers or users.\n\n5. Continuous delivery: With continuous integration and deployment (CI/CD), developers don't need to wait until a build is complete before deploying changes.\n6. Better code quality: CI helps ensure that all parts of your application are tested, which can lead to better-quality software with fewer bugs in the long run.\n\n7. Improved communication: Developers work together more effectively and efficiently when they're able to see each other's contributions at regular intervals during development cycles.\n\n8. Faster feedback loops: Continuous integration allows developers to quickly identify issues that need fixing before a full release cycle is complete, which can lead to faster product releases.\n9. Better scalability: CI helps ensure that changes are integrated into the shared repository without causing delays in deployment or maintenance of other parts of your application.\n10. Improved project management: By automating many aspects of development and testing processes, continuous integration makes it easier for teams to manage their projects more effectively.\n\nThese benefits make Continuous Integration a key component of modern software engineering practices that can help improve the quality, reliability, efficiency, and scalability of applications over time.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "df41ea6b1f9bd52cd009d541251407d70da8c81eea2a23c7ff30e2cb1acb7553",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Continuous Integration (CI) is an approach where developers automatically integrate their code changes into a shared repository, and then test those changes as part of each build. This helps to catch bugs early on during development cycles.\n\nThe main advantages include:\n\n1. Faster feedback: Developers can quickly see the results of their work in real-time.\n2. Improved collaboration: It allows team members from different parts of the project to contribute code more easily and efficiently, leading to better teamwork.\n3. Better testing practices: CI helps ensure that changes are tested before they're merged into production.\n\n4. Reduced risk: By catching bugs early on during development cycles, teams can avoid costly rework later in the process when those issues become critical problems for customers or users.\n\n5. Continuous delivery: With continuous integration and deployment (CI/CD), developers don't need to wait until a build is complete before deploying changes.\n6. Better code quality: CI helps ensure that all parts of your application are tested, which can lead to better-quality software with fewer bugs in the long run.\n\n7. Improved communication: Developers work together more effectively and efficiently when they're able to see each other's contributions at regular intervals during development cycles.\n\n8. Faster feedback loops: Continuous integration allows developers to quickly identify issues that need fixing before a full release cycle is complete, which can lead to faster product releases.\n9. Better scalability: CI helps ensure that changes are integrated into the shared repository without causing delays in deployment or maintenance of other parts of your application.\n10. Improved project management: By automating many aspects of development and testing processes, continuous integration makes it easier for teams to manage their projects more effectively.\n\nThese benefits make Continuous Integration a key component of modern software engineering practices that can help improve the quality, reliability, efficiency, and scalability of applications over time.",
+      "raw_provider_reply": "Continuous Integration (CI) is an approach where developers automatically integrate their code changes into a shared repository, and then test those changes as part of each build. This helps to catch bugs early on during development cycles.\n\nThe main advantages include:\n\n1. Faster feedback: Developers can quickly see the results of their work in real-time.\n2. Improved collaboration: It allows team members from different parts of the project to contribute code more easily and efficiently, leading to better teamwork.\n3. Better testing practices: CI helps ensure that changes are tested before they're merged into production.\n\n4. Reduced risk: By catching bugs early on during development cycles, teams can avoid costly rework later in the process when those issues become critical problems for customers or users.\n\n5. Continuous delivery: With continuous integration and deployment (CI/CD), developers don't need to wait until a build is complete before deploying changes.\n6. Better code quality: CI helps ensure that all parts of your application are tested, which can lead to better-quality software with fewer bugs in the long run.\n\n7. Improved communication: Developers work together more effectively and efficiently when they're able to see each other's contributions at regular intervals during development cycles.\n\n8. Faster feedback loops: Continuous integration allows developers to quickly identify issues that need fixing before a full release cycle is complete, which can lead to faster product releases.\n9. Better scalability: CI helps ensure that changes are integrated into the shared repository without causing delays in deployment or maintenance of other parts of your application.\n10. Improved project management: By automating many aspects of development and testing processes, continuous integration makes it easier for teams to manage their projects more effectively.\n\nThese benefits make Continuous Integration a key component of modern software engineering practices that can help improve the quality, reliability, efficiency, and scalability of applications over time.",
+      "sanitized_provider_output": "Continuous Integration (CI) is an approach where developers automatically integrate their code changes into a shared repository, and then test those changes as part of each build. This helps to catch bugs early on during development cycles.\n\nThe main advantages include:\n\n1. Faster feedback: Developers can quickly see the results of their work in real-time.\n2. Improved collaboration: It allows team members from different parts of the project to contribute code more easily and efficiently, leading to better teamwork.\n3. Better testing practices: CI helps ensure that changes are tested before they're merged into production.\n\n4. Reduced risk: By catching bugs early on during development cycles, teams can avoid costly rework later in the process when those issues become critical problems for customers or users.\n\n5. Continuous delivery: With continuous integration and deployment (CI/CD), developers don't need to wait until a build is complete before deploying changes.\n6. Better code quality: CI helps ensure that all parts of your application are tested, which can lead to better-quality software with fewer bugs in the long run.\n\n7. Improved communication: Developers work together more effectively and efficiently when they're able to see each other's contributions at regular intervals during development cycles.\n\n8. Faster feedback loops: Continuous integration allows developers to quickly identify issues that need fixing before a full release cycle is complete, which can lead to faster product releases.\n9. Better scalability: CI helps ensure that changes are integrated into the shared repository without causing delays in deployment or maintenance of other parts of your application.\n10. Improved project management: By automating many aspects of development and testing processes, continuous integration makes it easier for teams to manage their projects more effectively.\n\nThese benefits make Continuous Integration a key component of modern software engineering practices that can help improve the quality, reliability, efficiency, and scalability of applications over time.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 13,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "no deterministic semantic rubric; human review required"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_03_VI_PREF_EN": {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
+      "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 106,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 106,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "5840ca66475d871e420c7f591ad0ef6a87df88fdbf08c4308f4c446a4b90bb95",
+            "raw_provider_reply": "The API gateway is a web service that acts as an intermediary between clients, such as browsers or mobile devices, and servers. It allows users to access APIs (Application Programming Interfaces) without having to know the specific details of each one.\n\nIn summary:\n\n- The primary benefit of using an API gateway in modern software engineering is its ability to simplify the process of accessing various services on a platform.\n- By providing a single point for clients to interact with servers, it reduces friction and makes it easier for developers to manage their APIs.",
+            "sanitized_output": "The API gateway is a web service that acts as an intermediary between clients, such as browsers or mobile devices, and servers. It allows users to access APIs (Application Programming Interfaces) without having to know the specific details of each one.\n\nIn summary:\n\n- The primary benefit of using an API gateway in modern software engineering is its ability to simplify the process of accessing various services on a platform.\n- By providing a single point for clients to interact with servers, it reduces friction and makes it easier for developers to manage their APIs.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "5840ca66475d871e420c7f591ad0ef6a87df88fdbf08c4308f4c446a4b90bb95",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "The API gateway is a web service that acts as an intermediary between clients, such as browsers or mobile devices, and servers. It allows users to access APIs (Application Programming Interfaces) without having to know the specific details of each one.\n\nIn summary:\n\n- The primary benefit of using an API gateway in modern software engineering is its ability to simplify the process of accessing various services on a platform.\n- By providing a single point for clients to interact with servers, it reduces friction and makes it easier for developers to manage their APIs.",
+      "raw_provider_reply": "The API gateway is a web service that acts as an intermediary between clients, such as browsers or mobile devices, and servers. It allows users to access APIs (Application Programming Interfaces) without having to know the specific details of each one.\n\nIn summary:\n\n- The primary benefit of using an API gateway in modern software engineering is its ability to simplify the process of accessing various services on a platform.\n- By providing a single point for clients to interact with servers, it reduces friction and makes it easier for developers to manage their APIs.",
+      "sanitized_provider_output": "The API gateway is a web service that acts as an intermediary between clients, such as browsers or mobile devices, and servers. It allows users to access APIs (Application Programming Interfaces) without having to know the specific details of each one.\n\nIn summary:\n\n- The primary benefit of using an API gateway in modern software engineering is its ability to simplify the process of accessing various services on a platform.\n- By providing a single point for clients to interact with servers, it reduces friction and makes it easier for developers to manage their APIs.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 7,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "no deterministic semantic rubric; human review required"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_04_EN_PREF_VI": {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
+      "prompt": "Briefly explain why database indexing improves query performance.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 65,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 65,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "c08c32a0518b77e634e294aa4d9fcbe02af9de46481a737c226f3a4366702bd6",
+            "raw_provider_reply": "Để cải thiện hiệu suất của một hệ thống dữ liệu, việc sử dụng index trong nó có thể giúp tăng tốc độ xử lý các câu hỏi và phản hồi. Index được tạo ra để giảm thời gian tìm kiếm thông tin cần thiết khi chúng ta đang truy cập vào một tập hợp lớn dữ liệu.",
+            "sanitized_output": "Để cải thiện hiệu suất của một hệ thống dữ liệu, việc sử dụng index trong nó có thể giúp tăng tốc độ xử lý các câu hỏi và phản hồi. Index được tạo ra để giảm thời gian tìm kiếm thông tin cần thiết khi chúng ta đang truy cập vào một tập hợp lớn dữ liệu.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "c08c32a0518b77e634e294aa4d9fcbe02af9de46481a737c226f3a4366702bd6",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Để cải thiện hiệu suất của một hệ thống dữ liệu, việc sử dụng index trong nó có thể giúp tăng tốc độ xử lý các câu hỏi và phản hồi. Index được tạo ra để giảm thời gian tìm kiếm thông tin cần thiết khi chúng ta đang truy cập vào một tập hợp lớn dữ liệu.",
+      "raw_provider_reply": "Để cải thiện hiệu suất của một hệ thống dữ liệu, việc sử dụng index trong nó có thể giúp tăng tốc độ xử lý các câu hỏi và phản hồi. Index được tạo ra để giảm thời gian tìm kiếm thông tin cần thiết khi chúng ta đang truy cập vào một tập hợp lớn dữ liệu.",
+      "sanitized_provider_output": "Để cải thiện hiệu suất của một hệ thống dữ liệu, việc sử dụng index trong nó có thể giúp tăng tốc độ xử lý các câu hỏi và phản hồi. Index được tạo ra để giảm thời gian tìm kiếm thông tin cần thiết khi chúng ta đang truy cập vào một tập hợp lớn dữ liệu.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 54,
+        "vi_words": 8,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "no deterministic semantic rubric; human review required"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_05_AUTO_VI": {
+      "case_id": "CASE_05_AUTO_VI",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
+      "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 84,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 84,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "d78c20c08906a3b30aa6b539088b76ac28c48191c032fbef061fefa8b0725b88",
+            "raw_provider_reply": "Đảm bảo rằng bạn đang sử dụng thiết bị và hệ thống máy tính của mình một cách hợp lý, tránh các ứng dụng hoặc dịch vụ không cần thiết. Đặt lịch trình cụ thể cho thời gian hoạt động để đảm bảo sự tập trung vào công việc chính. Sử dụng hiệu năng tối ưu nhất có thể trong môi trường remote như sử dụng điện thoại di động và máy tính bảng.",
+            "sanitized_output": "Đảm bảo rằng bạn đang sử dụng thiết bị và hệ thống máy tính của mình một cách hợp lý, tránh các ứng dụng hoặc dịch vụ không cần thiết. Đặt lịch trình cụ thể cho thời gian hoạt động để đảm bảo sự tập trung vào công việc chính. Sử dụng hiệu năng tối ưu nhất có thể trong môi trường remote như sử dụng điện thoại di động và máy tính bảng.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "d78c20c08906a3b30aa6b539088b76ac28c48191c032fbef061fefa8b0725b88",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Đảm bảo rằng bạn đang sử dụng thiết bị và hệ thống máy tính của mình một cách hợp lý, tránh các ứng dụng hoặc dịch vụ không cần thiết. Đặt lịch trình cụ thể cho thời gian hoạt động để đảm bảo sự tập trung vào công việc chính. Sử dụng hiệu năng tối ưu nhất có thể trong môi trường remote như sử dụng điện thoại di động và máy tính bảng.",
+      "raw_provider_reply": "Đảm bảo rằng bạn đang sử dụng thiết bị và hệ thống máy tính của mình một cách hợp lý, tránh các ứng dụng hoặc dịch vụ không cần thiết. Đặt lịch trình cụ thể cho thời gian hoạt động để đảm bảo sự tập trung vào công việc chính. Sử dụng hiệu năng tối ưu nhất có thể trong môi trường remote như sử dụng điện thoại di động và máy tính bảng.",
+      "sanitized_provider_output": "Đảm bảo rằng bạn đang sử dụng thiết bị và hệ thống máy tính của mình một cách hợp lý, tránh các ứng dụng hoặc dịch vụ không cần thiết. Đặt lịch trình cụ thể cho thời gian hoạt động để đảm bảo sự tập trung vào công việc chính. Sử dụng hiệu năng tối ưu nhất có thể trong môi trường remote như sử dụng điện thoại di động và máy tính bảng.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 76,
+        "vi_words": 10,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "no deterministic semantic rubric; human review required"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_06_AUTO_EN": {
+      "case_id": "CASE_06_AUTO_EN",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
+      "prompt": "How does public key cryptography secure internet communications?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 182,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 182,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "c160e3f397fa8bc7e1e2eaaf635f37f7ec269488d13bd46d25761fe4ef72486e",
+            "raw_provider_reply": "Public-key cryptography is used in Internet communication because it provides an additional layer of security beyond what traditional encryption methods can offer, such as using a shared secret between two parties. This extra level of protection makes the system more resistant to eavesdropping and tampering.\n\nKey exchange involves exchanging public keys for each party involved in the conversation (e.g., Alice sending Bob's public key). The recipient then uses their private key to encrypt messages that are sent over an insecure channel, which can only be decrypted with a corresponding public key from another trusted source. This ensures both parties' identities and data integrity.\n\nIn summary:\n- Public-key cryptography provides additional security compared to traditional encryption methods.\n- It involves exchanging keys for each party involved in the conversation (e.g., Alice sending Bob's public key).\n- The recipient uses their private key, which is derived from a shared secret between them and another trusted source.",
+            "sanitized_output": "Public-key cryptography is used in Internet communication because it provides an additional layer of security beyond what traditional encryption methods can offer, such as using a shared secret between two parties. This extra level of protection makes the system more resistant to eavesdropping and tampering.\n\nKey exchange involves exchanging public keys for each party involved in the conversation (e.g., Alice sending Bob's public key). The recipient then uses their private key to encrypt messages that are sent over an insecure channel, which can only be decrypted with a corresponding public key from another trusted source. This ensures both parties' identities and data integrity.\n\nIn summary:\n- Public-key cryptography provides additional security compared to traditional encryption methods.\n- It involves exchanging keys for each party involved in the conversation (e.g., Alice sending Bob's public key).\n- The recipient uses their private key, which is derived from a shared secret between them and another trusted source.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "c160e3f397fa8bc7e1e2eaaf635f37f7ec269488d13bd46d25761fe4ef72486e",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Public-key cryptography is used in Internet communication because it provides an additional layer of security beyond what traditional encryption methods can offer, such as using a shared secret between two parties. This extra level of protection makes the system more resistant to eavesdropping and tampering.\n\nKey exchange involves exchanging public keys for each party involved in the conversation (e.g., Alice sending Bob's public key). The recipient then uses their private key to encrypt messages that are sent over an insecure channel, which can only be decrypted with a corresponding public key from another trusted source. This ensures both parties' identities and data integrity.\n\nIn summary:\n- Public-key cryptography provides additional security compared to traditional encryption methods.\n- It involves exchanging keys for each party involved in the conversation (e.g., Alice sending Bob's public key).\n- The recipient uses their private key, which is derived from a shared secret between them and another trusted source.",
+      "raw_provider_reply": "Public-key cryptography is used in Internet communication because it provides an additional layer of security beyond what traditional encryption methods can offer, such as using a shared secret between two parties. This extra level of protection makes the system more resistant to eavesdropping and tampering.\n\nKey exchange involves exchanging public keys for each party involved in the conversation (e.g., Alice sending Bob's public key). The recipient then uses their private key to encrypt messages that are sent over an insecure channel, which can only be decrypted with a corresponding public key from another trusted source. This ensures both parties' identities and data integrity.\n\nIn summary:\n- Public-key cryptography provides additional security compared to traditional encryption methods.\n- It involves exchanging keys for each party involved in the conversation (e.g., Alice sending Bob's public key).\n- The recipient uses their private key, which is derived from a shared secret between them and another trusted source.",
+      "sanitized_provider_output": "Public-key cryptography is used in Internet communication because it provides an additional layer of security beyond what traditional encryption methods can offer, such as using a shared secret between two parties. This extra level of protection makes the system more resistant to eavesdropping and tampering.\n\nKey exchange involves exchanging public keys for each party involved in the conversation (e.g., Alice sending Bob's public key). The recipient then uses their private key to encrypt messages that are sent over an insecure channel, which can only be decrypted with a corresponding public key from another trusted source. This ensures both parties' identities and data integrity.\n\nIn summary:\n- Public-key cryptography provides additional security compared to traditional encryption methods.\n- It involves exchanging keys for each party involved in the conversation (e.g., Alice sending Bob's public key).\n- The recipient uses their private key, which is derived from a shared secret between them and another trusted source.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 12,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "no deterministic semantic rubric; human review required"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_07_VERBATIM_ENTITIES": {
+      "case_id": "CASE_07_VERBATIM_ENTITIES",
+      "case_type": "verbatim_entities",
+      "objective": "Bảo toàn tên riêng, ID, URL và mã cấu hình trong câu trả lời.",
+      "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 2,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 34,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "89da5f5ad9dcb6ab0763f6f0faa29628bc9ff4f6cdf9816d73e4fc8da5d5bdf0",
+            "raw_provider_reply": "URL đã được cấu hình thành=https://api.dusnx.org/v1/auth, biến DUSNX_PORT = 8088已经在.env文件中。",
+            "sanitized_output": "URL đã được cấu hình thành=https://api.dusnx.org/v1/auth, biến DUSNX_PORT = 8088已经在.env文件中。",
+            "quality_status": "mixed",
+            "entity_status": "mutated",
+            "repetition_flags": []
+          },
+          {
+            "attempt": 2,
+            "done_reason": "stop",
+            "tokens_generated": 31,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "5d937d85bb867aa8f13bd27f2afbed04582751275cd884507302d5e048239faa",
+            "raw_provider_reply": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+            "sanitized_output": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+            "quality_status": "matched",
+            "entity_status": "missing",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "5d937d85bb867aa8f13bd27f2afbed04582751275cd884507302d5e048239faa",
+        "provider_quality_status": "failed",
+        "quality_status": "failed",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "raw_provider_reply": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "sanitized_provider_output": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 4,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "failed",
+          "method": "exact configuration-line rubric after removing copied prompt",
+          "expected_lines": [
+            "DUSNX_PORT=8088"
+          ]
+        },
+        "entities": {
+          "status": "missing",
+          "missing": [
+            "https://api.dusnx.org/v1/auth",
+            "DUSNX_PORT=8088"
+          ],
+          "mutated": [],
+          "prompt_echo_removed": true
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "VARIANT_14_ENTITY_CONFIG_WEBHOOK": {
+      "case_id": "VARIANT_14_ENTITY_CONFIG_WEBHOOK",
+      "case_type": "verbatim_entities",
+      "objective": "Tạo cấu hình .env, bảo toàn URL và assignment chính xác; không được chỉ chép prompt.",
+      "prompt": "Viết một đoạn cấu hình .env cho webhook, giữ URL https://hooks.example.net/v2/events và đặt WEBHOOK_RETRY_LIMIT=7. Giải thích ngắn gọn cách áp dụng.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 86,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 86,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "6182d5a71c03c2d7ab520f0c93346257062c99347556f7ace4bbeaa55192d305",
+            "raw_provider_reply": "Để hoàn thành yêu cầu này:\n\n- **URL:** `https://hooks.example.net/v2/events`\n  - Đây là địa chỉ cấu hình của webhook.\n\n- **Biến:**\n  ```env\n  WEBHOOK_RETRY_LIMIT = 7\n  ```\n  - Điều này đặt giới hạn tối đa số lượng lần gửi thông tin đến URL `https://hooks.example.net/v2/events` lên 7.",
+            "sanitized_output": "Để hoàn thành yêu cầu này:\n\n- **URL:** `https://hooks.example.net/v2/events`\n  - Đây là địa chỉ cấu hình của webhook.\n\n- **Biến:**\n  ```env\n  WEBHOOK_RETRY_LIMIT = 7\n  ```\n  - Điều này đặt giới hạn tối đa số lượng lần gửi thông tin đến URL `https://hooks.example.net/v2/events` lên 7.",
+            "quality_status": "matched",
+            "entity_status": "passed",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "6182d5a71c03c2d7ab520f0c93346257062c99347556f7ace4bbeaa55192d305",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Để hoàn thành yêu cầu này:\n\n- **URL:** `https://hooks.example.net/v2/events`\n  - Đây là địa chỉ cấu hình của webhook.\n\n- **Biến:**\n  ```env\n  WEBHOOK_RETRY_LIMIT = 7\n  ```\n  - Điều này đặt giới hạn tối đa số lượng lần gửi thông tin đến URL `https://hooks.example.net/v2/events` lên 7.",
+      "raw_provider_reply": "Để hoàn thành yêu cầu này:\n\n- **URL:** `https://hooks.example.net/v2/events`\n  - Đây là địa chỉ cấu hình của webhook.\n\n- **Biến:**\n  ```env\n  WEBHOOK_RETRY_LIMIT = 7\n  ```\n  - Điều này đặt giới hạn tối đa số lượng lần gửi thông tin đến URL `https://hooks.example.net/v2/events` lên 7.",
+      "sanitized_provider_output": "Để hoàn thành yêu cầu này:\n\n- **URL:** `https://hooks.example.net/v2/events`\n  - Đây là địa chỉ cấu hình của webhook.\n\n- **Biến:**\n  ```env\n  WEBHOOK_RETRY_LIMIT = 7\n  ```\n  - Điều này đặt giới hạn tối đa số lượng lần gửi thông tin đến URL `https://hooks.example.net/v2/events` lên 7.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 35,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "failed",
+          "method": "exact configuration-line rubric after removing copied prompt",
+          "expected_lines": [
+            "WEBHOOK_RETRY_LIMIT=7"
+          ]
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_15_ENTITY_CONFIG_QUERY_URL": {
+      "case_id": "VARIANT_15_ENTITY_CONFIG_QUERY_URL",
+      "case_type": "verbatim_entities",
+      "objective": "Tạo cấu hình .env, giữ nguyên URL có query/punctuation và giá trị không bị đổi.",
+      "prompt": "Provide an example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast, and set CACHE_TTL_SECONDS=45; include one sentence explaining where to put it.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 2,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 279,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "476e0e44d8a909f1bdfca2185fcc32c94548f9410b8a05ddf85d036d34c0e724",
+            "raw_provider_reply": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+            "sanitized_output": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+            "quality_status": "matched",
+            "entity_status": "mutated",
+            "repetition_flags": []
+          },
+          {
+            "attempt": 2,
+            "done_reason": "stop",
+            "tokens_generated": 271,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "d51eb139f7f555d1965d8467acba65e4e0b9316c986e3a3426d13db9d1674811",
+            "raw_provider_reply": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+            "sanitized_output": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+            "quality_status": "matched",
+            "entity_status": "mutated",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "d51eb139f7f555d1965d8467acba65e4e0b9316c986e3a3426d13db9d1674811",
+        "provider_quality_status": "failed",
+        "quality_status": "failed",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+      "raw_provider_reply": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+      "sanitized_provider_output": "To provide a complete solution that includes variables in `.env`, we can use:\n\n```plaintext\nCACHE_TTL_SECONDS=60 # 1 minute\n\n# Example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast:\nCACHES={\n    \"default\": {\n        \"BACKEND\": \"redis\",\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\" # 1 minute\n    }\n}\n```\n\nExplanation: We added the `CACHE_TTL_SECONDS` variable to `.env`, which specifies how long a cache entry should be retained. The value is set as `\"60\"` (i.e., one minute). This setting can then be used in your application code or configuration files.\n\nSentence explaining where to put it:\nYou need to include this line of the following format:\n\n```plaintext\nCACHES={\n    \"default\": {\n        # Add any other necessary configurations here...\n        \"DUSNX_PORT\": \"8089\", \n        \"CACHE_TTL_SECONDS\": \"60\"  # Set to one minute for example.\n}\n```\n\nThis will ensure that the cache is retained indefinitely, which can be useful in scenarios where you want your application's responses to persist even if it loses internet connectivity.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 9,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "failed",
+          "method": "exact configuration-line rubric after removing copied prompt",
+          "expected_lines": [
+            "CACHE_TTL_SECONDS=45"
+          ]
+        },
+        "entities": {
+          "status": "mutated",
+          "missing": [],
+          "mutated": [
+            {
+              "expected": "CACHE_TTL_SECONDS=45",
+              "actual": [
+                "CACHE_TTL_SECONDS=60"
+              ]
+            }
+          ],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_08_MEMORY_RECALL_TEMPLATE": {
+      "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+      "case_type": "template_recall",
+      "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
+      "prompt": "Cụm máy chủ chọn công nghệ gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "grounded_template",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": [
+          "648a03f8a383c3d2bd6dc5bd7644861d"
+        ]
+      },
+      "verbatim_reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 12,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "grounded_template"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "not_applicable",
+          "method": "memory-template contract is evaluated separately"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression"
+    },
+    "CASE_09_AUTO_SHORT_HISTORY": {
+      "case_id": "CASE_09_AUTO_SHORT_HISTORY",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi mơ hồ sau khi người dùng nêu hai chủ đề phải hỏi chọn chủ đề thay vì đoán.",
+      "prompt": "Ưu điểm là gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null
+      },
+      "verbatim_reply": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 17,
+        "vi_words": 5,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "checks first response sentence against the active topic or a clarification, and rejects stale/wrong subjects",
+          "subject_match": false,
+          "clarification": true,
+          "forbidden_subjects_found": []
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "setup_history": [
+        "Tôi đang tìm hiểu về kiến trúc microservices và distributed systems."
+      ],
+      "evaluation_label": "development_regression",
+      "notes": "Multiple topics are present in the latest user turn; clarification is expected, no provider call.",
+      "quality_flags": []
+    },
+    "VARIANT_16_TOPIC_SHIFT_FOLLOWUP": {
+      "case_id": "VARIANT_16_TOPIC_SHIFT_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau khi đổi chủ đề phải bám chủ đề gần nhất trong cùng session.",
+      "prompt": "Những rủi ro của nó là gì?",
+      "setup_history": [
+        "Tôi đang tìm hiểu ưu nhược điểm của kiến trúc microservices so với monolith.",
+        "Chuyển sang chủ đề khác: tôi đang học về public key cryptography."
+      ],
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": true,
+        "provider_call_count": 2,
+        "provider_ok": false,
+        "response_source": "provider_error",
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": "stop",
+        "sanitizer_changed": false,
+        "raw_output_sha256": "c2139fe0f3dc2336e5c4cf63defec28a4125782cc24d7f219ac1f15ccb3eb0b5",
+        "response_language": "vi",
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 402,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "a6b121b5b9bec096a43d96dc2713380957b288cb5ffac1031094952a1e30be99",
+            "raw_provider_reply": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n- Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n- Rõ ràng có khả năng bị xâm nhập và cài đặt.\n\n2. Cấu trúc mạng xã hội: \n- Mô phỏng, phân tán dữ liệu trên Internet.\n- Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.\n\n5. Lỗi tính toán: \n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n6. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.\n\n7. Lỗi tính toán: \n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n8. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.\n\n9. Lỗi tính toán: \n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n10. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.",
+            "sanitized_output": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n- Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n- Rõ ràng có khả năng bị xâm nhập và cài đặt.\n\n2. Cấu trúc mạng xã hội: \n- Mô phỏng, phân tán dữ liệu trên Internet.\n- Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.\n\n5. Lỗi tính toán: \n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n6. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.\n\n7. Lỗi tính toán: \n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n8. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.\n\n9. Lỗi tính toán: \n- Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n10. Rủi ro về an ninh mạng:\n- Cấu trúc mạng xã hội có khả năng bị tấn công.\n- Tính bảo mật không chắc chắn khi dữ liệu được lưu trữ trên các thiết bị cá nhân.",
+            "quality_status": "mixed",
+            "entity_status": "not_applicable",
+            "repetition_flags": [
+              "repeated_lines"
+            ]
+          },
+          {
+            "attempt": 2,
+            "done_reason": "stop",
+            "tokens_generated": 361,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "c2139fe0f3dc2336e5c4cf63defec28a4125782cc24d7f219ac1f15ccb3eb0b5",
+            "raw_provider_reply": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n   - Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n   \n2. Cấu trúc mạng xã hội: \n   - Mô phỏng, phân tán dữ liệu trên Internet.\n   - Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n   - Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng: \n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n5. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n6. Rủiroo về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n7. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n8. Rủi ro về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n9. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n10. Rủiroo về an ninh mạng:\n    - Cấu trúc mạng xã hội có khả năng bị tấn công.\n    \nLưu ý rằng các rủi ro này không phải là tất cả, nhưng chúng vẫn là những vấn đề cần quan tâm khi sử dụng công nghệ Public Key Cryptography (PKC).",
+            "sanitized_output": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n   - Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n   \n2. Cấu trúc mạng xã hội: \n   - Mô phỏng, phân tán dữ liệu trên Internet.\n   - Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n   - Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng: \n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n5. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n6. Rủiroo về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n7. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n8. Rủi ro về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n9. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n10. Rủiroo về an ninh mạng:\n    - Cấu trúc mạng xã hội có khả năng bị tấn công.\n    \nLưu ý rằng các rủi ro này không phải là tất cả, nhưng chúng vẫn là những vấn đề cần quan tâm khi sử dụng công nghệ Public Key Cryptography (PKC).",
+            "quality_status": "mixed",
+            "entity_status": "not_applicable",
+            "repetition_flags": [
+              "repeated_lines"
+            ]
+          }
+        ]
+      },
+      "raw_provider_reply": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n   - Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n   \n2. Cấu trúc mạng xã hội: \n   - Mô phỏng, phân tán dữ liệu trên Internet.\n   - Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n   - Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng: \n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n5. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n6. Rủiroo về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n7. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n8. Rủi ro về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n9. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n10. Rủiroo về an ninh mạng:\n    - Cấu trúc mạng xã hội có khả năng bị tấn công.\n    \nLưu ý rằng các rủi ro này không phải là tất cả, nhưng chúng vẫn là những vấn đề cần quan tâm khi sử dụng công nghệ Public Key Cryptography (PKC).",
+      "sanitized_provider_output": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n   - Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n   \n2. Cấu trúc mạng xã hội: \n   - Mô phỏng, phân tán dữ liệu trên Internet.\n   - Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n   - Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng: \n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n5. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n6. Rủiroo về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n7. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n8. Rủi ro về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n9. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n10. Rủiroo về an ninh mạng:\n    - Cấu trúc mạng xã hội có khả năng bị tấn công.\n    \nLưu ý rằng các rủi ro này không phải là tất cả, nhưng chúng vẫn là những vấn đề cần quan tâm khi sử dụng công nghệ Public Key Cryptography (PKC).",
+      "verbatim_reply": "Rủi ro chính của công nghệ Public Key Cryptography (PKC) bao gồm:\n\n1. Tính bảo mật mã hóa không chắc chắn:\n   - Có thể bị tấn công bằng các phương pháp lừa đảo hoặc giả mạo.\n   \n2. Cấu trúc mạng xã hội: \n   - Mô phỏng, phân tán dữ liệu trên Internet.\n   - Tính bảo mật không chắc chắn khi người dùng chia sẻ thông tin cá nhân.\n\n3. Lỗi tính toán:\n   - Có thể gặp lỗi do quá trình giải mã và xác thực密钥 phức tạp.\n\n4. Rủi ro về an ninh mạng: \n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n5. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n6. Rủiroo về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n7. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n8. Rủi ro về an ninh mạng:\n   - Cấu trúc mạng xã hội có khả năng bị tấn công.\n   \n9. Lỗi tính toán: \n   - Có thể gặp lỗi do quá trình giải mã và xác thực密 key phức tạp.\n\n10. Rủiroo về an ninh mạng:\n    - Cấu trúc mạng xã hội có khả năng bị tấn công.\n    \nLưu ý rằng các rủi ro này không phải là tất cả, nhưng chúng vẫn là những vấn đề cần quan tâm khi sử dụng công nghệ Public Key Cryptography (PKC).",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 200,
+        "vi_words": 10,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "mixed",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "mixed",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {
+            "han": 5
+          },
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "checks first response sentence against the active topic or a clarification, and rejects stale/wrong subjects",
+          "subject_match": true,
+          "clarification": false,
+          "forbidden_subjects_found": []
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "failed",
+          "flags": [
+            "repeated_lines",
+            "mixed_script_language"
+          ]
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "notes": "Automated rubric cannot establish semantic topic alignment; human review required.",
+      "quality_flags": [
+        "repeated_lines",
+        "mixed_script_language"
+      ]
+    },
+    "VARIANT_17_AMBIGUOUS_NEW_SESSION": {
+      "case_id": "VARIANT_17_AMBIGUOUS_NEW_SESSION",
+      "case_type": "clarification",
+      "objective": "Không đoán chủ đề cho câu hỏi thiếu antecedent trong session mới.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "application clarification path for missing antecedent"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim factual or human content review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_10_DURABLE_MEMORY_PREF_CHANGE": {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "case_type": "llm_generation",
+      "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
+      "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 10,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 10,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "0f22ea2bcf78d53f8b7bba2981290050dc64d74e3faa539d35295614ad748163",
+            "raw_provider_reply": "Two popular operating systems are Windows and macOS.",
+            "sanitized_output": "Two popular operating systems are Windows and macOS.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "0f22ea2bcf78d53f8b7bba2981290050dc64d74e3faa539d35295614ad748163"
+      },
+      "verbatim_reply": "Two popular operating systems are Windows and macOS.",
+      "raw_provider_reply": "Two popular operating systems are Windows and macOS.",
+      "sanitized_provider_output": "Two popular operating systems are Windows and macOS.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 2,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires the requested number of list items or distinct named answers",
+          "requested_count": 2,
+          "observed_list_items": 0,
+          "observed_distinct_named_answers": 2
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Memory preference superseded previous setting atomically.",
+      "quality_flags": []
+    },
+    "CASE_11_TWO_USERS_LANGUAGE_ISOLATION": {
+      "case_id": "CASE_11_TWO_USERS_LANGUAGE_ISOLATION",
+      "case_type": "user_preference_isolation",
+      "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+      "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+      "input_preferred_language": "auto",
+      "expected_response_language": "A:en, B:vi",
+      "user_a_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 160,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "f718332001f55de6f5f0a1b175359474e426a131e4ab9f5792c57ea937e0fd9b",
+            "raw_provider_reply": "Open-source software (OSS) refers to computer programs that are made available for anyone to use, modify and distribute. It emphasizes the idea of sharing code with others so they can improve it without needing permission from their original creators or owners.\n\nSome examples include:\n\n1. Linux: A free operating system developed by Linus Torvalds.\n2. Apache HTTP Server (Apache): An open-source web server software that is used for many websites and applications online today, including the World Wide Web Services Consortium's W3C HTML5 specification.\n3. MySQL: A popular relational database management system designed to be highly scalable with a large number of users.\n\nOpen source means you can use it without needing permission from its original developers or owners (e.g., free software licenses like GNU General Public License).",
+            "sanitized_output": "Open-source software (OSS) refers to computer programs that are made available for anyone to use, modify and distribute. It emphasizes the idea of sharing code with others so they can improve it without needing permission from their original creators or owners.\n\nSome examples include:\n\n1. Linux: A free operating system developed by Linus Torvalds.\n2. Apache HTTP Server (Apache): An open-source web server software that is used for many websites and applications online today, including the World Wide Web Services Consortium's W3C HTML5 specification.\n3. MySQL: A popular relational database management system designed to be highly scalable with a large number of users.\n\nOpen source means you can use it without needing permission from its original developers or owners (e.g., free software licenses like GNU General Public License).",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "response_source": "llm"
+      },
+      "user_b_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "tokens_generated": 106,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "1838da518053868722f08e3d0974857f0025f20aae5ff3cae9572cb9b572d736",
+            "raw_provider_reply": "Phần mềm mã nguồn mở (Open Source Software) là một loại phần mềm mà tất cả các tham gia đều có quyền truy cập và chỉnh sửa. Điều này bao gồm việc tạo, quản lý, sử dụng, cung cấp dịch vụ cho phần mềm đó. Phần mềm này không phải là công cụ độc lập hoặc riêng tư của cá nhân nhưng được phát triển dựa trên kiến thức cộng đồng để giúp người dùng dễ dàng tiếp cận với các ứng dụng và giải pháp hữu ích mà họ cần.",
+            "sanitized_output": "Phần mềm mã nguồn mở (Open Source Software) là một loại phần mềm mà tất cả các tham gia đều có quyền truy cập và chỉnh sửa. Điều này bao gồm việc tạo, quản lý, sử dụng, cung cấp dịch vụ cho phần mềm đó. Phần mềm này không phải là công cụ độc lập hoặc riêng tư của cá nhân nhưng được phát triển dựa trên kiến thức cộng đồng để giúp người dùng dễ dàng tiếp cận với các ứng dụng và giải pháp hữu ích mà họ cần.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "response_source": "llm"
+      },
+      "user_a_response_lang": "en",
+      "user_b_response_lang": "vi",
+      "verbatim_reply": "User A: Open-source software (OSS) refers to computer programs that are made available for anyone to use, modify and distribute. It emphasizes the idea of sharing code with others so they can improve it without needing permission from their original creators or owners.\n\nSome examples include:\n\n1. Linux: A free operating system developed by Linus Torvalds.\n2. Apache HTTP Server (Apache): An open-source web server software that is used for many websites and applications online today, including the World Wide Web Services Consortium's W3C HTML5 specification.\n3. MySQL: A popular relational database management system designed to be highly scalable with a large number of users.\n\nOpen source means you can use it without needing permission from its original developers or owners (e.g., free software licenses like GNU General Public License).\n---\nUser B: Phần mềm mã nguồn mở (Open Source Software) là một loại phần mềm mà tất cả các tham gia đều có quyền truy cập và chỉnh sửa. Điều này bao gồm việc tạo, quản lý, sử dụng, cung cấp dịch vụ cho phần mềm đó. Phần mềm này không phải là công cụ độc lập hoặc riêng tư của cá nhân nhưng được phát triển dựa trên kiến thức cộng đồng để giúp người dùng dễ dàng tiếp cận với các ứng dụng và giải pháp hữu ích mà họ cần.",
+      "raw_provider_reply": {
+        "user_a": "Open-source software (OSS) refers to computer programs that are made available for anyone to use, modify and distribute. It emphasizes the idea of sharing code with others so they can improve it without needing permission from their original creators or owners.\n\nSome examples include:\n\n1. Linux: A free operating system developed by Linus Torvalds.\n2. Apache HTTP Server (Apache): An open-source web server software that is used for many websites and applications online today, including the World Wide Web Services Consortium's W3C HTML5 specification.\n3. MySQL: A popular relational database management system designed to be highly scalable with a large number of users.\n\nOpen source means you can use it without needing permission from its original developers or owners (e.g., free software licenses like GNU General Public License).",
+        "user_b": "Phần mềm mã nguồn mở (Open Source Software) là một loại phần mềm mà tất cả các tham gia đều có quyền truy cập và chỉnh sửa. Điều này bao gồm việc tạo, quản lý, sử dụng, cung cấp dịch vụ cho phần mềm đó. Phần mềm này không phải là công cụ độc lập hoặc riêng tư của cá nhân nhưng được phát triển dựa trên kiến thức cộng đồng để giúp người dùng dễ dàng tiếp cận với các ứng dụng và giải pháp hữu ích mà họ cần."
+      },
+      "sanitized_provider_output": {
+        "user_a": "Open-source software (OSS) refers to computer programs that are made available for anyone to use, modify and distribute. It emphasizes the idea of sharing code with others so they can improve it without needing permission from their original creators or owners.\n\nSome examples include:\n\n1. Linux: A free operating system developed by Linus Torvalds.\n2. Apache HTTP Server (Apache): An open-source web server software that is used for many websites and applications online today, including the World Wide Web Services Consortium's W3C HTML5 specification.\n3. MySQL: A popular relational database management system designed to be highly scalable with a large number of users.\n\nOpen source means you can use it without needing permission from its original developers or owners (e.g., free software licenses like GNU General Public License).",
+        "user_b": "Phần mềm mã nguồn mở (Open Source Software) là một loại phần mềm mà tất cả các tham gia đều có quyền truy cập và chỉnh sửa. Điều này bao gồm việc tạo, quản lý, sử dụng, cung cấp dịch vụ cho phần mềm đó. Phần mềm này không phải là công cụ độc lập hoặc riêng tư của cá nhân nhưng được phát triển dựa trên kiến thức cộng đồng để giúp người dùng dễ dàng tiếp cận với các ứng dụng và giải pháp hữu ích mà họ cần."
+      },
+      "heuristic_evaluation": {
+        "user_a": {
+          "actual_language": "en",
+          "confidence": 1.0,
+          "vi_diacritics": 0,
+          "vi_words": 0,
+          "en_words": 11,
+          "method": "heuristic"
+        },
+        "user_b": {
+          "actual_language": "vi",
+          "confidence": 1.0,
+          "vi_diacritics": 91,
+          "vi_words": 11,
+          "en_words": 0,
+          "method": "heuristic"
+        }
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "user_a": {
+          "transport": {
+            "status": "passed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "llm"
+          },
+          "language": {
+            "status": "matched",
+            "actual_language": "en",
+            "expected_language": "en",
+            "unsupported_script_counts": {},
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Does not judge task correctness, factuality, or human acceptability."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "passed",
+            "reason": "no_provider_limit_or_obvious_open_clause",
+            "done_reason": "stop"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        },
+        "user_b": {
+          "transport": {
+            "status": "passed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "llm"
+          },
+          "language": {
+            "status": "matched",
+            "actual_language": "vi",
+            "expected_language": "vi",
+            "unsupported_script_counts": {},
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Does not judge task correctness, factuality, or human acceptability."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "passed",
+            "reason": "no_provider_limit_or_obvious_open_clause",
+            "done_reason": "stop"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        }
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Isolated per-user preference state verified via distinct tokens.",
+      "quality_flags": []
+    },
+    "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION": {
+      "case_id": "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION",
+      "case_type": "clarification",
+      "objective": "Không rò rỉ antecedent từ user A hoặc session khác sang session mới của user B.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify",
+        "preferred_language": "vi",
+        "response_language": "vi"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "fresh session clarification; provider must not receive other-user context"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim independent semantic review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_12_PROVIDER_OFFLINE": {
+      "case_id": "CASE_12_PROVIDER_OFFLINE",
+      "case_type": "expected_provider_error",
+      "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Không kết nối được Ollama (unreachable)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 6,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Offline error properly categorized and isolated. Not counted as generation."
+    },
+    "CASE_13_MODEL_MISSING": {
+      "case_id": "CASE_13_MODEL_MISSING",
+      "case_type": "expected_provider_error",
+      "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Model cấu hình không tồn tại trong Ollama (model_missing)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 5,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Missing model error cleanly caught. Not counted as generation."
+    }
+  },
+  "summary": {
+    "quality_flagged_cases": 1,
+    "total_cases": 18,
+    "contract_passed": 14,
+    "contract_failed": 4,
+    "real_llm_generations": 6,
+    "template_recalls": 1,
+    "expected_provider_failures": 2,
+    "eligible_language_cases": 11,
+    "linguistic_matched": 10,
+    "linguistic_divergent": 0,
+    "linguistic_uncertain": 0,
+    "linguistic_mixed": 1,
+    "task_failed": 3,
+    "task_uncertain": 5,
+    "completion_failed": 0,
+    "completion_uncertain": 0,
+    "execution_status": "completed"
+  },
+  "code_sha": "a5c9fa5be6fe7c0975f65ceef3129921a1b61556"
+}

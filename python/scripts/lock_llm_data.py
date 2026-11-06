@@ -4,13 +4,15 @@ import hashlib
 from datetime import datetime,timezone
 import json
 from pathlib import Path
-from dusnx_core.llm_data import audit,completion_rows,digest,read_sft,verify_file_manifest,write_json
+from dusnx_core.llm_data import audit,completion_rows,digest,read_sft,verify_file_manifest,verify_train_validation_lineage_receipt,write_json
 
 
-def _receipt(path, expected_type, expected_files, expected_rows):
+def _receipt(path, expected_type, expected_files, expected_rows, root=None):
     receipt_path=Path(path);raw=receipt_path.read_bytes();receipt=json.loads(raw.decode('utf-8'))
     if not isinstance(receipt,dict):raise ValueError('Review receipt must be a JSON object')
-    if type(receipt.get('schema_version')) is not int or receipt.get('schema_version')!=1 or receipt.get('review_type')!=expected_type or receipt.get('test_only') is not False:
+    version=receipt.get('schema_version')
+    allowed_version=type(version) is int and (version==1 or (expected_type=='train_validation' and version==2))
+    if not allowed_version or receipt.get('review_type')!=expected_type or receipt.get('test_only') is not False:
         raise ValueError('A real human review receipt is required')
     if receipt.get('result_files')!=expected_files or type(receipt.get('row_count')) is not int or receipt.get('row_count')!=expected_rows:
         raise ValueError('Review receipt does not match the current reviewed data')
@@ -19,6 +21,9 @@ def _receipt(path, expected_type, expected_files, expected_rows):
         raise ValueError('Review receipt is incomplete')
     if not isinstance(reviewed_at,list) or not reviewed_at or any(not isinstance(value,str) or not value.strip() for value in reviewed_at):
         raise ValueError('Review receipt is incomplete')
+    if version==2:
+        if root is None:raise ValueError('Lineage receipt verification requires the data root')
+        verify_train_validation_lineage_receipt(root,receipt,expected_files,expected_rows)
     return receipt,raw
 
 
@@ -53,8 +58,8 @@ def main():
     train_files={f'{s}.jsonl':digest(root/f'{s}.jsonl') for s in ('train','validation')}
     test_files={'test.jsonl':digest(root/'test.jsonl')}
     row_counts={s:len(completion_rows(rows[s])) for s in ('train','validation','test')}
-    train_receipt,train_receipt_raw=_receipt(a.train_review_receipt,'train_validation',train_files,row_counts['train']+row_counts['validation'])
-    test_receipt,test_receipt_raw=_receipt(a.test_review_receipt,'independent_test',test_files,row_counts['test'])
+    train_receipt,train_receipt_raw=_receipt(a.train_review_receipt,'train_validation',train_files,row_counts['train']+row_counts['validation'],root=root)
+    test_receipt,test_receipt_raw=_receipt(a.test_review_receipt,'independent_test',test_files,row_counts['test'],root=root)
     if a.reviewer.strip() not in train_receipt['reviewers']:
         raise ValueError('Reviewer does not match the train/validation review receipt')
     if test_receipt.get('human_author')!=a.human_author.strip() or a.reviewer.strip() not in test_receipt['reviewers']:

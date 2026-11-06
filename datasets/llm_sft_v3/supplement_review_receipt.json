@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "receipt_type": "train_validation_supplement_review",
+  "scope": "supplemental completion rows only; does not attest the full release",
+  "covered_completion_rows": 16,
+  "covered_review_keys": [
+    "train:llmv2supp-train-system-context-a:1",
+    "train:llmv2supp-train-clarify-answer-a:1",
+    "train:llmv2supp-train-clarify-answer-a:2",
+    "train:llmv2supp-train-web-ppt-web-a:1",
+    "train:llmv2supp-train-web-ppt-web-a:2",
+    "train:llmv2supp-train-entities-a:1",
+    "train:llmv2supp-train-chat-vs-saved-a:1",
+    "train:llmv2supp-train-chat-vs-saved-a:2",
+    "validation:llmv2supp-validation-system-context-b:1",
+    "validation:llmv2supp-validation-clarify-answer-b:1",
+    "validation:llmv2supp-validation-clarify-answer-b:2",
+    "validation:llmv2supp-validation-web-ppt-web-b:1",
+    "validation:llmv2supp-validation-web-ppt-web-b:2",
+    "validation:llmv2supp-validation-entities-b:1",
+    "validation:llmv2supp-validation-chat-vs-saved-b:1",
+    "validation:llmv2supp-validation-chat-vs-saved-b:2"
+  ],
+  "decisions": {
+    "approve": 16,
+    "revise": 0
+  },
+  "reviewers": [
+    "quynh"
+  ],
+  "reviewed_at": [
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00",
+    "2026-11-05T19:36:00+07:00"
+  ],
+  "review_csv_sha256": "78c5d63fad32060e48bc1de369de8e12cbb831ec6ddab969521f3ed53471d00d",
+  "parent_manifest_sha256": "f81fa75516675657957d79327eb80d937c7de74691a4b395b40b0ebcc2a7f41a",
+  "parent_train_validation_receipt_sha256": "fce55f7ae7dca210e41d0a27cb2c3767b8bf907afd33d9038a1636a5c91bfa03",
+  "parent_file_sha256": {
+    "train.jsonl": "2fb56f1f7ef44b1074495687556f8e05796841c5f970eaca9e7d516d1ed995d3",
+    "validation.jsonl": "60d7c4851df0b869b0f8867b044aaed6320a8645993ebff6f834c71de1aabb48"
+  },
+  "candidate_manifest_sha256": "46abe2e1d7c1216a84433242dd263c579bea7d73f080168ad583408260f60da8",
+  "candidate_train_validation_sha256": {
+    "train.jsonl": "fa43e11652f3fce7e22a5e8665deca8b409777dded729b64f96bde9b2de4336a",
+    "validation.jsonl": "a0593eadcbc06c5ff2ec1998e428b2888931eab1c87e2c27ebbc719b548cd058"
+  },
+  "release_v3_sha256": {
+    "train.jsonl": "1d5e1cb6e054c78b88dfaf366949818306245d2ab35ef4d9a18fa9f38fd479ed",
+    "validation.jsonl": "b769341de3bb75fab3ed1d9d6e8f71352b7e1b35b4b2c667b187f94b2bc694a4"
+  },
+  "added_records": {
+    "train": 5,
+    "validation": 5
+  },
+  "release_counts": {
+    "train_records": 105,
+    "train_assistant_completions": 108,
+    "validation_records": 29,
+    "validation_assistant_completions": 32
+  },
+  "review_source": "Quynh-approved supplement CSV; parent rows retain parent receipt lineage",
+  "created_at_utc": "2026-11-05T13:56:50.384212+00:00",
+  "not_a_full_release_receipt": true
+}

@@ -12,7 +12,7 @@ from test_week2_acceptance import isolated_week2_env, client, _register_and_logi
     (b"not json", "invalid_json"),
     (b'[]', "invalid_schema"),
     (b'{"done":true,"model":"qwen","message":{"content":5}}', "invalid_schema"),
-    (b'{"done":false,"model":"qwen","message":{"content":"partial"}}', "invalid_schema"),
+    (b'{"done":false,"model":"qwen","message":{"content":"partial"}}', "incomplete_response"),
 ])
 def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, category):
     calls = []
@@ -21,40 +21,39 @@ def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, cate
         return BytesIO(raw)
     monkeypatch.setattr(provider.urllib.request, "urlopen", response)
     text, ok, model, tokens = provider._ollama_generate("context", "question")
-    assert not ok and model is None and tokens is None and category in text
+    assert not ok and category in text
+    assert model == ("qwen" if b'"model":"qwen"' in raw else None)
     assert len(calls) == 1
 
 
-def test_ollama_diagnostics_distinguish_thinking_only_budget_empty_content_from_invalid_schema(monkeypatch):
-    response = BytesIO(json.dumps({
-        "done": True, "done_reason": "length", "model": "qwen3:4b",
-        "eval_count": 256, "prompt_eval_count": 91,
-        "message": {"content": "", "thinking": "private synthetic reasoning"},
-    }).encode())
-    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: response)
-    result = provider._ollama_generate("synthetic system", "synthetic question")
-    text, ok, model, tokens = result
-    assert not ok and model is None and tokens is None
-    assert "empty_content" in text
-    assert result.diagnostics["schema_valid"] is True
-    assert result.diagnostics["done_reason"] == "length"
-    assert result.diagnostics["eval_count"] == 256
-    assert result.diagnostics["content_chars"] == 0
-    assert result.diagnostics["thinking_chars"] == len("private synthetic reasoning")
+def test_qwen_thinking_only_response_is_empty_content_with_metadata(monkeypatch):
+    raw = json.dumps({"done": True, "done_reason": "length", "model": "qwen3:4b",
+                      "eval_count": 512, "prompt_eval_count": 42,
+                      "message": {"role": "assistant", "content": "", "thinking": "private reasoning"}}).encode()
+    monkeypatch.delenv("DUSNX_CAPTURE_RAW_GENERATION", raising=False)
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
+    result = provider._ollama_generate("system", "user")
+    assert not result[1] and "empty_content" in result[0]
+    assert result[2:] == ("qwen3:4b", 512)
+    assert result.done_reason == "length"
+    assert "n\u1ed9i dung r\u1ed7ng" in result[0]
+    assert result.diagnostics["thinking_chars"] == len("private reasoning")
+    assert "private reasoning" not in result.diagnostics
+    assert result.diagnostics["num_predict"] == 512
+    assert result.diagnostics["response_sha256"]
     assert result.diagnostics["response_classification"] == "thinking_only_budget_exhausted"
     assert result.diagnostics["token_budget_status"] == "reached"
-    assert "private synthetic reasoning" not in json.dumps(result.diagnostics)
-
-
-def test_ollama_empty_content_without_budget_metadata_keeps_budget_unknown(monkeypatch):
-    response = BytesIO(json.dumps({
-        "done": True, "done_reason": "stop", "model": "qwen3:4b",
-        "message": {"content": ""},
-    }).encode())
-    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: response)
-    result = provider._ollama_generate("synthetic system", "synthetic question")
+    assert result.diagnostics["schema_valid"] is True
+    assert result.diagnostics["http_completed"] is True
     assert result.diagnostics["error_category"] == "empty_content"
-    assert result.diagnostics["response_classification"] == "empty_content"
+
+
+def test_provider_budget_diagnostic_is_unknown_without_eval_metadata(monkeypatch):
+    raw = json.dumps({"done": True, "done_reason": "stop", "model": "qwen3:4b",
+                      "message": {"content": "Answer."}}).encode()
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
+    result = provider._ollama_generate("system", "user")
+    assert result[1] is True
     assert result.diagnostics["token_budget_status"] == "unknown"
 
 
@@ -62,15 +61,26 @@ def test_ollama_empty_content_without_budget_metadata_keeps_budget_unknown(monke
     TimeoutError("http://user:password@host/?token=secret"),
     urllib.error.URLError(TimeoutError("http://user:password@host/?token=secret")),
 ])
-def test_ollama_diagnostics_mark_timeout_without_raw_exception(monkeypatch, error):
-    def timeout(req, timeout):
-        raise error
-    monkeypatch.setattr(provider.urllib.request, "urlopen", timeout)
-    result = provider._ollama_generate("synthetic system", "synthetic question")
+def test_provider_diagnostics_mark_direct_and_wrapped_timeout_without_exception_details(monkeypatch, error):
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: (_ for _ in ()).throw(error))
+    result = provider._ollama_generate("synthetic system", "synthetic request")
     assert result.diagnostics["error_category"] == "timeout"
+    assert result.diagnostics["validation"] == "timeout"
     assert result.diagnostics["http_completed"] is False
-    assert "password" not in json.dumps(result.diagnostics)
-    assert "secret" not in json.dumps(result.diagnostics)
+    serialized = json.dumps(result.diagnostics)
+    assert "password" not in serialized and "secret" not in serialized
+
+
+def test_qwen_content_and_thinking_raw_capture_is_explicit(monkeypatch):
+    raw = json.dumps({"done": True, "done_reason": "stop", "model": "qwen3:4b",
+                      "eval_count": 9, "message": {"content": "Trả lời.", "thinking": "reason"}}).encode()
+    monkeypatch.setenv("DUSNX_CAPTURE_RAW_GENERATION", "1")
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda req, timeout: BytesIO(raw))
+    result = provider._ollama_generate("system", "user")
+    assert result[0] == "Trả lời." and result[1]
+    assert result.diagnostics["done_reason"] == "stop"
+    assert result.diagnostics["content"] == "Trả lời."
+    assert result.diagnostics["thinking"] == "reason"
 
 
 def test_provider_http_failure_does_not_expose_secret_url(monkeypatch):
@@ -122,8 +132,7 @@ def test_llm_replay_reports_no_new_provider_call(client, monkeypatch):
     calls = []
     def generate(**kwargs):
         calls.append(kwargs)
-        return provider.ProviderResult("Một câu đã sinh.", True, "ollama", "test-model", 5, called=True,
-            diagnostics={"done_reason": "stop", "eval_count": 5, "content_chars": 15})
+        return provider.ProviderResult("Một câu đã sinh.", True, "ollama", "test-model", 5, called=True)
     monkeypatch.setattr(main, "generate_response", generate)
     _, token = _register_and_login(client, "week4_llm_replay")
     h = {"Authorization": f"Bearer {token}"}
@@ -136,8 +145,6 @@ def test_llm_replay_reports_no_new_provider_call(client, monkeypatch):
     assert repeated["response_source"] == "replay" and not repeated["provider_called"]
     assert repeated["provider_used"] is None and repeated["model_used"] is None
     assert repeated["original_provenance"]["model_used"] == "test-model"
-    assert original["provider_diagnostics"]["done_reason"] == "stop"
-    assert repeated["original_provenance"]["provider_diagnostics"]["eval_count"] == 5
 
 
 def test_direct_update_rolls_back_on_deactivation_failure(client):

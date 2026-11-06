@@ -1,0 +1,3552 @@
+{
+  "timestamp_utc": "2026-11-03T16:14:54.899814+00:00",
+  "gateway_url": "http://127.0.0.1:63088",
+  "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
+  "execution_status": "completed",
+  "command": [
+    "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+    "..\\scripts\\verify_bilingual_generation.py",
+    "--expected-model",
+    "qwen3:4b",
+    "--expected-model-digest",
+    "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "--strict-language",
+    "--strict-quality",
+    "--output-dir",
+    "..\\runtime\\quality-work-20261103\\qwen3-providerdiag-r1"
+  ],
+  "working_directory": "D:\\Projects\\dusnx-platform\\python",
+  "tool_versions": {
+    "python": "3.12.10"
+  },
+  "configuration": {
+    "provider": "ollama",
+    "model": "qwen3:4b",
+    "expected_model": "qwen3:4b",
+    "expected_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "actual_model_tag": "qwen3:4b",
+    "actual_model_digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "token_budget": 512,
+    "context_size": 4096,
+    "temperature": 0.1,
+    "repeat_penalty": 1.25,
+    "repeat_last_n": 64,
+    "checkpoint": "project default",
+    "raw_capture_enabled": true
+  },
+  "cases": {
+    "CASE_01_VI_PREF_VI": {
+      "case_id": "CASE_01_VI_PREF_VI",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi về tính năng sản phẩm nội bộ không có tài liệu grounding phải được làm rõ thay vì tự sinh thông tin.",
+      "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "unknown_product_clarification"
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 26,
+        "vi_words": 7,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires explicit uncertainty or clarification and rejects unsupported capability claims",
+          "disclaimer_or_question": true,
+          "unsupported_product_claim": false
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_02_EN_PREF_EN": {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
+      "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "ci_benefits_v1",
+        "basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+        "criteria": [
+          {
+            "id": "integrate_changes",
+            "terms_any": [
+              "integrate code",
+              "integrate changes",
+              "shared repository",
+              "merge changes"
+            ]
+          },
+          {
+            "id": "automated_validation",
+            "terms_any": [
+              "automated test",
+              "automated build",
+              "build and test",
+              "run tests"
+            ]
+          },
+          {
+            "id": "early_feedback",
+            "terms_any": [
+              "early feedback",
+              "catch bugs early",
+              "detect issues early",
+              "faster feedback"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 390,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25670.999999998457,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 25656.0,
+            "tokens_generated": 390,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2604,
+              "response_sha256": "db52c1620f7bf67172d84ee7fc8d56cd4e6a45087fa3fef84b8511af9ff229ee",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "stop",
+              "prompt_eval_count": 329,
+              "eval_count": 390,
+              "total_duration": 23607230200,
+              "load_duration": 6722624000,
+              "prompt_eval_duration": 391653000,
+              "eval_duration": 16472010999,
+              "content_chars": 511,
+              "content_sha256": "635fcfddbde84f30ef25ebe935151ea58cd7c5a316d329fd45da92f3b091d57d",
+              "content": "Continuous integration provides several primary benefits for modern software engineering, including early detection of defects through frequent code merges and automated testing pipelines that prevent regression issues before they reach production environments. This practice also enables faster feedback cycles for developers, improves collaboration across teams by reducing integration conflicts, and enhances overall system stability while supporting agile development workflows in distributed team settings.",
+              "thinking_chars": 1722,
+              "thinking_sha256": "f479357f5015b1d7ac9495838251ec8186647b6558c6249144444c6ad4b5910f",
+              "thinking": "Okay, let me tackle this query about continuous integration (CI) benefits. The user wants to know the primary advantages in modern software engineering contexts.\n\nFirst I recall that CI is a practice where developers frequently merge code changes into a shared repository, followed by automated testing and builds. This helps catch issues early rather than later stages of development.\n\nThe main benefits would include:\n- Early bug detection through frequent integration\n- Automated regression tests preventing broken functionality \n- Faster feedback cycles for developers to fix problems quickly\n- Improved code quality from consistent testing practices\n- Better collaboration between team members since changes are integrated regularly\n\nI should focus on modern relevance too - like how CI fits with DevOps, cloud environments, and agile workflows. But I need to keep it concise as per instructions.\n\nImportant: Must not add examples or unrelated details beyond what's asked. The user specifically wants \"primary benefits\" so I'll list 3-4 key points without going into deep technical specifics about tools like Jenkins or GitLab CI unless relevant.\n\nAlso checking if there are any active memories to reference - but the system says no active memories, so this is fresh context from scratch.\n\nI'll phrase it as a clear explanation in English since that's what they requested. No need for translation here because user didn't specify target language (they just said \"respond in english\" generally).\n\nLet me structure:\n1) First sentence: state the core concept briefly\n2) List 3-4 key benefits with short explanations \n3) Keep it professional but accessible\n\nAvoiding any markdown as instructed. Just plain English prose.\n",
+              "validation": "passed"
+            },
+            "raw_output_sha256": "635fcfddbde84f30ef25ebe935151ea58cd7c5a316d329fd45da92f3b091d57d",
+            "raw_provider_reply": "Continuous integration provides several primary benefits for modern software engineering, including early detection of defects through frequent code merges and automated testing pipelines that prevent regression issues before they reach production environments. This practice also enables faster feedback cycles for developers, improves collaboration across teams by reducing integration conflicts, and enhances overall system stability while supporting agile development workflows in distributed team settings.",
+            "sanitized_output": "Continuous integration provides several primary benefits for modern software engineering, including early detection of defects through frequent code merges and automated testing pipelines that prevent regression issues before they reach production environments. This practice also enables faster feedback cycles for developers, improves collaboration across teams by reducing integration conflicts, and enhances overall system stability while supporting agile development workflows in distributed team settings.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "635fcfddbde84f30ef25ebe935151ea58cd7c5a316d329fd45da92f3b091d57d",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Continuous integration provides several primary benefits for modern software engineering, including early detection of defects through frequent code merges and automated testing pipelines that prevent regression issues before they reach production environments. This practice also enables faster feedback cycles for developers, improves collaboration across teams by reducing integration conflicts, and enhances overall system stability while supporting agile development workflows in distributed team settings.",
+      "raw_provider_reply": "Continuous integration provides several primary benefits for modern software engineering, including early detection of defects through frequent code merges and automated testing pipelines that prevent regression issues before they reach production environments. This practice also enables faster feedback cycles for developers, improves collaboration across teams by reducing integration conflicts, and enhances overall system stability while supporting agile development workflows in distributed team settings.",
+      "sanitized_provider_output": "Continuous integration provides several primary benefits for modern software engineering, including early detection of defects through frequent code merges and automated testing pipelines that prevent regression issues before they reach production environments. This practice also enables faster feedback cycles for developers, improves collaboration across teams by reducing integration conflicts, and enhances overall system stability while supporting agile development workflows in distributed team settings.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 4,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "ci_benefits_v1",
+          "rubric_basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+          "automated_signals": [
+            {
+              "criterion": "integrate_changes",
+              "signal_observed": false,
+              "terms_checked": [
+                "integrate code",
+                "integrate changes",
+                "shared repository",
+                "merge changes"
+              ]
+            },
+            {
+              "criterion": "automated_validation",
+              "signal_observed": true,
+              "terms_checked": [
+                "automated test",
+                "automated build",
+                "build and test",
+                "run tests"
+              ]
+            },
+            {
+              "criterion": "early_feedback",
+              "signal_observed": true,
+              "terms_checked": [
+                "early feedback",
+                "catch bugs early",
+                "detect issues early",
+                "faster feedback"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_03_VI_PREF_EN": {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
+      "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "api_gateway_operation_v1",
+        "basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+        "criteria": [
+          {
+            "id": "intermediary",
+            "terms_any": [
+              "intermediary",
+              "middle layer",
+              "đứng giữa",
+              "trung gian"
+            ]
+          },
+          {
+            "id": "route_requests",
+            "terms_any": [
+              "route requests",
+              "routes requests",
+              "forward requests",
+              "định tuyến",
+              "chuyển tiếp yêu cầu"
+            ]
+          },
+          {
+            "id": "backend_services",
+            "terms_any": [
+              "backend services",
+              "back-end services",
+              "dịch vụ phía sau",
+              "các dịch vụ"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 512,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25780.99999999904,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 25781.0,
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 3063,
+              "response_sha256": "c7335f33e849bd30a51861fd14c0ccd5dbeb6bcc79d6c20881b9ba2cd815bdc6",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 411,
+              "eval_count": 512,
+              "total_duration": 23718911900,
+              "load_duration": 8722700,
+              "prompt_eval_duration": 307968000,
+              "eval_duration": 23348327000,
+              "content_chars": 109,
+              "content_sha256": "a58b270f529ac3b33d7b0183fa39fcee947075d64c85f66f1b93443055dae383",
+              "content": "The API Gateway acts as an intermediary layer that routes client requests to the appropriate backend services",
+              "thinking_chars": 2554,
+              "thinking_sha256": "b9bbfda3f0a9d807530ace1067439ee1f5ba378f8d27d8ae7302d35bcec8720a",
+              "thinking": "Okay, let's tackle this query step by step. The user is asking for a concise explanation of how an API Gateway works in Vietnamese: \"Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.\" \n\nFirst, I need to respond in English as per the instructions since that's the selected response language. Wait, no—the user specified \"Respond in English\" at the top, so my entire answer should be in English.\n\nWait, looking back: The current request is a Vietnamese sentence asking for a short explanation of API Gateway principles. But the assistant must respond in English because it says \"Respond in English.\" So I need to translate or explain this query into an English response without changing its task type (which here is 'explain').\n\nThe user's previous messages were: first they asked about DUSN-X system features, then what are primary benefits of CI. Now the current request is a Vietnamese question asking for short explanation on API Gateway operation principles.\n\nBut according to instructions, I should respond in English without changing task type (which here is explain). So my job is to provide an concise English explanation of how API Gateways work.\n\nWait, but the user wrote their query in Vietnamese. The instruction says: \"Complete the request below without changing its task.\" The task here is explaining the principle of operation for API Gateway.\n\nSo I need to write a short English explanation (since response must be in English) about what an API Gateway does.\n\nLet me recall: An API Gateway acts as a single entry point for clients to access multiple backend services. It handles routing, authentication, rate limiting, request transformation, etc., and can also provide features like caching, logging, security protocols.\n\nSo the answer should be concise. Let's draft:\n\n\"The API Gateway serves as an intermediary layer that routes client requests to appropriate backend services while handling tasks such as authentication, authorization, rate limiting, and protocol translation.\"\n\nCheck if it covers key points: routing, auth, rate lim, maybe mention aggregation or transformation? But user wants short.\n\nYes, this seems concise. Let me make sure not to add extra info beyond the explanation of operation principles.\n\nAlso check previous messages for context—user previously asked about DUSN-X and CI benefits but those are separate topics now (current request is API Gateway). So no need to reference past conversations here since it's a new topic.\n\nNo active memories, so just answer directly in English as per instructions.\n",
+              "validation": "passed"
+            },
+            "raw_output_sha256": "a58b270f529ac3b33d7b0183fa39fcee947075d64c85f66f1b93443055dae383",
+            "raw_provider_reply": "The API Gateway acts as an intermediary layer that routes client requests to the appropriate backend services",
+            "sanitized_output": "The API Gateway acts as an intermediary layer that routes client requests to the appropriate backend services",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "a58b270f529ac3b33d7b0183fa39fcee947075d64c85f66f1b93443055dae383",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "The API Gateway acts as an intermediary layer that routes client requests to the appropriate backend services",
+      "raw_provider_reply": "The API Gateway acts as an intermediary layer that routes client requests to the appropriate backend services",
+      "sanitized_provider_output": "The API Gateway acts as an intermediary layer that routes client requests to the appropriate backend services",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 2,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "api_gateway_operation_v1",
+          "rubric_basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+          "automated_signals": [
+            {
+              "criterion": "intermediary",
+              "signal_observed": true,
+              "terms_checked": [
+                "intermediary",
+                "middle layer",
+                "đứng giữa",
+                "trung gian"
+              ]
+            },
+            {
+              "criterion": "route_requests",
+              "signal_observed": false,
+              "terms_checked": [
+                "route requests",
+                "routes requests",
+                "forward requests",
+                "định tuyến",
+                "chuyển tiếp yêu cầu"
+              ]
+            },
+            {
+              "criterion": "backend_services",
+              "signal_observed": true,
+              "terms_checked": [
+                "backend services",
+                "back-end services",
+                "dịch vụ phía sau",
+                "các dịch vụ"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "failed",
+          "reason": "provider_reported_token_limit",
+          "done_reason": "length"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_04_EN_PREF_VI": {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
+      "prompt": "Briefly explain why database indexing improves query performance.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "database_indexing_v1",
+        "basis": "The question asks for the performance mechanism; a valid short answer should connect an index to locating rows without scanning the full table. No single analogy or implementation is required.",
+        "criteria": [
+          {
+            "id": "lookup_structure",
+            "terms_any": [
+              "index structure",
+              "search structure",
+              "b-tree",
+              "b tree",
+              "cấu trúc chỉ mục"
+            ]
+          },
+          {
+            "id": "avoid_full_scan",
+            "terms_any": [
+              "full table scan",
+              "scan every row",
+              "avoid scanning",
+              "không quét toàn bộ",
+              "không cần duyệt toàn bộ"
+            ]
+          },
+          {
+            "id": "faster_lookup",
+            "terms_any": [
+              "faster lookup",
+              "reduce search time",
+              "tăng tốc tìm kiếm",
+              "giảm thời gian tìm"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 27920.999999998457,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 27921.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2815,
+              "response_sha256": "76b685acaf0589e7bb6a050e8c1d4213a034a88f3b7cced4a9556ae5f87deab1",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 480,
+              "eval_count": 512,
+              "total_duration": 25879442700,
+              "load_duration": 10671100,
+              "prompt_eval_duration": 496472000,
+              "eval_duration": 25298977000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2172,
+              "thinking_sha256": "d4c8f296e8a292e39432be0df2331e97ecb368b23614d4f59ac2e6664db0b0b2",
+              "thinking": "Okay, let's tackle this user request. The user wants a brief explanation in Vietnamese about why database indexing improves query performance.\n\nFirst, I need to recall what database indexes do. From my knowledge, an index is like a catalog that helps the database quickly find data without scanning every row. So when you have an indexed column, the DB can use it to locate records faster, especially for large tables.\n\nThe user specified \"briefly,\" so I shouldn't go into too much detail. Also, they want it in Vietnamese. Let me translate key terms: index is \"chỉ số\" or \"cấu trúc chỉ mục\", query performance might be \"hiệu suất truy vấn\". \n\nWait, the previous instruction says to keep code and URLs as original if needed, but here there's no code provided by user. The answer should just explain in Vietnamese without adding extra info.\n\nI need to make sure it's concise. Maybe start with: Cấu trúc chỉ mục trong cơ sở dữ liệu giúp tăng tốc độ truy vấn bằng cách... \n\nWait, the explanation needs to be brief. Let me think of a simple sentence. For example:\n\n\"Chỉ số (index) trong cơ sở dữ liệu cải thiện hiệu suất truy vấn nhờ việc tạo một cấu trúc tìm kiếm nhanh để định vị các hàng dữ liệu mà không cần quét toàn bộ bảng.\"\n\nBut maybe that's too long? The user said \"briefly\". Let me check the length. Maybe shorten it to: Chỉ số giúp cơ sở dữ và truy vấn nhanh hơn bằng cách giảm thời gian tìm kiếm thông qua cấu trúc chỉ dẫn.\n\nHmm, but in Vietnamese technical terms, they might use specific phrases. Alternatively:\n\n\"Chỉ mục trong cơ sở dữ liệu tăng tốc độ thực hiện truy vấn nhờ khả năng định vị nhanh các dòng dữ liệu thay vì quét toàn bộ bảng.\"\n\nYes, that's concise and accurate. Let me check if it's correct.\n\nIn databases, indexes work by creating a sorted structure (like B-trees) so the database can quickly locate records without scanning all rows. So translating this into Vietnamese: Chỉ mục giúp cơ sở dữ liệu tìm kiếm và truy vấn nhanh hơn bằng cách định vị các hàng trong bảng mà không cần quét toàn bộ.\n\nBut need to be brief. Maybe:\n\n\"Chỉ số (index) cải thiện hiệu suất truy vấn nhờ việc tạo cấu trúc để xác định nhanh chóng vị trí của dữ liệu, thay vì",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_05_AUTO_VI": {
+      "case_id": "CASE_05_AUTO_VI",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
+      "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "remote_focus_v1",
+        "basis": "The prompt asks for practical ways to sustain focus while working remotely; the rubric looks for concrete attention management, work planning, and interruption control, not a fixed list.",
+        "criteria": [
+          {
+            "id": "reduce_distractions",
+            "terms_any": [
+              "distractions",
+              "notifications",
+              "tránh xao nhãng",
+              "tắt thông báo"
+            ]
+          },
+          {
+            "id": "plan_work",
+            "terms_any": [
+              "schedule",
+              "time block",
+              "prioritize tasks",
+              "lịch trình",
+              "chia thời gian",
+              "ưu tiên công việc"
+            ]
+          },
+          {
+            "id": "breaks_or_workspace",
+            "terms_any": [
+              "break",
+              "workspace",
+              "nghỉ giải lao",
+              "không gian làm việc"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 27687.999999998283,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 27688.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2836,
+              "response_sha256": "41e0c7915892de08abc2d512daee07a2387e8853e13370688771eb0b629de8c5",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 490,
+              "eval_count": 512,
+              "total_duration": 25622097500,
+              "load_duration": 14453800,
+              "prompt_eval_duration": 420650000,
+              "eval_duration": 25124239000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2201,
+              "thinking_sha256": "23ef86c7e01eff285e8ef1eb76879038fbd881b9da561fc418f9dcb97e3fa32e",
+              "thinking": "Okay, let's tackle this user query step by step. The user is asking in Vietnamese: \"Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?\" which translates to \"How can you maintain effective focus when working remotely?\"\n\nFirst, I need to make sure the response is in Vietnamese as per their instruction. They specified that if they want a translation, use the target language; otherwise, keep explanations in Vietnamese.\n\nThe user's request here is for an explanation (giải thích) since it's asking \"how\" something works. So my job is to provide clear steps or methods in Vietnamese without adding examples unless necessary. But wait, their instructions say: \"Trả lời ngắn gọn, không thêm ví dụ hoặc thiết lập không liên quan.\" So keep the answer concise.\n\nI should check if there are any specific terms related to remote work focus that I need to use correctly in Vietnamese. Let me think about common advice for maintaining concentration when working remotely:\n\n1. Tạo môi trường làm việc chuyên nghiệp (Create a professional workspace)\n2. Thiết lập giờ làm và nghỉ ngơi rõ ràng (Set clear work and rest hours)\n3. Tránh các yếu tố phân tâm như mạng xã hội, thông báo điện thoại\n4. Sử dụng công cụ quản lý thời gian (Time management tools like Pomodoro technique)\n5. Giữ liên lạc với đồng nghiệp để tránh cảm giác cô đơn\n\nBut the user wants a concise answer without examples or extra info. So I need to list 2-3 key points in Vietnamese.\n\nWait, their instruction says: \"Giữ phần văn xuôi bằng tiếng Việt; bảo toàn code và trích dẫn gốc khi cần.\" Since this is an explanation question and there's no code/URL mentioned here, just the answer in Vietnamese.\n\nAlso check if previous memory exists. The user said \"Trí nhớ hiệu lực: Chưa có trí nhớ nào.\" So no prior context to refer to.\n\nSo I'll structure a short response with 2-3 bullet points or sentences that are actionable and concise.\n\nPossible translation:\n\nĐể duy trì sự tập trung khi làm việc từ xa, bạn nên:\n1. Thiết lập không gian làm việc riêng và hạn chế các yếu tố phân tâm như mạng xã hội.\n2. Sử dụng kỹ thuật quản lý thời gian (ví dụ: Pomodoro) để tối ưu hóa hiệu suất.\n3. Đặt lịch nghỉ ngơi đều đặn và tránh quá tải công việc",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_06_AUTO_EN": {
+      "case_id": "CASE_06_AUTO_EN",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
+      "prompt": "How does public key cryptography secure internet communications?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "public_key_crypto_v1",
+        "basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+        "criteria": [
+          {
+            "id": "asymmetric_key_pair",
+            "terms_any": [
+              "public and private key",
+              "public/private key pair",
+              "asymmetric key pair"
+            ]
+          },
+          {
+            "id": "valid_security_use",
+            "terms_any": [
+              "encrypt",
+              "decryption",
+              "digital signature",
+              "authenticate",
+              "authentication"
+            ]
+          },
+          {
+            "id": "internet_protocol_context",
+            "terms_any": [
+              "tls",
+              "https",
+              "key exchange",
+              "session key"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 439,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 23125.0,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 23125.0,
+            "tokens_generated": 439,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2703,
+              "response_sha256": "8f502728d3fbe7bc3e72f1e2c8f985a42b420de35ee67ed2b9c5f4d3e895a691",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "stop",
+              "prompt_eval_count": 325,
+              "eval_count": 439,
+              "total_duration": 21064182600,
+              "load_duration": 17080200,
+              "prompt_eval_duration": 273176000,
+              "eval_duration": 20665365000,
+              "content_chars": 648,
+              "content_sha256": "440fcbbc46c09203662c0816c9e90ce6a21b03778a771ec4c14aa62065d54162",
+              "content": "Public key cryptography secures internet communications through asymmetric encryption, where each participant has a pair of mathematically linked keys: a public key shared openly for encrypting messages and a private key kept secret to decrypt them. When data is sent over the network (e.g., via HTTPS), senders use the recipient’s **public key** to encrypt content so only their corresponding **private key** can decode it, preventing eavesdroppers from reading intercepted transmissions. This foundation enables secure authentication in protocols like TLS/SSL and ensures confidentiality without requiring pre-shared secrets for every connection.",
+              "thinking_chars": 1684,
+              "thinking_sha256": "39fe503696317f744b69b2d222f161410fb9bdbd47fb6b7607aa8396f014ad2b",
+              "thinking": "Okay, let me tackle this query about how public key cryptography secures internet communications. The user wants a concise explanation without adding extra examples or changing the task type to something else like translate or summarize—wait no, they specified \"explain\" here.\n\nFirst, I need to recall what public key cryptography is all about. It's asymmetric encryption where each person has two keys: a public key that anyone can use to encrypt messages and a private key only they have for decrypting. This setup prevents eavesdropping because even if someone intercepts the encrypted message (which uses the recipient’s public key), without their private key, it stays unreadable.\n\nThe internet relies on this through protocols like TLS/SSL which handle secure connections by using certificates to verify identities and exchange keys securely during handshakes. But I should avoid getting too technical—just focus on how it secures communications step-by-step in simple terms.\n\nWait, the user didn't ask for a specific target language since they said \"explain,\" so prose stays English as instructed. No active memories here from history (the system says none), so no need to reference anything else. \n\nI should make sure not to invent facts—like if someone mentions TLS certificates without context, I can say it's used in HTTPS but don't assume details beyond what’s standard knowledge for this explanation.\n\nStructure the answer: Start with a clear first sentence naming public key cryptography as the method, then explain encryption/decryption using keys, mention secure channels (TLS), and why it prevents interception. Keep it short—user wants conciseness per instructions.\n",
+              "validation": "passed"
+            },
+            "raw_output_sha256": "440fcbbc46c09203662c0816c9e90ce6a21b03778a771ec4c14aa62065d54162",
+            "raw_provider_reply": "Public key cryptography secures internet communications through asymmetric encryption, where each participant has a pair of mathematically linked keys: a public key shared openly for encrypting messages and a private key kept secret to decrypt them. When data is sent over the network (e.g., via HTTPS), senders use the recipient’s **public key** to encrypt content so only their corresponding **private key** can decode it, preventing eavesdroppers from reading intercepted transmissions. This foundation enables secure authentication in protocols like TLS/SSL and ensures confidentiality without requiring pre-shared secrets for every connection.",
+            "sanitized_output": "Public key cryptography secures internet communications through asymmetric encryption, where each participant has a pair of mathematically linked keys: a public key shared openly for encrypting messages and a private key kept secret to decrypt them. When data is sent over the network (e.g., via HTTPS), senders use the recipient’s **public key** to encrypt content so only their corresponding **private key** can decode it, preventing eavesdroppers from reading intercepted transmissions. This foundation enables secure authentication in protocols like TLS/SSL and ensures confidentiality without requiring pre-shared secrets for every connection.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "440fcbbc46c09203662c0816c9e90ce6a21b03778a771ec4c14aa62065d54162",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Public key cryptography secures internet communications through asymmetric encryption, where each participant has a pair of mathematically linked keys: a public key shared openly for encrypting messages and a private key kept secret to decrypt them. When data is sent over the network (e.g., via HTTPS), senders use the recipient’s **public key** to encrypt content so only their corresponding **private key** can decode it, preventing eavesdroppers from reading intercepted transmissions. This foundation enables secure authentication in protocols like TLS/SSL and ensures confidentiality without requiring pre-shared secrets for every connection.",
+      "raw_provider_reply": "Public key cryptography secures internet communications through asymmetric encryption, where each participant has a pair of mathematically linked keys: a public key shared openly for encrypting messages and a private key kept secret to decrypt them. When data is sent over the network (e.g., via HTTPS), senders use the recipient’s **public key** to encrypt content so only their corresponding **private key** can decode it, preventing eavesdroppers from reading intercepted transmissions. This foundation enables secure authentication in protocols like TLS/SSL and ensures confidentiality without requiring pre-shared secrets for every connection.",
+      "sanitized_provider_output": "Public key cryptography secures internet communications through asymmetric encryption, where each participant has a pair of mathematically linked keys: a public key shared openly for encrypting messages and a private key kept secret to decrypt them. When data is sent over the network (e.g., via HTTPS), senders use the recipient’s **public key** to encrypt content so only their corresponding **private key** can decode it, preventing eavesdroppers from reading intercepted transmissions. This foundation enables secure authentication in protocols like TLS/SSL and ensures confidentiality without requiring pre-shared secrets for every connection.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 8,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "public_key_crypto_v1",
+          "rubric_basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+          "automated_signals": [
+            {
+              "criterion": "asymmetric_key_pair",
+              "signal_observed": false,
+              "terms_checked": [
+                "public and private key",
+                "public/private key pair",
+                "asymmetric key pair"
+              ]
+            },
+            {
+              "criterion": "valid_security_use",
+              "signal_observed": true,
+              "terms_checked": [
+                "encrypt",
+                "decryption",
+                "digital signature",
+                "authenticate",
+                "authentication"
+              ]
+            },
+            {
+              "criterion": "internet_protocol_context",
+              "signal_observed": true,
+              "terms_checked": [
+                "tls",
+                "https",
+                "key exchange",
+                "session key"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_07_VERBATIM_ENTITIES": {
+      "case_id": "CASE_07_VERBATIM_ENTITIES",
+      "case_type": "application_formatting",
+      "objective": "Định dạng cấu hình .env từ các giá trị người dùng cung cấp; phân biệt formatter với generation.",
+      "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "DUSNX_PORT=8088"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://api.dusnx.org/v1/auth\nDUSNX_PORT=8088\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://api.dusnx.org/v1/auth\nDUSNX_PORT=8088\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "DUSNX_PORT",
+              "8088"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "DUSNX_PORT",
+              "8088"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "VARIANT_14_ENTITY_CONFIG_WEBHOOK": {
+      "case_id": "VARIANT_14_ENTITY_CONFIG_WEBHOOK",
+      "case_type": "application_formatting",
+      "objective": "Tạo cấu hình .env, bảo toàn URL và assignment chính xác; không được chỉ chép prompt.",
+      "prompt": "Viết một đoạn cấu hình .env cho webhook, giữ URL https://hooks.example.net/v2/events và đặt WEBHOOK_RETRY_LIMIT=7. Giải thích ngắn gọn cách áp dụng.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "WEBHOOK_RETRY_LIMIT=7"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://hooks.example.net/v2/events\nWEBHOOK_RETRY_LIMIT=7\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://hooks.example.net/v2/events\nWEBHOOK_RETRY_LIMIT=7\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "WEBHOOK_RETRY_LIMIT",
+              "7"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "WEBHOOK_RETRY_LIMIT",
+              "7"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_15_ENTITY_CONFIG_QUERY_URL": {
+      "case_id": "VARIANT_15_ENTITY_CONFIG_QUERY_URL",
+      "case_type": "application_formatting",
+      "objective": "Tạo cấu hình .env, giữ nguyên URL có query/punctuation và giá trị không bị đổi.",
+      "prompt": "Provide an example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast, and set CACHE_TTL_SECONDS=45; include one sentence explaining where to put it.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "CACHE_TTL_SECONDS=45"
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://edge.example.org/api/v3?mode=fast\nCACHE_TTL_SECONDS=45\n```\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://edge.example.org/api/v3?mode=fast\nCACHE_TTL_SECONDS=45\n```\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 2,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "CACHE_TTL_SECONDS",
+              "45"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "CACHE_TTL_SECONDS",
+              "45"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION": {
+      "case_id": "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION",
+      "case_type": "application_formatting",
+      "objective": "Định dạng nhiều assignment đã cho, giữ giá trị có khoảng trắng và URL có query; không tạo biến từ query URL.",
+      "prompt": "Viết cấu hình .env với SERVICE_LABEL=\"orders api\", MAX_RETRIES = 3 và endpoint https://cfg.example.net/v1/run?mode=fast,.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "SERVICE_LABEL=orders api",
+          "MAX_RETRIES=3"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://cfg.example.net/v1/run?mode=fast\nSERVICE_LABEL=\"orders api\"\nMAX_RETRIES=3\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://cfg.example.net/v1/run?mode=fast\nSERVICE_LABEL=\"orders api\"\nMAX_RETRIES=3\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "SERVICE_LABEL",
+              "orders api"
+            ],
+            [
+              "MAX_RETRIES",
+              "3"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "MAX_RETRIES",
+              "3"
+            ],
+            [
+              "SERVICE_LABEL",
+              "orders api"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_20_ENV_VALUE_NOT_PROVIDED": {
+      "case_id": "VARIANT_20_ENV_VALUE_NOT_PROVIDED",
+      "case_type": "application_clarification",
+      "objective": "Không tự tạo giá trị cấu hình; hỏi người dùng khi họ nêu key nhưng chưa chọn value.",
+      "prompt": "Create a .env setting named CACHE_TTL_SECONDS, but I have not chosen its value yet.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "missing_config_value_clarification",
+        "key": "CACHE_TTL_SECONDS"
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "application_clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "What value should `CACHE_TTL_SECONDS` have?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "What value should `CACHE_TTL_SECONDS` have?",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 1,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires clarification for a missing value and rejects invented assignment values",
+          "key": "CACHE_TTL_SECONDS",
+          "asks_for_value": true,
+          "invented_value": false
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP": {
+      "case_id": "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau topic switch mới phải dùng chủ đề mới, không chỉ đạt bằng nhắc keyword; nội dung semantic cần human review.",
+      "prompt": "Nó có ưu điểm gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [
+        "Tôi đang so sánh monolith và microservices.",
+        "Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC)."
+      ],
+      "task_rubric": {
+        "kind": "context_subject",
+        "subject_terms": [
+          "elliptic-curve",
+          "elliptic curve",
+          "ECC",
+          "đường cong elliptic"
+        ],
+        "forbidden_terms": [
+          "monolith",
+          "microservices"
+        ],
+        "factual_red_flags": [
+          {
+            "id": "passwords_misrepresented_as_direct_ecc_encryption",
+            "pattern": "(?i)(?:(?:encrypt(?:ing|ion)?|encryption method).{0,30}passwords?|mã hóa.{0,20}mật khẩu)"
+          },
+          {
+            "id": "elliptic_curve_misrepresented_as_linear",
+            "pattern": "(?i)(?:linear equation|phương trình (?:số )?tuyến tính)"
+          },
+          {
+            "id": "unqualified_ecc_superiority_over_rsa",
+            "pattern": "(?i)(?:more secure than RSA|bảo mật tốt hơn (?:so với )?thuật toán RSA)"
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 27967.99999999712,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 27968.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2834,
+              "response_sha256": "74ff5ed643d7bd3234f31bc5e66f54e3a2bca3a512467c163de555607016e9e3",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 567,
+              "eval_count": 512,
+              "total_duration": 25905586100,
+              "load_duration": 9073400,
+              "prompt_eval_duration": 261927000,
+              "eval_duration": 25538263000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2384,
+              "thinking_sha256": "92786042ee4bbc80bb91bfa681fffa38052feac52f60e3b3340d752fa682f2e5",
+              "thinking": "Okay, let's tackle this user query step by step. The user is asking about the advantages of elliptic curve cryptography (ECC) in Vietnamese. First, I need to recall what ECC is and its main benefits.\n\nThe previous context says they're learning ECC, so the answer should be relevant without assuming prior knowledge beyond that. Since it's a technical topic, I have to make sure not to add incorrect info or guess features from product names.\n\nI remember ECC has smaller key sizes compared to RSA, which makes it more efficient for devices with limited resources like mobile phones and IoT devices. Also, the security level is higher per bit of key size, so you need less computational power for encryption and decryption.\n\nWait, but I should check if there's any specific advantage they might be interested in here. The user just asked \"Nó có ưu điểm gì?\" which translates to \"What are its advantages?\"\n\nI need to list the main points concisely in Vietnamese without technical jargon that's too complex. Let me think: smaller key sizes, better security per bit, efficient for resource-constrained systems.\n\nAlso, make sure not to mention anything about specific products unless there's info from context (which there isn't here). The user hasn't provided any product names or URLs related to ECC in their history, so I shouldn't assume that.\n\nWait the previous message says \"Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC).\" So they're switching topics and learning about ECC. They want advantages of ECC here.\n\nSo answer should be in Vietnamese, list 2-3 key points without code or URLs since it's a general question. But the user said to keep code, URL etc if applicable. Since this is an explanation, maybe no codes needed unless they're part of examples (but the user didn't ask for that).\n\nWait the instruction says: \"Giữ nguyên code, URL, tên riêng và trích dẫn khi phù hợp.\" So in this case, since it's a general question about ECC advantages, there might not be any specific URLs or code to include. But maybe mention some standard terms like ECDSA (Elliptic Curve Digital Signature Algorithm) as an example? Wait the user didn't ask for examples.\n\nWait no, they just want the advantages in Vietnamese. Let me structure it:\n\n- Kích thước khóa nhỏ hơn so với RSA → tiết kiệm tài nguyên\n- Mức độ bảo mật cao cho mỗi bit khóa (tương đương RSA có kích thước",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT": {
+      "case_id": "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT",
+      "case_type": "llm_generation",
+      "objective": "Yêu cầu tiếng Việt nhưng đặt response preference tiếng Anh; đánh giá riêng ngôn ngữ và tín hiệu nội dung.",
+      "prompt": "Nói ngắn gọn một lợi ích của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "api_gateway_benefit_v1",
+        "basis": "The request asks for one benefit; accepted concepts include simplified client access, centralized routing, or shared cross-cutting controls.",
+        "criteria": [
+          {
+            "id": "simplified_access",
+            "terms_any": [
+              "single entry point",
+              "simplifies client access",
+              "one endpoint",
+              "điểm truy cập"
+            ]
+          },
+          {
+            "id": "routing_or_shared_controls",
+            "terms_any": [
+              "routing",
+              "route requests",
+              "authentication",
+              "rate limiting",
+              "định tuyến"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 30140.99999999962,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 30141.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2889,
+              "response_sha256": "f9ce741fb531007e84d39aa585a4bb4938371ca09444e13f887a96d4b6e8de9f",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 403,
+              "eval_count": 512,
+              "total_duration": 28099608900,
+              "load_duration": 6252200,
+              "prompt_eval_duration": 260851000,
+              "eval_duration": 27715746000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2398,
+              "thinking_sha256": "35b460cc8dfd1af1385cb17bfbe5b09aa0288cbbb5da49fde7ac4a034f07b7fe",
+              "thinking": "Okay, let's see here. The user wants a short explanation of one benefit of an API Gateway. Wait, but the conversation history shows they were previously talking about elliptic curve cryptography (ECC) in Vietnamese.\n\nHmm, so first I need to check if there's any context from their previous messages that might relate. They said \"Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC).\" which translates to switching topics because they're studying ECC. Then the next message was \"Nó có ưu điểm gì?\" meaning \"What are its advantages?\"\n\nBut now, in their current request, it's written in Vietnamese as \"Nói ngắn gọn một lợi ích của API Gateway.\" So that means: \"Briefly state one benefit of an API Gateway.\"\n\nWait a second. The user switched topics from ECC to asking about API Gateways? Because the previous messages were about ECC advantages (they asked for benefits), but now they're talking about API Gateway's benefits.\n\nBut in their current request, it's written in Vietnamese: \"Nói ngắn gọn một lợi ích của API Gateway.\" So translating that directly is \"Briefly state one benefit of an API Gateway.\"\n\nThe user might have made a mistake here because the previous topic was ECC (elliptic curve cryptography), but now they're asking about API Gateways. However, according to their instructions: use recent conversation history only for reference resolution.\n\nWait, looking at the active memories and same-session history:\n\nUser previously said in Vietnamese that they switched topics while studying ECC, then asked \"Nó có ưu điểm gì?\" which is a question about advantages of something (probably ECC). Then now the current request is another message in Vietnamese asking for one benefit of API Gateway.\n\nSo there's a topic shift here. The user might have intended to ask about ECC benefits but switched topics? Wait no, their first message was \"Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC).\" which translates as \"Switching to another topic: I'm studying Elliptic Curve Cryptography (ECC)\". Then they asked \"Nó có ưu điểm gì?\" meaning \"What are its advantages?\"\n\nSo the user was talking about ECC's benefits. But now, in their current request, it's a new message asking for one benefit of API Gateway.\n\nWait, but according to the problem statement: The user has made two messages so far:\n\n1. Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_23_TOPIC_SHIFT_TLS_FOLLOWUP": {
+      "case_id": "VARIANT_23_TOPIC_SHIFT_TLS_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "After an explicit topic switch, answer the short follow-up from the latest TLS certificate/hostname context; a topic keyword alone does not establish correctness.",
+      "prompt": "What risk does that check reduce?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [
+        "I am comparing PostgreSQL and MySQL for transaction-heavy applications.",
+        "Switching topics: I am learning how TLS validates a server certificate and hostname."
+      ],
+      "task_rubric": {
+        "kind": "context_subject",
+        "subject_terms": [
+          "TLS",
+          "certificate",
+          "hostname",
+          "man-in-the-middle"
+        ],
+        "forbidden_terms": [
+          "PostgreSQL",
+          "MySQL",
+          "database"
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 29202.9999999977,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 29203.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2987,
+              "response_sha256": "9529b4935f37c5654cde823613fac47b76c06127bd6838758cdd3ffb2622c256",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 443,
+              "eval_count": 512,
+              "total_duration": 27148581000,
+              "load_duration": 7040600,
+              "prompt_eval_duration": 260670000,
+              "eval_duration": 26789666000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2604,
+              "thinking_sha256": "292b2e1ffb2723ad698cc238db1ede5ca7be8f01c34b4be8c0f2ffcf3f608e30",
+              "thinking": "Okay, let's see here. The user is asking: \"What risk does that check reduce?\" Hmm, but I need to figure out what context they're referring to because the conversation history has a few topics switched around.\n\nLooking at the recent chat history:\n\n- User started by switching to ECC (elliptic curve cryptography) learning.\n- Then asked about advantages of ECC.\n- Next question was short on an API Gateway benefit.\n- Later, user compared PostgreSQL and MySQL for transaction-heavy apps.\n- Now they switched again: \"I am learning how TLS validates a server certificate and hostname.\"\n\nWait, the current request is in English. The previous topic after switching topics was TLS validation. But the user's last message says: \"Switching topics: I am learning how TLS validates a server certificate and hostname.\" So maybe this question about what risk that check reduces refers to something related to TLS.\n\nBut wait, the phrase \"that check\" is vague here. In TLS context, there are checks like verifying certificates against the hostname (SNI), checking certificate chain validity, etc. The user might be referring to a specific step in TLS handshake where a server's certificate is validated.\n\nWait, but the question says: What risk does that check reduce? So \"that check\" probably refers to some previous mention of a check they were discussing. However, looking at the conversation history provided by the assistant (the active user memories and same-session history), there isn't any specific prior context where a particular check was mentioned in relation to TLS.\n\nWait, let me recheck: The last message from the user is \"Switching topics: I am learning how TLS validates a server certificate and hostname.\" So they're now focusing on that topic. But their current request (\"What risk does that check reduce?\") might be referring to something related to this new topic (TLS validation).\n\nIn TLS, when validating a server's certificate against the hostname, one of the checks is ensuring that the certificate matches the domain name you are trying to connect to. The main risks here would include man-in-the-middle attacks if the certificate isn't properly validated.\n\nBut without knowing exactly which \"check\" they're referring to (since it says \"that check\"), I need to be careful not to assume too much. However, given that their last topic is TLS validation of certificates and hostnames, perhaps this question relates to a specific step in that process.\n\nFor example: In the context of TLS certificate verification, one common check is verifying that the server's hostname matches what's presented in",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_24_ECC_STANDARD_USE": {
+      "case_id": "VARIANT_24_ECC_STANDARD_USE",
+      "case_type": "llm_generation",
+      "objective": "State one standard use of elliptic-curve cryptography; automated concept signals do not establish factual correctness.",
+      "prompt": "Name one standard use of elliptic-curve cryptography in secure communications.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "ecc_standard_use_v1",
+        "basis": "A valid example should identify a standard cryptographic use; source/factual review remains required.",
+        "criteria": [
+          {
+            "id": "key_agreement",
+            "terms_any": [
+              "ECDH",
+              "key agreement",
+              "key exchange"
+            ]
+          },
+          {
+            "id": "digital_signature",
+            "terms_any": [
+              "ECDSA",
+              "digital signature",
+              "signatures"
+            ]
+          },
+          {
+            "id": "secure_protocol",
+            "terms_any": [
+              "TLS",
+              "secure channel",
+              "authenticate"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 512,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 27844.00000000096,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 27844.0,
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2725,
+              "response_sha256": "c654895f42f785feb31fb23e040c2fdb141a45b421912464c1393c264806792f",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 330,
+              "eval_count": 512,
+              "total_duration": 25787271200,
+              "load_duration": 6946300,
+              "prompt_eval_duration": 429863000,
+              "eval_duration": 25267057000,
+              "content_chars": 119,
+              "content_sha256": "707c786f748b86f8e387c847a47d078103443b02665e62c660b91e8d1635ac67",
+              "content": "One common standard application of elliptic-curve cryptography in secure communications is **ephemeral key exchange via",
+              "thinking_chars": 2234,
+              "thinking_sha256": "9022ec8fefb501aca7d197bc9dce44378f54c8e4a546cd96633efc0ce9797155",
+              "thinking": "Okay, let's tackle this query step by step. The user wants me to name one standard use of elliptic-curve cryptography (ECC) in secure communications. \n\nFirst, I need to recall what ECC is commonly used for. From my knowledge base, ECC is a type of public-key cryptosystem that offers security with smaller key sizes compared to RSA. It's widely applied in various protocols.\n\nThe most standard use case here would be TLS/SSL handshakes. Specifically, elliptic-curve cryptography is often employed in the ECDHE (Elliptic Curve Diffie-Hellman Ephemeral) key exchange mechanism within SSL/TLS versions like 1.2 and above. This provides forward secrecy by generating temporary keys for each session.\n\nWait, but I should make sure this is accurate. Let me think: Yes, TLS uses ECC in the form of ECDSA (Elliptic Curve Digital Signature Algorithm) for digital signatures as well, or ECDHE for key exchange. The question asks for a standard use case in secure communications—so either could be correct.\n\nHmm, but maybe the most common example is using ECC in SSL/TLS to establish secure connections between clients and servers. For instance, when you visit HTTPS websites, they often use elliptic curves like Curve25519 or secp256k1 for key exchange.\n\nWait, another angle: The user might be expecting a specific protocol name. Let me check standard references. In the context of secure communications (like internet traffic), ECC is used in TLS 1.3 with ECDHE as part of the handshake process to securely establish session keys.\n\nYes, so one clear answer would be \"Elliptic-curve cryptography is commonly used for key exchange in SSL/TLS protocols via ephemeral Diffie-Hellman (ECDH) to provide forward secrecy.\"\n\nBut I need to phrase it concisely. The user asked for a single standard use case. Let me confirm: ECDHE is indeed the primary application here.\n\nAlternatively, ECDSA signatures are another common use—like in digital certificates or signing messages—but key exchange via ECC (ECDH) might be more directly related to secure communications setup between two parties.\n\nThe question says \"secure communications,\" so establishing a shared secret securely would fit. So I'll go with ECDHE for TLS handshakes as the standard use case.\n",
+              "validation": "passed"
+            },
+            "raw_output_sha256": "707c786f748b86f8e387c847a47d078103443b02665e62c660b91e8d1635ac67",
+            "raw_provider_reply": "One common standard application of elliptic-curve cryptography in secure communications is **ephemeral key exchange via",
+            "sanitized_output": "One common standard application of elliptic-curve cryptography in secure communications is **ephemeral key exchange via",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "707c786f748b86f8e387c847a47d078103443b02665e62c660b91e8d1635ac67",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "One common standard application of elliptic-curve cryptography in secure communications is **ephemeral key exchange via",
+      "raw_provider_reply": "One common standard application of elliptic-curve cryptography in secure communications is **ephemeral key exchange via",
+      "sanitized_provider_output": "One common standard application of elliptic-curve cryptography in secure communications is **ephemeral key exchange via",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 1,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "ecc_standard_use_v1",
+          "rubric_basis": "A valid example should identify a standard cryptographic use; source/factual review remains required.",
+          "automated_signals": [
+            {
+              "criterion": "key_agreement",
+              "signal_observed": true,
+              "terms_checked": [
+                "ECDH",
+                "key agreement",
+                "key exchange"
+              ]
+            },
+            {
+              "criterion": "digital_signature",
+              "signal_observed": false,
+              "terms_checked": [
+                "ECDSA",
+                "digital signature",
+                "signatures"
+              ]
+            },
+            {
+              "criterion": "secure_protocol",
+              "signal_observed": false,
+              "terms_checked": [
+                "TLS",
+                "secure channel",
+                "authenticate"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "failed",
+          "reason": "provider_reported_token_limit",
+          "done_reason": "length"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_25_TRANSLATE_PRESERVE_LITERAL": {
+      "case_id": "VARIANT_25_TRANSLATE_PRESERVE_LITERAL",
+      "case_type": "llm_generation",
+      "objective": "Translate explanatory prose to English while preserving the user-supplied URL and KEY=VALUE literal exactly.",
+      "prompt": "Translate this sentence to English: Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "DUSNX_PORT=8188"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 26157.00000000288,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 26157.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2556,
+              "response_sha256": "a92403375f2d2079c59a7bac7ae578d01921ed83812cf51bb77f3b77de9d1132",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 449,
+              "eval_count": 512,
+              "total_duration": 24083972200,
+              "load_duration": 11754700,
+              "prompt_eval_duration": 323245000,
+              "eval_duration": 23657831000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2066,
+              "thinking_sha256": "98864dfedae5666bd86de90696a1165c5abedee258dfb0567d3c2f4bf6c9b96c",
+              "thinking": "Okay, let's tackle this translation task step by step. The user wants me to translate a Russian sentence into English.\n\nFirst, I'll look at the original text: \"Дịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối.\"\n\nBreaking it down:\n\n- \"Dịch vụ\" translates to \"Service\".\n- The URL part is already in English (https://service.example.net/v2), so that stays as is.\n- \"dùng biến DUSNX_PORT=8188\" – here, \"dùng\" means \"uses\", and \"biến\" is variable. So it's saying the service uses a variable named DUSNX_PORT set to 8188.\n- \"để nhận kết nối.\" translates to \"to accept connections.\"\n\nWait, but in technical contexts like this, when they say \"dùng biến... để...\", maybe it's more precise as \"uses the environment variable...\" because variables here are likely environment variables.\n\nLet me check each part again. The phrase structure is: [Service] uses [variable name]=[value] to accept connections.\n\nIn English tech terms, we often refer to environment variables with names like DUSNX_PORT=8188 (though usually they're written as key=value pairs). So the translation should be something like:\n\n\"The service https://service.example.net/v2 uses the environment variable DUSNX_PORT=8188 to accept connections.\"\n\nWait, but in English, when listing variables, sometimes we say \"the environment variable named...\" or just state it directly. Let me see.\n\nOriginal Russian: Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối.\n\nSo the verb here is \"dùng\" (uses), followed by \"biến\" (variable) with its value, then purpose (\"để nhận kết nối\").\n\nIn technical English, it's common to say: \"[Service] uses environment variable [NAME]=[VALUE] for...\"\n\nBut in this case, maybe they just mean the service uses that specific variable. The phrase \"dùng biến DUSNX_PORT=8188\" translates directly as \"uses variable DUSNX_PORT=8188\".\n\nWait, but variables are usually referred to with their names and values. So perhaps it's better phrased as: \"...uses the environment variable DUSNX_PORT set to 8188...\"\n\nBut in some contexts, they",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_26_CROSS_LANGUAGE_PASSWORD_SALT": {
+      "case_id": "VARIANT_26_CROSS_LANGUAGE_PASSWORD_SALT",
+      "case_type": "llm_generation",
+      "objective": "Answer an unseen Vietnamese prompt in the explicitly selected English response language; content quality remains separate.",
+      "prompt": "Hãy giải thích ngắn gọn vì sao cần salt khi băm mật khẩu.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "password_salt_v1",
+        "basis": "A useful explanation should describe per-password random salt and its role against precomputed hash attacks; human factual review remains required.",
+        "criteria": [
+          {
+            "id": "unique_random_salt",
+            "terms_any": [
+              "unique salt",
+              "random salt",
+              "different salt"
+            ]
+          },
+          {
+            "id": "precomputation_resistance",
+            "terms_any": [
+              "rainbow table",
+              "precomputed",
+              "pre-computed"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "tokens_generated": 512,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 25844.00000000096,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 25844.0,
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2925,
+              "response_sha256": "9f939ed1e021289d4c51a5eb7129f9e0f6c25bce78e95e8391e02c6068b94468",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 456,
+              "eval_count": 512,
+              "total_duration": 23790732800,
+              "load_duration": 12031300,
+              "prompt_eval_duration": 351992000,
+              "eval_duration": 23363151000,
+              "content_chars": 37,
+              "content_sha256": "c8f94c86c1493337b29516866c1fad6093afe5e5aedea5c2692a3ac500001f9b",
+              "content": "Salts add unique, random data to each",
+              "thinking_chars": 2438,
+              "thinking_sha256": "dad90462f153ddbf8f1962e3fb4e4694da4b8f337c0ed0249b0fd36e3d9e78c9",
+              "thinking": "Okay, let's tackle this user query step by step. The user is asking for a short explanation in Vietnamese about why you need a salt when hashing passwords. Wait, no—the actual user request here says: \"Hãy giải thích ngắn gọn vì sao cần salt khi băm mật khẩu.\" Translating that to English would be something like \"Please explain briefly why salt is needed when hashing passwords.\"\n\nBut the instructions say I should respond in English because it's specified. Wait, no—the current user request here is written in Vietnamese: \"Hãy giải thích ngắn gọn vì sao cần salt khi băm mật khẩu.\" So they want a short explanation in English? Let me check.\n\nThe problem says: Respond in English. Complete the request below without changing its task... If the user asks to translate, follow the requested target language; otherwise keep explanatory prose in English.\n\nWait, looking at the history:\n\nUser previously switched topics about TLS and elliptic-curve cryptography, then asked a translation question from Russian (Dịch vụ https://service.example.net/v2 dùng biến DUSNX_PORT=8188 để nhận kết nối). The assistant translated that to English. Now this new user request is in Vietnamese: \"Hãy giải thích ngắn gọn vì sao cần salt khi băm mật khẩu.\" So the task here is an explanation (not a translation), so I need to respond with explanatory prose in English.\n\nThe instruction says: If the user asks to translate, follow target language; otherwise keep prose in English. Since this request isn't asking for a translation but explaining why salt is needed when hashing passwords, response should be in English.\n\nSo first, explain briefly why salts are used in password hashing.\n\nKey points about salting:\n\n- Salts add randomness to the hash input.\n- Prevents rainbow table attacks because each user has unique salt.\n- Ensures that even if two users have same password, their hashes differ due to different salts.\n- Makes precomputed attack tables (like rainbow tables) ineffective since without knowing the specific salt for a given password, attackers can't reuse existing hashes.\n\nThe explanation should be concise. The user wants it short and in English.\n\nCheck active memories: none here. Recent history is about TLS and elliptic curves but this new request is separate—so no need to reference previous topics unless relevant (but they're different).\n\nSo the answer would start with \"Salts are used when hashing passwords...\" then explain briefly.\n",
+              "validation": "passed"
+            },
+            "raw_output_sha256": "c8f94c86c1493337b29516866c1fad6093afe5e5aedea5c2692a3ac500001f9b",
+            "raw_provider_reply": "Salts add unique, random data to each",
+            "sanitized_output": "Salts add unique, random data to each",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "c8f94c86c1493337b29516866c1fad6093afe5e5aedea5c2692a3ac500001f9b",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Salts add unique, random data to each",
+      "raw_provider_reply": "Salts add unique, random data to each",
+      "sanitized_provider_output": "Salts add unique, random data to each",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "password_salt_v1",
+          "rubric_basis": "A useful explanation should describe per-password random salt and its role against precomputed hash attacks; human factual review remains required.",
+          "automated_signals": [
+            {
+              "criterion": "unique_random_salt",
+              "signal_observed": false,
+              "terms_checked": [
+                "unique salt",
+                "random salt",
+                "different salt"
+              ]
+            },
+            {
+              "criterion": "precomputation_resistance",
+              "signal_observed": false,
+              "terms_checked": [
+                "rainbow table",
+                "precomputed",
+                "pre-computed"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "failed",
+          "reason": "provider_reported_token_limit",
+          "done_reason": "length"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_27_HTTP_IDEMPOTENCY_EXPLANATION": {
+      "case_id": "VARIANT_27_HTTP_IDEMPOTENCY_EXPLANATION",
+      "case_type": "llm_generation",
+      "objective": "Give one concise, accurate explanation of idempotency in HTTP retries; concept signals do not claim semantic review.",
+      "prompt": "In one sentence, explain what idempotency means when an HTTP request is retried.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "http_idempotency_v1",
+        "basis": "A valid explanation should state that repeated equivalent requests have the same intended effect; factual/semantic review remains required.",
+        "criteria": [
+          {
+            "id": "repeat_effect",
+            "terms_any": [
+              "same effect",
+              "same result",
+              "same intended effect"
+            ]
+          },
+          {
+            "id": "repeated_request",
+            "terms_any": [
+              "repeated request",
+              "repeat the request",
+              "retry"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 28344.00000000096,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 28344.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2789,
+              "response_sha256": "b726618eaad336fa1fc93b604d9832244fc43aa706bc4441fbc68aeef95e910c",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 335,
+              "eval_count": 512,
+              "total_duration": 26279521900,
+              "load_duration": 13532400,
+              "prompt_eval_duration": 384428000,
+              "eval_duration": 25784764000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2399,
+              "thinking_sha256": "732935a53305bd93766c8be9d94b4283a3123d56d9f51f7e749194950585a86d",
+              "thinking": "Okay, let's tackle this user query. The user wants a single-sentence explanation of idempotency in the context of retrying HTTP requests.\n\nFirst, I need to recall what idempotency means here. From my knowledge base: Idempotent operations ensure that making multiple identical calls has the same effect as one call. In HTTP terms, this is crucial for retries because if a request can be safely retried without side effects (like creating duplicate resources), it's idempotent.\n\nWait, but I should make sure not to mix up with other concepts like幂等性 in Chinese contexts. The user specified English response and the term \"idempotency\" here is standard HTTP terminology.\n\nThe key point for retries: If an HTTP request is idempotent (e.g., using methods like GET or DELETE), retrying it won't cause unintended side effects, such as creating multiple resources when a POST might. But wait—actually, in practice, some requests are designed to be safe even if retried.\n\nWait, the user wants one sentence explaining what idempotency means *when an HTTP request is retried*. So I need to focus on that scenario.\n\nLet me structure it: Idempotency ensures that retrying a single HTTP request does not cause unintended side effects (e.g., duplicate resource creation), meaning multiple identical requests have the same outcome as one execution. But maybe more precise?\n\nWait, in RESTful APIs, idempotent methods are those where repeated calls don't change state beyond what's already done once—like GET and DELETE.\n\nBut for HTTP retries: If a request is idempotent (e.g., using safe methods), retrying it won’t cause issues. So the explanation should be that an idempotent HTTP request, when retried, produces no additional side effects compared to executing it once.\n\nWait, but I need to phrase this in one sentence without being too technical. Let me check standard definitions:\n\nFrom MDN: \"Idempotency is a property of functions and/or operations where the result remains consistent regardless of how many times they are executed.\"\n\nIn HTTP context: A request method (e.g., GET) is idempotent because it doesn't change state, so retrying won’t cause side effects.\n\nSo for this user's question: When an HTTP request is retried, if it’s idempotent, the outcome remains identical to a single execution—no unintended consequences like duplicate processing or resource creation.\n\nBut I need to make sure not to add",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_08_MEMORY_RECALL_TEMPLATE": {
+      "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+      "case_type": "template_recall",
+      "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
+      "prompt": "Cụm máy chủ chọn công nghệ gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [
+        "Hãy nhớ rằng chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026."
+      ],
+      "task_rubric": null,
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "grounded_template",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": [
+          "ad0cf87a06d4c3b0dc0d9bf4fa3308a4"
+        ]
+      },
+      "verbatim_reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 12,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "grounded_template"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "not_applicable",
+          "method": "memory-template contract is evaluated separately"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen3:4b pipeline.",
+      "evaluation_label": "development_regression"
+    },
+    "CASE_09_AUTO_SHORT_HISTORY": {
+      "case_id": "CASE_09_AUTO_SHORT_HISTORY",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi mơ hồ sau khi người dùng nêu hai chủ đề phải hỏi chọn chủ đề thay vì đoán.",
+      "prompt": "Ưu điểm là gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null
+      },
+      "verbatim_reply": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 17,
+        "vi_words": 5,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "application_clarification_contract",
+          "subject_match": false,
+          "clarification": true,
+          "topic_answered": false,
+          "factual_red_flags": [],
+          "forbidden_subjects_found": [],
+          "review_required": false,
+          "review_status": "not_applicable"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "setup_history": [
+        "Tôi đang tìm hiểu về kiến trúc microservices và distributed systems."
+      ],
+      "evaluation_label": "development_regression",
+      "notes": "Multiple topics are present in the latest user turn; clarification is expected, no provider call.",
+      "quality_flags": []
+    },
+    "VARIANT_16_TOPIC_SHIFT_FOLLOWUP": {
+      "case_id": "VARIANT_16_TOPIC_SHIFT_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau khi đổi chủ đề phải bám chủ đề gần nhất trong cùng session.",
+      "prompt": "Những rủi ro của nó là gì?",
+      "setup_history": [
+        "Tôi đang tìm hiểu ưu nhược điểm của kiến trúc microservices so với monolith.",
+        "Chuyển sang chủ đề khác: tôi đang học về public key cryptography."
+      ],
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_ok": false,
+        "response_source": "provider_error",
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": "length",
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+        "response_language": "vi",
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 30485.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2982,
+              "response_sha256": "71b74034de3645a5f7c36fb8238086fa1a8ad8201064f74faec6c1df08963d91",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 566,
+              "eval_count": 512,
+              "total_duration": 28427698300,
+              "load_duration": 11950300,
+              "prompt_eval_duration": 265689000,
+              "eval_duration": 28004878000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2509,
+              "thinking_sha256": "c28cdc69568689f79f7e932a3806099f60760e06d6e9a70178d8782bceac7e63",
+              "thinking": "Okay, let's tackle this user query step by step. The user is asking about the risks of public key cryptography in Vietnamese. First, I need to recall what they mentioned earlier: \"Chuyển sang chủ đề khác: tôi đang học về public key cryptography.\" So they're currently studying public key cryptography.\n\nThe main task here is to list the risks associated with it. But wait, as per the instructions, if there's no prior memory or context that can help determine the next question, I should ask for clarification instead of guessing. However, in this case, since the user has already specified they're learning about public key cryptography and now asks \"Những rủi ro của nó là gì?\" which translates to \"What are its risks?\", it's clear they want the risks related to that topic.\n\nI need to make sure not to assume any prior knowledge beyond what's given. The previous message from user was switching topics: they were learning about public as a subject, so now asking for risks of public key cryptography.\n\nWait, but in Vietnamese technical terms, \"public key cryptography\" is usually called mã hóa khóa công khai or hệ thống mật mã khóa công khai. So the answer should be in Vietnamese too since user requested to respond in Vietnamese.\n\nBut I need to check if there are specific risks associated with public key crypto systems that might have been covered before. However, according to the memory: \"Chưa có trí nhớ nào.\" so no prior context stored here except what's given by current conversation history.\n\nThe instruction says not to use previous assistant responses as facts unless confirmed. But in this case, there was a switch topic message from user saying they're learning about public key crypto now.\n\nSo I need to list the risks of public key cryptography without adding extra info that isn't supported. Common risks include:\n\n1. Key management issues (e.g., if private keys are compromised)\n2. Quantum computing threats\n3. Side-channel attacks\n4. Implementation vulnerabilities\n\nBut since it's a technical topic, maybe in Vietnamese educational context they expect certain points.\n\nWait the user is learning about this, so I should explain risks without being too detailed but accurate.\n\nThe answer needs to be concise and in Vietnamese as per instructions.\n\nLet me structure the response:\n\n- First sentence: Nêu tên chủ đề (public key cryptography)\n- Then list các rủi ro ngắn gọn\n\nBut according to previous instruction: \"Sau một lần đổi chủ đề rõ ràng, đại từ trong câu hỏi tiếp theo nói về chủ đề",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ]
+      },
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "notes": "Automated rubric cannot establish semantic topic alignment; human review required.",
+      "quality_flags": []
+    },
+    "VARIANT_17_AMBIGUOUS_NEW_SESSION": {
+      "case_id": "VARIANT_17_AMBIGUOUS_NEW_SESSION",
+      "case_type": "clarification",
+      "objective": "Không đoán chủ đề cho câu hỏi thiếu antecedent trong session mới.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "application clarification path for missing antecedent"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim factual or human content review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_10_DURABLE_MEMORY_PREF_CHANGE": {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "case_type": "llm_generation",
+      "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
+      "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": "length",
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 29359.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2829,
+              "response_sha256": "3506859126425dd70361bc113fabd3bc92ae886c12cf451a5fcb0cf62fac7fa4",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 388,
+              "eval_count": 512,
+              "total_duration": 27308225200,
+              "load_duration": 9073100,
+              "prompt_eval_duration": 419090000,
+              "eval_duration": 26694842000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2403,
+              "thinking_sha256": "89083a0b6b91aa31ac768132b2e0d9bf8a35ee0e0586a5ad41b7c1d9334bf094",
+              "thinking": "Okay, let's tackle this query step by step. The user asked for the two most popular operating systems (hệ điều hành phổ biến nhất). First, I need to make sure my response is in English as per their instruction.\n\nWait, they specified \"Respond in English\" earlier and now want a translation or explanation? Wait no—the current request says: User wants me to respond in English. The user's original message here is Vietnamese asking for the two most popular OSes.\n\nThe task type here is explain (since it's asking for information). But I need to check if there are any active memories, but according to history, there are none. So just answer directly.\n\nIn recent context: User said \"Từ giờ trả lời bằng tiếng Anh nhé\" which means \"From now on, reply in English please.\" So the assistant should respond in English as per that instruction.\n\nThe user's current request is Vietnamese asking for two most popular OSes. The task here is to translate or explain? Wait no—the instructions say: If the user asks to translate, follow target language; otherwise keep prose in English. But this query isn't a translation request—it's an information question. So I should answer with explanation in English.\n\nSo first, list two most popular OSes globally. The top ones are Windows and macOS (Apple), but sometimes Linux is also considered very common, especially on servers or desktops. However, the user asked for \"phổ biến nhất\" which translates to most commonly used/popular.\n\nAccording to recent data from sources like Statista or other market research: As of 2023-2024, Windows has a large share (around 75% in PCs), then macOS. Linux is also widely used but maybe not as the top two for end-users. Wait, sometimes mobile OSes are considered too—like Android and iOS—but the user said \"hệ điều hành\" which usually refers to desktop/mobile? In Vietnamese context, when they say operating systems without specifying, it's often desktop.\n\nBut in this case, since the question is about most popular globally for general use (desktop), Windows and macOS. Alternatively, if mobile OSes are included, Android and iOS would be top two—but I think here \"hệ điều hành\" refers to traditional desktop OSes because Vietnamese context might not include mobile as part of that.\n\nWait, but in the answer, need to check what's considered most popular globally for operating systems. Let me recall: For example, Windows is dominant",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442"
+      },
+      "verbatim_reply": "[Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+      "sanitized_provider_output": "[Ollama returned empty content (empty_content)]",
+      "heuristic_evaluation": {
+        "actual_language": "uncertain",
+        "confidence": 0.5,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "language": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "task": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "content_quality": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "factual_accuracy": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "context_relevance": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "not_applicable",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "No content evaluation is possible for a provider error."
+        ]
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Memory preference superseded previous setting atomically.",
+      "quality_flags": []
+    },
+    "CASE_11_TWO_USERS_LANGUAGE_ISOLATION": {
+      "case_id": "CASE_11_TWO_USERS_LANGUAGE_ISOLATION",
+      "case_type": "user_preference_isolation",
+      "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+      "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+      "input_preferred_language": "auto",
+      "expected_response_language": "A:en, B:vi",
+      "user_a_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "model_used": "qwen3:4b",
+            "elapsed_ms": 29141.0,
+            "tokens_generated": 469,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 2761,
+              "response_sha256": "25d2191855a74bd25bdee23fdba4c913190f73d197af971668a76a899468289f",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "stop",
+              "prompt_eval_count": 394,
+              "eval_count": 469,
+              "total_duration": 27097298300,
+              "load_duration": 9727300,
+              "prompt_eval_duration": 315804000,
+              "eval_duration": 26623357000,
+              "content_chars": 422,
+              "content_sha256": "9183fad444e4ce6cc4ae164476c2e3e3fffb3b68ee91050032d6fe1ead23108b",
+              "content": "Open source software (OSS) refers to computer software whose source code is freely available for anyone to inspect, modify, and distribute under terms that allow sharing and collaboration. This model emphasizes transparency, community-driven development, and user freedom while adhering to specific licenses—such as the GNU General Public License (GPL)—that protect these rights without requiring proprietary restrictions.",
+              "thinking_chars": 1940,
+              "thinking_sha256": "88d2acda1af35f55d20fd284809e470f43b1608fd4e7e252e803d982830c8fb8",
+              "thinking": "Okay, let's tackle this step by step. The user wants me to respond in English about what open source software is. First, I need to recall the previous messages to make sure there are no context issues here.\n\nLooking at the history: The user first said \"Từ giờ trả lời bằng tiếng Anh nhé\" which means \"From now on, answer in English please.\" Then they asked for two popular operating systems (\"Hãy nêu 2 hệ điều hành phổ biến nhất\"). So their current request is a new one about open source software.\n\nThe task here is to explain what open source software (OSS) is. I need to make sure my response stays concise, in English as per the user's instruction earlier. The active memories are empty now since they didn't save anything specific for this context.\n\nI should define OSS clearly without adding extra examples or unrelated info. Important points: code available, community-driven development, freedom to use/modify/share, licenses like GPL vs MIT. Avoid technical jargon but be precise.\n\nWait, the user's request is straightforward—no need for translation here since they already specified English responses. The previous messages were in Vietnamese and then a switch to English answers. So I don't have to translate anything now; just answer directly.\n\nCheck if there are any references from history that might affect this response. Previous questions about OSes (like Windows, macOS) but the current question is OSS definition—so no overlap here. The user isn't asking for examples of OSS in their request though.\n\nMake sure not to add unrelated info like specific products or features unless necessary. Just a clear explanation as per standard definitions from reliable sources without inventing facts.\n\nSo structure: Start with \"Open source software (OSS) refers...\" then key characteristics, mention licenses briefly but don't dive deep into types since the user just wants what it is. Keep it to 2-3 sentences max for conciseness.\n",
+              "validation": "passed"
+            },
+            "raw_output_sha256": "9183fad444e4ce6cc4ae164476c2e3e3fffb3b68ee91050032d6fe1ead23108b",
+            "raw_provider_reply": "Open source software (OSS) refers to computer software whose source code is freely available for anyone to inspect, modify, and distribute under terms that allow sharing and collaboration. This model emphasizes transparency, community-driven development, and user freedom while adhering to specific licenses—such as the GNU General Public License (GPL)—that protect these rights without requiring proprietary restrictions.",
+            "sanitized_output": "Open source software (OSS) refers to computer software whose source code is freely available for anyone to inspect, modify, and distribute under terms that allow sharing and collaboration. This model emphasizes transparency, community-driven development, and user freedom while adhering to specific licenses—such as the GNU General Public License (GPL)—that protect these rights without requiring proprietary restrictions.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": "qwen3:4b",
+        "response_source": "llm"
+      },
+      "user_b_provenance": {
+        "provider_ok": false,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "length",
+            "elapsed_ms": 30875.0,
+            "called": true,
+            "model_used": "qwen3:4b",
+            "tokens_generated": 512,
+            "sanitizer_changed": false,
+            "provider_diagnostics": {
+              "configured_model": "qwen3:4b",
+              "num_predict": 512,
+              "call_timeout_seconds": 60.0,
+              "response_bytes": 3015,
+              "response_sha256": "ac8761939486f4abd03ac0e605a334be22ff0f587a768a9bcf4b593acb222a17",
+              "model": "qwen3:4b",
+              "done": true,
+              "done_reason": "length",
+              "prompt_eval_count": 558,
+              "eval_count": 512,
+              "total_duration": 28832633700,
+              "load_duration": 5905300,
+              "prompt_eval_duration": 304569000,
+              "eval_duration": 28421438000,
+              "content_chars": 0,
+              "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "content": "",
+              "thinking_chars": 2373,
+              "thinking_sha256": "1ce6bd4bf257cdb7e7387d55df7cf63b2a716d07b0003328721b012fe30654e8",
+              "thinking": "Okay, let's tackle this query step by step. The user wants a response in Vietnamese about what open-source software is. First, I need to make sure the answer stays in Vietnamese as per their request.\n\nThe key points here are: define \"phần mềm mã nguồn mở\" (open-source software) clearly and concisely. Since they specified not to change task type, it's a definition question so no translation needed beyond what's required.\n\nI should check if there's any specific terminology in Vietnamese for open-source that I need to use correctly. For example, \"mã nguồn mở\" is the term used here. Open-source software typically refers to software with source code available for modification and distribution under certain licenses like GPL or MIT.\n\nWait, but the user said not to add examples unless necessary. The previous instruction says: trả lời ngắn gọn, không thêm ví dụ hoặc thiết lập không liên quan. So I shouldn't include examples here.\n\nAlso need to make sure that any technical terms are correctly translated and presented in Vietnamese without adding extra info. For instance, \"phần mềm mã nguồn mở\" is the standard term for open-source software in Vietnamese tech contexts.\n\nLet me structure it: Start with a clear definition using simple Vietnamese language. Maybe something like:\n\nPhần mềm mã nguồn mở là phần mềm mà người dùng có thể truy cập và sửa đổi mã nguồn gốc của nó, thường được phân phối dưới các giấy phép như GPL hoặc MIT để đảm bảo quyền sử dụng tự do.\n\nWait, but the user might not need to mention specific licenses unless necessary. The question is \"phần mềm mã nguồn mở là gì?\" so a basic definition without too much detail would be better here.\n\nAlternatively: Phần mềm mã nguồn mở (open-source software) là loại phần mềm mà người dùng có thể xem và chỉnh sửa được mã nguồn, đồng thời phân phối lại dưới các điều kiện nhất định theo giấy phép open source.\n\nBut I need to check if \"phân phối lại\" is correct. Maybe better phrasing: Phần mềm mã nguồn mở (open-source software) là phần mềm cho phép người dùng truy cập và chỉnh sửa mã nguồn gốc, được phát hành với giấy phép đảm bảo quyền sử dụng tự do mà không bị hạn chế.\n\nHmm, but the user wants it concise and without examples. Let me try to make sure I don't add extra info beyond what's needed.\n\nAnother angle: In Vietnamese tech terms, \"mã nguồn mở\" is commonly used as a term for open-source code",
+              "validation": "empty_content"
+            },
+            "raw_output_sha256": "b2c4011bc4002d4ec525b5e904ce5b983b92e62a2fa32b525ce98c8776293442",
+            "raw_provider_reply": "[Ollama returned empty content (empty_content)]",
+            "sanitized_output": "[Ollama returned empty content (empty_content)]",
+            "quality_status": null,
+            "entity_status": null,
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": null,
+        "response_source": "provider_error"
+      },
+      "user_a_response_lang": "en",
+      "user_b_response_lang": "vi",
+      "verbatim_reply": "User A: Open source software (OSS) refers to computer software whose source code is freely available for anyone to inspect, modify, and distribute under terms that allow sharing and collaboration. This model emphasizes transparency, community-driven development, and user freedom while adhering to specific licenses—such as the GNU General Public License (GPL)—that protect these rights without requiring proprietary restrictions.\n---\nUser B: [Ollama returned empty content (empty_content)]",
+      "raw_provider_reply": {
+        "user_a": "Open source software (OSS) refers to computer software whose source code is freely available for anyone to inspect, modify, and distribute under terms that allow sharing and collaboration. This model emphasizes transparency, community-driven development, and user freedom while adhering to specific licenses—such as the GNU General Public License (GPL)—that protect these rights without requiring proprietary restrictions.",
+        "user_b": "[Ollama returned empty content (empty_content)]"
+      },
+      "sanitized_provider_output": {
+        "user_a": "Open source software (OSS) refers to computer software whose source code is freely available for anyone to inspect, modify, and distribute under terms that allow sharing and collaboration. This model emphasizes transparency, community-driven development, and user freedom while adhering to specific licenses—such as the GNU General Public License (GPL)—that protect these rights without requiring proprietary restrictions.",
+        "user_b": "[Ollama returned empty content (empty_content)]"
+      },
+      "heuristic_evaluation": {
+        "user_a": {
+          "actual_language": "en",
+          "confidence": 1.0,
+          "vi_diacritics": 0,
+          "vi_words": 0,
+          "en_words": 6,
+          "method": "heuristic"
+        },
+        "user_b": {
+          "actual_language": "uncertain",
+          "confidence": 0.5,
+          "vi_diacritics": 0,
+          "vi_words": 0,
+          "en_words": 0,
+          "method": "heuristic"
+        }
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "user_a": {
+          "transport": {
+            "status": "passed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "llm"
+          },
+          "language": {
+            "status": "matched",
+            "actual_language": "en",
+            "expected_language": "en",
+            "unsupported_script_counts": {},
+            "mixed_language_segments": 0,
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "content_quality": {
+            "status": "uncertain",
+            "reason": "No automated judgement is treated as semantic review."
+          },
+          "factual_accuracy": {
+            "status": "uncertain",
+            "reason": "Requires source-based or human review; concept presence alone is insufficient."
+          },
+          "context_relevance": {
+            "status": "uncertain"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "passed",
+            "reason": "no_provider_limit_or_obvious_open_clause",
+            "done_reason": "stop"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        },
+        "user_b": {
+          "language": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "task": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "content_quality": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "factual_accuracy": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "context_relevance": {
+            "status": "not_applicable"
+          },
+          "instruction_leak_and_repetition": {
+            "status": "not_applicable",
+            "flags": []
+          },
+          "completion": {
+            "status": "not_applicable",
+            "reason": "provider_not_successful"
+          },
+          "evaluation_limitations": [
+            "No content evaluation is possible for a provider error."
+          ]
+        }
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Isolated per-user preference state verified via distinct tokens.",
+      "quality_flags": []
+    },
+    "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION": {
+      "case_id": "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION",
+      "case_type": "clarification",
+      "objective": "Không rò rỉ antecedent từ user A hoặc session khác sang session mới của user B.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify",
+        "preferred_language": "vi",
+        "response_language": "vi"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "mixed_language_segments": 0,
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Segment-level lexical signals are heuristic; proper names and short technical phrases are intentionally insufficient on their own. Does not judge task correctness or factuality."
+        },
+        "task": {
+          "status": "passed",
+          "method": "fresh session clarification; provider must not receive other-user context"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim independent semantic review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_12_PROVIDER_OFFLINE": {
+      "case_id": "CASE_12_PROVIDER_OFFLINE",
+      "case_type": "expected_provider_error",
+      "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Ollama is unreachable (unreachable)]",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 1,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Offline error properly categorized and isolated. Not counted as generation."
+    },
+    "CASE_13_MODEL_MISSING": {
+      "case_id": "CASE_13_MODEL_MISSING",
+      "case_type": "expected_provider_error",
+      "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Ollama model is not installed (model_missing)]",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 1,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Missing model error cleanly caught. Not counted as generation."
+    }
+  },
+  "summary": {
+    "quality_flagged_cases": 0,
+    "total_cases": 27,
+    "contract_passed": 17,
+    "contract_failed": 10,
+    "real_llm_generations": 5,
+    "template_recalls": 1,
+    "application_formatting_cases": 4,
+    "application_formatting_passed": 4,
+    "expected_provider_failures": 2,
+    "eligible_language_cases": 5,
+    "linguistic_matched": 5,
+    "linguistic_divergent": 0,
+    "linguistic_uncertain": 0,
+    "linguistic_mixed": 0,
+    "task_failed": 0,
+    "task_uncertain": 5,
+    "completion_failed": 3,
+    "completion_uncertain": 0,
+    "execution_status": "completed"
+  },
+  "code_sha": "3747cbdaf4af9d8ea0ba7920c18c8bebf118cbe4",
+  "locked_case_specs_sha256": "1c7462c976ba59fab8d18c193f4788a0cabdf781c0dd1f476b607d06471fb899"
+}

@@ -1,0 +1,2704 @@
+{
+  "timestamp_utc": "2026-11-03T12:29:04.930154+00:00",
+  "gateway_url": "http://127.0.0.1:53291",
+  "test_suite": "DUSN-X Bilingual Generation and Language Policy Matrix",
+  "execution_status": "completed",
+  "command": [
+    "D:\\Projects\\dusnx-platform\\python\\.venv\\Scripts\\python.exe",
+    "scripts/verify_bilingual_generation.py",
+    "--output-dir",
+    "runtime/quality-followup-20261103/final-qwen-r18",
+    "--expected-model",
+    "qwen2.5:0.5b",
+    "--expected-model-digest",
+    "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+    "--strict-language",
+    "--strict-quality"
+  ],
+  "working_directory": "D:\\Projects\\dusnx-platform",
+  "tool_versions": {
+    "python": "3.12.10"
+  },
+  "configuration": {
+    "provider": "ollama",
+    "model": "qwen2.5:0.5b",
+    "expected_model": "qwen2.5:0.5b",
+    "expected_model_digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+    "actual_model_tag": "qwen2.5:0.5b",
+    "actual_model_digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+    "token_budget": 512,
+    "checkpoint": "project default",
+    "raw_capture_enabled": true
+  },
+  "cases": {
+    "CASE_01_VI_PREF_VI": {
+      "case_id": "CASE_01_VI_PREF_VI",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi về tính năng sản phẩm nội bộ không có tài liệu grounding phải được làm rõ thay vì tự sinh thông tin.",
+      "prompt": "Hệ thống DUSN-X có những tính năng cốt lõi nào?",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "unknown_product_clarification"
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Tôi chưa có tài liệu đã xác minh về tính năng của DUSN-X. Bạn gửi đặc tả hoặc tài liệu liên quan, tôi sẽ tóm tắt giúp.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 26,
+        "vi_words": 7,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires explicit uncertainty or clarification and rejects unsupported capability claims",
+          "disclaimer_or_question": true,
+          "unsupported_product_claim": false
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_02_EN_PREF_EN": {
+      "case_id": "CASE_02_EN_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=en. Yêu cầu sinh tiếng Anh.",
+      "prompt": "What are the primary benefits of continuous integration in modern software engineering?",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "ci_benefits_v1",
+        "basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+        "criteria": [
+          {
+            "id": "integrate_changes",
+            "terms_any": [
+              "integrate code",
+              "integrate changes",
+              "shared repository",
+              "merge changes"
+            ]
+          },
+          {
+            "id": "automated_validation",
+            "terms_any": [
+              "automated test",
+              "automated build",
+              "build and test",
+              "run tests"
+            ]
+          },
+          {
+            "id": "early_feedback",
+            "terms_any": [
+              "early feedback",
+              "catch bugs early",
+              "detect issues early",
+              "faster feedback"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 224,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 3686.999999999898,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 3687.0,
+            "tokens_generated": 224,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "5b1ddb83f3c0958b1ca4e337f62ebcb7ae98856df0551bdb64607cc2318cd870",
+            "raw_provider_reply": "The main benefit of Continuous Integration (CI) is improved collaboration among developers by allowing them to integrate their work into a single integrated development environment or CI/CD pipeline. This reduces manual testing and increases efficiency, as it enables faster feedback loops between code changes made locally versus those committed upstream in the repository.\nTo elaborate:\n- **Improved Collaboration**: Developers can now see all contributions from other team members at once during integration cycles, reducing conflicts that could have occurred if they had to manually merge each change into their own branch separately. This collaborative environment also helps with version control and code review processes.\n\nCI is particularly beneficial in modern software engineering for several reasons:\n1. **Reduced Manual Testing**: Developers can now integrate changes from multiple contributors without the need for manual testing, which saves time.\n2. **Increased Efficiency**: It allows developers to see all contributions at once during integration cycles, reducing delays and improving overall project timelines.\n\nIn summary, Continuous Integration (CI) is a key feature in modern software engineering that enhances collaboration among team members by enabling faster feedback loops between code changes made locally versus those committed upstream in the repository.",
+            "sanitized_output": "The main benefit of Continuous Integration (CI) is improved collaboration among developers by allowing them to integrate their work into a single integrated development environment or CI/CD pipeline. This reduces manual testing and increases efficiency, as it enables faster feedback loops between code changes made locally versus those committed upstream in the repository.\nTo elaborate:\n- **Improved Collaboration**: Developers can now see all contributions from other team members at once during integration cycles, reducing conflicts that could have occurred if they had to manually merge each change into their own branch separately. This collaborative environment also helps with version control and code review processes.\n\nCI is particularly beneficial in modern software engineering for several reasons:\n1. **Reduced Manual Testing**: Developers can now integrate changes from multiple contributors without the need for manual testing, which saves time.\n2. **Increased Efficiency**: It allows developers to see all contributions at once during integration cycles, reducing delays and improving overall project timelines.\n\nIn summary, Continuous Integration (CI) is a key feature in modern software engineering that enhances collaboration among team members by enabling faster feedback loops between code changes made locally versus those committed upstream in the repository.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "5b1ddb83f3c0958b1ca4e337f62ebcb7ae98856df0551bdb64607cc2318cd870",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "The main benefit of Continuous Integration (CI) is improved collaboration among developers by allowing them to integrate their work into a single integrated development environment or CI/CD pipeline. This reduces manual testing and increases efficiency, as it enables faster feedback loops between code changes made locally versus those committed upstream in the repository.\nTo elaborate:\n- **Improved Collaboration**: Developers can now see all contributions from other team members at once during integration cycles, reducing conflicts that could have occurred if they had to manually merge each change into their own branch separately. This collaborative environment also helps with version control and code review processes.\n\nCI is particularly beneficial in modern software engineering for several reasons:\n1. **Reduced Manual Testing**: Developers can now integrate changes from multiple contributors without the need for manual testing, which saves time.\n2. **Increased Efficiency**: It allows developers to see all contributions at once during integration cycles, reducing delays and improving overall project timelines.\n\nIn summary, Continuous Integration (CI) is a key feature in modern software engineering that enhances collaboration among team members by enabling faster feedback loops between code changes made locally versus those committed upstream in the repository.",
+      "raw_provider_reply": "The main benefit of Continuous Integration (CI) is improved collaboration among developers by allowing them to integrate their work into a single integrated development environment or CI/CD pipeline. This reduces manual testing and increases efficiency, as it enables faster feedback loops between code changes made locally versus those committed upstream in the repository.\nTo elaborate:\n- **Improved Collaboration**: Developers can now see all contributions from other team members at once during integration cycles, reducing conflicts that could have occurred if they had to manually merge each change into their own branch separately. This collaborative environment also helps with version control and code review processes.\n\nCI is particularly beneficial in modern software engineering for several reasons:\n1. **Reduced Manual Testing**: Developers can now integrate changes from multiple contributors without the need for manual testing, which saves time.\n2. **Increased Efficiency**: It allows developers to see all contributions at once during integration cycles, reducing delays and improving overall project timelines.\n\nIn summary, Continuous Integration (CI) is a key feature in modern software engineering that enhances collaboration among team members by enabling faster feedback loops between code changes made locally versus those committed upstream in the repository.",
+      "sanitized_provider_output": "The main benefit of Continuous Integration (CI) is improved collaboration among developers by allowing them to integrate their work into a single integrated development environment or CI/CD pipeline. This reduces manual testing and increases efficiency, as it enables faster feedback loops between code changes made locally versus those committed upstream in the repository.\nTo elaborate:\n- **Improved Collaboration**: Developers can now see all contributions from other team members at once during integration cycles, reducing conflicts that could have occurred if they had to manually merge each change into their own branch separately. This collaborative environment also helps with version control and code review processes.\n\nCI is particularly beneficial in modern software engineering for several reasons:\n1. **Reduced Manual Testing**: Developers can now integrate changes from multiple contributors without the need for manual testing, which saves time.\n2. **Increased Efficiency**: It allows developers to see all contributions at once during integration cycles, reducing delays and improving overall project timelines.\n\nIn summary, Continuous Integration (CI) is a key feature in modern software engineering that enhances collaboration among team members by enabling faster feedback loops between code changes made locally versus those committed upstream in the repository.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 12,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "ci_benefits_v1",
+          "rubric_basis": "The request asks for benefits of continuous integration; the criteria cover integration automation, feedback/defect discovery, and team integration without requiring fixed wording.",
+          "automated_signals": [
+            {
+              "criterion": "integrate_changes",
+              "signal_observed": true,
+              "terms_checked": [
+                "integrate code",
+                "integrate changes",
+                "shared repository",
+                "merge changes"
+              ]
+            },
+            {
+              "criterion": "automated_validation",
+              "signal_observed": false,
+              "terms_checked": [
+                "automated test",
+                "automated build",
+                "build and test",
+                "run tests"
+              ]
+            },
+            {
+              "criterion": "early_feedback",
+              "signal_observed": true,
+              "terms_checked": [
+                "early feedback",
+                "catch bugs early",
+                "detect issues early",
+                "faster feedback"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_03_VI_PREF_EN": {
+      "case_id": "CASE_03_VI_PREF_EN",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Việt, preferred_language=en (dịch chéo: hỏi tiếng Việt, yêu cầu trả lời tiếng Anh).",
+      "prompt": "Hãy giải thích ngắn gọn nguyên lý hoạt động của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "api_gateway_operation_v1",
+        "basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+        "criteria": [
+          {
+            "id": "intermediary",
+            "terms_any": [
+              "intermediary",
+              "middle layer",
+              "đứng giữa",
+              "trung gian"
+            ]
+          },
+          {
+            "id": "route_requests",
+            "terms_any": [
+              "route requests",
+              "routes requests",
+              "forward requests",
+              "định tuyến",
+              "chuyển tiếp yêu cầu"
+            ]
+          },
+          {
+            "id": "backend_services",
+            "terms_any": [
+              "backend services",
+              "back-end services",
+              "dịch vụ phía sau",
+              "các dịch vụ"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 181,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 2,
+        "provider_elapsed_ms": 6406.000000000859,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 3000.0,
+            "tokens_generated": 109,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "8b9c429ed9acb0e2f13b54e67f8f8ca428e949ee1bb98301a696b63651fe9068",
+            "raw_provider_reply": "API Gateway là một hệ thống quản lí các ứng dụng RESTful được sử dụng trong nhiều công nghệ hiện đại như Node.js và Django. Nó giúp bảo vệ dữ liệu từ tấn công mã hóa, cung cấp dịch vụ HTTP truy cập an toàn cho khách hàng, và hỗ trợ việc phân loại và xử lý thông tin theo yêu cầu của người dùng. API Gateway hoạt động dựa trên nguyên tắc \"tất cả đều có thể\", trong đó các ứng dụng RESTful được quản lí bởi một hệ thống API Gateway.",
+            "sanitized_output": "API Gateway là một hệ thống quản lí các ứng dụng RESTful được sử dụng trong nhiều công nghệ hiện đại như Node.js và Django. Nó giúp bảo vệ dữ liệu từ tấn công mã hóa, cung cấp dịch vụ HTTP truy cập an toàn cho khách hàng, và hỗ trợ việc phân loại và xử lý thông tin theo yêu cầu của người dùng. API Gateway hoạt động dựa trên nguyên tắc \"tất cả đều có thể\", trong đó các ứng dụng RESTful được quản lí bởi một hệ thống API Gateway.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          },
+          {
+            "attempt": 2,
+            "elapsed_ms": 3406.0,
+            "called": true,
+            "done_reason": "stop",
+            "tokens_generated": 181,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "6da45475e3ebd5112914c8d2d4ac296a2727e4a17a49d18ce0a55119b522fdf3",
+            "raw_provider_reply": "API Gateway is a software system that manages multiple APIs (Application Programming Interfaces) to provide services across different applications in an organization's infrastructure. It allows developers to define their API endpoints, specify security rules for each endpoint, and route requests based on these definitions.\n\nThe primary benefits of using an API gateway include:\n\n1. **Simplified Management**: Developers can manage all the APIs together without having to worry about individual application-specific configurations.\n2. **Improved Security**: By centralizing authentication and authorization across multiple applications, it helps in reducing security risks associated with each separate service.\n3. **Enhanced Scalability**: The API gateway simplifies scaling of an organization's infrastructure by allowing for easy addition or removal of APIs without affecting the existing services.\n\nIn summary, an API Gateway provides a centralized platform to manage all your application-specific endpoints and configurations efficiently while maintaining high levels of security and scalability in modern software development.",
+            "sanitized_output": "API Gateway is a software system that manages multiple APIs (Application Programming Interfaces) to provide services across different applications in an organization's infrastructure. It allows developers to define their API endpoints, specify security rules for each endpoint, and route requests based on these definitions.\n\nThe primary benefits of using an API gateway include:\n\n1. **Simplified Management**: Developers can manage all the APIs together without having to worry about individual application-specific configurations.\n2. **Improved Security**: By centralizing authentication and authorization across multiple applications, it helps in reducing security risks associated with each separate service.\n3. **Enhanced Scalability**: The API gateway simplifies scaling of an organization's infrastructure by allowing for easy addition or removal of APIs without affecting the existing services.\n\nIn summary, an API Gateway provides a centralized platform to manage all your application-specific endpoints and configurations efficiently while maintaining high levels of security and scalability in modern software development.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "6da45475e3ebd5112914c8d2d4ac296a2727e4a17a49d18ce0a55119b522fdf3",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "API Gateway is a software system that manages multiple APIs (Application Programming Interfaces) to provide services across different applications in an organization's infrastructure. It allows developers to define their API endpoints, specify security rules for each endpoint, and route requests based on these definitions.\n\nThe primary benefits of using an API gateway include:\n\n1. **Simplified Management**: Developers can manage all the APIs together without having to worry about individual application-specific configurations.\n2. **Improved Security**: By centralizing authentication and authorization across multiple applications, it helps in reducing security risks associated with each separate service.\n3. **Enhanced Scalability**: The API gateway simplifies scaling of an organization's infrastructure by allowing for easy addition or removal of APIs without affecting the existing services.\n\nIn summary, an API Gateway provides a centralized platform to manage all your application-specific endpoints and configurations efficiently while maintaining high levels of security and scalability in modern software development.",
+      "raw_provider_reply": "API Gateway is a software system that manages multiple APIs (Application Programming Interfaces) to provide services across different applications in an organization's infrastructure. It allows developers to define their API endpoints, specify security rules for each endpoint, and route requests based on these definitions.\n\nThe primary benefits of using an API gateway include:\n\n1. **Simplified Management**: Developers can manage all the APIs together without having to worry about individual application-specific configurations.\n2. **Improved Security**: By centralizing authentication and authorization across multiple applications, it helps in reducing security risks associated with each separate service.\n3. **Enhanced Scalability**: The API gateway simplifies scaling of an organization's infrastructure by allowing for easy addition or removal of APIs without affecting the existing services.\n\nIn summary, an API Gateway provides a centralized platform to manage all your application-specific endpoints and configurations efficiently while maintaining high levels of security and scalability in modern software development.",
+      "sanitized_provider_output": "API Gateway is a software system that manages multiple APIs (Application Programming Interfaces) to provide services across different applications in an organization's infrastructure. It allows developers to define their API endpoints, specify security rules for each endpoint, and route requests based on these definitions.\n\nThe primary benefits of using an API gateway include:\n\n1. **Simplified Management**: Developers can manage all the APIs together without having to worry about individual application-specific configurations.\n2. **Improved Security**: By centralizing authentication and authorization across multiple applications, it helps in reducing security risks associated with each separate service.\n3. **Enhanced Scalability**: The API gateway simplifies scaling of an organization's infrastructure by allowing for easy addition or removal of APIs without affecting the existing services.\n\nIn summary, an API Gateway provides a centralized platform to manage all your application-specific endpoints and configurations efficiently while maintaining high levels of security and scalability in modern software development.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 7,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "api_gateway_operation_v1",
+          "rubric_basis": "A concise explanation of operation should identify the intermediary role and request routing to backend services; controls are optional examples, not mandatory wording.",
+          "automated_signals": [
+            {
+              "criterion": "intermediary",
+              "signal_observed": false,
+              "terms_checked": [
+                "intermediary",
+                "middle layer",
+                "đứng giữa",
+                "trung gian"
+              ]
+            },
+            {
+              "criterion": "route_requests",
+              "signal_observed": true,
+              "terms_checked": [
+                "route requests",
+                "routes requests",
+                "forward requests",
+                "định tuyến",
+                "chuyển tiếp yêu cầu"
+              ]
+            },
+            {
+              "criterion": "backend_services",
+              "signal_observed": false,
+              "terms_checked": [
+                "backend services",
+                "back-end services",
+                "dịch vụ phía sau",
+                "các dịch vụ"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_04_EN_PREF_VI": {
+      "case_id": "CASE_04_EN_PREF_VI",
+      "case_type": "llm_generation",
+      "objective": "Prompt tiếng Anh, preferred_language=vi (dịch chéo: hỏi tiếng Anh, yêu cầu trả lời tiếng Việt).",
+      "prompt": "Briefly explain why database indexing improves query performance.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "database_indexing_v1",
+        "basis": "The question asks for the performance mechanism; a valid short answer should connect an index to locating rows without scanning the full table. No single analogy or implementation is required.",
+        "criteria": [
+          {
+            "id": "lookup_structure",
+            "terms_any": [
+              "index structure",
+              "search structure",
+              "b-tree",
+              "b tree",
+              "cấu trúc chỉ mục"
+            ]
+          },
+          {
+            "id": "avoid_full_scan",
+            "terms_any": [
+              "full table scan",
+              "scan every row",
+              "avoid scanning",
+              "không quét toàn bộ",
+              "không cần duyệt toàn bộ"
+            ]
+          },
+          {
+            "id": "faster_lookup",
+            "terms_any": [
+              "faster lookup",
+              "reduce search time",
+              "tăng tốc tìm kiếm",
+              "giảm thời gian tìm"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "vi",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 2,
+        "provider_elapsed_ms": 5469.00000000096,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2781.0,
+            "tokens_generated": 83,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "f6beaef285cb05db9e2f7727f2f9d06d87fb2a16b0a4f424268a4f280b2907d5",
+            "raw_provider_reply": "Database indexes improve query performance by reducing the number of disk I/O operations required to access data in a table. By organizing frequently used columns and their values into separate tables, queries can be executed more efficiently without having to scan large amounts of unorganized data on each row or column. This reduces unnecessary disk seek times and improves overall database read/write speeds for applications that require frequent querying of the same set of records.",
+            "sanitized_output": "Database indexes improve query performance by reducing the number of disk I/O operations required to access data in a table. By organizing frequently used columns and their values into separate tables, queries can be executed more efficiently without having to scan large amounts of unorganized data on each row or column. This reduces unnecessary disk seek times and improves overall database read/write speeds for applications that require frequent querying of the same set of records.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          },
+          {
+            "attempt": 2,
+            "elapsed_ms": 2688.0,
+            "called": true,
+            "done_reason": "stop",
+            "tokens_generated": 62,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "2da855b4d18488f0a05a40a55c4bf88e0fac61139b3e79c8f31ce9dcd50d91f5",
+            "raw_provider_reply": "Database indexing improves query performance by reducing unnecessary data access times during queries. By organizing frequently accessed columns in a database table as indexes (such as primary keys), it allows for faster retrieval of relevant information, leading to improved overall system response time and reduced latency associated with slow or repetitive operations on the same tables.",
+            "sanitized_output": "Database indexing improves query performance by reducing unnecessary data access times during queries. By organizing frequently accessed columns in a database table as indexes (such as primary keys), it allows for faster retrieval of relevant information, leading to improved overall system response time and reduced latency associated with slow or repetitive operations on the same tables.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "2da855b4d18488f0a05a40a55c4bf88e0fac61139b3e79c8f31ce9dcd50d91f5",
+        "provider_quality_status": "failed",
+        "quality_status": "failed",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Database indexing improves query performance by reducing unnecessary data access times during queries. By organizing frequently accessed columns in a database table as indexes (such as primary keys), it allows for faster retrieval of relevant information, leading to improved overall system response time and reduced latency associated with slow or repetitive operations on the same tables.",
+      "raw_provider_reply": "Database indexing improves query performance by reducing unnecessary data access times during queries. By organizing frequently accessed columns in a database table as indexes (such as primary keys), it allows for faster retrieval of relevant information, leading to improved overall system response time and reduced latency associated with slow or repetitive operations on the same tables.",
+      "sanitized_provider_output": "Database indexing improves query performance by reducing unnecessary data access times during queries. By organizing frequently accessed columns in a database table as indexes (such as primary keys), it allows for faster retrieval of relevant information, leading to improved overall system response time and reduced latency associated with slow or repetitive operations on the same tables.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 4,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "en",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "database_indexing_v1",
+          "rubric_basis": "The question asks for the performance mechanism; a valid short answer should connect an index to locating rows without scanning the full table. No single analogy or implementation is required.",
+          "automated_signals": [
+            {
+              "criterion": "lookup_structure",
+              "signal_observed": false,
+              "terms_checked": [
+                "index structure",
+                "search structure",
+                "b-tree",
+                "b tree",
+                "cấu trúc chỉ mục"
+              ]
+            },
+            {
+              "criterion": "avoid_full_scan",
+              "signal_observed": false,
+              "terms_checked": [
+                "full table scan",
+                "scan every row",
+                "avoid scanning",
+                "không quét toàn bộ",
+                "không cần duyệt toàn bộ"
+              ]
+            },
+            {
+              "criterion": "faster_lookup",
+              "signal_observed": false,
+              "terms_checked": [
+                "faster lookup",
+                "reduce search time",
+                "tăng tốc tìm kiếm",
+                "giảm thời gian tìm"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_05_AUTO_VI": {
+      "case_id": "CASE_05_AUTO_VI",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Việt đầy đủ.",
+      "prompt": "Làm thế nào để duy trì sự tập trung hiệu quả khi làm việc từ xa?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "remote_focus_v1",
+        "basis": "The prompt asks for practical ways to sustain focus while working remotely; the rubric looks for concrete attention management, work planning, and interruption control, not a fixed list.",
+        "criteria": [
+          {
+            "id": "reduce_distractions",
+            "terms_any": [
+              "distractions",
+              "notifications",
+              "tránh xao nhãng",
+              "tắt thông báo"
+            ]
+          },
+          {
+            "id": "plan_work",
+            "terms_any": [
+              "schedule",
+              "time block",
+              "prioritize tasks",
+              "lịch trình",
+              "chia thời gian",
+              "ưu tiên công việc"
+            ]
+          },
+          {
+            "id": "breaks_or_workspace",
+            "terms_any": [
+              "break",
+              "workspace",
+              "nghỉ giải lao",
+              "không gian làm việc"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 98,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 2828.000000001339,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2828.0,
+            "tokens_generated": 98,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "41ff9ad2eee094afe357d1b6978e6c1609016a7fb1ae4bee02ae247753f11eca",
+            "raw_provider_reply": "Đảm bảo rằng bạn đang sử dụng thiết bị hoặc máy tính của mình trong một môi trường ổn định. Điều này bao gồm việc tắt các ứng dụng khác và không mở nhiều ứng dụng liên tục trên màn hình, giúp giảm sự mất tập trung. Bạn cũng nên tránh thay đổi chế độ điều chỉnh thời gian để làm việc từ xa vì vậy mà bạn có thể bị ảnh hưởng bởi hệ thống tự động hóa của công ty hoặc dịch vụ hỗ trợ.",
+            "sanitized_output": "Đảm bảo rằng bạn đang sử dụng thiết bị hoặc máy tính của mình trong một môi trường ổn định. Điều này bao gồm việc tắt các ứng dụng khác và không mở nhiều ứng dụng liên tục trên màn hình, giúp giảm sự mất tập trung. Bạn cũng nên tránh thay đổi chế độ điều chỉnh thời gian để làm việc từ xa vì vậy mà bạn có thể bị ảnh hưởng bởi hệ thống tự động hóa của công ty hoặc dịch vụ hỗ trợ.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "41ff9ad2eee094afe357d1b6978e6c1609016a7fb1ae4bee02ae247753f11eca",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Đảm bảo rằng bạn đang sử dụng thiết bị hoặc máy tính của mình trong một môi trường ổn định. Điều này bao gồm việc tắt các ứng dụng khác và không mở nhiều ứng dụng liên tục trên màn hình, giúp giảm sự mất tập trung. Bạn cũng nên tránh thay đổi chế độ điều chỉnh thời gian để làm việc từ xa vì vậy mà bạn có thể bị ảnh hưởng bởi hệ thống tự động hóa của công ty hoặc dịch vụ hỗ trợ.",
+      "raw_provider_reply": "Đảm bảo rằng bạn đang sử dụng thiết bị hoặc máy tính của mình trong một môi trường ổn định. Điều này bao gồm việc tắt các ứng dụng khác và không mở nhiều ứng dụng liên tục trên màn hình, giúp giảm sự mất tập trung. Bạn cũng nên tránh thay đổi chế độ điều chỉnh thời gian để làm việc từ xa vì vậy mà bạn có thể bị ảnh hưởng bởi hệ thống tự động hóa của công ty hoặc dịch vụ hỗ trợ.",
+      "sanitized_provider_output": "Đảm bảo rằng bạn đang sử dụng thiết bị hoặc máy tính của mình trong một môi trường ổn định. Điều này bao gồm việc tắt các ứng dụng khác và không mở nhiều ứng dụng liên tục trên màn hình, giúp giảm sự mất tập trung. Bạn cũng nên tránh thay đổi chế độ điều chỉnh thời gian để làm việc từ xa vì vậy mà bạn có thể bị ảnh hưởng bởi hệ thống tự động hóa của công ty hoặc dịch vụ hỗ trợ.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 90,
+        "vi_words": 11,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "remote_focus_v1",
+          "rubric_basis": "The prompt asks for practical ways to sustain focus while working remotely; the rubric looks for concrete attention management, work planning, and interruption control, not a fixed list.",
+          "automated_signals": [
+            {
+              "criterion": "reduce_distractions",
+              "signal_observed": false,
+              "terms_checked": [
+                "distractions",
+                "notifications",
+                "tránh xao nhãng",
+                "tắt thông báo"
+              ]
+            },
+            {
+              "criterion": "plan_work",
+              "signal_observed": false,
+              "terms_checked": [
+                "schedule",
+                "time block",
+                "prioritize tasks",
+                "lịch trình",
+                "chia thời gian",
+                "ưu tiên công việc"
+              ]
+            },
+            {
+              "criterion": "breaks_or_workspace",
+              "signal_observed": false,
+              "terms_checked": [
+                "break",
+                "workspace",
+                "nghỉ giải lao",
+                "không gian làm việc"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_06_AUTO_EN": {
+      "case_id": "CASE_06_AUTO_EN",
+      "case_type": "llm_generation",
+      "objective": "Auto detection với prompt tiếng Anh đầy đủ.",
+      "prompt": "How does public key cryptography secure internet communications?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "public_key_crypto_v1",
+        "basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+        "criteria": [
+          {
+            "id": "asymmetric_key_pair",
+            "terms_any": [
+              "public and private key",
+              "public/private key pair",
+              "asymmetric key pair"
+            ]
+          },
+          {
+            "id": "valid_security_use",
+            "terms_any": [
+              "encrypt",
+              "decryption",
+              "digital signature",
+              "authenticate",
+              "authentication"
+            ]
+          },
+          {
+            "id": "internet_protocol_context",
+            "terms_any": [
+              "tls",
+              "https",
+              "key exchange",
+              "session key"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 76,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 2781.0000000008586,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2781.0,
+            "tokens_generated": 76,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "d265de34307605110f97ce63181876bb811747ef7fb504ca89378e1fbb1c1c02",
+            "raw_provider_reply": "Public key cryptography secures internet communications by enabling two parties (the sender and receiver) to exchange messages securely without revealing the content of those messages or each other's private keys. This is achieved through a process called asymmetric encryption, where one party generates an encrypted message using their public key while keeping their own secret key hidden; this shared secret allows them both to communicate with privacy.",
+            "sanitized_output": "Public key cryptography secures internet communications by enabling two parties (the sender and receiver) to exchange messages securely without revealing the content of those messages or each other's private keys. This is achieved through a process called asymmetric encryption, where one party generates an encrypted message using their public key while keeping their own secret key hidden; this shared secret allows them both to communicate with privacy.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "d265de34307605110f97ce63181876bb811747ef7fb504ca89378e1fbb1c1c02",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Public key cryptography secures internet communications by enabling two parties (the sender and receiver) to exchange messages securely without revealing the content of those messages or each other's private keys. This is achieved through a process called asymmetric encryption, where one party generates an encrypted message using their public key while keeping their own secret key hidden; this shared secret allows them both to communicate with privacy.",
+      "raw_provider_reply": "Public key cryptography secures internet communications by enabling two parties (the sender and receiver) to exchange messages securely without revealing the content of those messages or each other's private keys. This is achieved through a process called asymmetric encryption, where one party generates an encrypted message using their public key while keeping their own secret key hidden; this shared secret allows them both to communicate with privacy.",
+      "sanitized_provider_output": "Public key cryptography secures internet communications by enabling two parties (the sender and receiver) to exchange messages securely without revealing the content of those messages or each other's private keys. This is achieved through a process called asymmetric encryption, where one party generates an encrypted message using their public key while keeping their own secret key hidden; this shared secret allows them both to communicate with privacy.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 5,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "public_key_crypto_v1",
+          "rubric_basis": "The prompt asks for the security mechanism; criteria cover asymmetric key roles and at least one valid security use. Any claim of converting a private key into a public key or using the recipient's public key to decrypt is a factual red flag for reviewers.",
+          "automated_signals": [
+            {
+              "criterion": "asymmetric_key_pair",
+              "signal_observed": false,
+              "terms_checked": [
+                "public and private key",
+                "public/private key pair",
+                "asymmetric key pair"
+              ]
+            },
+            {
+              "criterion": "valid_security_use",
+              "signal_observed": true,
+              "terms_checked": [
+                "encrypt",
+                "decryption",
+                "digital signature",
+                "authenticate",
+                "authentication"
+              ]
+            },
+            {
+              "criterion": "internet_protocol_context",
+              "signal_observed": false,
+              "terms_checked": [
+                "tls",
+                "https",
+                "key exchange",
+                "session key"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "CASE_07_VERBATIM_ENTITIES": {
+      "case_id": "CASE_07_VERBATIM_ENTITIES",
+      "case_type": "application_formatting",
+      "objective": "Định dạng cấu hình .env từ các giá trị người dùng cung cấp; phân biệt formatter với generation.",
+      "prompt": "Cấu hình URL https://api.dusnx.org/v1/auth và biến DUSNX_PORT=8088 trong file .env.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "DUSNX_PORT=8088"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://api.dusnx.org/v1/auth\nDUSNX_PORT=8088\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://api.dusnx.org/v1/auth\nDUSNX_PORT=8088\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "DUSNX_PORT",
+              "8088"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "DUSNX_PORT",
+              "8088"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression",
+      "quality_flags": []
+    },
+    "VARIANT_14_ENTITY_CONFIG_WEBHOOK": {
+      "case_id": "VARIANT_14_ENTITY_CONFIG_WEBHOOK",
+      "case_type": "application_formatting",
+      "objective": "Tạo cấu hình .env, bảo toàn URL và assignment chính xác; không được chỉ chép prompt.",
+      "prompt": "Viết một đoạn cấu hình .env cho webhook, giữ URL https://hooks.example.net/v2/events và đặt WEBHOOK_RETRY_LIMIT=7. Giải thích ngắn gọn cách áp dụng.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "WEBHOOK_RETRY_LIMIT=7"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://hooks.example.net/v2/events\nWEBHOOK_RETRY_LIMIT=7\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://hooks.example.net/v2/events\nWEBHOOK_RETRY_LIMIT=7\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "WEBHOOK_RETRY_LIMIT",
+              "7"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "WEBHOOK_RETRY_LIMIT",
+              "7"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_15_ENTITY_CONFIG_QUERY_URL": {
+      "case_id": "VARIANT_15_ENTITY_CONFIG_QUERY_URL",
+      "case_type": "application_formatting",
+      "objective": "Tạo cấu hình .env, giữ nguyên URL có query/punctuation và giá trị không bị đổi.",
+      "prompt": "Provide an example .env setting for the cache endpoint https://edge.example.org/api/v3?mode=fast, and set CACHE_TTL_SECONDS=45; include one sentence explaining where to put it.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "CACHE_TTL_SECONDS=45"
+        ]
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://edge.example.org/api/v3?mode=fast\nCACHE_TTL_SECONDS=45\n```\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://edge.example.org/api/v3?mode=fast\nCACHE_TTL_SECONDS=45\n```\nSave these lines in the application's `.env` file; the application must read the variables from its environment.",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 2,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "CACHE_TTL_SECONDS",
+              "45"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "CACHE_TTL_SECONDS",
+              "45"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION": {
+      "case_id": "VARIANT_19_ENV_MULTI_VALUE_PUNCTUATION",
+      "case_type": "application_formatting",
+      "objective": "Định dạng nhiều assignment đã cho, giữ giá trị có khoảng trắng và URL có query; không tạo biến từ query URL.",
+      "prompt": "Viết cấu hình .env với SERVICE_LABEL=\"orders api\", MAX_RETRIES = 3 và endpoint https://cfg.example.net/v1/run?mode=fast,.",
+      "input_preferred_language": "vi",
+      "expected_response_language": "vi",
+      "setup_history": [],
+      "task_rubric": {
+        "assignments": [
+          "SERVICE_LABEL=orders api",
+          "MAX_RETRIES=3"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "application_formatter",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "```dotenv\n# Endpoint: https://cfg.example.net/v1/run?mode=fast\nSERVICE_LABEL=\"orders api\"\nMAX_RETRIES=3\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "```dotenv\n# Endpoint: https://cfg.example.net/v1/run?mode=fast\nSERVICE_LABEL=\"orders api\"\nMAX_RETRIES=3\n```\nLưu các dòng này vào tệp `.env` của ứng dụng; ứng dụng cần đọc các biến từ môi trường.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 20,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_formatter"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "standalone dotenv assignment syntax with exact key/value after removing copied prompt",
+          "expected_assignments": [
+            [
+              "SERVICE_LABEL",
+              "orders api"
+            ],
+            [
+              "MAX_RETRIES",
+              "3"
+            ]
+          ],
+          "observed_env_assignments": [
+            [
+              "MAX_RETRIES",
+              "3"
+            ],
+            [
+              "SERVICE_LABEL",
+              "orders api"
+            ]
+          ]
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "passed",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_20_ENV_VALUE_NOT_PROVIDED": {
+      "case_id": "VARIANT_20_ENV_VALUE_NOT_PROVIDED",
+      "case_type": "application_clarification",
+      "objective": "Không tự tạo giá trị cấu hình; hỏi người dùng khi họ nêu key nhưng chưa chọn value.",
+      "prompt": "Create a .env setting named CACHE_TTL_SECONDS, but I have not chosen its value yet.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "missing_config_value_clarification",
+        "key": "CACHE_TTL_SECONDS"
+      },
+      "metadata": {
+        "detected_language": "en",
+        "response_language": "en",
+        "response_source": "application_clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "What value should `CACHE_TTL_SECONDS` have?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "What value should `CACHE_TTL_SECONDS` have?",
+      "heuristic_evaluation": {
+        "actual_language": "en",
+        "confidence": 1.0,
+        "vi_diacritics": 0,
+        "vi_words": 0,
+        "en_words": 1,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "application_clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "en",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires clarification for a missing value and rejects invented assignment values",
+          "key": "CACHE_TTL_SECONDS",
+          "asks_for_value": true,
+          "invented_value": false
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Application clarification for undocumented product facts; no Ollama call expected.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP": {
+      "case_id": "VARIANT_21_TOPIC_SHIFT_ECC_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau topic switch mới phải dùng chủ đề mới, không chỉ đạt bằng nhắc keyword; nội dung semantic cần human review.",
+      "prompt": "Nó có ưu điểm gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [
+        "Tôi đang so sánh monolith và microservices.",
+        "Chuyển sang chủ đề khác: tôi đang học mật mã đường cong elliptic (ECC)."
+      ],
+      "task_rubric": {
+        "kind": "context_subject",
+        "subject_terms": [
+          "elliptic-curve",
+          "elliptic curve",
+          "ECC",
+          "đường cong elliptic"
+        ],
+        "forbidden_terms": [
+          "monolith",
+          "microservices"
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "llm",
+        "provider_called": true,
+        "provider_ok": true,
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 115,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 1,
+        "provider_elapsed_ms": 3030.9999999990396,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 3031.0,
+            "tokens_generated": 115,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "2154f01f59905409dc4ad4f58b1afe8ab089f8b791badc6fdff5fa3c7f811fc7",
+            "raw_provider_reply": "Độ phức tạp: 1\n\nTác vụ: Tính năng hoặc dịch thuật mật mã đường cong elliptic (ECC)\n\nGiải thích: ECC là một giải pháp toán học để bảo vệ dữ liệu khỏi tấn công cài đặt. Nó sử dụng phương trình số tuyến tính và không cần thiết phải có giao thức truyền thống, giúp giảm thiểu rủi ro về hiệu suất khi chuyển đổi giữa các hệ thống.\n\nDịch thuật mật mã ECC cho phép người dùng dễ dàng hiểu và sử dụng thông tin mà họ đã gửi qua ECC.",
+            "sanitized_output": "Độ phức tạp: 1\n\nTác vụ: Tính năng hoặc dịch thuật mật mã đường cong elliptic (ECC)\n\nGiải thích: ECC là một giải pháp toán học để bảo vệ dữ liệu khỏi tấn công cài đặt. Nó sử dụng phương trình số tuyến tính và không cần thiết phải có giao thức truyền thống, giúp giảm thiểu rủi ro về hiệu suất khi chuyển đổi giữa các hệ thống.\n\nDịch thuật mật mã ECC cho phép người dùng dễ dàng hiểu và sử dụng thông tin mà họ đã gửi qua ECC.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "2154f01f59905409dc4ad4f58b1afe8ab089f8b791badc6fdff5fa3c7f811fc7",
+        "provider_quality_status": "matched",
+        "quality_status": "matched",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "Độ phức tạp: 1\n\nTác vụ: Tính năng hoặc dịch thuật mật mã đường cong elliptic (ECC)\n\nGiải thích: ECC là một giải pháp toán học để bảo vệ dữ liệu khỏi tấn công cài đặt. Nó sử dụng phương trình số tuyến tính và không cần thiết phải có giao thức truyền thống, giúp giảm thiểu rủi ro về hiệu suất khi chuyển đổi giữa các hệ thống.\n\nDịch thuật mật mã ECC cho phép người dùng dễ dàng hiểu và sử dụng thông tin mà họ đã gửi qua ECC.",
+      "raw_provider_reply": "Độ phức tạp: 1\n\nTác vụ: Tính năng hoặc dịch thuật mật mã đường cong elliptic (ECC)\n\nGiải thích: ECC là một giải pháp toán học để bảo vệ dữ liệu khỏi tấn công cài đặt. Nó sử dụng phương trình số tuyến tính và không cần thiết phải có giao thức truyền thống, giúp giảm thiểu rủi ro về hiệu suất khi chuyển đổi giữa các hệ thống.\n\nDịch thuật mật mã ECC cho phép người dùng dễ dàng hiểu và sử dụng thông tin mà họ đã gửi qua ECC.",
+      "sanitized_provider_output": "Độ phức tạp: 1\n\nTác vụ: Tính năng hoặc dịch thuật mật mã đường cong elliptic (ECC)\n\nGiải thích: ECC là một giải pháp toán học để bảo vệ dữ liệu khỏi tấn công cài đặt. Nó sử dụng phương trình số tuyến tính và không cần thiết phải có giao thức truyền thống, giúp giảm thiểu rủi ro về hiệu suất khi chuyển đổi giữa các hệ thống.\n\nDịch thuật mật mã ECC cho phép người dùng dễ dàng hiểu và sử dụng thông tin mà họ đã gửi qua ECC.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 88,
+        "vi_words": 9,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "failed",
+          "method": "subject/clarification signals can reject obvious drift but cannot establish relevance or answer correctness; human review required",
+          "subject_match": false,
+          "clarification": false,
+          "forbidden_subjects_found": [],
+          "review_required": false,
+          "review_status": "not_applicable"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT": {
+      "case_id": "VARIANT_22_CROSS_LANGUAGE_GATEWAY_BENEFIT",
+      "case_type": "llm_generation",
+      "objective": "Yêu cầu tiếng Việt nhưng đặt response preference tiếng Anh; đánh giá riêng ngôn ngữ và tín hiệu nội dung.",
+      "prompt": "Nói ngắn gọn một lợi ích của API Gateway.",
+      "input_preferred_language": "en",
+      "expected_response_language": "en",
+      "setup_history": [],
+      "task_rubric": {
+        "kind": "open_ended_coverage",
+        "rubric_id": "api_gateway_benefit_v1",
+        "basis": "The request asks for one benefit; accepted concepts include simplified client access, centralized routing, or shared cross-cutting controls.",
+        "criteria": [
+          {
+            "id": "simplified_access",
+            "terms_any": [
+              "single entry point",
+              "simplifies client access",
+              "one endpoint",
+              "điểm truy cập"
+            ]
+          },
+          {
+            "id": "routing_or_shared_controls",
+            "terms_any": [
+              "routing",
+              "route requests",
+              "authentication",
+              "rate limiting",
+              "định tuyến"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": "stop",
+        "provider_call_count": 2,
+        "provider_elapsed_ms": 6359.000000000378,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2468.0,
+            "tokens_generated": 31,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "f070947a115d47fdc0fdecd30f25aa12e545b21acf7fcd5aa7291bc808909c11",
+            "raw_provider_reply": "API Gateway có thể giúp bạn quản lý các dịch vụ HTTP và mã hóa chúng để đảm bảo rằng mỗi dịch vụ đều được kiểm soát tốt hơn.",
+            "sanitized_output": "API Gateway có thể giúp bạn quản lý các dịch vụ HTTP và mã hóa chúng để đảm bảo rằng mỗi dịch vụ đều được kiểm soát tốt hơn.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          },
+          {
+            "attempt": 2,
+            "elapsed_ms": 3891.0,
+            "called": true,
+            "done_reason": "stop",
+            "tokens_generated": 263,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "62aa7574b2e2a6d21467ccf6b5f31a6c6c5f3191aff3b3f82e8174a3f6b6e5ec",
+            "raw_provider_reply": "API Gateway là một công cụ mạnh mẽ để quản lý các dịch vụ API và phân loại chúng thành nhiều gói khác nhau dựa trên yêu cầu của khách hàng hoặc mã nguồn. Nó giúp giảm thiểu sự phức tạp trong việc tạo, truy cập và bảo vệ dữ liệu API bằng cách sử dụng mô hình học máy tự động (MLA) và thuật toán phân tích nội dung để xác định các loại dịch vụ API phù hợp nhất với mỗi gói.\n\nLợi ích chính của API Gateway bao gồm:\n\n1. Tối ưu hóa hiệu suất: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n2. Dễ dàng quản lý và phân tích dữ liệu API: API Gateway hỗ trợ các thuật toán phân loại và giải quyết lỗi để dễ dàng theo dõi và xử lý vấn đề liên quan đến API.\n3. Tối ưu hóa hiệu suất cho dịch vụ khách hàng: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n\nLưu ý rằng đây chỉ là một số lợi ích chính của API Gateway mà nó cung cấp. API Gateway còn có rất nhiều tính năng khác như phân tích nội dung, mã nguồn và các thuật toán xử lý lỗi để tăng cường hiệu suất cho dịch vụ API.",
+            "sanitized_output": "API Gateway là một công cụ mạnh mẽ để quản lý các dịch vụ API và phân loại chúng thành nhiều gói khác nhau dựa trên yêu cầu của khách hàng hoặc mã nguồn. Nó giúp giảm thiểu sự phức tạp trong việc tạo, truy cập và bảo vệ dữ liệu API bằng cách sử dụng mô hình học máy tự động (MLA) và thuật toán phân tích nội dung để xác định các loại dịch vụ API phù hợp nhất với mỗi gói.\n\nLợi ích chính của API Gateway bao gồm:\n\n1. Tối ưu hóa hiệu suất: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n2. Dễ dàng quản lý và phân tích dữ liệu API: API Gateway hỗ trợ các thuật toán phân loại và giải quyết lỗi để dễ dàng theo dõi và xử lý vấn đề liên quan đến API.\n3. Tối ưu hóa hiệu suất cho dịch vụ khách hàng: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n\nLưu ý rằng đây chỉ là một số lợi ích chính của API Gateway mà nó cung cấp. API Gateway còn có rất nhiều tính năng khác như phân tích nội dung, mã nguồn và các thuật toán xử lý lỗi để tăng cường hiệu suất cho dịch vụ API.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "62aa7574b2e2a6d21467ccf6b5f31a6c6c5f3191aff3b3f82e8174a3f6b6e5ec",
+        "provider_quality_status": "failed",
+        "quality_status": "failed",
+        "memory_ids_used": []
+      },
+      "verbatim_reply": "API Gateway là một công cụ mạnh mẽ để quản lý các dịch vụ API và phân loại chúng thành nhiều gói khác nhau dựa trên yêu cầu của khách hàng hoặc mã nguồn. Nó giúp giảm thiểu sự phức tạp trong việc tạo, truy cập và bảo vệ dữ liệu API bằng cách sử dụng mô hình học máy tự động (MLA) và thuật toán phân tích nội dung để xác định các loại dịch vụ API phù hợp nhất với mỗi gói.\n\nLợi ích chính của API Gateway bao gồm:\n\n1. Tối ưu hóa hiệu suất: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n2. Dễ dàng quản lý và phân tích dữ liệu API: API Gateway hỗ trợ các thuật toán phân loại và giải quyết lỗi để dễ dàng theo dõi và xử lý vấn đề liên quan đến API.\n3. Tối ưu hóa hiệu suất cho dịch vụ khách hàng: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n\nLưu ý rằng đây chỉ là một số lợi ích chính của API Gateway mà nó cung cấp. API Gateway còn có rất nhiều tính năng khác như phân tích nội dung, mã nguồn và các thuật toán xử lý lỗi để tăng cường hiệu suất cho dịch vụ API.",
+      "raw_provider_reply": "API Gateway là một công cụ mạnh mẽ để quản lý các dịch vụ API và phân loại chúng thành nhiều gói khác nhau dựa trên yêu cầu của khách hàng hoặc mã nguồn. Nó giúp giảm thiểu sự phức tạp trong việc tạo, truy cập và bảo vệ dữ liệu API bằng cách sử dụng mô hình học máy tự động (MLA) và thuật toán phân tích nội dung để xác định các loại dịch vụ API phù hợp nhất với mỗi gói.\n\nLợi ích chính của API Gateway bao gồm:\n\n1. Tối ưu hóa hiệu suất: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n2. Dễ dàng quản lý và phân tích dữ liệu API: API Gateway hỗ trợ các thuật toán phân loại và giải quyết lỗi để dễ dàng theo dõi và xử lý vấn đề liên quan đến API.\n3. Tối ưu hóa hiệu suất cho dịch vụ khách hàng: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n\nLưu ý rằng đây chỉ là một số lợi ích chính của API Gateway mà nó cung cấp. API Gateway còn có rất nhiều tính năng khác như phân tích nội dung, mã nguồn và các thuật toán xử lý lỗi để tăng cường hiệu suất cho dịch vụ API.",
+      "sanitized_provider_output": "API Gateway là một công cụ mạnh mẽ để quản lý các dịch vụ API và phân loại chúng thành nhiều gói khác nhau dựa trên yêu cầu của khách hàng hoặc mã nguồn. Nó giúp giảm thiểu sự phức tạp trong việc tạo, truy cập và bảo vệ dữ liệu API bằng cách sử dụng mô hình học máy tự động (MLA) và thuật toán phân tích nội dung để xác định các loại dịch vụ API phù hợp nhất với mỗi gói.\n\nLợi ích chính của API Gateway bao gồm:\n\n1. Tối ưu hóa hiệu suất: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n2. Dễ dàng quản lý và phân tích dữ liệu API: API Gateway hỗ trợ các thuật toán phân loại và giải quyết lỗi để dễ dàng theo dõi và xử lý vấn đề liên quan đến API.\n3. Tối ưu hóa hiệu suất cho dịch vụ khách hàng: API Gateway giúp giảm tải hệ thống, tránh việc tạo nhiều gói API cùng một lúc.\n\nLưu ý rằng đây chỉ là một số lợi ích chính của API Gateway mà nó cung cấp. API Gateway còn có rất nhiều tính năng khác như phân tích nội dung, mã nguồn và các thuật toán xử lý lỗi để tăng cường hiệu suất cho dịch vụ API.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 202,
+        "vi_words": 10,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "predeclared concept-coverage signals; factuality, relevance, completeness, and acceptability still require human review",
+          "rubric_id": "api_gateway_benefit_v1",
+          "rubric_basis": "The request asks for one benefit; accepted concepts include simplified client access, centralized routing, or shared cross-cutting controls.",
+          "automated_signals": [
+            {
+              "criterion": "simplified_access",
+              "signal_observed": false,
+              "terms_checked": [
+                "single entry point",
+                "simplifies client access",
+                "one endpoint",
+                "điểm truy cập"
+              ]
+            },
+            {
+              "criterion": "routing_or_shared_controls",
+              "signal_observed": false,
+              "terms_checked": [
+                "routing",
+                "route requests",
+                "authentication",
+                "rate limiting",
+                "định tuyến"
+              ]
+            }
+          ],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_08_MEMORY_RECALL_TEMPLATE": {
+      "case_id": "CASE_08_MEMORY_RECALL_TEMPLATE",
+      "case_type": "template_recall",
+      "objective": "Recall trí nhớ từ template xác thực: response_source=grounded_template, KHÔNG gọi LLM.",
+      "prompt": "Cụm máy chủ chọn công nghệ gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "setup_history": [
+        "Hãy nhớ rằng chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026."
+      ],
+      "task_rubric": null,
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "grounded_template",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "token_budget": 512,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_elapsed_ms": 0.0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null,
+        "provider_quality_status": null,
+        "quality_status": null,
+        "memory_ids_used": [
+          "eaf7d6ae670a59600eb1d67233626742"
+        ]
+      },
+      "verbatim_reply": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Theo trí nhớ đang hiệu lực: chúng tôi chọn Kubernetes cho cụm máy chủ năm 2026.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 12,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "grounded_template"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "not_applicable",
+          "method": "memory-template contract is evaluated separately"
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "notes": "Verified on real Gateway -> FastAPI -> Ollama qwen2.5:0.5b pipeline.",
+      "evaluation_label": "development_regression"
+    },
+    "CASE_09_AUTO_SHORT_HISTORY": {
+      "case_id": "CASE_09_AUTO_SHORT_HISTORY",
+      "case_type": "application_clarification",
+      "objective": "Câu hỏi mơ hồ sau khi người dùng nêu hai chủ đề phải hỏi chọn chủ đề thay vì đoán.",
+      "prompt": "Ưu điểm là gì?",
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "vi",
+        "response_source": "clarification",
+        "provider_called": false,
+        "provider_ok": true,
+        "provider_used": null,
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": null,
+        "provider_call_count": 0,
+        "provider_attempts": [],
+        "sanitizer_changed": false,
+        "raw_output_sha256": null
+      },
+      "verbatim_reply": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "raw_provider_reply": null,
+      "sanitized_provider_output": "Bạn muốn hỏi ưu điểm của chủ đề nào trong các chủ đề vừa nêu?",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 17,
+        "vi_words": 5,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "provider_called": false,
+          "provider_call_count": 0,
+          "response_source": "clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "subject/clarification signals can reject obvious drift but cannot establish relevance or answer correctness; human review required",
+          "subject_match": false,
+          "clarification": true,
+          "forbidden_subjects_found": [],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": null
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "setup_history": [
+        "Tôi đang tìm hiểu về kiến trúc microservices và distributed systems."
+      ],
+      "evaluation_label": "development_regression",
+      "notes": "Multiple topics are present in the latest user turn; clarification is expected, no provider call.",
+      "quality_flags": []
+    },
+    "VARIANT_16_TOPIC_SHIFT_FOLLOWUP": {
+      "case_id": "VARIANT_16_TOPIC_SHIFT_FOLLOWUP",
+      "case_type": "llm_generation",
+      "objective": "Câu tiếp nối sau khi đổi chủ đề phải bám chủ đề gần nhất trong cùng session.",
+      "prompt": "Những rủi ro của nó là gì?",
+      "setup_history": [
+        "Tôi đang tìm hiểu ưu nhược điểm của kiến trúc microservices so với monolith.",
+        "Chuyển sang chủ đề khác: tôi đang học về public key cryptography."
+      ],
+      "input_preferred_language": "auto",
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_ok": true,
+        "response_source": "llm",
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "tokens_generated": 68,
+        "done_reason": "stop",
+        "sanitizer_changed": false,
+        "raw_output_sha256": "7a30611edc23086650b7cee9d7cc8b9fb4540d570ef55e341fd9767b9dce288c",
+        "response_language": "vi",
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2718.0,
+            "tokens_generated": 68,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "7a30611edc23086650b7cee9d7cc8b9fb4540d570ef55e341fd9767b9dce288c",
+            "raw_provider_reply": "Rõ ràng: Những rủi ro chính của công nghệ public key cryptography bao gồm khả năng bị tấn công bởi các tổ chức quốc tế như NSA, có thể gây ra sự cố nghiêm trọng. Rất nhiều nhà cung cấp dịch vụ public key encryption đều đã phải chịu hậu quả do những thách thức này.",
+            "sanitized_output": "Rõ ràng: Những rủi ro chính của công nghệ public key cryptography bao gồm khả năng bị tấn công bởi các tổ chức quốc tế như NSA, có thể gây ra sự cố nghiêm trọng. Rất nhiều nhà cung cấp dịch vụ public key encryption đều đã phải chịu hậu quả do những thách thức này.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ]
+      },
+      "raw_provider_reply": "Rõ ràng: Những rủi ro chính của công nghệ public key cryptography bao gồm khả năng bị tấn công bởi các tổ chức quốc tế như NSA, có thể gây ra sự cố nghiêm trọng. Rất nhiều nhà cung cấp dịch vụ public key encryption đều đã phải chịu hậu quả do những thách thức này.",
+      "sanitized_provider_output": "Rõ ràng: Những rủi ro chính của công nghệ public key cryptography bao gồm khả năng bị tấn công bởi các tổ chức quốc tế như NSA, có thể gây ra sự cố nghiêm trọng. Rất nhiều nhà cung cấp dịch vụ public key encryption đều đã phải chịu hậu quả do những thách thức này.",
+      "verbatim_reply": "Rõ ràng: Những rủi ro chính của công nghệ public key cryptography bao gồm khả năng bị tấn công bởi các tổ chức quốc tế như NSA, có thể gây ra sự cố nghiêm trọng. Rất nhiều nhà cung cấp dịch vụ public key encryption đều đã phải chịu hậu quả do những thách thức này.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 46,
+        "vi_words": 6,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "passed",
+          "provider_called": true,
+          "provider_call_count": 1,
+          "response_source": "llm"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "uncertain",
+          "method": "subject/clarification signals can reject obvious drift but cannot establish relevance or answer correctness; human review required",
+          "subject_match": true,
+          "clarification": false,
+          "forbidden_subjects_found": [],
+          "review_required": true,
+          "review_status": "needs_human_review"
+        },
+        "content_quality": {
+          "status": "uncertain",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "uncertain",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "uncertain"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "passed",
+          "reason": "no_provider_limit_or_obvious_open_clause",
+          "done_reason": "stop"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "notes": "Automated rubric cannot establish semantic topic alignment; human review required.",
+      "quality_flags": []
+    },
+    "VARIANT_17_AMBIGUOUS_NEW_SESSION": {
+      "case_id": "VARIANT_17_AMBIGUOUS_NEW_SESSION",
+      "case_type": "clarification",
+      "objective": "Không đoán chủ đề cho câu hỏi thiếu antecedent trong session mới.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "application clarification path for missing antecedent"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim factual or human content review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_10_DURABLE_MEMORY_PREF_CHANGE": {
+      "case_id": "CASE_10_DURABLE_MEMORY_PREF_CHANGE",
+      "case_type": "llm_generation",
+      "objective": "Lệnh chuyển ngôn ngữ bền vững ('Từ giờ trả lời bằng tiếng Anh nhé') lưu vào memory preference, các turn sau auto dùng English.",
+      "prompt": "Hãy nêu 2 hệ điều hành phổ biến nhất.",
+      "input_preferred_language": "auto",
+      "expected_response_language": "en",
+      "metadata": {
+        "detected_language": "vi",
+        "response_language": "en",
+        "response_source": "provider_error",
+        "provider_called": true,
+        "provider_ok": false,
+        "provider_used": "ollama",
+        "model_used": null,
+        "tokens_generated": null,
+        "done_reason": "stop",
+        "provider_call_count": 2,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2641.0,
+            "tokens_generated": 62,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "988914fd8af07487920151ef318f115e6c9c6b137b41dd1e8f5cefc4b3a78a7e",
+            "raw_provider_reply": "1. Windows: Đây là một trong những hệ điều hành phổ biến nhất hiện tại với nhiều tính năng và tiện ích mạnh mẽ.\n2. macOS: Được tạo ra bởi Apple, nó cung cấp các tính năng đa dạng hơn so với Windows và có khả năng quản lý hiệu suất tốt hơn.",
+            "sanitized_output": "1. Windows: Đây là một trong những hệ điều hành phổ biến nhất hiện tại với nhiều tính năng và tiện ích mạnh mẽ.\n2. macOS: Được tạo ra bởi Apple, nó cung cấp các tính năng đa dạng hơn so với Windows và có khả năng quản lý hiệu suất tốt hơn.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          },
+          {
+            "attempt": 2,
+            "elapsed_ms": 2422.0,
+            "called": true,
+            "done_reason": "stop",
+            "tokens_generated": 19,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "30f35acf7f16802495d95b16e4b9c2a0947abbd7dc743594ab2bfd26c1003167",
+            "raw_provider_reply": "Hãy nêu 2 hệ điều hành phổ biến nhất là Windows và macOS.",
+            "sanitized_output": "Hãy nêu 2 hệ điều hành phổ biến nhất là Windows và macOS.",
+            "quality_status": "divergent",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "sanitizer_changed": false,
+        "raw_output_sha256": "30f35acf7f16802495d95b16e4b9c2a0947abbd7dc743594ab2bfd26c1003167"
+      },
+      "verbatim_reply": "Hãy nêu 2 hệ điều hành phổ biến nhất là Windows và macOS.",
+      "raw_provider_reply": "Hãy nêu 2 hệ điều hành phổ biến nhất là Windows và macOS.",
+      "sanitized_provider_output": "Hãy nêu 2 hệ điều hành phổ biến nhất là Windows và macOS.",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 11,
+        "vi_words": 3,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": false,
+      "linguistic_status": "divergent",
+      "evaluation": {
+        "transport": {
+          "status": "failed",
+          "provider_called": true,
+          "provider_call_count": 2,
+          "response_source": "provider_error"
+        },
+        "language": {
+          "status": "divergent",
+          "actual_language": "vi",
+          "expected_language": "en",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "requires the requested number of list items or distinct named answers",
+          "requested_count": 2,
+          "observed_list_items": 0,
+          "observed_distinct_named_answers": 2
+        },
+        "content_quality": {
+          "status": "not_separately_scored",
+          "reason": "No automated judgement is treated as semantic review."
+        },
+        "factual_accuracy": {
+          "status": "not_separately_scored",
+          "reason": "Requires source-based or human review; concept presence alone is insufficient."
+        },
+        "context_relevance": {
+          "status": "not_separately_scored"
+        },
+        "entities": {
+          "status": "not_applicable",
+          "missing": [],
+          "mutated": [],
+          "prompt_echo_removed": false
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable",
+          "reason": "provider_not_successful"
+        },
+        "evaluation_limitations": [
+          "Automated language and task checks are heuristics; no independent human review is claimed."
+        ]
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Memory preference superseded previous setting atomically.",
+      "quality_flags": []
+    },
+    "CASE_11_TWO_USERS_LANGUAGE_ISOLATION": {
+      "case_id": "CASE_11_TWO_USERS_LANGUAGE_ISOLATION",
+      "case_type": "user_preference_isolation",
+      "objective": "Hai user có memory preference khác nhau (User A=en, User B=vi). Không rò rỉ cấu hình.",
+      "prompt": "User A: 'What is open source software?' | User B: 'Phần mềm mã nguồn mở là gì?'",
+      "input_preferred_language": "auto",
+      "expected_response_language": "A:en, B:vi",
+      "user_a_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 4562.0,
+            "tokens_generated": 356,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "f72defe6510c0710988e9d147f437d102d5bb71736a2284a48df84dda2439272",
+            "raw_provider_reply": "Open-source software (OSS) refers to computer programs that are made available for free use under a license agreement where users can modify the program as they see fit without restrictions on how it's used. It typically includes code, documentation, and sometimes other resources like libraries or tools.\n\nTo provide more detailed information:\n\n1. **Definition**: Open-source software is open source means anyone with access to your computer (or any device) has permission to use, modify, distribute, display, perform, copy, compile, combine, publish, repackage, release for commercial purposes and so on.\n2. **Types of OSS**:\n   - Source code: The original version that includes all the source files along with comments explaining how they were written\n   - Binary distribution (binary): A binary file containing a set of instructions to run an application or software program\n\n3. **Advantages**: Open-source projects often have more features and are easier for users who don't know much about programming.\n4. **Examples**:\n   - Linux: An open source operating system that is free, but it's not always the same as Windows\n   - Apache HTTP Server (Apache): A popular web server software with a large community of developers\n\n5. **Impact**: Open-source projects can lead to faster development cycles and more efficient use of resources.\n\n6. **Legal Considerations**:\n    - Many open source licenses allow users to modify, distribute, or share the code under certain conditions.\n7. **Community Support**: The vast majority of software is developed by a community rather than individual developers; this makes it easier for people who are not familiar with programming but interested in technology.\n\nIf you have any specific questions about OSS that don't fit into these categories, feel free to ask!",
+            "sanitized_output": "Open-source software (OSS) refers to computer programs that are made available for free use under a license agreement where users can modify the program as they see fit without restrictions on how it's used. It typically includes code, documentation, and sometimes other resources like libraries or tools.\n\nTo provide more detailed information:\n\n1. **Definition**: Open-source software is open source means anyone with access to your computer (or any device) has permission to use, modify, distribute, display, perform, copy, compile, combine, publish, repackage, release for commercial purposes and so on.\n2. **Types of OSS**:\n   - Source code: The original version that includes all the source files along with comments explaining how they were written\n   - Binary distribution (binary): A binary file containing a set of instructions to run an application or software program\n\n3. **Advantages**: Open-source projects often have more features and are easier for users who don't know much about programming.\n4. **Examples**:\n   - Linux: An open source operating system that is free, but it's not always the same as Windows\n   - Apache HTTP Server (Apache): A popular web server software with a large community of developers\n\n5. **Impact**: Open-source projects can lead to faster development cycles and more efficient use of resources.\n\n6. **Legal Considerations**:\n    - Many open source licenses allow users to modify, distribute, or share the code under certain conditions.\n7. **Community Support**: The vast majority of software is developed by a community rather than individual developers; this makes it easier for people who are not familiar with programming but interested in technology.\n\nIf you have any specific questions about OSS that don't fit into these categories, feel free to ask!",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "response_source": "llm"
+      },
+      "user_b_provenance": {
+        "provider_ok": true,
+        "provider_called": true,
+        "provider_call_count": 1,
+        "provider_attempts": [
+          {
+            "attempt": 1,
+            "done_reason": "stop",
+            "elapsed_ms": 2406.0,
+            "tokens_generated": 22,
+            "sanitizer_changed": false,
+            "raw_output_sha256": "d97a61501beb15a41274dfe2db8c25a87ca0899a39fde88995020150f69efec2",
+            "raw_provider_reply": "Nhà phát triển ứng dụng phần mềm (Open Source) được gọi là phần mềm mã nguồn mở.",
+            "sanitized_output": "Nhà phát triển ứng dụng phần mềm (Open Source) được gọi là phần mềm mã nguồn mở.",
+            "quality_status": "matched",
+            "entity_status": "not_applicable",
+            "repetition_flags": []
+          }
+        ],
+        "provider_used": "ollama",
+        "model_used": "qwen2.5:0.5b",
+        "response_source": "llm"
+      },
+      "user_a_response_lang": "en",
+      "user_b_response_lang": "vi",
+      "verbatim_reply": "User A: Open-source software (OSS) refers to computer programs that are made available for free use under a license agreement where users can modify the program as they see fit without restrictions on how it's used. It typically includes code, documentation, and sometimes other resources like libraries or tools.\n\nTo provide more detailed information:\n\n1. **Definition**: Open-source software is open source means anyone with access to your computer (or any device) has permission to use, modify, distribute, display, perform, copy, compile, combine, publish, repackage, release for commercial purposes and so on.\n2. **Types of OSS**:\n   - Source code: The original version that includes all the source files along with comments explaining how they were written\n   - Binary distribution (binary): A binary file containing a set of instructions to run an application or software program\n\n3. **Advantages**: Open-source projects often have more features and are easier for users who don't know much about programming.\n4. **Examples**:\n   - Linux: An open source operating system that is free, but it's not always the same as Windows\n   - Apache HTTP Server (Apache): A popular web server software with a large community of developers\n\n5. **Impact**: Open-source projects can lead to faster development cycles and more efficient use of resources.\n\n6. **Legal Considerations**:\n    - Many open source licenses allow users to modify, distribute, or share the code under certain conditions.\n7. **Community Support**: The vast majority of software is developed by a community rather than individual developers; this makes it easier for people who are not familiar with programming but interested in technology.\n\nIf you have any specific questions about OSS that don't fit into these categories, feel free to ask!\n---\nUser B: Nhà phát triển ứng dụng phần mềm (Open Source) được gọi là phần mềm mã nguồn mở.",
+      "raw_provider_reply": {
+        "user_a": "Open-source software (OSS) refers to computer programs that are made available for free use under a license agreement where users can modify the program as they see fit without restrictions on how it's used. It typically includes code, documentation, and sometimes other resources like libraries or tools.\n\nTo provide more detailed information:\n\n1. **Definition**: Open-source software is open source means anyone with access to your computer (or any device) has permission to use, modify, distribute, display, perform, copy, compile, combine, publish, repackage, release for commercial purposes and so on.\n2. **Types of OSS**:\n   - Source code: The original version that includes all the source files along with comments explaining how they were written\n   - Binary distribution (binary): A binary file containing a set of instructions to run an application or software program\n\n3. **Advantages**: Open-source projects often have more features and are easier for users who don't know much about programming.\n4. **Examples**:\n   - Linux: An open source operating system that is free, but it's not always the same as Windows\n   - Apache HTTP Server (Apache): A popular web server software with a large community of developers\n\n5. **Impact**: Open-source projects can lead to faster development cycles and more efficient use of resources.\n\n6. **Legal Considerations**:\n    - Many open source licenses allow users to modify, distribute, or share the code under certain conditions.\n7. **Community Support**: The vast majority of software is developed by a community rather than individual developers; this makes it easier for people who are not familiar with programming but interested in technology.\n\nIf you have any specific questions about OSS that don't fit into these categories, feel free to ask!",
+        "user_b": "Nhà phát triển ứng dụng phần mềm (Open Source) được gọi là phần mềm mã nguồn mở."
+      },
+      "sanitized_provider_output": {
+        "user_a": "Open-source software (OSS) refers to computer programs that are made available for free use under a license agreement where users can modify the program as they see fit without restrictions on how it's used. It typically includes code, documentation, and sometimes other resources like libraries or tools.\n\nTo provide more detailed information:\n\n1. **Definition**: Open-source software is open source means anyone with access to your computer (or any device) has permission to use, modify, distribute, display, perform, copy, compile, combine, publish, repackage, release for commercial purposes and so on.\n2. **Types of OSS**:\n   - Source code: The original version that includes all the source files along with comments explaining how they were written\n   - Binary distribution (binary): A binary file containing a set of instructions to run an application or software program\n\n3. **Advantages**: Open-source projects often have more features and are easier for users who don't know much about programming.\n4. **Examples**:\n   - Linux: An open source operating system that is free, but it's not always the same as Windows\n   - Apache HTTP Server (Apache): A popular web server software with a large community of developers\n\n5. **Impact**: Open-source projects can lead to faster development cycles and more efficient use of resources.\n\n6. **Legal Considerations**:\n    - Many open source licenses allow users to modify, distribute, or share the code under certain conditions.\n7. **Community Support**: The vast majority of software is developed by a community rather than individual developers; this makes it easier for people who are not familiar with programming but interested in technology.\n\nIf you have any specific questions about OSS that don't fit into these categories, feel free to ask!",
+        "user_b": "Nhà phát triển ứng dụng phần mềm (Open Source) được gọi là phần mềm mã nguồn mở."
+      },
+      "heuristic_evaluation": {
+        "user_a": {
+          "actual_language": "en",
+          "confidence": 1.0,
+          "vi_diacritics": 0,
+          "vi_words": 0,
+          "en_words": 11,
+          "method": "heuristic"
+        },
+        "user_b": {
+          "actual_language": "vi",
+          "confidence": 1.0,
+          "vi_diacritics": 17,
+          "vi_words": 2,
+          "en_words": 0,
+          "method": "heuristic"
+        }
+      },
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "user_a": {
+          "transport": {
+            "status": "passed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "llm"
+          },
+          "language": {
+            "status": "matched",
+            "actual_language": "en",
+            "expected_language": "en",
+            "unsupported_script_counts": {},
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Does not judge task correctness, factuality, or human acceptability."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "content_quality": {
+            "status": "uncertain",
+            "reason": "No automated judgement is treated as semantic review."
+          },
+          "factual_accuracy": {
+            "status": "uncertain",
+            "reason": "Requires source-based or human review; concept presence alone is insufficient."
+          },
+          "context_relevance": {
+            "status": "uncertain"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "passed",
+            "reason": "no_provider_limit_or_obvious_open_clause",
+            "done_reason": "stop"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        },
+        "user_b": {
+          "transport": {
+            "status": "passed",
+            "provider_called": true,
+            "provider_call_count": 1,
+            "response_source": "llm"
+          },
+          "language": {
+            "status": "matched",
+            "actual_language": "vi",
+            "expected_language": "vi",
+            "unsupported_script_counts": {},
+            "method": "lexical_and_unicode_script_heuristic",
+            "limitation": "Does not judge task correctness, factuality, or human acceptability."
+          },
+          "task": {
+            "status": "uncertain",
+            "method": "no deterministic semantic rubric; human review required"
+          },
+          "content_quality": {
+            "status": "uncertain",
+            "reason": "No automated judgement is treated as semantic review."
+          },
+          "factual_accuracy": {
+            "status": "uncertain",
+            "reason": "Requires source-based or human review; concept presence alone is insufficient."
+          },
+          "context_relevance": {
+            "status": "uncertain"
+          },
+          "entities": {
+            "status": "not_applicable",
+            "missing": [],
+            "mutated": [],
+            "prompt_echo_removed": false
+          },
+          "instruction_leak_and_repetition": {
+            "status": "passed",
+            "flags": []
+          },
+          "completion": {
+            "status": "passed",
+            "reason": "no_provider_limit_or_obvious_open_clause",
+            "done_reason": "stop"
+          },
+          "evaluation_limitations": [
+            "Automated language and task checks are heuristics; no independent human review is claimed."
+          ]
+        }
+      },
+      "evaluation_label": "development_regression",
+      "notes": "Isolated per-user preference state verified via distinct tokens.",
+      "quality_flags": []
+    },
+    "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION": {
+      "case_id": "VARIANT_18_USER_SESSION_CONTEXT_ISOLATION",
+      "case_type": "clarification",
+      "objective": "Không rò rỉ antecedent từ user A hoặc session khác sang session mới của user B.",
+      "prompt": "Ưu điểm là gì?",
+      "setup_history": [],
+      "expected_response_language": "vi",
+      "metadata": {
+        "provider_called": false,
+        "provider_call_count": 0,
+        "provider_ok": true,
+        "response_source": "clarification",
+        "next_action": "clarify",
+        "preferred_language": "vi",
+        "response_language": "vi"
+      },
+      "verbatim_reply": "Hiện tại tôi chưa có bối cảnh hoặc quyết định nào trước đó để nhắc lại. Bạn có thể cho tôi biết bạn muốn trao đổi hay chốt nội dung nào không?",
+      "contract_passed": true,
+      "linguistic_status": "matched",
+      "evaluation": {
+        "transport": {
+          "status": "not_applicable",
+          "reason": "application clarification"
+        },
+        "language": {
+          "status": "matched",
+          "actual_language": "vi",
+          "expected_language": "vi",
+          "unsupported_script_counts": {},
+          "method": "lexical_and_unicode_script_heuristic",
+          "limitation": "Does not judge task correctness, factuality, or human acceptability."
+        },
+        "task": {
+          "status": "passed",
+          "method": "fresh session clarification; provider must not receive other-user context"
+        },
+        "entities": {
+          "status": "not_applicable"
+        },
+        "instruction_leak_and_repetition": {
+          "status": "passed",
+          "flags": []
+        },
+        "completion": {
+          "status": "not_applicable"
+        },
+        "evaluation_limitations": [
+          "Does not claim independent semantic review."
+        ]
+      },
+      "evaluation_label": "variation_locked_before_run",
+      "quality_flags": []
+    },
+    "CASE_12_PROVIDER_OFFLINE": {
+      "case_id": "CASE_12_PROVIDER_OFFLINE",
+      "case_type": "expected_provider_error",
+      "objective": "Ollama service offline: báo lỗi trung thực provider_error, provider_ok=false, KHÔNG lưu lỗi vào DB thành câu trả lời của AI.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Không kết nối được Ollama (unreachable)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 6,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Offline error properly categorized and isolated. Not counted as generation."
+    },
+    "CASE_13_MODEL_MISSING": {
+      "case_id": "CASE_13_MODEL_MISSING",
+      "case_type": "expected_provider_error",
+      "objective": "Model cấu hình không tồn tại trong Ollama: báo lỗi model_missing, provider_ok=false, KHÔNG lưu assistant message.",
+      "prompt": "Xin chào DUSN-X",
+      "input_preferred_language": "auto",
+      "expected_response_language": null,
+      "metadata": {
+        "provider_ok": false,
+        "provider_called": true,
+        "response_source": "provider_error"
+      },
+      "verbatim_reply": "[Model cấu hình không tồn tại trong Ollama (model_missing)]",
+      "heuristic_evaluation": {
+        "actual_language": "vi",
+        "confidence": 1.0,
+        "vi_diacritics": 5,
+        "vi_words": 2,
+        "en_words": 0,
+        "method": "heuristic"
+      },
+      "contract_passed": true,
+      "linguistic_status": "not_applicable",
+      "notes": "Missing model error cleanly caught. Not counted as generation."
+    }
+  },
+  "summary": {
+    "quality_flagged_cases": 0,
+    "total_cases": 22,
+    "contract_passed": 18,
+    "contract_failed": 4,
+    "real_llm_generations": 5,
+    "template_recalls": 1,
+    "application_formatting_cases": 4,
+    "application_formatting_passed": 4,
+    "expected_provider_failures": 2,
+    "eligible_language_cases": 10,
+    "linguistic_matched": 7,
+    "linguistic_divergent": 3,
+    "linguistic_uncertain": 0,
+    "linguistic_mixed": 0,
+    "task_failed": 1,
+    "task_uncertain": 8,
+    "completion_failed": 0,
+    "completion_uncertain": 0,
+    "execution_status": "completed"
+  },
+  "code_sha": "55c5737a77424207005ddda2f056e49bb7eeb64b"
+}
