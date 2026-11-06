@@ -1309,7 +1309,7 @@ def _chat_impl(req: ChatRequest, user: dict):
 
     # A template is selected before any provider call. Never discard generated
     # text while attributing a deterministic quotation to its model/provider.
-    grounded_answer, selected = memory_answer_with_selection(req.message, memories)
+    grounded_answer, selected = memory_answer_with_selection(req.message, memories, reply_language)
     prompt_ids = []
     provider_called = False
     provider_call_count = 0

@@ -68,9 +68,26 @@ def summarize(rows):
     return report
 
 
+def build_parser():
+    p=argparse.ArgumentParser()
+    p.add_argument('--gateway',default='http://localhost:8080')
+    p.add_argument('--data',default='datasets/llm_sft')
+    p.add_argument('--base',default='qwen2.5:0.5b')
+    p.add_argument('--candidate',help='Explicit candidate tag; required when generating a new evaluation')
+    p.add_argument('--output',required=True)
+    p.add_argument('--ratings')
+    p.add_argument('--dev-smoke',action='store_true')
+    return p
+
+
+def parse_args(argv=None):
+    p=build_parser();a=p.parse_args(argv)
+    if not a.ratings and not a.candidate:p.error('--candidate is required when generating a new evaluation')
+    return a
+
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--gateway',default='http://localhost:8080');p.add_argument('--data',default='datasets/llm_sft');p.add_argument('--base',default='qwen2.5:0.5b');p.add_argument('--candidate',default='dusnx-vi-candidate');p.add_argument('--output',required=True);p.add_argument('--ratings');p.add_argument('--dev-smoke',action='store_true')
-    a=p.parse_args();out=Path(a.output)
+    a=parse_args();out=Path(a.output)
     if a.ratings:
         run=json.loads((out/'run.json').read_text(encoding='utf-8'))
         predictions=json.loads((out/'raw_outputs.json').read_text(encoding='utf-8'))

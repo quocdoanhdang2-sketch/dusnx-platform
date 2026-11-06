@@ -92,7 +92,8 @@ thao tác. Không dùng `Stop-Process -Name python`. Chỉ process do mình xác
   kèm `state_reset/reset_reason`. GET state phản ánh metadata đang lưu và tính tương thích.
 
 Evaluation mặc định tắt. Chỉ bật ở stack riêng với `DUSNX_ENABLE_LLM_EVAL=1` và
-`DUSNX_LLM_EVAL_MODELS=qwen2.5:0.5b,dusnx-vi-candidate`; yêu cầu Bearer token,
+allowlist tường minh, ví dụ `DUSNX_LLM_EVAL_MODELS=qwen2.5:0.5b,dusnx-vi-v2-20261105`
+(thay bằng tag candidate thật đang cài; mặc định chỉ cho phép base); yêu cầu Bearer token,
 allowlist và không lưu prompt vào DB. Không đặt token ở URL hoặc command line.
 Không chạy lại test đã xem prediction để tune/promote model.
 

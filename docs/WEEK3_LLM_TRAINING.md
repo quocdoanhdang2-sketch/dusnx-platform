@@ -2,7 +2,8 @@
 
 > Cập nhật Tuần4 (2026-10-04): đã đối chiếu artifact export local với toàn bộ hash
 > inventory; manifest `training_complete`, epoch3, checkpoint21, T4, LoRA thật.
-> Ollama hiện có base và `dusnx-vi-candidate:latest`; pair cũ transport8/8 mỗi model.
+> Ollama hiện có base, candidate lịch sử `dusnx-vi-candidate:latest` và candidate v2
+> `dusnx-vi-v2-20261105:latest`; pair lịch sử transport8/8 mỗi model.
 > Base không đổi; candidate không được promote. Chưa tìm thấy ZIP AI review complete
 > hoặc báo cáo chấm gốc, không coi điểm AI người dùng cung cấp là human review.
 > [Bằng chứng hiện hành](evidence/llm-sft/evaluation-01/README.md).
@@ -77,6 +78,8 @@ Get-FileHash datasets/llm_sft/train.jsonl,datasets/llm_sft/validation.jsonl,data
 
 `result_files` của `train_validation` phải chứa đúng `train.jsonl` và `validation.jsonl`; loại `independent_test` chỉ chứa `test.jsonl`. Mỗi giá trị là SHA-256 của **byte nguyên gốc** trong file tương ứng (PowerShell `Get-FileHash` dùng đúng byte đó; không hash JSON đã parse hoặc đã serialize lại). Lệnh apply tự tạo các hash này. Nếu dữ liệu đổi sau review/export, xuất và review lại đúng nguồn trước khi khóa.
 
+Khi release được ghép từ parent đã khóa cộng supplement đã duyệt, receipt train/validation có thể dùng schema v2 với `receipt_kind: lineage_aggregate` và khối `lineage`. Chỉ dùng receipt này khi nó được sinh từ đúng parent + supplement; `lock_llm_data.py` và `verify_full_training_gate` sẽ kiểm tra lại các artifact `lineage_parent_manifest.json`, `lineage_parent_train_validation_review_receipt.json`, `lineage_parent_train.jsonl`, `lineage_parent_validation.jsonl`, `supplement_review_receipt.json`, `supplement_review.csv`: hash từng file, parent phải khóa và trùng byte prefix, phần thêm phải đã `human_reviewed`, review key/cột bất biến/decision/reviewer/timestamp khớp CSV, và tổng completion của parent + supplement phải bằng `row_count`. Receipt supplement chỉ chứng nhận phần bổ sung, không phải receipt tổng; schema v2 không áp dụng cho `independent_test`.
+
 Sau khi hai receipt thật khớp, `lock_llm_data.py` mới ghi manifest schema v4 gồm `row_counts` theo split và hash của từng receipt đã lưu. Không tự sửa manifest hoặc receipt để làm cho gate đạt.
 
 3. Audit exact tokenizer, rồi khóa **trước train và prediction** bằng hai receipt thật:
@@ -135,17 +138,17 @@ $sha=(Get-Content 'D:/Downloads/dusnx-llm-export.zip.sha256' -Raw).Trim()
 ./scripts/import_llm_ollama.ps1 -ArtifactDir runtime/llm-export -Python $py
 ```
 
-Import script kiểm tra SHA, base revision, GGUF magic, base vẫn installed, tên candidate riêng; từ chối ghi đè candidate đã tồn tại. Lấy chat template từ base Qwen đang cài, thay FROM bằng GGUF, `ollama create dusnx-vi-candidate -f Modelfile.local`, chạy một câu tiếng Việt. Đó là smoke, chưa phải bằng chứng tốt hơn. Base vẫn nguyên để rollback.
+Import script kiểm tra SHA, base revision, GGUF magic, base vẫn installed, tên candidate riêng; từ chối ghi đè candidate đã tồn tại. Lấy chat template từ base Qwen đang cài, thay FROM bằng GGUF, `ollama create <tag> -f Modelfile.local` (ví dụ `dusnx-vi-v2-20261105`), chạy một câu tiếng Việt. Đó là smoke, chưa phải bằng chứng tốt hơn. Base vẫn nguyên để rollback.
 
 ## So sánh thật qua Gateway và quyết định chọn model
 
-Khởi động lại **FastAPI và Gateway đã build code mới**, đặt `DUSNX_ENABLE_LLM_EVAL=1`; chỉ thêm allowlist nếu dùng candidate tên khác. Endpoint `/api/v1/llm-evaluation` cần opaque Bearer token đăng nhập, mặc định tắt. Nó đi Gateway → FastAPI → Ollama, không dùng template/retrieval/rules/state, không lưu prompt vào DB. Đây là đánh giá sinh câu trả lời có context được cấp; không thay thế bài test end-to-end retrieval/router của sản phẩm.
+Khởi động lại **FastAPI và Gateway đã build code mới**, đặt `DUSNX_ENABLE_LLM_EVAL=1`. Allowlist phải khai báo tường minh tag candidate thật đang cài; mặc định chỉ cho phép base. Endpoint `/api/v1/llm-evaluation` cần opaque Bearer token đăng nhập, mặc định tắt. Nó đi Gateway → FastAPI → Ollama, không dùng template/retrieval/rules/state, không lưu prompt vào DB. Đây là đánh giá sinh câu trả lời có context được cấp; không thay thế bài test end-to-end retrieval/router của sản phẩm.
 
 ```powershell
 $env:DUSNX_ENABLE_LLM_EVAL='1'
-$env:DUSNX_LLM_EVAL_MODELS='qwen2.5:0.5b,dusnx-vi-candidate'
+$env:DUSNX_LLM_EVAL_MODELS='qwen2.5:0.5b,dusnx-vi-v2-20261105'
 # Restart the existing local services with these env vars, then:
-& $py python/scripts/evaluate_llm_pair.py --output runtime/llm-pair-01
+& $py python/scripts/evaluate_llm_pair.py --candidate dusnx-vi-v2-20261105 --output runtime/llm-pair-01
 ```
 
 Token nhập tại prompt ẩn, không truyền qua command line, không ghi output. Cùng context/prompt/seed/temp/num_predict cho cả hai model; thứ tự được tráo theo case. `raw_outputs.json` ghi nguyên câu trả lời, model/provider, thời gian, lỗi và các phép exact-match tự động; `summary.json` tách tỷ lệ tự động và latency, `blind_ratings.csv` dành cho người chấm. Chấm 0/1 cho **đúng tiếng Việt**, **grounded không bịa**, **quyết định hỏi lại thích hợp**, **không dùng obsolete**, **không nhận đã lưu khi persistence chưa xác nhận**, **hoàn thành câu trả lời**; chấm 0 khi provider lỗi. Ghi reviewer/date/notes, không tự điền là người đã duyệt.
@@ -156,7 +159,7 @@ Token nhập tại prompt ẩn, không truyền qua command line, không ghi out
 
 Gate được chốt trước khi xem kết quả: đủ hai output LLM thật mỗi case, test có human attestation, không case/tiêu chí nào giảm so với base; tiếng Việt >=95%; grounded, clarification, no-obsolete và no-false-save đạt100%; các trung bình không thấp hơn base. Exact-match tự động chỉ là tín hiệu hỗ trợ, điểm người chấm quyết định gate. Tập nhỏ nên không khẳng định superiority thống kê. Chưa đủ review, thiếu candidate hoặc fail thì **không promote**.
 
-Sau gate đạt và các regression test sản phẩm đạt, người vận hành mới đặt `DUSNX_OLLAMA_MODEL=dusnx-vi-candidate`, restart FastAPI; router path giữ nguyên. Rollback: đặt lại `qwen2.5:0.5b`, restart và kiểm tra `/v1/health`. Script không tự đổi `.env`.
+Sau gate đạt và các regression test sản phẩm đạt, người vận hành mới đặt `DUSNX_OLLAMA_MODEL` bằng tag candidate đã được gate, restart FastAPI; router path giữ nguyên. Rollback: đặt lại `qwen2.5:0.5b`, restart và kiểm tra `/v1/health`. Script không tự đổi `.env`.
 
 ## Kiểm tra local / CI
 

@@ -11,7 +11,7 @@ import zipfile
 import pytest
 from dusnx_core.llm_data import audit, completion_rows, digest, read_sft, validate, verify_file_manifest, verify_full_training_gate
 from dusnx_core.llm_artifacts import pack, unpack
-from dusnx_core.llm_review import apply_package, export_package
+from dusnx_core.llm_review import FIELDS, apply_package, export_package
 
 ROOT=Path(__file__).resolve().parents[2]
 DATA=ROOT/'datasets/llm_sft'
@@ -36,6 +36,33 @@ def test_known_content_regressions_are_grounded():
     assert 'state đã xác nhận' in rows['train-017']['messages'][0]['content']
     assert 'chưa đi qua luồng ghi cơ sở dữ liệu' in rows['train-020']['messages'][0]['content']
     assert all(fact in rows['train-025']['messages'][0]['content'] for fact in rows['train-025']['quality_contracts'][0]['required_facts'])
+
+
+def test_english_response_language_accepts_confirmed_timeout_wording():
+    row={
+        'id':'english-timeout-language-regression',
+        'source':'synthetic_designed',
+        'source_revision':'validator-regression-fixture',
+        'license':'CC0-1.0',
+        'generation_method':'AI-generated',
+        'scenario_family':'train_technical_code_switch',
+        'sequence_id':'english-timeout-language-regression-sequence',
+        'user_id':'fictional-language-regression',
+        'split':'train',
+        'review_status':'needs_human_review',
+        'data_kind':'designed_conversation',
+        'messages':[
+            {'role':'system','content':'Use only confirmed facts.'},
+            {'role':'user','content':'The GCP API returned a timeout; explain briefly in English without claiming success.'},
+            {'role':'assistant','content':'The GCP API returned a timeout, so the operation cannot be confirmed as successful.'},
+        ],
+        'quality_contracts':[{
+            'assistant_turn':1,'response_mode':'answer','language':'en','response_language':'en',
+            'required_facts':['GCP'],'forbidden_facts':[],'future_facts':[],
+            'criteria':['grounded','language_compliance'],
+        }],
+    }
+    validate([row],'train')
 
 
 @pytest.mark.parametrize('field',['id','sequence_id','user_id','scenario_family'])
@@ -138,9 +165,141 @@ def _locked_gate_fixture(tmp_path):
     return manifest
 
 
+def _lineaged_train_receipt_fixture(root):
+    root=Path(root)
+    parent_rows={
+        'train':[{'id':'synthetic-parent-train','messages':[{'role':'user','content':'Synthetic parent prompt.'},{'role':'assistant','content':'Synthetic parent answer.'}]}],
+        'validation':[{'id':'synthetic-parent-validation','messages':[{'role':'user','content':'Synthetic parent prompt.'},{'role':'assistant','content':'Synthetic parent answer.'}]}],
+    }
+    parent_bytes={s:(json.dumps(rows[0],separators=(',',':'))+'\n').encode() for s,rows in parent_rows.items()}
+    additions={}
+    review_rows=[]
+    for split,suffix in (('train','a'),('validation','b')):
+        record_id=f'supplement-{suffix}'
+        messages=[
+            {'role':'system','content':'Synthetic lineage verifier fixture.'},
+            {'role':'user','content':f'Synthetic prompt {suffix}.'},
+            {'role':'assistant','content':f'Synthetic answer {suffix}.'},
+        ]
+        contract={'assistant_turn':1,'response_mode':'answer','language':'en','response_language':'en','required_facts':[],'forbidden_facts':[],'future_facts':[],'criteria':['fixture']}
+        record={'id':record_id,'split':split,'review_status':'human_reviewed','messages':messages,'quality_contracts':[contract]}
+        additions[split]=record
+        review_rows.append({
+            'review_key':f'{split}:{record_id}:1','split':split,'record_id':record_id,'assistant_turn':'1',
+            'prefix_json':json.dumps(messages[:2],ensure_ascii=False,separators=(',',':')),
+            'reference_answer':messages[2]['content'],
+            'quality_contract_json':json.dumps(contract,ensure_ascii=False,separators=(',',':')),
+            'decision':'approve','revised_answer':'','revised_quality_contract_json':'',
+            'reviewer':'reviewer-fixture','reviewed_at':'2026-10-01T10:00:00+00:00','reason':'',
+        })
+    release_bytes={}
+    for split in ('train','validation'):
+        release_bytes[split]=parent_bytes[split]+(json.dumps(additions[split],ensure_ascii=False,separators=(',',':'))+'\n').encode()
+        (root/f'{split}.jsonl').write_bytes(release_bytes[split])
+        (root/f'lineage_parent_{split}.jsonl').write_bytes(parent_bytes[split])
+    parent_files={f'{s}.jsonl':digest(root/f'lineage_parent_{s}.jsonl') for s in ('train','validation')}
+    parent_manifest={'schema_version':4,'status':'human_attested_locked_before_training','locked':True,'files':parent_files}
+    (root/'lineage_parent_manifest.json').write_text(json.dumps(parent_manifest),encoding='utf-8')
+    parent_receipt={'schema_version':1,'review_type':'train_validation','test_only':False,'result_files':parent_files,'row_count':2,'reviewers':['reviewer-fixture'],'reviewed_at':['2026-10-01T10:00:00+00:00']}
+    (root/'lineage_parent_train_validation_review_receipt.json').write_text(json.dumps(parent_receipt),encoding='utf-8')
+    with (root/'supplement_review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=FIELDS);writer.writeheader();writer.writerows(review_rows)
+    review_sha=digest(root/'supplement_review.csv')
+    release_hashes={f'{s}.jsonl':digest(root/f'{s}.jsonl') for s in ('train','validation')}
+    supplement={'schema_version':1,'receipt_type':'train_validation_supplement_review','scope':'supplemental completion rows only; does not attest the full release','not_a_full_release_receipt':True,'covered_completion_rows':2,'added_records':{'train':1,'validation':1},'release_counts':{'train_records':2,'train_assistant_completions':2,'validation_records':2,'validation_assistant_completions':2},'covered_review_keys':[r['review_key'] for r in review_rows],'decisions':{'approve':2,'revise':0},'reviewers':['reviewer-fixture'],'reviewed_at':['2026-10-01T10:00:00+00:00'],'review_csv_sha256':review_sha,'parent_manifest_sha256':digest(root/'lineage_parent_manifest.json'),'parent_train_validation_receipt_sha256':digest(root/'lineage_parent_train_validation_review_receipt.json'),'parent_file_sha256':parent_files,'release_v3_sha256':release_hashes}
+    (root/'supplement_review_receipt.json').write_text(json.dumps(supplement),encoding='utf-8')
+    lineage_paths={
+        'parent_manifest':'lineage_parent_manifest.json',
+        'parent_receipt':'lineage_parent_train_validation_review_receipt.json',
+        'parent_train':'lineage_parent_train.jsonl',
+        'parent_validation':'lineage_parent_validation.jsonl',
+        'supplement_receipt':'supplement_review_receipt.json',
+        'supplement_review_csv':'supplement_review.csv',
+    }
+    lineage={f'{key}_path':name for key,name in lineage_paths.items()}
+    lineage.update({f'{key}_sha256':digest(root/name) for key,name in lineage_paths.items()})
+    lineage['completion_counts']={'parent':2,'supplement':2,'total':4}
+    aggregate={'schema_version':2,'receipt_kind':'lineage_aggregate','review_type':'train_validation','test_only':False,'result_files':release_hashes,'row_count':4,'reviewers':['reviewer-fixture'],'reviewed_at':['2026-10-01T10:00:00+00:00'],'lineage':lineage}
+    aggregate_path=root/'train_validation_review_receipt.json'
+    aggregate_path.write_text(json.dumps(aggregate),encoding='utf-8')
+    return aggregate_path,aggregate,release_hashes
+
+
 def test_full_training_gate_requires_persisted_review_receipts(tmp_path):
     manifest=_locked_gate_fixture(tmp_path)
     assert verify_full_training_gate(tmp_path,manifest) is True
+
+
+def test_full_training_gate_accepts_lineage_aware_train_validation_receipt(tmp_path):
+    root=tmp_path/'lineaged-release';root.mkdir()
+    train_receipt_path,train_receipt,train_files=_lineaged_train_receipt_fixture(root)
+    test_path=root/'test.jsonl';test_path.write_text('{"synthetic_test_fixture":true}\n',encoding='utf-8')
+    test_hash=digest(test_path)
+    test_receipt={'schema_version':1,'review_type':'independent_test','test_only':False,'human_author':'author-fixture','result_files':{'test.jsonl':test_hash},'row_count':1,'reviewers':['reviewer-fixture'],'reviewed_at':['2026-10-01T10:00:00+00:00']}
+    test_receipt_path=root/'independent_test_review_receipt.json';test_receipt_path.write_text(json.dumps(test_receipt),encoding='utf-8')
+    files={**train_files,'test.jsonl':test_hash,'train_validation_review_receipt.json':digest(train_receipt_path),'independent_test_review_receipt.json':digest(test_receipt_path)}
+    manifest={'schema_version':4,'status':'human_attested_locked_before_training','locked':True,'row_counts':{'train':2,'validation':2,'test':1},'files':files}
+    attestation={'human_author':'author-fixture','reviewer':'reviewer-fixture','training_reviewed':True,'locked_before_training':True,'test_sha256':test_hash,'train_review_receipt_sha256':files['train_validation_review_receipt.json'],'test_review_receipt_sha256':files['independent_test_review_receipt.json']}
+    (root/'human_test_attestation.json').write_text(json.dumps(attestation),encoding='utf-8')
+    assert verify_full_training_gate(root,manifest) is True
+    script=ROOT/'python/scripts/lock_llm_data.py'
+    spec=importlib.util.spec_from_file_location('lock_llm_data_lineage_receipt_test',script)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    loaded,_=module._receipt(train_receipt_path,'train_validation',train_files,4,root=root)
+    assert loaded['receipt_kind']=='lineage_aggregate'
+
+
+def test_lineage_receipt_rejects_supplement_review_csv_tampering(tmp_path):
+    root=tmp_path/'lineaged-release';root.mkdir()
+    _,receipt,files=_lineaged_train_receipt_fixture(root)
+    (root/'supplement_review.csv').write_bytes((root/'supplement_review.csv').read_bytes()+b'\n')
+    with pytest.raises(ValueError,match='artifact hash mismatch'):
+        from dusnx_core.llm_data import verify_train_validation_lineage_receipt
+        verify_train_validation_lineage_receipt(root,receipt,files,4)
+
+
+def test_lineage_receipt_rejects_review_key_mismatch_after_rehash(tmp_path):
+    root=tmp_path/'lineaged-release';root.mkdir()
+    receipt_path,receipt,files=_lineaged_train_receipt_fixture(root)
+    supplement_path=root/'supplement_review_receipt.json'
+    supplement=json.loads(supplement_path.read_text(encoding='utf-8'))
+    supplement['covered_review_keys'][0]='train:wrong-record:1'
+    supplement_path.write_text(json.dumps(supplement),encoding='utf-8')
+    receipt['lineage']['supplement_receipt_sha256']=digest(supplement_path)
+    receipt_path.write_text(json.dumps(receipt),encoding='utf-8')
+    from dusnx_core.llm_data import verify_train_validation_lineage_receipt
+    with pytest.raises(ValueError,match='review keys'):
+        verify_train_validation_lineage_receipt(root,receipt,files,4)
+
+
+def test_lineage_receipt_rejects_malformed_supplement_record(tmp_path):
+    root=tmp_path/'lineaged-release';root.mkdir()
+    receipt_path,receipt,_=_lineaged_train_receipt_fixture(root)
+    rows=[json.loads(line) for line in (root/'train.jsonl').read_text(encoding='utf-8').splitlines() if line.strip()]
+    del rows[-1]['quality_contracts']
+    (root/'train.jsonl').write_text(''.join(json.dumps(row,ensure_ascii=False,separators=(',',':'))+'\n' for row in rows),encoding='utf-8',newline='\n')
+    release_hashes={'train.jsonl':digest(root/'train.jsonl'),'validation.jsonl':digest(root/'validation.jsonl')}
+    supplement_path=root/'supplement_review_receipt.json'
+    supplement=json.loads(supplement_path.read_text(encoding='utf-8'))
+    supplement['release_v3_sha256']=release_hashes
+    supplement_path.write_text(json.dumps(supplement),encoding='utf-8')
+    receipt['result_files']=release_hashes
+    receipt['lineage']['supplement_receipt_sha256']=digest(supplement_path)
+    receipt_path.write_text(json.dumps(receipt),encoding='utf-8')
+    from dusnx_core.llm_data import verify_train_validation_lineage_receipt
+    with pytest.raises(ValueError,match='Invalid supplement record structure'):
+        verify_train_validation_lineage_receipt(root,receipt,release_hashes,4)
+
+
+def test_full_training_gate_rejects_lineage_receipt_for_independent_test(tmp_path):
+    manifest=_locked_gate_fixture(tmp_path)
+    path=tmp_path/'independent_test_review_receipt.json';receipt=json.loads(path.read_text(encoding='utf-8'))
+    receipt['schema_version']=2;path.write_text(json.dumps(receipt),encoding='utf-8')
+    manifest['files'][path.name]=digest(path)
+    attestation_path=tmp_path/'human_test_attestation.json';attestation=json.loads(attestation_path.read_text(encoding='utf-8'))
+    attestation['test_review_receipt_sha256']=digest(path);attestation_path.write_text(json.dumps(attestation),encoding='utf-8')
+    with pytest.raises(ValueError,match='receipt'):
+        verify_full_training_gate(tmp_path,manifest)
 
 
 @pytest.mark.parametrize('fault',['missing_receipt','tampered_receipt','wrong_result_hash'])
@@ -477,6 +636,7 @@ def test_eval_transport_is_real_llm_not_template(monkeypatch):
     import io
     from apps.ai_api.llm_evaluation import EvaluationRequest,evaluate
     monkeypatch.setenv('DUSNX_ENABLE_LLM_EVAL','1')
+    monkeypatch.setenv('DUSNX_LLM_EVAL_MODELS','qwen2.5:0.5b,dusnx-vi-candidate')
     def call(req,timeout):
         body=json.loads(req.data)
         assert body['model']=='dusnx-vi-candidate' and body['options']['temperature']==0
@@ -485,6 +645,24 @@ def test_eval_transport_is_real_llm_not_template(monkeypatch):
     r=evaluate(EvaluationRequest(model='dusnx-vi-candidate',messages=[{'role':'system','content':'Tiếng Việt'},{'role':'user','content':'Chào'}]))
     assert r['response_source']=='llm' and r['provider_called'] and r['provider_ok']
     assert r['model_used']=='dusnx-vi-candidate'
+
+
+def test_eval_default_allowlist_is_base_only(monkeypatch):
+    from apps.ai_api.llm_evaluation import EvaluationRequest,evaluate
+    from fastapi import HTTPException
+    monkeypatch.setenv('DUSNX_ENABLE_LLM_EVAL','1')
+    monkeypatch.delenv('DUSNX_LLM_EVAL_MODELS',raising=False)
+    req=EvaluationRequest(model='dusnx-vi-v2-20261105',messages=[{'role':'system','content':'Tiếng Việt'},{'role':'user','content':'Chào'}])
+    with pytest.raises(HTTPException) as e:evaluate(req)
+    assert e.value.status_code==400
+
+
+def test_pair_eval_requires_explicit_candidate(tmp_path):
+    spec=importlib.util.spec_from_file_location('pair_args',ROOT/'python/scripts/evaluate_llm_pair.py');mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    with pytest.raises(SystemExit):mod.parse_args(['--output',str(tmp_path/'out')])
+    args=mod.parse_args(['--output',str(tmp_path/'out'),'--candidate','dusnx-vi-v2-20261105'])
+    assert args.candidate=='dusnx-vi-v2-20261105'
+    assert mod.parse_args(['--output',str(tmp_path/'out'),'--ratings','ratings.csv']).candidate is None
 
 
 def test_promotion_rejects_regression_and_missing_human_test():

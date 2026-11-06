@@ -22,8 +22,8 @@ class EvaluationRequest(BaseModel):
 
 def evaluate(req):
     if os.getenv('DUSNX_ENABLE_LLM_EVAL')!='1':raise HTTPException(404,'LLM evaluation is disabled')
-    allowed={m.strip() for m in os.getenv('DUSNX_LLM_EVAL_MODELS','qwen2.5:0.5b,dusnx-vi-candidate').split(',') if m.strip()}
-    if req.model not in allowed:raise HTTPException(400,'Model is not in evaluation allowlist')
+    allowed={m.strip() for m in os.getenv('DUSNX_LLM_EVAL_MODELS','qwen2.5:0.5b').split(',') if m.strip()}
+    if req.model not in allowed:raise HTTPException(400,'Model is not in the DUSNX_LLM_EVAL_MODELS allowlist')
     if req.messages[0].role!='system' or req.messages[-1].role!='user':raise HTTPException(400,'Expected system context and final user prompt')
     token_budget = int(os.getenv('DUSNX_OLLAMA_NUM_PREDICT', '512'))
     payload={'model':req.model,'messages':[m.model_dump() for m in req.messages],'stream':False,'options':{'temperature':0,'seed':20260930,'num_predict':token_budget}}
