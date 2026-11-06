@@ -707,6 +707,18 @@ def test_promotion_rejects_regression_and_missing_human_test():
     assert checks['required_fact_exact'] and checks['forbidden_fact_exact']
 
 
+def test_promotion_accepts_spreadsheet_float_ratings():
+    spec=importlib.util.spec_from_file_location('pair_float',ROOT/'python/scripts/evaluate_llm_pair.py');mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    rows=[dict(output_id=arm,case_id='x',arm=arm,provider_ok=True,provider_called=True,response_source='llm') for arm in ('base','candidate')]
+    ratings=[dict(output_id=arm,reviewer='real-reviewer',reviewed_at='2026-11-07T01:22:23+07:00',**{c:'1.0' for c in mod.CRITERIA}) for arm in ('base','candidate')]
+    assert mod.promotion(rows,ratings,True)['promote']
+    ratings[0]['grounded']='0.0'
+    assert mod.promotion(rows,ratings,True)['promote']
+    for bad in ('0.5','','2','yes'):
+        ratings[1]['grounded']=bad
+        with pytest.raises(ValueError,match='0 or 1'):mod.promotion(rows,ratings,True)
+
+
 def test_eval_api_requires_auth(monkeypatch):
     from apps.ai_api.main import app
     from fastapi.testclient import TestClient
