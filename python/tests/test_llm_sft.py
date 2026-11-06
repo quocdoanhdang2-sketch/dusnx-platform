@@ -687,3 +687,101 @@ def test_eval_api_requires_auth(monkeypatch):
     monkeypatch.setenv('DUSNX_ENABLE_LLM_EVAL','1')
     response=TestClient(app).post('/v1/llm-evaluation',json={'model':'qwen2.5:0.5b','messages':[{'role':'system','content':'test'},{'role':'user','content':'hello'}]})
     assert response.status_code==401
+
+
+def _stage_module():
+    spec=importlib.util.spec_from_file_location('stage_llm_release_test',ROOT/'python/scripts/stage_llm_release.py')
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+
+
+def _stage_test_row(index,status='needs_human_review'):
+    project=f'Dự án Hồ Sen {index}'
+    return {
+        'id':f'test-human-{index:03d}','source':'human_designed','source_revision':'human-test-v1',
+        'license':'CC0-1.0','generation_method':'human-authored','scenario_family':f'human_unique_family_{index:03d}',
+        'sequence_id':f'human-seq-{index:03d}','user_id':f'fictional-human-{index:03d}','split':'test',
+        'review_status':status,'data_kind':'designed_conversation',
+        'messages':[
+            {'role':'system','content':f'Bối cảnh giả lập: {project} đang dùng PostgreSQL.'},
+            {'role':'user','content':f'{project} dùng database nào?'},
+            {'role':'assistant','content':f'Theo bối cảnh hiện tại, {project} đang dùng PostgreSQL.'},
+        ],
+        'quality_contracts':[{
+            'assistant_turn':1,'response_mode':'answer','language':'vi','response_language':'vi',
+            'required_facts':['PostgreSQL'],'forbidden_facts':[],'future_facts':[],
+        }],
+    }
+
+
+def _stage_release_fixture(tmp_path,test_count=6,test_status='needs_human_review',locked=False):
+    release=tmp_path/'release';release.mkdir()
+    _,_,release_hashes=_lineaged_train_receipt_fixture(release)
+    release_manifest={
+        'schema_version':1,'release':'llm-v2-supplement-v3',
+        'status':'human_reviewed_supplement_pending_independent_test',
+        'locked':locked,'training_allowed':False,'official_evaluation_allowed':False,
+        'contains_test_split':False,'independent_test_created':False,
+        'release_file_sha256':release_hashes,
+    }
+    (release/'release_manifest.json').write_text(json.dumps(release_manifest),encoding='utf-8')
+    (release/'lineage_receipt_verification.json').write_text('{}\n',encoding='utf-8')
+    test_path=tmp_path/'independent_test.jsonl'
+    test_path.write_text(''.join(json.dumps(_stage_test_row(i,test_status),ensure_ascii=False,separators=(',',':'))+'\n' for i in range(test_count)),encoding='utf-8',newline='\n')
+    return release,test_path
+
+
+def test_stage_llm_release_builds_unlocked_pending_gate(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path)
+    out=tmp_path/'gate'
+    summary=_stage_module().stage_release(release,out,test_path)
+    assert summary['status']=='staged' and summary['test_sequences']==6
+    assert summary['row_counts']=={'train':2,'validation':2,'test':6}
+    manifest=json.loads((out/'manifest.json').read_text(encoding='utf-8'))
+    assert manifest['status']=='human_authored_test_pending_review'
+    assert manifest['locked'] is False and manifest['training_allowed'] is False
+    assert set(manifest['files'])=={'train.jsonl','validation.jsonl','test.jsonl'}
+    assert verify_file_manifest(out,manifest)
+    assert (out/'test.jsonl').read_bytes()==test_path.read_bytes()
+    assert (out/'train.jsonl').read_bytes()==(release/'train.jsonl').read_bytes()
+    assert (out/'lineage_parent_manifest.json').is_file()
+    assert not (out/'independent_test_review_receipt.json').exists()
+    assert not (out/'human_test_attestation.json').exists()
+
+
+def test_stage_llm_release_requires_a_fresh_output(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path)
+    out=tmp_path/'gate';out.mkdir()
+    with pytest.raises(ValueError,match='must not exist'):
+        _stage_module().stage_release(release,out,test_path)
+
+
+def test_stage_llm_release_rejects_tampered_release(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path)
+    train=release/'train.jsonl';train.write_bytes(train.read_bytes()+b'\n')
+    with pytest.raises(ValueError,match='hashes do not match'):
+        _stage_module().stage_release(release,tmp_path/'gate',test_path)
+    assert not (tmp_path/'gate').exists()
+
+
+def test_stage_llm_release_rejects_locked_release(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path,locked=True)
+    with pytest.raises(ValueError,match='unlocked'):
+        _stage_module().stage_release(release,tmp_path/'gate',test_path)
+
+
+def test_stage_llm_release_requires_pending_human_test(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path,test_status='human_reviewed')
+    with pytest.raises(ValueError,match='needs_human_review'):
+        _stage_module().stage_release(release,tmp_path/'gate',test_path)
+
+
+def test_stage_llm_release_requires_6_to_12_sequences(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path,test_count=5)
+    with pytest.raises(ValueError,match='6-12'):
+        _stage_module().stage_release(release,tmp_path/'gate',test_path)
+
+
+def test_stage_llm_release_rejects_protected_output(tmp_path):
+    release,test_path=_stage_release_fixture(tmp_path)
+    with pytest.raises(ValueError,match='Protected'):
+        _stage_module().stage_release(release,tmp_path/'reviewer'/'gate',test_path)

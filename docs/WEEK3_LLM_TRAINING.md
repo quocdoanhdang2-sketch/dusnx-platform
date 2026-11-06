@@ -82,18 +82,37 @@ Khi release được ghép từ parent đã khóa cộng supplement đã duyệt
 
 Sau khi hai receipt thật khớp, `lock_llm_data.py` mới ghi manifest schema v4 gồm `row_counts` theo split và hash của từng receipt đã lưu. Không tự sửa manifest hoặc receipt để làm cho gate đạt.
 
+### Release v3: train/validation đã duyệt, chờ test độc lập
+
+Release v3 nằm trong `runtime/llm-v2-human-gate-20261104/staging-v3-human-reviewed-supplement-pending-independent-test-20261105-01/` và **không có** `manifest.json` hay `test.jsonl`; trạng thái là `human_reviewed_supplement_pending_independent_test`, `locked: false`, `training_allowed: false`. Không export/review lại train/validation v3: receipt train/validation schema v2 `lineage_aggregate` đã chứng nhận đủ 140 completion row (105 train/108 completion, 29 validation/32 completion). Chỉ stage lại khi cần đổi test hoặc khi release thay đổi.
+
+`stage_llm_release.py` ghép release + `independent_test.jsonl` do người viết thành một thư mục gate mới (mặc định `datasets/llm_sft_v3`, vì `runtime/` bị gitignore và Colab cần checkout dữ liệu đã commit). Tool kiểm tra hash release, lineage receipt, test `human_designed`/`human-authored`/`needs_human_review`, 6–12 `sequence_id`, rồi ghi manifest schema 1 `human_authored_test_pending_review` — **không** phải attestation và **không** cho train:
+
+```powershell
+& $py python/scripts/stage_llm_release.py `
+  --release runtime/llm-v2-human-gate-20261104/staging-v3-human-reviewed-supplement-pending-independent-test-20261105-01 `
+  --test D:/secure/independent_test.jsonl `
+  --output datasets/llm_sft_v3
+```
+
+Sau khi stage, **người thứ hai** mới export/review test bằng `review_llm_data.py export --kind test --data datasets/llm_sft_v3 ...` rồi apply. Không dùng `stage_llm_release.py` để tự tạo test, reviewer, receipt hay attestation.
+
 3. Audit exact tokenizer, rồi khóa **trước train và prediction** bằng hai receipt thật:
 
 ```powershell
 runtime/llm-venv/Scripts/python.exe python/scripts/prepare_llm_data.py `
+  --data datasets/llm_sft_v3 `
   --tokenizer-model Qwen/Qwen2.5-0.5B-Instruct `
   --tokenizer-revision 7ae557604adf67be50417f59c2c2f167def9a775 `
   --max-length 640 --output runtime/llm-audit-reviewed
-& $py python/scripts/lock_llm_data.py --human-author AUTHOR_ID --reviewer REVIEWER_ID `
-  --train-review-receipt runtime/llm-review-train-validation/review_receipt.json `
+& $py python/scripts/lock_llm_data.py --data datasets/llm_sft_v3 `
+  --human-author AUTHOR_ID --reviewer REVIEWER_ID `
+  --train-review-receipt datasets/llm_sft_v3/train_validation_review_receipt.json `
   --test-review-receipt runtime/llm-review-test/review_receipt.json `
   --attest-authored-reviewed-before-predictions
 ```
+
+Với v3, `--train-review-receipt` trỏ đến aggregate receipt đã được commit trong thư mục gate; không chép receipt từ lượt review khác. Receipt test do người reviewer độc lập sinh ra sau khi test được stage.
 
 Lệnh đầu chỉ dành cho người xác nhận thật; kiểm tra schema/split trước khi ghi SHA và attestation. Lưu thay đổi dữ liệu/manifest vào commit riêng để Colab checkout đúng SHA. Không chọn hyperparameter theo test. Nếu sửa dữ liệu sau train thì run cũ không còn được so sánh với bộ mới như test đã khóa.
 
@@ -101,7 +120,7 @@ Lệnh đầu chỉ dành cho người xác nhận thật; kiểm tra schema/spl
 
 1. Mở [notebook](../notebooks/finetune_llm_colab.ipynb), chọn **Open in Colab** qua GitHub hoặc vào Colab → File → Open notebook → GitHub → dán URL repo và chọn `notebooks/finetune_llm_colab.ipynb`.
 2. **File → Save a copy in Drive** chỉ lưu notebook; không cần mount Drive cho train. **Runtime → Change runtime type → T4 GPU → Save**. Không có GPU vẫn chạy smoke CPU được, full train báo lỗi rõ.
-3. Ô đầu cố ý dừng ở `REPLACE_WITH_REVIEWED_DATA_COMMIT`. Dán SHA 40 ký tự của commit chứa dữ liệu đã duyệt và manifest đã khóa; notebook không cho dùng nhánh động như `main`. Không dùng token trong notebook.
+3. Ô đầu đọc `DUSNX_DATA_COMMIT`; mặc định là `REPLACE_WITH_LOCKED_V3_COMMIT` và cố ý dừng. Đặt biến môi trường hoặc sửa đúng một lần thành SHA 40 ký tự của commit chứa `datasets/llm_sft_v3` đã khóa; notebook không cho dùng nhánh động như `main`. Không dùng token trong notebook.
 4. Chạy ô cài pinned packages trong venv riêng `/content/dusnx-llm-env`, rồi kiểm tra Python/PyTorch/GPU thật qua interpreter đó. Python 3.11–3.13, torch 2.8.0, Transformers 4.56.2, TRL 0.23.1, PEFT 0.17.1. Kernel Colab giữ thư viện download; môi trường train không dùng torchvision/torchaudio có sẵn. Không khẳng định bộ này đã chạy GPU Colab chỉ vì smoke CPU đạt.
 5. Chạy audit; notebook dùng đúng tokenizer/revision và chặn sample vượt 640 token. Đọc `/content/llm-audit/audit.json`, `audit.md`, `human_review_sample.json`. Smoke CPU không tải pretrained weights; kiểm tra hai epoch qua save/resume. Không gọi loss smoke là chất lượng base.
 6. Sau duyệt/khóa, bật `RUN_FULL=True`. Chạy chặng epoch 1. Tải **`dusnx-llm-run.zip` và `.zip.sha256`** ngay, kiểm tra trong Downloads.
@@ -115,7 +134,7 @@ Full SFT tự dùng CUDA khi có; dùng BF16 nếu GPU báo hỗ trợ, nếu kh
 Resume phải dùng cùng effective config và cùng runtime precision (BF16/FP16); script ghi precision vào contract để từ chối resume nếu precision khác.
 
 ```powershell
-& $py python/scripts/finetune_llm.py --output runtime/sft-run --per-device-train-batch-size 1 --per-device-eval-batch-size 1 --gradient-accumulation-steps 8 --max-length 640 --gradient-checkpointing
+& $py python/scripts/finetune_llm.py --data datasets/llm_sft_v3 --output runtime/sft-run-v3 --per-device-train-batch-size 1 --per-device-eval-batch-size 1 --gradient-accumulation-steps 8 --max-length 640 --gradient-checkpointing
 ```
 
 Các cờ trên nhận giá trị cho lần chạy đó; bỏ cờ để giữ giá trị trong config (mặc định `max_length: 640`). `--no-gradient-checkpointing` tắt checkpointing tường minh. Nếu hết VRAM, lệnh báo lỗi và dừng; người vận hành có thể chạy lại với batch nhỏ hơn, accumulation khác, checkpointing hoặc max_length do mình chọn. Script không tự giảm length, bật QLoRA hay thay đổi dữ liệu. QLoRA vẫn tắt theo config mặc định; không đổi cấu hình model chỉ để né OOM. Resume yêu cầu cùng effective config, dữ liệu, commit và thư viện như lần chạy ban đầu.
@@ -148,13 +167,13 @@ Khởi động lại **FastAPI và Gateway đã build code mới**, đặt `DUSN
 $env:DUSNX_ENABLE_LLM_EVAL='1'
 $env:DUSNX_LLM_EVAL_MODELS='qwen2.5:0.5b,dusnx-vi-v2-20261105'
 # Restart the existing local services with these env vars, then:
-& $py python/scripts/evaluate_llm_pair.py --candidate dusnx-vi-v2-20261105 --output runtime/llm-pair-01
+& $py python/scripts/evaluate_llm_pair.py --data datasets/llm_sft_v3 --candidate dusnx-vi-v3-20261106 --output runtime/llm-pair-v3-01
 ```
 
 Token nhập tại prompt ẩn, không truyền qua command line, không ghi output. Cùng context/prompt/seed/temp/num_predict cho cả hai model; thứ tự được tráo theo case. `raw_outputs.json` ghi nguyên câu trả lời, model/provider, thời gian, lỗi và các phép exact-match tự động; `summary.json` tách tỷ lệ tự động và latency, `blind_ratings.csv` dành cho người chấm. Chấm 0/1 cho **đúng tiếng Việt**, **grounded không bịa**, **quyết định hỏi lại thích hợp**, **không dùng obsolete**, **không nhận đã lưu khi persistence chưa xác nhận**, **hoàn thành câu trả lời**; chấm 0 khi provider lỗi. Ghi reviewer/date/notes, không tự điền là người đã duyệt.
 
 ```powershell
-& $py python/scripts/evaluate_llm_pair.py --output runtime/llm-pair-01 --ratings runtime/llm-pair-01/blind_ratings.csv
+& $py python/scripts/evaluate_llm_pair.py --data datasets/llm_sft_v3 --output runtime/llm-pair-v3-01 --ratings runtime/llm-pair-v3-01/blind_ratings.csv
 ```
 
 Gate được chốt trước khi xem kết quả: đủ hai output LLM thật mỗi case, test có human attestation, không case/tiêu chí nào giảm so với base; tiếng Việt >=95%; grounded, clarification, no-obsolete và no-false-save đạt100%; các trung bình không thấp hơn base. Exact-match tự động chỉ là tín hiệu hỗ trợ, điểm người chấm quyết định gate. Tập nhỏ nên không khẳng định superiority thống kê. Chưa đủ review, thiếu candidate hoặc fail thì **không promote**.
@@ -179,10 +198,10 @@ Lỗi thường gặp: checksum khác → tải lại ZIP, không bỏ kiểm tr
 
 ## Checklist trước khi giao cho Colab
 
-- [ ] Người thật đã đọc đủ 43 train và 12 validation; mọi dòng được duyệt mới mang `human_reviewed`.
-- [ ] Một người viết 6–12 test độc lập; người thứ hai duyệt trước prediction; không tái sử dụng test AI nháp.
-- [ ] `prepare_llm_data.py` với tokenizer pin đạt và `lock_llm_data.py` được chính người có tên trong attestation chạy.
-- [ ] Dữ liệu/manifest/attestation đã commit; SHA commit 40 ký tự được dán vào ô đầu Colab.
+- [ ] Với v3: release đã duyệt sẵn 105 train/108 completion và 29 validation/32 completion; không export/review lại train/validation, chỉ dùng aggregate receipt schema 2.
+- [ ] Doanh viết 6–12 test độc lập và stage vào `datasets/llm_sft_v3`; Quỳnh duyệt test trước prediction; không tái sử dụng test AI nháp.
+- [ ] `prepare_llm_data.py --data datasets/llm_sft_v3` với tokenizer pin đạt và `lock_llm_data.py --data datasets/llm_sft_v3` được chính người có tên trong attestation chạy.
+- [ ] Dữ liệu/manifest/attestation v3 đã commit; SHA commit 40 ký tự đặt vào `DUSNX_DATA_COMMIT` của ô đầu Colab.
 - [ ] T4 được chọn; tải ZIP + SHA sau từng epoch, giữ ngoài `/content`; Drive chỉ tùy chọn.
 - [ ] Chỉ export/import `dusnx-vi-candidate` sau `training_complete`; giữ `qwen2.5:0.5b` để rollback.
 - [ ] So sánh cùng prompt qua Gateway, chấm CSV bằng người thật; chỉ đổi env khi promotion gate đạt.
