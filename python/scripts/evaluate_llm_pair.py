@@ -10,9 +10,30 @@ import statistics
 import time
 import uuid
 import urllib.request
-from dusnx_core.llm_data import digest, normalized, read_sft, verify_file_manifest, verify_full_training_gate, write_json
+from dusnx_core.llm_data import completion_rows, digest, normalized, read_sft, verify_file_manifest, verify_full_training_gate, write_json
 
 CRITERIA=('vietnamese','grounded','clarification','no_obsolete','no_false_save','final_answer')
+
+
+def completion_cases(records):
+    """Flatten every reviewed assistant turn into a prompt/reference pair."""
+    cases=[]
+    for row in records:
+        pairs=completion_rows([row])
+        contracts=row['quality_contracts']
+        if len(pairs)!=len(contracts):
+            raise ValueError(f"Quality contract count mismatch: {row['id']}")
+        for pair in pairs:
+            turn=pair['assistant_turn']
+            cases.append({
+                'id':f"{row['id']}:{turn}",
+                'record_id':row['id'],
+                'assistant_turn':turn,
+                'messages':pair['prompt'],
+                'reference':pair['completion'][0]['content'],
+                'quality_contracts':[contracts[turn-1]],
+            })
+    return cases
 
 
 def automatic_checks(case,text):
@@ -111,8 +132,12 @@ def main():
     # Development smoke is separate from the frozen test; no test answers are read.
     split='validation' if a.dev_smoke else 'test'
     if not a.dev_smoke:verify_full_training_gate(root,lock)
-    cases=read_sft(root/f'{split}.jsonl',split)
-    if a.dev_smoke:cases=cases[:2]
+    records=read_sft(root/f'{split}.jsonl',split)
+    cases=completion_cases(records)
+    if a.dev_smoke:
+        cases=cases[:2]
+    elif len(cases)!=lock['row_counts'][split]:
+        raise ValueError(f"Evaluation completions do not match locked {split} row_count: {len(cases)} != {lock['row_counts'][split]}")
     token=getpass.getpass('Gateway Bearer token (hidden; never saved): ')
     rows=[];review=[]
     for case in cases:
@@ -120,16 +145,16 @@ def main():
         random.Random(case['id']).shuffle(order)
         for arm,model in order:
             start=time.perf_counter()
-            try:response=post(a.gateway.rstrip('/')+'/api/v1/llm-evaluation',{'model':model,'messages':case['messages'][:-1]},token)
+            try:response=post(a.gateway.rstrip('/')+'/api/v1/llm-evaluation',{'model':model,'messages':case['messages']},token)
             except Exception as exc:response=dict(text='',provider_ok=False,provider_called=False,response_source='transport_error',error=type(exc).__name__)
             response['gateway_roundtrip_ms']=(time.perf_counter()-start)*1000
             if response.get('model_used') not in (None,model,model+':latest'):
                 response.update(provider_ok=False,error='UnexpectedModel')
             oid=uuid.uuid4().hex[:12]
             rows.append(dict(output_id=oid,case_id=case['id'],arm=arm,requested_model=model,automatic=automatic_checks(case,response.get('text','')),**response))
-            review.append(dict(output_id=oid,case_id=case['id'],prompt=json.dumps(case['messages'][:-1],ensure_ascii=False),reference=case['messages'][-1]['content'],answer=response.get('text',''),**{c:'' for c in CRITERIA},reviewer='',reviewed_at='',notes=''))
+            review.append(dict(output_id=oid,case_id=case['id'],prompt=json.dumps(case['messages'][:-1],ensure_ascii=False),reference=case['reference'],answer=response.get('text',''),**{c:'' for c in CRITERIA},reviewer='',reviewed_at='',notes=''))
     write_json(out/'raw_outputs.json',rows)
-    write_json(out/'run.json',dict(test_sha256=digest(root/f'{split}.jsonl'),dev_smoke=a.dev_smoke,base=a.base,candidate=a.candidate,outputs_sha256=digest(out/'raw_outputs.json'),test_review_status='pending; explicit human attestation required',sampling={'temperature':0,'seed':20260930,'num_predict':256}))
+    write_json(out/'run.json',dict(test_sha256=digest(root/f'{split}.jsonl'),dev_smoke=a.dev_smoke,split=split,case_count=len(cases),assistant_turn_count=len(cases),base=a.base,candidate=a.candidate,outputs_sha256=digest(out/'raw_outputs.json'),test_review_status='pending; explicit human attestation required',sampling={'temperature':0,'seed':20260930,'num_predict':256}))
     with (out/'blind_ratings.csv').open('w',encoding='utf-8-sig',newline='') as f:
         w=csv.DictWriter(f,fieldnames=list(review[0]));w.writeheader();w.writerows(review)
     summary=summarize(rows)

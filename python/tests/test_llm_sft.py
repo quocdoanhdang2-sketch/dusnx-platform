@@ -143,6 +143,11 @@ def test_development_manifest_cannot_start_full_training():
     with pytest.raises(ValueError,match='human-attested'):verify_full_training_gate(DATA,manifest)
 
 
+def test_locked_manifest_can_start_full_training(tmp_path):
+    manifest = _locked_gate_fixture(tmp_path)
+    assert verify_full_training_gate(tmp_path, manifest) is True
+
+
 def test_same_person_cannot_author_and_review_test(tmp_path):
     manifest=_locked_gate_fixture(tmp_path)
     attestation=json.loads((tmp_path/'human_test_attestation.json').read_text(encoding='utf-8'))
