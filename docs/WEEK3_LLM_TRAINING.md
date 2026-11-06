@@ -192,7 +192,15 @@ dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release
 git diff --check
 ```
 
-SFT dùng **venv riêng**, `pip install -r requirements/llm-sft.txt`, rồi `finetune_llm.py --smoke --output runtime/llm-smoke --stop-after-epoch 1`; resume từ `checkpoint-2` để hoàn tất epoch2. CI đặt HF_HUB_OFFLINE và TRANSFORMERS_OFFLINE; không tải pretrained weights hoặc dataset. Package install cần mạng. File weights/GGUF/ZIP/runtime bị ignore, không commit log riêng tư hoặc token.
+SFT dùng **venv riêng**, `pip install -r requirements/llm-sft.txt`. Smoke train/validation không cần test hay attestation; chỉ cần một thư mục có `manifest.json` checksum cùng `train.jsonl`/`validation.jsonl` (ví dụ envelope tạm `runtime/llm-smoke-v3-data`, không phải gate):
+
+```powershell
+$env:PYTHONPATH='python/src;python;.'
+runtime/llm-venv/Scripts/python.exe python/scripts/llm_pipeline_smoke.py `
+  --data runtime/llm-smoke-v3-data --output runtime/llm-smoke-v3-01
+```
+
+Smoke chạy epoch1 → resume → so khớp adapter với chạy liền mạch, kiểm tra loss mask nhiều lượt, LoRA update và việc export từ chối run chưa `training_complete`. Muốn chạy tay: `finetune_llm.py --smoke --data <dir> --output runtime/llm-smoke --stop-after-epoch 1`, resume từ checkpoint cuối. CI đặt HF_HUB_OFFLINE và TRANSFORMERS_OFFLINE; không tải pretrained weights hoặc dataset. Package install cần mạng. File weights/GGUF/ZIP/runtime bị ignore, không commit log riêng tư hoặc token.
 
 Lỗi thường gặp: checksum khác → tải lại ZIP, không bỏ kiểm tra; output tồn tại → resume đúng checkpoint hoặc thư mục mới; HTTP404 → bật env và restart đúng code Gateway/FastAPI; HTTP401 → đăng nhập lại và nhập token kín; provider_error → kiểm tra `ollama list` và candidate import; CUDA OOM → config mới/QLoRA có kiểm tra; gated dataset → không cần cho pipeline này. Full train không được thực hiện cho tới khi người dùng chạy notebook trên GPU và cung cấp artifact.
 
