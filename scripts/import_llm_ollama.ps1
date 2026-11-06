@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$ArtifactDir,
     [string]$Python = 'python',
     [string]$Candidate = 'dusnx-vi-candidate'

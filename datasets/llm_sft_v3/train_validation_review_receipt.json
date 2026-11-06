@@ -1,0 +1,38 @@
+{
+  "schema_version": 2,
+  "receipt_kind": "lineage_aggregate",
+  "review_type": "train_validation",
+  "test_only": false,
+  "reviewers": [
+    "quynh"
+  ],
+  "reviewed_at": [
+    "2026-11-05T13:30:00+07:00",
+    "2026-11-05T19:36:00+07:00"
+  ],
+  "row_count": 140,
+  "result_files": {
+    "train.jsonl": "1d5e1cb6e054c78b88dfaf366949818306245d2ab35ef4d9a18fa9f38fd479ed",
+    "validation.jsonl": "b769341de3bb75fab3ed1d9d6e8f71352b7e1b35b4b2c667b187f94b2bc694a4"
+  },
+  "lineage": {
+    "parent_manifest_path": "lineage_parent_manifest.json",
+    "parent_receipt_path": "lineage_parent_train_validation_review_receipt.json",
+    "parent_train_path": "lineage_parent_train.jsonl",
+    "parent_validation_path": "lineage_parent_validation.jsonl",
+    "supplement_receipt_path": "supplement_review_receipt.json",
+    "supplement_review_csv_path": "supplement_review.csv",
+    "parent_manifest_sha256": "f81fa75516675657957d79327eb80d937c7de74691a4b395b40b0ebcc2a7f41a",
+    "parent_receipt_sha256": "fce55f7ae7dca210e41d0a27cb2c3767b8bf907afd33d9038a1636a5c91bfa03",
+    "parent_train_sha256": "2fb56f1f7ef44b1074495687556f8e05796841c5f970eaca9e7d516d1ed995d3",
+    "parent_validation_sha256": "60d7c4851df0b869b0f8867b044aaed6320a8645993ebff6f834c71de1aabb48",
+    "supplement_receipt_sha256": "fe43cd2dfaf4af5dce84fc0f0b3d449f2241999765ee67d390c58c391b45d885",
+    "supplement_review_csv_sha256": "78c5d63fad32060e48bc1de369de8e12cbb831ec6ddab969521f3ed53471d00d",
+    "completion_counts": {
+      "parent": 124,
+      "supplement": 16,
+      "total": 140
+    }
+  },
+  "provenance": "Derived aggregate; original parent receipt and supplement receipt remain the source human-review records."
+}

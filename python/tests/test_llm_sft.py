@@ -520,6 +520,32 @@ def test_review_package_round_trip_receipt_uses_default_non_test_mode(tmp_path):
     assert receipt['result_files']=={s+'.jsonl':digest(data/(s+'.jsonl')) for s in ('train','validation')}
 
 
+def test_review_package_accepts_reserialized_json_columns(tmp_path):
+    data=_copy_sft(tmp_path);package=tmp_path/'package'
+    assert export_package(data,package,('train','validation'))==61
+    rows=_complete_review_csv(package/'review.csv',reviewer='fixture-reviewer-1',timestamp='2026-10-01T10:00:00+00:00')
+    for row in rows:
+        for field in ('prefix_json','quality_contract_json'):
+            row[field]=json.dumps(json.loads(row[field]),ensure_ascii=False,indent=1)
+    with (package/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=FIELDS);writer.writeheader();writer.writerows(rows)
+    receipt=apply_package(data,package)
+    assert receipt['row_count']==61
+
+
+def test_review_package_rejects_changed_json_meaning(tmp_path):
+    data=_copy_sft(tmp_path);package=tmp_path/'package'
+    export_package(data,package,('train','validation'))
+    rows=_complete_review_csv(package/'review.csv',reviewer='fixture-reviewer-1',timestamp='2026-10-01T10:00:00+00:00')
+    contract=json.loads(rows[0]['quality_contract_json'])
+    contract['forbidden_facts']=list(contract['forbidden_facts'])+['__tamper__']
+    rows[0]['quality_contract_json']=json.dumps(contract,ensure_ascii=False)
+    with (package/'review.csv').open('w',encoding='utf-8-sig',newline='') as handle:
+        writer=csv.DictWriter(handle,fieldnames=FIELDS);writer.writeheader();writer.writerows(rows)
+    with pytest.raises(ValueError,match='quality_contract_json'):
+        apply_package(data,package)
+
+
 def test_review_package_rejects_missing_duplicate_stale_and_bad_timestamp(tmp_path):
     data=_copy_sft(tmp_path);package=tmp_path/'package';export_package(data,package,('train','validation'))
     rows=_complete_review_csv(package/'review.csv')

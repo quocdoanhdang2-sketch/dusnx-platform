@@ -16,8 +16,21 @@ FIELDS = (
 )
 
 
+_IMMUTABLE_JSON_FIELDS = ("prefix_json", "quality_contract_json")
+
+
 def _json(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _same_immutable(left, right, field):
+    """CSV editors re-serialize JSON; compare meaning for JSON columns only."""
+    if field not in _IMMUTABLE_JSON_FIELDS:
+        return left == right
+    try:
+        return json.loads(left) == json.loads(right)
+    except (TypeError, ValueError):
+        return False
 
 
 def _review_rows(records, split):
@@ -130,7 +143,7 @@ def apply_package(data_root, package, reviewed_csv=None, allow_test_identities=F
     for row in submitted:
         original = originals[row["review_key"]]
         for field in ("split", "record_id", "assistant_turn", "prefix_json", "reference_answer", "quality_contract_json"):
-            if row.get(field) != original[field]:
+            if not _same_immutable(row.get(field), original[field], field):
                 raise ValueError(f"Immutable review column changed: {row['review_key']} {field}")
         decision = row.get("decision", "").strip().casefold()
         if decision not in {"approve", "revise"}:

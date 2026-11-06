@@ -1,0 +1,19 @@
+{
+  "schema_version": 4,
+  "status": "human_attested_locked_before_training",
+  "locked": true,
+  "locked_at": "2026-11-06T17:30:10.819164+00:00",
+  "source_revision": "human-reviewed-release",
+  "row_counts": {
+    "train": 108,
+    "validation": 32,
+    "test": 8
+  },
+  "files": {
+    "train.jsonl": "1d5e1cb6e054c78b88dfaf366949818306245d2ab35ef4d9a18fa9f38fd479ed",
+    "validation.jsonl": "b769341de3bb75fab3ed1d9d6e8f71352b7e1b35b4b2c667b187f94b2bc694a4",
+    "test.jsonl": "c814e9aed987037717abf920a523c77977e29f4543aafc21f0a5fbc2b38fd170",
+    "train_validation_review_receipt.json": "87faa92b63d175e2c310d772e744249374039646b48ca32a6c2f41f2cc4ee515",
+    "independent_test_review_receipt.json": "21363d4eefb8582d594b8adcff9f72277fd5db7c5016794db7369c718c3699a6"
+  }
+}

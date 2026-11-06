@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "review_type": "train_validation",
+  "test_only": false,
+  "human_author": null,
+  "human_authored_at": null,
+  "reviewers": [
+    "quynh"
+  ],
+  "reviewed_at": [
+    "2026-11-05T13:30:00+07:00"
+  ],
+  "row_count": 124,
+  "result_files": {
+    "train.jsonl": "2fb56f1f7ef44b1074495687556f8e05796841c5f970eaca9e7d516d1ed995d3",
+    "validation.jsonl": "60d7c4851df0b869b0f8867b044aaed6320a8645993ebff6f834c71de1aabb48"
+  }
+}
