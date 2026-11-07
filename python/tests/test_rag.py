@@ -41,6 +41,11 @@ def test_gate_rejects_general_knowledge_and_small_talk():
         assert not rag.should_retrieve(query), query
 
 
+def test_gate_accepts_local_run_question():
+    assert rag.should_retrieve("web chạy local thế nào?")
+    assert rag.should_retrieve("chay local bang cach nao?")
+
+
 # ── Extractive answers ───────────────────────────────────────────────────────
 
 def test_answer_quotes_passage_with_citation():

@@ -605,6 +605,10 @@ _RETRIEVAL_HINTS = [
     "quy trinh", "luong", "tin nhan", "model", "mo hinh", "chinh sach",
     "security", "bao mat", "permission", "van hanh", "deploy",
     "trien khai", "gioi han", "ngon ngu", "cli",
+    # Local startup questions ("web chạy local thế nào?") name the runbook
+    # topic without using the word "runbook".
+    "chay local", "chay web", "chay du an", "localhost", "start-local",
+    "khoi dong", "cai dat",
 ]
 _RETRIEVAL_HINT = re.compile(
     r"\b(?:" + "|".join(re.escape(hint) for hint in _RETRIEVAL_HINTS) + r")\b")

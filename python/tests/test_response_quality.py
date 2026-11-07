@@ -643,6 +643,85 @@ def test_undocumented_dusnx_feature_question_asks_for_source(client, monkeypatch
     assert calls == []
 
 
+def test_translation_request_is_not_answered_by_document_quotation(client, monkeypatch):
+    from apps.ai_api import rag
+
+    calls = []
+
+    def generate(**kwargs):
+        calls.append(kwargs)
+        return provider.ProviderResult("I am checking the system.", True, "ollama",
+                                       "qwen-test", 8, called=True)
+
+    monkeypatch.setattr(main, "generate_response", generate)
+    monkeypatch.setattr(main.rag, "should_retrieve", lambda query: True)
+    monkeypatch.setattr(main.rag, "retrieve", lambda query, top_k=5: [
+        rag.Hit("docs/HANDOVER.md", "Handover", "DUSN-X > Kiểm tra",
+                10, 12, "Bằng chứng HTTP thật trên instance kiểm thử.", 100.0, 0.0)])
+    monkeypatch.setattr(main.rag, "has_evidence", lambda hits: True)
+    monkeypatch.setattr(main.rag, "has_strong_evidence", lambda hits: True)
+    monkeypatch.setattr(main.rag, "answer_from_hits",
+                        lambda query, hits, language="vi": "QUOTED EVIDENCE")
+
+    _, token = _register_and_login(client, "synthetic_translation_request")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+    response = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "dịch câu này sang tiếng Anh: tao đang kiểm tra hệ thống",
+        "request_id": "translation-request-0001",
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["response_source"] == "llm"
+    assert data["provider_called"] is True
+    assert data["reply"] == "I am checking the system."
+    assert data["sources"] == []
+    assert data["rag_used"] is False
+    assert calls[-1]["knowledge_context"] is None
+
+
+def test_summary_request_uses_provider_instead_of_quoting_evidence(client, monkeypatch):
+    from apps.ai_api import rag
+
+    calls = []
+
+    def generate(**kwargs):
+        calls.append(kwargs)
+        return provider.ProviderResult("Tóm tắt: bốn thành phần chính.", True, "ollama",
+                                       "qwen-test", 8, called=True)
+
+    monkeypatch.setattr(main, "generate_response", generate)
+    monkeypatch.setattr(main.rag, "should_retrieve", lambda query: True)
+    monkeypatch.setattr(main.rag, "retrieve", lambda query, top_k=5: [
+        rag.Hit("docs/REPORT.md", "Report", "DUSN-X > Kiến trúc", 1, 3,
+                "Kiến trúc gồm bốn tầng.", 100.0, 0.0)])
+    monkeypatch.setattr(main.rag, "has_evidence", lambda hits: True)
+    monkeypatch.setattr(main.rag, "has_strong_evidence", lambda hits: True)
+    monkeypatch.setattr(main.rag, "answer_from_hits",
+                        lambda query, hits, language="vi": "QUOTED EVIDENCE")
+
+    _, token = _register_and_login(client, "synthetic_summary_request")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+    response = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "tóm tắt ngắn: DUSN-X gồm web tĩnh, gateway .NET, AI API FastAPI và SQLite.",
+        "request_id": "summary-request-0001",
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["response_source"] == "llm"
+    assert data["provider_called"] is True
+    assert data["reply"] == "Tóm tắt: bốn thành phần chính."
+    assert "QUOTED EVIDENCE" not in data["reply"]
+
+
+def test_configuration_question_is_not_treated_as_transform_request():
+    assert not main._is_transform_request("cấu hình Ollama provider")
+    assert not main._is_transform_request("kiến trúc DUSN-X gồm mấy tầng?")
+
+
 def test_language_preference_control_turn_does_not_count_as_topic_context(client, monkeypatch):
     monkeypatch.setattr(main, "generate_response", lambda **kwargs: None)
     _, token = _register_and_login(client, "synthetic_control_context")

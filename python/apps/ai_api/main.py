@@ -612,6 +612,33 @@ def _detect_unverified_dusnx_product_question(text: str) -> bool:
     return has_product and asks_facts and not cites_source
 
 
+def _is_transform_request(text: str) -> bool:
+    """True for requests that rewrite or produce text rather than ask a fact.
+
+    "Dịch câu này", "tóm tắt đoạn sau", "viết email" must be answered by the
+    provider. A quoted repository passage would answer a different question.
+    """
+    return bool(re.match(
+        r"\s*(?:hãy\s+|hay\s+|giúp\s+(?:tôi|tao|mình)\s+|please\s+|can you\s+|could you\s+)?"
+        r"(?:dịch|dich|translate|chuyển sang|đổi sang|convert|"
+        r"tóm tắt|tom tat|summari[sz]e|tổng hợp|tong hop|"
+        r"viết|viet|soạn|draft|write|compose|tạo|generate|"
+        r"rewrite|viết lại|viet lai)\b",
+        text, re.IGNORECASE))
+
+
+def _is_translation_request(text: str) -> bool:
+    """Translation and rewriting must use only the user's supplied text.
+
+    Injecting repository evidence into these prompts makes a 1.5B model
+    translate or rewrite the evidence instead of the user's sentence.
+    """
+    return bool(re.match(
+        r"\s*(?:hãy\s+|hay\s+|giúp\s+(?:tôi|tao|mình)\s+|please\s+|can you\s+|could you\s+)?"
+        r"(?:dịch|dich|translate|chuyển sang|đổi sang|convert|rewrite|viết lại|viet lai)\b",
+        text, re.IGNORECASE))
+
+
 def _has_conversational_topic(history: list[dict]) -> bool:
     """Ignore control turns such as language-preference commands as topic context."""
     return any(
@@ -1061,7 +1088,10 @@ def _chat_impl(req: ChatRequest, user: dict):
     # unrelated snippets never steer the answer.
     rag_hits: list = []
     rag_context = ""
-    if rag.should_retrieve(req.message):
+    # Translation/rewrite prompts must operate on the user's sentence alone;
+    # retrieved passages would become the text being translated.
+    transform_request = _is_transform_request(req.message)
+    if not _is_translation_request(req.message) and rag.should_retrieve(req.message):
         candidate_hits = rag.retrieve(req.message, top_k=5)
         if rag.has_evidence(candidate_hits):
             rag_hits = candidate_hits
@@ -1070,9 +1100,11 @@ def _chat_impl(req: ChatRequest, user: dict):
     # Retrieval hits alone do not mean the corpus answers the question: a status
     # report can share product words without describing the product. The cited
     # extractive answer is the real test of coverage, so it is computed once and
-    # reused by the grounded-answer branch below.
+    # reused by the grounded-answer branch below. Transform requests are never
+    # answered by quotation, even when the corpus is relevant.
     rag_extractive = (rag.answer_from_hits(req.message, rag_hits, reply_language)
-                      if rag_hits and rag.has_strong_evidence(rag_hits) else None)
+                      if rag_hits and not transform_request
+                      and rag.has_strong_evidence(rag_hits) else None)
 
     # ── Missing context guard ─────────────────────────────────────────────────
     if _detect_unverified_dusnx_product_question(req.message) and rag_extractive is None:
