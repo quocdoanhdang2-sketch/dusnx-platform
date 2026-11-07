@@ -15,7 +15,7 @@ Local `runtime/` artifacts stay outside the repository.
 | Word add-in | Proposal/Apply guards verified on Word Desktop (WordApi 1.1/1.3). | `docs/evidence/word-addin-desktop-20261106`. |
 | PowerPoint add-in | Edit-selected-text and generate-slides modes verified on PowerPoint Desktop 16.0.20527. | `docs/evidence/powerpoint-addin-generate-20261107`. |
 | SFT v3 candidate | Evaluation complete with `promote=false` (n=6). The base `qwen2.5:1.5b-instruct` remains the runtime model. | Paired evaluation report; candidate `dusnx-vi-v3-20261107`. |
-| Production restart | Not performed. Ports 8000/8080 still run pre-RAG, pre-adaptive code and need explicit consent to restart. | `/health.source_hashes` on 2026-11-07. |
+| Production restart | Completed on 2026-11-07 with explicit consent. Ports 8000/8080 now serve the merged code, adaptive profile, RAG, and drafting gate. | `/health` source hashes match the working tree; Gateway smoke on 2026-11-07. |
 
 ## Verification run (local, 2026-11-07)
 
@@ -27,6 +27,7 @@ Local `runtime/` artifacts stay outside the repository.
 | PowerShell local-health tests | 6/6 passed; `start-local.ps1` syntax OK |
 | `python -m compileall -q python` | OK |
 | Live AI API on isolated port 8046 | auto profile low / 4 GB / 1.5B; email and message drafts completed |
+| Production 8000/8080 after restart | source hashes match; `model_profile` tier low / 4 GB / 1.5B; RAG 161 documents / 1,415 chunks; Gateway proxy answered a cited docs question, a drafting request, and the runtime clock |
 
 These are local harnesses and live local probes. They are not a GitHub Actions run and
 not a Desktop Office re-verification.
@@ -44,10 +45,8 @@ not a Desktop Office re-verification.
 
 ## Still open
 
-1. Restart the local production AI API and Gateway so ports 8000/8080 serve the merged RAG and
-   adaptive code. This needs explicit consent for that specific restart.
-2. Promote a candidate only after the frozen evaluation gate passes; Holdout v3 stays closed
-   until then.
+1. Promote a candidate only after the frozen evaluation gate passes; Holdout v3 stays closed
+   until then. Explicit consent does not replace missing evaluation evidence.
 3. Teams, Zalo OA, and vision/image editing remain separate integrations that need real
    credentials and platform verification. No fake capability is exposed.
 4. Office production hardening: signed/central manifests, same-origin HTTPS with an internal CA,
