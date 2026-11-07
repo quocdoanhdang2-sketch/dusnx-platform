@@ -8,7 +8,7 @@ không được inject. Không yêu cầu gửi secret vào chat.
 | Thành phần | Có trong repo | Bằng chứng hiện tại |
 |---|---|---|
 | Web | Web tĩnh, Gateway auth/chat/memory/project | HTTP và Chromium local thật |
-| PowerPoint | Office.js task pane, manifest, proposal/Apply | Office mock; HTTPS local/CORS thật; chưa Desktop |
+| PowerPoint | Office.js task pane, manifest, proposal/Apply, sửa text và sinh slide từ template | PowerPoint Desktop thật, PowerPointApi 1.5; xem `docs/evidence/powerpoint-addin-generate-20261107` |
 | Word | Office.js task pane, manifest, proposal/Apply, guard selection | Word Desktop thật, WordApi 1.1; xem `docs/evidence/word-addin-desktop-20261106` |
 | Teams | Chưa thấy bot/adapter/manifest Teams | Chỉ kiểm kê mã; chưa có tenant credential |
 | Zalo | /webhooks/zalo, normalized payload, channel worker, dedupe local | HTTP local khi chưa cấu hình bị 503; chưa OA thật |
@@ -33,6 +33,26 @@ reverse proxy và CA nội bộ thay certificate localhost); chính sách dữ l
 xử lý bảng/field/tracked changes; undo/telemetry; và model chất lượng cao hơn (model do từng máy
 cấu hình qua `DUSNX_OLLAMA_MODEL`/provider; bằng chứng hiện tại dùng `qwen2.5:1.5b-instruct`,
 chưa đủ ổn định để coi nội dung là bản cuối). Harness mock không thay bằng chứng Desktop.
+
+## PowerPoint: hai mode đã chạy trên Desktop
+
+`powerpoint-addin/` có hai mode dùng chung `/v1/chat`, token opaque trong RAM:
+
+- **Edit selected text** đọc đúng một slide + một text shape, hiện proposal/provenance và
+  chỉ ghi khi Apply; guard từ chối đổi slide/shape/text/session hoặc mất login.
+- **Generate slides from instruction** nhận outline chặt (1–6 slide, 1–5 bullet), hiện preview,
+  rồi chèn N slide từ `deck-template.pptx` sau slide cuối với đúng title/body/footer. Template
+  tải same-origin; lỗi chèn sẽ rollback các slide vừa thêm.
+
+Đã kiểm chứng trên Microsoft PowerPoint `16.0.20527`: sinh 3 slide vào deck trống, append 3
+slide sau slide 3 giữ thứ tự (footer tuyệt đối 4–6), và sửa `DUSN-X Body` tại chỗ. Bằng chứng:
+`docs/evidence/powerpoint-addin-generate-20261107`. Runbook: `docs/POWERPOINT_ADDIN_RUNBOOK.md`.
+
+Còn thiếu trước production: manifest ký/central deployment; lưu deck bàn giao và kiểm Undo/Redo;
+nhiều cửa sổ PowerPoint; model local chưa ổn định định dạng outline nên preview là bắt buộc;
+HTTPS production/reverse proxy và CA nội bộ; chính sách dữ liệu nhạy cảm. Bằng chứng sinh slide
+dùng candidate `dusnx-vi-v3-20261107` để chạy tích hợp, không promote; stack đã khôi phục
+`qwen2.5:1.5b-instruct`.
 
 ## Teams và Zalo
 

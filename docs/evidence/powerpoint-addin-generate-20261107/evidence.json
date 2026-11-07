@@ -1,0 +1,100 @@
+{
+  "kind": "powerpoint-addin-generate-evidence",
+  "date": "2026-11-07",
+  "device": "PowerPoint Desktop (Win32, COM host)",
+  "powerpoint_version": "16.0",
+  "powerpoint_build": "20527",
+  "task_pane_url": "https://localhost:3001/taskpane.html?_host_Info=Powerpoint$Win32$16.01$en-US$$$$0",
+  "auth": {
+    "account": "pptvisual1 (synthetic)",
+    "session": "PowerPoint (new session per run)"
+  },
+  "stack": {
+    "dev_server": "https://localhost:3001 (word-addin/dev-server.js, same-origin proxy)",
+    "gateway": "http://127.0.0.1:8181",
+    "ai_api": "http://127.0.0.1:8180",
+    "model_during_evidence": "dusnx-vi-v3-20261107",
+    "model_restored_after": "qwen2.5:1.5b-instruct",
+    "candidate_promoted": false
+  },
+  "template": {
+    "file": "powerpoint-addin/deck-template.pptx",
+    "bytes": 34760,
+    "canvas_px": { "width": 960, "height": 540 },
+    "shapes": ["DUSN-X Accent", "DUSN-X Title", "DUSN-X Body", "DUSN-X Footer"],
+    "accent": "#0F766E",
+    "title": "Segoe UI 32 bold #0F172A",
+    "body": "Segoe UI 20 #475569",
+    "footer": "Segoe UI 10 #94A3B8"
+  },
+  "generate_preview": {
+    "mode": "generate",
+    "requested_slides": 3,
+    "language": "vi",
+    "instruction": "Sao chép nguyên văn nội dung sau thành đúng định dạng, không thêm, không bớt, không giải thích (Dữ liệu / Huấn luyện và export / Đánh giá và quyết định)",
+    "status": "Review 3 slide(s), then append them to the presentation.",
+    "proposal": [
+      { "title": "Dữ liệu", "bullets": ["Dữ liệu đã khóa sau review của người và test độc lập."] },
+      { "title": "Huấn luyện và export", "bullets": ["Huấn luyện LoRA rồi export GGUF, import vào Ollama làm candidate."] },
+      { "title": "Đánh giá và quyết định", "bullets": ["Đánh giá paired nhỏ có regression; quyết định không promote; còn lại review độc lập, mở rộng đánh giá, ký manifest, HTTPS production."] }
+    ],
+    "provenance": {
+      "intent": "chat",
+      "routing_source": "model",
+      "response_source": "llm",
+      "provider_used": "ollama",
+      "model_used": "dusnx-vi-v3-20261107"
+    },
+    "deck_writes_before_apply": 0
+  },
+  "generate_apply_empty_deck": {
+    "selected_slides_before": 0,
+    "status": "Appended 3 slide(s) to the empty presentation.",
+    "slides": [
+      { "index": 1, "title": "Dữ liệu", "body": "• Dữ liệu đã khóa sau review của người và test độc lập.", "footer": "DUSN-X · 1" },
+      { "index": 2, "title": "Huấn luyện và export", "body": "• Huấn luyện LoRA rồi export GGUF, import vào Ollama làm candidate.", "footer": "DUSN-X · 2" },
+      { "index": 3, "title": "Đánh giá và quyết định", "body": "• Đánh giá paired nhỏ có regression; quyết định không promote; còn lại review độc lập, mở rộng đánh giá, ký manifest, HTTPS production.", "footer": "DUSN-X · 3" }
+    ],
+    "proposal_cleared": true,
+    "apply_disabled_after": true
+  },
+  "append_apply_existing_deck": {
+    "method": "harness-injected reviewed outline (Apply path only; no model call)",
+    "slides_before": 3,
+    "status": "Appended 3 slide(s) after slide 3 of the presentation.",
+    "slides_after": 6,
+    "appended": [
+      { "index": 4, "title": "Việc còn lại", "body": "• Duy trì baseline qwen2.5:1.5b-instruct; candidate v3 không được promote.", "footer": "DUSN-X · 4" },
+      { "index": 5, "title": "Vận hành", "body": "• Dev server same-origin đã chạy; HTTPS production vẫn còn mở.", "footer": "DUSN-X · 5" },
+      { "index": 6, "title": "Bằng chứng", "body": "• Unit test, Desktop E2E và ảnh chụp lưu trong docs/evidence.", "footer": "DUSN-X · 6" }
+    ],
+    "order_preserved": true
+  },
+  "edit_apply": {
+    "selected": "DUSN-X Body on slide 1",
+    "instruction": "Tóm tắt gạch đầu dòng đang chọn thành một câu ngắn hơn, giữ nguyên ý. Chỉ trả về nội dung mới.",
+    "proposal": "Dữ liệu đã khóa sau review của người và test độc lập.",
+    "provenance": {
+      "intent": "summarize",
+      "routing_source": "business_rule_override",
+      "response_source": "llm",
+      "provider_used": "ollama",
+      "model_used": "dusnx-vi-v3-20261107"
+    },
+    "status": "Proposal applied after confirmation.",
+    "slide_1_body_after": "Dữ liệu đã khóa sau review của người và test độc lập.",
+    "proposal_cleared": true
+  },
+  "tests": {
+    "node_addins": { "command": "node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js word-addin/dev-server.test.js", "passed": 41, "failed": 0 },
+    "powerpoint_taskpane": { "passed": 17, "failed": 0 },
+    "python": { "command": "python -m pytest python/tests -q", "passed": 353, "failed": 0 },
+    "gateway_harness": { "command": "dotnet run --project gateway-dotnet.tests -c Release --no-build", "passed": 7, "failed": 0 }
+  },
+  "observations": [
+    "insertSlidesFromBase64 inserts at the beginning; insertPlan inserts in reverse with targetSlideId and fills slides in deck order.",
+    "Outline parser tolerates a short preamble, '# Slide N - title' labels and 'Title:'/'Bullet text:' prefixes; code fences and JSON are rejected.",
+    "Model v3 produced wrong slide counts (1, 2, 4, 6) and occasionally altered facts in repeated runs; the pane rejects count mismatches before any write and shows a reviewable proposal otherwise.",
+    "The deck was an unsaved test presentation (Presentation1); slides were exported to PNG for evidence. No file was written to the repository except the template and evidence assets."
+  ]
+}

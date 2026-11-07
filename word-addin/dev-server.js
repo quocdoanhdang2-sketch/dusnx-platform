@@ -9,6 +9,9 @@ const ASSETS = new Map([
   ["/", { file: "word-taskpane.html", type: "text/html; charset=utf-8" }],
   ["/word-taskpane.html", { file: "word-taskpane.html", type: "text/html; charset=utf-8" }],
   ["/word-taskpane.js", { file: "word-taskpane.js", type: "text/javascript; charset=utf-8" }],
+  ["/taskpane.html", { file: path.join("..", "powerpoint-addin", "taskpane.html"), type: "text/html; charset=utf-8" }],
+  ["/taskpane.js", { file: path.join("..", "powerpoint-addin", "taskpane.js"), type: "text/javascript; charset=utf-8" }],
+  ["/deck-template.pptx", { file: path.join("..", "powerpoint-addin", "deck-template.pptx"), type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" }],
 ]);
 const CSP = [
   "default-src 'self' https://appsforoffice.microsoft.com",

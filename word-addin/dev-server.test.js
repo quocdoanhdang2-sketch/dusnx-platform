@@ -15,8 +15,8 @@ test("gateway rejects non-loopback, credentials, paths and non-http schemes", ()
 });
 
 test("only the task pane assets are served", () => {
-  for (const value of ["/", "/word-taskpane.html", "/word-taskpane.js"]) assert.equal(server.isAssetPath(value), true);
-  for (const value of ["/manifest.xml", "/../word-taskpane.js", "/v1/chat", "/word-taskpane.html/..", "//word-taskpane.js"]) assert.equal(server.isAssetPath(value), false);
+  for (const value of ["/", "/word-taskpane.html", "/word-taskpane.js", "/taskpane.html", "/taskpane.js", "/deck-template.pptx"]) assert.equal(server.isAssetPath(value), true);
+  for (const value of ["/manifest.xml", "/../word-taskpane.js", "/v1/chat", "/word-taskpane.html/..", "//word-taskpane.js", "/powerpoint-addin/taskpane.js", "/powerpoint-addin/deck-template.pptx"]) assert.equal(server.isAssetPath(value), false);
 });
 
 test("proxy forwards only auth/content headers and never cookies", () => {
