@@ -37,4 +37,19 @@ test("static assets carry no-store, nosniff and a frame-ancestors policy", () =>
   assert.match(headers["content-security-policy"], /connect-src 'self'/);
 });
 
+test("proxy URLs stay on the gateway origin and under /v1/", () => {
+  const target = "http://127.0.0.1:8181";
+  assert.equal(server.upstreamUrl(target, "/v1/chat").href, "http://127.0.0.1:8181/v1/chat");
+  assert.equal(server.upstreamUrl(target, "/v1/health?check=1").href, "http://127.0.0.1:8181/v1/health?check=1");
+  for (const value of ["/health", "/", "//evil.example/v1/chat", "http://evil.example/v1/chat", "https://127.0.0.1:8181/v1/chat", "http://user:pass@127.0.0.1:8181/v1/chat", "/v1"]) {
+    assert.throws(() => server.upstreamUrl(target, value));
+  }
+});
+
+test("a missing asset file answers 404 instead of crashing", () => {
+  let status = null;
+  server.serveAsset({ method: "GET" }, { writeHead(code) { status = code; }, end() {} }, { file: "does-not-exist.js", type: "text/plain" });
+  assert.equal(status, 404);
+});
+
 test("request body limit is bounded", () => { assert.equal(server.MAX_BODY, 64 * 1024); });

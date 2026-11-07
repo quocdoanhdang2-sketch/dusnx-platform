@@ -64,34 +64,59 @@ function send(res, status, body, headers = {}) {
   res.end(body);
 }
 
+function upstreamUrl(target, requestUrl) {
+  let url;
+  try { url = new URL(String(requestUrl || ""), target); }
+  catch { throw new Error("Invalid proxy request URL"); }
+  if (url.origin !== new URL(target).origin) throw new Error("Proxy request must stay on the gateway origin");
+  if (url.username || url.password) throw new Error("Proxy request must not contain credentials");
+  if (!url.pathname.startsWith("/v1/")) throw new Error("Proxy request must target /v1/");
+  return url;
+}
+
 function serveAsset(req, res, asset) {
   const file = path.join(__dirname, asset.file);
-  const stat = fs.statSync(file);
+  let stat;
+  try { stat = fs.statSync(file); }
+  catch { return send(res, 404, "Not found\n", { "content-type": "text/plain; charset=utf-8" }); }
   res.writeHead(200, { ...assetHeaders(asset), "content-length": String(stat.size) });
   if (req.method === "HEAD") return res.end();
-  fs.createReadStream(file).pipe(res);
+  const stream = fs.createReadStream(file);
+  stream.on("error", () => res.destroy());
+  stream.pipe(res);
 }
 
 function proxy(req, res, target) {
   if (!["GET", "POST"].includes(req.method)) return send(res, 405, "Method not allowed\n", { "content-type": "text/plain; charset=utf-8" });
-  let size = 0;
-  const chunks = [];
+  let size = 0, tooLarge = false, chunks = [];
   req.on("data", chunk => {
+    if (tooLarge) return;
     size += chunk.length;
-    if (size > MAX_BODY) { req.destroy(); if (!res.headersSent) send(res, 413, "Request body too large\n", { "content-type": "text/plain; charset=utf-8" }); return; }
+    if (size > MAX_BODY) {
+      tooLarge = true; chunks = [];
+      send(res, 413, "Request body too large\n", { "content-type": "text/plain; charset=utf-8" });
+      req.resume();
+      return;
+    }
     chunks.push(chunk);
   });
   req.on("end", () => {
-    if (res.headersSent) return;
+    if (tooLarge || res.headersSent) return;
+    let url;
+    try { url = upstreamUrl(target, req.url); }
+    catch { return send(res, 400, "Bad request\n", { "content-type": "text/plain; charset=utf-8" }); }
     const body = Buffer.concat(chunks);
     const headers = { ...requestHeaders(req.headers), "content-length": String(body.length) };
     const transport = target.startsWith("https:") ? https : http;
-    const upstream = transport.request(new URL(target + req.url), { method: req.method, headers, timeout: 120000 }, response => {
-      res.writeHead(response.statusCode || 502, responseHeaders(response.headers));
-      response.pipe(res);
-    });
+    let upstream;
+    try {
+      upstream = transport.request(url, { method: req.method, headers, timeout: 120000 }, response => {
+        res.writeHead(response.statusCode || 502, responseHeaders(response.headers));
+        response.pipe(res);
+      });
+    } catch { return send(res, 502, JSON.stringify({ detail: "Gateway unavailable" }), { "content-type": "application/json; charset=utf-8" }); }
     upstream.on("timeout", () => upstream.destroy(new Error("gateway timeout")));
-    upstream.on("error", () => { if (!res.headersSent) send(res, 502, JSON.stringify({ detail: "Gateway unavailable" }), { "content-type": "application/json; charset=utf-8" }); });
+    upstream.on("error", () => { if (!res.headersSent) send(res, 502, JSON.stringify({ detail: "Gateway unavailable" }), { "content-type": "application/json; charset=utf-8" }); else res.destroy(); });
     upstream.end(body.length ? body : undefined);
   });
   req.on("error", () => { if (!res.headersSent) send(res, 400, "Bad request\n", { "content-type": "text/plain; charset=utf-8" }); });
@@ -127,4 +152,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { MAX_BODY, gatewayUrl, isAssetPath, requestHeaders, responseHeaders, assetHeaders, createServer };
+module.exports = { MAX_BODY, gatewayUrl, isAssetPath, requestHeaders, responseHeaders, assetHeaders, upstreamUrl, serveAsset, createServer };

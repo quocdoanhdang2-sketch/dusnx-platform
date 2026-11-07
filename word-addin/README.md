@@ -7,10 +7,12 @@ Office.js task pane cho Microsoft Word. Người dùng đăng nhập DUSN-X, ch�
   `https://localhost:3001/word-taskpane.html`.
 - `word-taskpane.html` — UI đăng nhập/session/instruction/proposal/provenance.
 - `word-taskpane.js` — toàn bộ logic; token opaque chỉ nằm trong RAM.
-- `dev-server.js` — HTTPS server dev: chỉ phục vụ hai asset trên, proxy `/v1/*` same-origin
+- `dev-server.js` — HTTPS server dev dùng chung cho Word và PowerPoint: chỉ phục vụ allowlist
+  asset (Word task pane, PowerPoint task pane, `deck-template.pptx`), proxy `/v1/*` same-origin
   tới Gateway loopback, CSP + `no-store` + giới hạn body 64 KiB.
 - `word-taskpane.test.js` — 15 unit test với Word host giả.
-- `dev-server.test.js` — 7 test cho allowlist asset, kiểm tra Gateway URL, lọc header và CSP.
+- `dev-server.test.js` — 9 test cho allowlist asset, kiểm tra Gateway URL, đích proxy, lọc
+  header, CSP và asset thiếu.
 
 ## Hành vi an toàn
 
@@ -40,4 +42,4 @@ thật: [docs/evidence/word-addin-desktop-20261106](../docs/evidence/word-addin-
 node --test word-addin/word-taskpane.test.js word-addin/dev-server.test.js
 ```
 
-Kết quả hiện tại: 22/22 pass (15 task pane + 7 dev server; tổng Node suite 48/48).
+Kết quả hiện tại: 24/24 pass (15 task pane + 9 dev server; tổng Node suite 58/58).

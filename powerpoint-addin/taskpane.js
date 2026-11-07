@@ -117,10 +117,14 @@
         current.bullets.push(bullet[1].replace(BULLET_LABEL, "").trim());
         continue;
       }
+      if (/^(?:slide|bài)\s*\d+\s*[-–—:.)]?$/i.test(line)) continue;
+      const labelled = line.match(/^(?:slide|bài)\s*\d+\s*[-–—:.)]\s*(.+)$/i);
+      if (labelled && labelled[1].trim()) {
+        if (current) plan.push(current);
+        current = { title: labelled[1].replace(TITLE_LABEL, "").trim(), bullets: [] };
+        continue;
+      }
       if (!current) {
-        const labelled = line.match(/^(?:slide|bài)\s*\d+\s*[-–—:.)]\s*(.+)$/i);
-        if (labelled && labelled[1].trim()) { current = { title: labelled[1].replace(TITLE_LABEL, "").trim(), bullets: [] }; continue; }
-        if (/^(?:slide|bài)\s*\d+\s*[-–—:.)]?$/i.test(line)) continue;
         if (++preamble > 3 || line.length > 300) throw new Error(`Unexpected outline line: ${safe(line).slice(0, 80)}`);
         continue;
       }

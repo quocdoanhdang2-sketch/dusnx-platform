@@ -86,7 +86,7 @@
     "proposal_cleared": true
   },
   "tests": {
-    "node_addins": { "command": "node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js word-addin/dev-server.test.js", "passed": 41, "failed": 0 },
+    "node_addins": { "command": "node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js word-addin/word-taskpane.test.js word-addin/dev-server.test.js", "passed": 58, "failed": 0 },
     "powerpoint_taskpane": { "passed": 17, "failed": 0 },
     "python": { "command": "python -m pytest python/tests -q", "passed": 353, "failed": 0 },
     "gateway_harness": { "command": "dotnet run --project gateway-dotnet.tests -c Release --no-build", "passed": 7, "failed": 0 }

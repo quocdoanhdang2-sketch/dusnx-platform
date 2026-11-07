@@ -95,6 +95,11 @@ test("outline parser tolerates a short preamble and model slide labels", () => {
     { title: "Đánh giá", bullets: ["Có regression"] },
   ]);
   assert.deepEqual(app.parseOutline("Slide 1 - Mở đầu\n- Ý một"), [{ title: "Mở đầu", bullets: ["Ý một"] }]);
+  assert.deepEqual(app.parseOutline("# Mở đầu\n- Ý một\nSlide 2 - Kết luận\n- Ý hai"), [
+    { title: "Mở đầu", bullets: ["Ý một"] },
+    { title: "Kết luận", bullets: ["Ý hai"] },
+  ]);
+  assert.deepEqual(app.parseOutline("# Mở đầu\n- Ý một\nSlide 2\n- Ý hai"), [{ title: "Mở đầu", bullets: ["Ý một", "Ý hai"] }]);
   assert.deepEqual(app.parseOutline("# Slide 1 - Title: Dữ liệu\n- Bullet text: Đã khóa\n# Title: Vận hành\nBullet text: Same-origin"), [
     { title: "Dữ liệu", bullets: ["Đã khóa"] },
     { title: "Vận hành", bullets: ["Same-origin"] },

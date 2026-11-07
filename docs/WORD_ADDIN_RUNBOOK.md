@@ -18,10 +18,10 @@ WordApi 1.1 và 1.3, task pane nạp từ `https://localhost:3001`, proposal/app
 
 ## 2. Phục vụ task pane qua HTTPS
 
-Office chỉ nạp task pane từ HTTPS. Repo có `word-addin/dev-server.js`: server HTTPS dev chỉ phục
-vụ `word-taskpane.html` và `word-taskpane.js`, đồng thời proxy `/v1/*` same-origin tới Gateway
-loopback. Vì vậy task pane gọi Gateway bằng đường dẫn tương đối, không cần chèn
-`window.DUSNX_GATEWAY` vào HTML.
+Office chỉ nạp task pane từ HTTPS. Repo có `word-addin/dev-server.js`: server HTTPS dev dùng chung
+cho Word và PowerPoint, chỉ phục vụ allowlist asset (Word task pane, PowerPoint task pane,
+`deck-template.pptx`), đồng thời proxy `/v1/*` same-origin tới Gateway loopback. Vì vậy task pane
+gọi Gateway bằng đường dẫn tương đối, không cần chèn `window.DUSNX_GATEWAY` vào HTML.
 
 ```powershell
 $env:WORD_ADDIN_TLS_CERT = "C:\certs\localhost-cert.pem"
@@ -34,7 +34,8 @@ node word-addin/dev-server.js
 
 Đặc điểm của server dev:
 
-- Chỉ hai asset trong allowlist; path khác trả `404` (kể cả `/manifest.xml`).
+- Allowlist chỉ gồm `/`, `/word-taskpane.html`, `/word-taskpane.js`, `/taskpane.html`,
+  `/taskpane.js`, `/deck-template.pptx`; path khác trả `404` (kể cả `/manifest.xml`).
 - Proxy chỉ nhận `GET`/`POST` cho `/v1/*`, Gateway phải là loopback (`127.0.0.1`/`localhost`/`::1`),
   không credential/query/path trong URL đích; body tối đa 64 KiB; timeout 120 s.
 - Chỉ chuyển tiếp `Authorization`, `Content-Type`, `Accept`; không forward cookie.

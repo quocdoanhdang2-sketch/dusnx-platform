@@ -89,7 +89,7 @@ unit test (17 test task pane), gồm cả trường hợp Apply lần hai bị t
 
 | Bộ | Lệnh | Kết quả |
 |---|---|---|
-| Node add-in + web | `node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js word-addin/dev-server.test.js` | 41 passed, 0 failed |
+| Node add-in + web | `node --test web-ui/app.test.js web-ui/auth.test.js powerpoint-addin/taskpane.test.js word-addin/word-taskpane.test.js word-addin/dev-server.test.js` | 58 passed, 0 failed |
 | PowerPoint task pane | `node --test powerpoint-addin/taskpane.test.js` | 17 passed, 0 failed |
 | Python | `python -m pytest python/tests -q` | 353 passed, 0 failed |
 | Gateway harness | `dotnet run --project gateway-dotnet.tests -c Release --no-build` | 7/7 passed |
