@@ -677,6 +677,8 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
         state_version: response.state_version,
         memory_ids_used: response.memory_ids_used,
         response_language: response.response_language,
+        sources: response.sources,
+        rag_used: response.rag_used,
         inspector: response.inspector,
         created_at: new Date().toISOString(),
       });
@@ -792,9 +794,16 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
       tag.textContent = meta.response_source === "grounded_template" ? "Trích trí nhớ đã lưu" :
+        meta.response_source === "rag_extract" ? "Trích tài liệu nội bộ" :
         meta.response_source === "replay" ? "Phản hồi đã xác nhận trước đó" :
         meta.response_source === "clarification" ? "Cần làm rõ" :
         meta.response_source === "mock" ? "Phản hồi thử nghiệm" : "Thao tác ứng dụng";
+      metaEl.appendChild(tag);
+    }
+    if (meta.rag_used) {
+      const tag = document.createElement("span");
+      tag.className = "meta-tag";
+      tag.textContent = "📚 Có nguồn";
       metaEl.appendChild(tag);
     }
     if (meta.memory_ids_used && meta.memory_ids_used.length > 0) {
@@ -822,10 +831,47 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
 
   col.appendChild(bubble);
   col.appendChild(metaEl);
+  if (role === "assistant" && Array.isArray(meta.sources) && meta.sources.length > 0) {
+    col.appendChild(buildSourcesCard(meta.sources));
+  }
   wrapper.appendChild(avatar);
   wrapper.appendChild(col);
   if (append) list.appendChild(wrapper);
   return wrapper;
+}
+
+function buildSourcesCard(sources) {
+  const details = document.createElement("details");
+  details.className = "sources-card";
+  const summary = document.createElement("summary");
+  summary.textContent = `Nguồn tài liệu (${sources.length})`;
+  details.appendChild(summary);
+
+  const list = document.createElement("ul");
+  for (const source of sources) {
+    const item = document.createElement("li");
+    // SAFE: textContent — source metadata comes from indexed files, never rendered as HTML
+    const label = document.createElement("span");
+    label.className = "source-id";
+    const sourceId = String(source.id ?? "");
+    label.textContent = sourceId.startsWith("S") ? `[${sourceId}]` : `[S${sourceId}]`;
+    const where = document.createElement("span");
+    where.className = "source-where";
+    const path = source.path || "?";
+    const heading = source.heading ? ` · ${source.heading}` : "";
+    const lines = source.start_line ? ` (dòng ${source.start_line}–${source.end_line})` : "";
+    where.textContent = `${path}${heading}${lines}`;
+    item.append(label, where);
+    if (source.title) {
+      const title = document.createElement("div");
+      title.className = "source-title";
+      title.textContent = source.title;
+      item.appendChild(title);
+    }
+    list.appendChild(item);
+  }
+  details.appendChild(list);
+  return details;
 }
 
 

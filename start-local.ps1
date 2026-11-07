@@ -26,14 +26,14 @@ $AiUrl = "http://127.0.0.1:$AiPort"
 $GatewayUrl = "http://127.0.0.1:$GatewayPort"
 $Provider = if ($env:DUSNX_PROVIDER) { $env:DUSNX_PROVIDER } else { "ollama" }
 $Model = if ($env:DUSNX_OLLAMA_MODEL) { $env:DUSNX_OLLAMA_MODEL } else { "qwen2.5:0.5b" }
-$OllamaUrl = if ($env:DUSNX_OLLAMA_URL) { $env:DUSNX_OLLAMA_URL.TrimEnd('/') } else { "http://localhost:11434" }
+$OllamaUrl = if ($env:DUSNX_OLLAMA_URL) { $env:DUSNX_OLLAMA_URL.TrimEnd('/') } else { "http://127.0.0.1:11434" }
 
 # Inspect both ports before launching anything. Never terminate an existing service.
 $AiOwner = Get-DusnxListeningProcess $AiPort
 $GatewayOwner = Get-DusnxListeningProcess $GatewayPort
 if ($AiOwner) {
     $h = Assert-DusnxFastApiCheckpoint -Owner $AiOwner -ExpectedCheckpoint $Checkpoint -Uri "$AiUrl/health"
-    foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py')) {
+    foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py','language.py','runtime_clock.py','rag.py')) {
         $sha = (Get-FileHash (Join-Path $ProjectRoot "python/apps/ai_api/$sourceName") -Algorithm SHA256).Hash
         if ($h.source_hashes.$sourceName -ine $sha) { throw "Verified FastAPI PID $($AiOwner.ProcessId) has stale source $sourceName. Recheck PID and restart; no process was stopped." }
     }

@@ -99,7 +99,7 @@ khởi động AI API):
 ```powershell
 # Ollama (mặc định)
 $env:DUSNX_PROVIDER = "ollama"
-$env:DUSNX_OLLAMA_URL = "http://localhost:11434"
+$env:DUSNX_OLLAMA_URL = "http://127.0.0.1:11434"
 $env:DUSNX_OLLAMA_MODEL = "qwen2.5:1.5b-instruct"   # hoặc dusnx-vi-v3-20261107, qwen3:4b, ...
 
 # Hoặc OpenAI-compatible

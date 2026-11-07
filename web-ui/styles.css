@@ -588,6 +588,13 @@ body {
 .inspector-card summary { cursor:pointer; color:var(--accent-bright); font-weight:600; }
 .inspector-card pre { max-height:260px; overflow:auto; white-space:pre-wrap; word-break:break-word; color:var(--text-secondary); }
 
+.sources-card { margin-top:8px; padding:8px 10px; max-width:680px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-base); font-size:12px; }
+.sources-card summary { cursor:pointer; color:var(--accent-bright); font-weight:600; }
+.sources-card ul { margin:6px 0 0; padding-left:16px; }
+.sources-card li { margin-bottom:4px; color:var(--text-secondary); word-break:break-word; }
+.sources-card .source-id { color:var(--accent-bright); font-weight:600; margin-right:4px; }
+.sources-card .source-title { color:var(--text-muted); font-size:11px; margin-top:1px; }
+
 /* Input area */
 .input-area {
   padding: 12px 16px 16px;

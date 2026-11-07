@@ -26,7 +26,7 @@ của docker-compose, không dùng đường host Windows trong container.
 $env:DUSNX_CHECKPOINT = 'training-results/colab-run-01/extracted/dusnx-router-full-01/router.pt'
 $env:DUSNX_DEVICE = 'cpu'
 $env:DUSNX_PROVIDER = 'ollama'
-$env:DUSNX_OLLAMA_URL = 'http://localhost:11434'
+$env:DUSNX_OLLAMA_URL = 'http://127.0.0.1:11434'
 $env:DUSNX_OLLAMA_MODEL = 'qwen2.5:0.5b'
 $env:DUSNX_ENABLE_LLM_EVAL = '0'
 ./start-local.ps1

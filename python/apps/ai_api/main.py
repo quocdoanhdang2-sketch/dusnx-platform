@@ -35,12 +35,15 @@ from .decision_updater import (
     extract_modify_components,
 )
 from .language import detect_language, preference_instruction, response_language
+from .runtime_clock import answer_clock_query, detect_clock_query, stated_date_correction
+from . import rag
 
 # ── Model loading ─────────────────────────────────────────────────────────────
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
 SOURCE_HASHES = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
-                 for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py", "language.py")}
+                 for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py",
+                              "language.py", "runtime_clock.py", "rag.py")}
 
 def resolve_default_checkpoint() -> str:
     env_ckpt = os.getenv("DUSNX_CHECKPOINT")
@@ -193,7 +196,7 @@ def health():
         "configuration": {
             "data_dir": str(Path(os.getenv("DUSNX_DATA_DIR", "data")).resolve()),
             "device_requested": os.getenv("DUSNX_DEVICE", "auto"),
-            "ollama_url": os.getenv("DUSNX_OLLAMA_URL", "http://localhost:11434").rstrip("/"),
+            "ollama_url": os.getenv("DUSNX_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/"),
             "evaluation_enabled": os.getenv("DUSNX_ENABLE_LLM_EVAL") == "1",
             "inspector_enabled": os.getenv("DUSNX_ENABLE_INSPECTOR") == "1",
         },
@@ -207,6 +210,7 @@ def health():
         "metadata": META,
         "model_version": MODEL_VERSION,
         "provider": p_health,
+        "rag": rag.index_status(),
     }
 
 
@@ -847,6 +851,8 @@ class ChatResponse(BaseModel):
     preferred_language: str = "auto"
     detected_language: str = "unknown"
     response_language: str = "vi"
+    sources: list[dict] = Field(default_factory=list)
+    rag_used: bool = False
     inspector: Optional[dict] = None
 
 
@@ -1012,8 +1018,64 @@ def _chat_impl(req: ChatRequest, user: dict):
             memory_ids_used=[new_mem["memory_id"]], session_id=req.session_id,
             response_source="application_rule")
 
+    # ── Runtime clock ─────────────────────────────────────────────────────────
+    # A small model has a fixed training cutoff and cannot know today's date.
+    # Answer direct clock questions from the server clock, without a provider
+    # call, so the result is always correct and instant.
+    clock_kind = detect_clock_query(req.message)
+    if clock_kind is not None:
+        reply_text = answer_clock_query(clock_kind, reply_language)
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", reply_text,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="runtime_clock", selected_agent="conversation", next_action="reply",
+            confidence=1.0, runtime_mode=RUNTIME_MODE, routing_source="runtime_clock",
+            provider_used=None, provider_ok=True, state_version=s_ver,
+            memory_ids_used=[], session_id=req.session_id,
+            provider_called=False, response_source="runtime_clock")
+
+    # A stated "today" that contradicts the clock is corrected deterministically:
+    # small models tend to agree with the user's latest claim instead of the clock.
+    stated_correction = stated_date_correction(req.message, reply_language)
+    if stated_correction is not None:
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", stated_correction,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=stated_correction,
+            intent="runtime_clock_correction", selected_agent="conversation", next_action="reply",
+            confidence=1.0, runtime_mode=RUNTIME_MODE, routing_source="runtime_clock",
+            provider_used=None, provider_ok=True, state_version=s_ver,
+            memory_ids_used=[], session_id=req.session_id,
+            provider_called=False, response_source="runtime_clock")
+
+    # ── Grounded retrieval ────────────────────────────────────────────────────
+    # Questions about this repository are answered from indexed documentation
+    # and code, with citations. General knowledge questions skip retrieval so
+    # unrelated snippets never steer the answer.
+    rag_hits: list = []
+    rag_context = ""
+    if rag.should_retrieve(req.message):
+        candidate_hits = rag.retrieve(req.message, top_k=5)
+        if rag.has_evidence(candidate_hits):
+            rag_hits = candidate_hits
+            rag_context = rag.build_context(rag_hits, reply_language)
+    rag_sources = [hit.as_source() for hit in rag_hits]
+    # Retrieval hits alone do not mean the corpus answers the question: a status
+    # report can share product words without describing the product. The cited
+    # extractive answer is the real test of coverage, so it is computed once and
+    # reused by the grounded-answer branch below.
+    rag_extractive = (rag.answer_from_hits(req.message, rag_hits, reply_language)
+                      if rag_hits and rag.has_strong_evidence(rag_hits) else None)
+
     # ── Missing context guard ─────────────────────────────────────────────────
-    if _detect_unverified_dusnx_product_question(req.message):
+    if _detect_unverified_dusnx_product_question(req.message) and rag_extractive is None:
         reply_text = (
             "I don't have verified documentation about DUSN-X's product features. Please share the relevant spec or documentation, and I can summarize it."
             if reply_language == "en" else
@@ -1332,31 +1394,43 @@ def _chat_impl(req: ChatRequest, user: dict):
     else:
         selected = select_memories(req.message, memories)
         prompt_ids = [m["memory_id"] for m in selected]
-        generated = generate_response(
-            user_message=req.message, memories=selected, intent=dusnx_intent,
-            session_history=history, project_name=project_name,
-            response_language=reply_language,
-        )
-        reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
-        provider_called = getattr(generated, "provider_called", False)
-        provider_call_count = getattr(generated, "provider_call_count", int(provider_called))
-        provider_attempts = getattr(generated, "provider_attempts", [])
-        provider_elapsed_ms = getattr(generated, "provider_elapsed_ms", 0.0)
-        done_reason = getattr(generated, "done_reason", None)
-        sanitizer_changed = getattr(generated, "sanitizer_changed", False)
-        raw_output_sha256 = getattr(generated, "raw_output_sha256", None)
-        raw_provider_reply = getattr(generated, "raw_provider_reply", None)
-        provider_sanitized_reply = getattr(generated, "sanitized_provider_reply", None)
-        quality_status = getattr(generated, "quality_status", None)
-        response_source = (getattr(generated, "response_source", None)
-                           or (("llm" if provider_called else "mock") if provider_ok else "provider_error"))
-        if not provider_ok:
-            response_source = "provider_error"
-        if not provider_called:
+        # Documentation answers are quoted, not generated: a 1.5B model tends to
+        # invent DUSN-X facts even when correct context is supplied. Strong
+        # retrieval therefore produces a deterministic cited answer.
+        extractive = rag_extractive
+        if extractive:
+            reply_text, provider_ok = extractive, True
             provider_used = model_used = tokens_generated = None
-        # LLM citations are not measured. Prompt inclusion is reported separately;
-        # do not invent evidence attribution from lexical overlap with its output.
-        memory_ids = []
+            provider_called = False
+            response_source = "rag_extract"
+            memory_ids = []
+        else:
+            generated = generate_response(
+                user_message=req.message, memories=selected, intent=dusnx_intent,
+                session_history=history, project_name=project_name,
+                response_language=reply_language,
+                knowledge_context=rag_context or None,
+            )
+            reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
+            provider_called = getattr(generated, "provider_called", False)
+            provider_call_count = getattr(generated, "provider_call_count", int(provider_called))
+            provider_attempts = getattr(generated, "provider_attempts", [])
+            provider_elapsed_ms = getattr(generated, "provider_elapsed_ms", 0.0)
+            done_reason = getattr(generated, "done_reason", None)
+            sanitizer_changed = getattr(generated, "sanitizer_changed", False)
+            raw_output_sha256 = getattr(generated, "raw_output_sha256", None)
+            raw_provider_reply = getattr(generated, "raw_provider_reply", None)
+            provider_sanitized_reply = getattr(generated, "sanitized_provider_reply", None)
+            quality_status = getattr(generated, "quality_status", None)
+            response_source = (getattr(generated, "response_source", None)
+                               or (("llm" if provider_called else "mock") if provider_ok else "provider_error"))
+            if not provider_ok:
+                response_source = "provider_error"
+            if not provider_called:
+                provider_used = model_used = tokens_generated = None
+            # LLM citations are not measured. Prompt inclusion is reported separately;
+            # do not invent evidence attribution from lexical overlap with its output.
+            memory_ids = []
 
     if provider_ok:
         # Save assistant message only on success
@@ -1382,6 +1456,12 @@ def _chat_impl(req: ChatRequest, user: dict):
         if title:
             db.update_session_title(user_id, req.session_id, title)
 
+    # Only expose passages the answer actually cites; a source list that the
+    # reply never references implies evidence that was not used.
+    cited_ids = sorted({int(match) for match in re.findall(r"\[S(\d+)\]", reply_text or "")})
+    cited_sources = [rag_sources[index - 1] for index in cited_ids
+                     if 0 < index <= len(rag_sources)]
+
     return chat_response(
         message_id=msg_id,
         reply=reply_text,
@@ -1399,7 +1479,7 @@ def _chat_impl(req: ChatRequest, user: dict):
         model_used=model_used if provider_ok else None,
         tokens_generated=tokens_generated if provider_ok else None,
         answer_source=("active_memory_extract" if grounded_answer is not None else
-                       ("application_rule" if response_source in {"application_formatter", "application_clarification"}
+                       ("application_rule" if response_source in {"application_formatter", "application_clarification", "rag_extract"}
                         else "provider")),
         prompt_memory_ids=prompt_ids,
         provider_called=provider_called,
@@ -1414,6 +1494,8 @@ def _chat_impl(req: ChatRequest, user: dict):
             if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
         quality_status=quality_status,
         response_source=response_source,
+        sources=cited_sources if provider_ok and grounded_answer is None else [],
+        rag_used=bool(provider_ok and cited_sources and grounded_answer is None),
     )
 
 

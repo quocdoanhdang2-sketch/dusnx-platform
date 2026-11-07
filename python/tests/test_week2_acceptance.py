@@ -366,9 +366,12 @@ class TestProviderFailureAndRetry:
         # Configure an unsupported/failing provider
         monkeypatch.setenv("DUSNX_PROVIDER", "failing_broken_provider")
 
+        # This must be a message the documentation cannot answer: a question
+        # covered by the RAG index is answered from the corpus without calling
+        # the provider, which would bypass the failure path under test.
         res = client.post("/v1/chat", json={
             "session_id": sid,
-            "message": "Câu hỏi khi LLM provider đang sập",
+            "message": "Thử nghiệm lỗi nhà cung cấp.",
         }, headers=headers).json()
 
         # API must report failure cleanly
@@ -395,7 +398,7 @@ class TestProviderFailureAndRetry:
         monkeypatch.setenv("DUSNX_PROVIDER", "mock")
         res_retry = client.post("/v1/chat", json={
             "session_id": sid,
-            "message": "Câu hỏi khi LLM provider đang sập",
+            "message": "Thử nghiệm lỗi nhà cung cấp.",
             "is_retry": True,
         }, headers=headers).json()
 
