@@ -30,9 +30,9 @@ chối khi đổi selection và tài liệu không đổi. Bằng chứng và �
 Còn thiếu trước production: manifest đã ký/central deployment thay vì sideload registry; HTTPS
 cùng origin cho WebView2 (dev đã chạy `word-addin/dev-server.js` proxy `/v1/*`; production cần
 reverse proxy và CA nội bộ thay certificate localhost); chính sách dữ liệu nhạy cảm và retention;
-xử lý bảng/field/tracked changes; undo/telemetry; và model chất lượng cao hơn (bằng chứng hiện
-tại dùng `qwen2.5:1.5b-instruct`, chưa đủ ổn định để coi nội dung là bản cuối). Harness mock
-không thay bằng chứng Desktop.
+xử lý bảng/field/tracked changes; undo/telemetry; và model chất lượng cao hơn (model do từng máy
+cấu hình qua `DUSNX_OLLAMA_MODEL`/provider; bằng chứng hiện tại dùng `qwen2.5:1.5b-instruct`,
+chưa đủ ổn định để coi nội dung là bản cuối). Harness mock không thay bằng chứng Desktop.
 
 ## Teams và Zalo
 

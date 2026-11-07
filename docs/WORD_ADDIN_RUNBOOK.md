@@ -89,7 +89,33 @@ Chuẩn bị tài liệu có 3 đoạn: tiêu đề, đoạn đích, đoạn cu�
    muộn không được render thành proposal.
 7. Thử chọn vùng rỗng hoặc >4000 ký tự: không có request provider.
 
-## 5. Giới hạn đã biết
+## 5. Model theo từng máy
+
+Model do **AI API của máy đó** chọn lúc khởi động; task pane không hard-code model và mỗi request
+không đổi model. Cấu hình bằng biến môi trường trước khi chạy `start-local.ps1` (hoặc trước khi
+khởi động AI API):
+
+```powershell
+# Ollama (mặc định)
+$env:DUSNX_PROVIDER = "ollama"
+$env:DUSNX_OLLAMA_URL = "http://localhost:11434"
+$env:DUSNX_OLLAMA_MODEL = "qwen2.5:1.5b-instruct"   # hoặc dusnx-vi-v3-20261107, qwen3:4b, ...
+
+# Hoặc OpenAI-compatible
+$env:DUSNX_PROVIDER = "openai"
+$env:DUSNX_OPENAI_BASE_URL = "https://api.openai.com/v1"
+$env:DUSNX_OPENAI_MODEL = "gpt-4o-mini"
+$env:DUSNX_OPENAI_API_KEY = "..."   # do operator đặt, không ghi vào repo
+```
+
+- Model phải đã có trên máy (`ollama list`) hoặc đã import; máy khác nhau có thể dùng model khác.
+- Đổi model phải **restart AI API** (biến được đọc lúc khởi động), rồi restart Gateway nếu URL đổi.
+- Xác minh đúng máy: `curl http://127.0.0.1:8180/health` → `provider.configured_model` và
+  `provider.model_available: true`.
+- Trong Word, provenance của proposal trả `model_used` thực tế; nếu lệch với cấu hình thì task pane
+  đang nối nhầm Gateway/API. Model không có sẵn → provider lỗi, không có proposal (guard chặn).
+
+## 6. Giới hạn đã biết
 
 - Chỉ xử lý **plain text** của selection. Bảng, ảnh, field, footnote, tracked changes có thể
   bị Word chuẩn hóa khi đọc/ghi; chưa có test cho các cấu trúc này.
@@ -104,7 +130,7 @@ Chuẩn bị tài liệu có 3 đoạn: tiêu đề, đoạn đích, đoạn cu�
 - Sideload và task pane chạy được với certificate localhost tin cậy; máy khác cần lặp lại bước
   tin cậy certificate hoặc dùng CA nội bộ.
 
-## 6. Khi lỗi
+## 7. Khi lỗi
 
 - `Select text in the document first.` — chưa chọn văn bản hoặc selection rỗng.
 - `A measured LLM response with provenance is required...` — provider lỗi/trả memory/template;
