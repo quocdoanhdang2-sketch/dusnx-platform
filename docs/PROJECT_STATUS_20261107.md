@@ -24,7 +24,7 @@ Local `runtime/` artifacts stay outside the repository.
 | Word add-in | Proposal/Apply guards verified on Word Desktop (WordApi 1.1/1.3). Apply now supports Replace selection or Insert new paragraph after selection; both re-check the selection before writing. | `docs/evidence/word-addin-desktop-20261106`; insert-after covered by the Node harness, not yet re-verified on Desktop. |
 | PowerPoint add-in | Edit-selected-text and generate-slides modes verified on PowerPoint Desktop 16.0.20527. Generation can insert after the currently selected slide (or after the last slide) and refuses if the reviewed target slide was deleted. | `docs/evidence/powerpoint-addin-generate-20261107`; target selection/deletion covered by the Node harness, not yet re-verified on Desktop. |
 | SFT v3 candidate | Evaluation complete with `promote=false` (n=6). The base `qwen2.5:1.5b-instruct` remains the runtime model. | Paired evaluation report; candidate `dusnx-vi-v3-20261107`. |
-| Production restart | Completed on 2026-11-07 with explicit consent. Ports 8000/8080 now serve the merged code, adaptive profile, RAG, and drafting gate. | `/health` source hashes match the working tree; Gateway smoke on 2026-11-07. |
+| Production restart | Completed on 2026-11-07 with explicit consent, twice: first for `25034d5`, then for `7792ffc` which adds safe Markdown rendering, memory recall/dedup, Office request routing, Word insert-after and PowerPoint selected-slide insertion. | `/health` source hashes match the working tree at `7792ffc`; live chat probes through Gateway on 2026-11-07. |
 
 ## Verification run (local, 2026-11-07)
 
@@ -38,7 +38,7 @@ Local `runtime/` artifacts stay outside the repository.
 | Live AI API on isolated port 8046 | auto profile low / 4 GB / 1.5B; observance, year caveat, runtime model identity, and vi/en language probes answered; `provider_called=false` on fast paths |
 | Isolated Web UI on 8180 | Lazy session creation, empty-state row, one titled session per conversation after refresh, header/sidebar title agreement, compact router label, runtime-identity chip. Structural inspection only — the in-app browser had no visible surface, so no screenshot was taken. |
 | Upgrade round on branch `fix/quality-context-evidence` | Python 425/1 skipped, Node 66/66. Office request routing, Word insert-after, PowerPoint target selection, Markdown rendering and memory dedup are covered by unit/Node harnesses. No Desktop Office re-verification and no visible-browser run this round. |
-| Production 8000/8080 after restart | source hashes match commit `25034d5` only; it does not include this working tree's changes. |
+| Production 8000/8080 after restart to `7792ffc` | `/v1/health` source hashes match the working tree (`main.py` `0e7d1b49…`); `provider_ok=true`, model `qwen2.5:1.5b-instruct`, tier `low`. Live probes through Gateway: `2 + 2` answered `4` with `provider_called=false`; repeated explicit remember kept one memory row; a Word-marked request returned `response_source=llm` with `provider_called=true`; a RAG question returned `rag_extract` with cited sources; served Web UI ships `app.js?v=20261107h`. |
 
 These are local harnesses and live local probes. They are not a GitHub Actions run and
 not a Desktop Office re-verification.
@@ -52,7 +52,9 @@ not a Desktop Office re-verification.
   identity, simple arithmetic) are exact; outside them the small model can still state a wrong
   fact. ChatGPT/Gemini-level breadth needs a hosted model: set `DUSNX_PROVIDER=openai` plus
   `DUSNX_OPENAI_BASE_URL`, `DUSNX_OPENAI_MODEL`, and `DUSNX_OPENAI_API_KEY` (Gemini uses its
-  OpenAI-compatibility endpoint). No key is bundled.
+  OpenAI-compatibility endpoint). No key is bundled. The native launcher reads these from the
+  launching shell only, so use `$env:NAME = "..."` before `start-local.ps1` or `setx NAME "..."`
+  for a persistent user-level value; `.env` is consumed by Docker Compose, not by the script.
 - Auto selection installs nothing. If the preferred model for a tier is absent, `/health`
   reports `preferred_model_missing` with a pull hint and uses the largest installed Qwen2.5
   model that fits.
@@ -60,9 +62,9 @@ not a Desktop Office re-verification.
 
 ## Still open
 
-1. Deploy this working tree to production 8000/8080 (restart required) with explicit consent.
-   The 2026-11-07 restart covered commit `25034d5`, not these later changes.
-   Set an external provider key to reach hosted-model answer quality across all domains.
+1. Set an external provider key to reach hosted-model answer quality across all domains, then
+   restart the AI API so it picks up `DUSNX_PROVIDER` and the `DUSNX_OPENAI_*` values.
+   Production 8000/8080 already serves `7792ffc`; no redeploy is pending.
 2. Promote a candidate only after the frozen evaluation gate passes; Holdout v3 stays closed
    until then. Explicit consent does not replace missing evaluation evidence.
 3. Teams, Zalo OA, and vision/image editing remain separate integrations that need real
