@@ -130,6 +130,15 @@ def test_sanitize_generated_reply_removes_instruction_leakage():
     assert "Continuous integration" in cleaned_2
 
 
+def test_sanitize_removes_correction_meta_commentary():
+    text = ("Thủ đô của Pháp là Paris.\n\n"
+            "Câu này đã được viết bằng tiếng Việt để đáp ứng yêu cầu người dùng, "
+            "không sao chép bản nháp lỗi trước đó hoặc trộn ngôn ngữ như trong lần sửa đổi đầu tiên.")
+    cleaned = sanitize_generated_reply(text)
+    assert "Thủ đô của Pháp là Paris." in cleaned
+    assert "bản nháp" not in cleaned
+
+
 def test_quality_flags_detector_and_false_positive_resistance():
     """Quality flags detector catches leaks and loops, but ignores legitimate text."""
     # 1. Obvious leak must be flagged

@@ -471,7 +471,9 @@ class MemoryDB:
 
     def list_sessions(self, user_id: str, limit: int = 50) -> list[dict]:
         rows = self._conn.execute(
-            "SELECT * FROM chat_sessions WHERE user_id=? ORDER BY updated_at DESC LIMIT ?",
+            "SELECT s.*, "
+            "(SELECT COUNT(*) FROM chat_messages m WHERE m.session_id = s.session_id) AS message_count "
+            "FROM chat_sessions s WHERE s.user_id=? ORDER BY s.updated_at DESC LIMIT ?",
             (user_id, limit),
         ).fetchall()
         return [dict(r) for r in rows]

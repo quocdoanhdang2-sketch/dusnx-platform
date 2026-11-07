@@ -800,7 +800,9 @@ def test_drafting_request_retries_when_model_defers(monkeypatch):
         result = provider.generate_response("viết email xin nghỉ phép 1 ngày", [], "recommendation",
                                             response_language="vi")
     assert len(calls) == 2
-    assert "square-bracket placeholders" in calls[1]
+    # The corrective retry follows the selected response language.
+    assert "chỗ trống" in calls[1]
+    assert "không từ chối" in calls[1]
     assert result[1] is True
     assert result[0].startswith("Kính gửi")
     assert [a.get("drafting_status") for a in result.provider_attempts] == ["deferred", "completed"]

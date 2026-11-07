@@ -20,10 +20,11 @@ function officeFixture() {
       get start() { return fixture.start; },
       get end() { return fixture.end; },
       insertText(value, location) { assert.equal(location, "Replace"); fixture.text = value; fixture.end = fixture.start + value.length; fixture.writes += 1; },
+      insertParagraph(value, location) { assert.equal(location, "After"); fixture.inserted = value; fixture.writes += 1; },
     };
     return fn({ sync: async () => {}, document: { getSelection: () => selection } });
   } };
-  app.state.token = "synthetic-harness-token"; app.state.sessionId = "session-a"; app.state.proposal = null; app.state.busy = false;
+  app.state.token = "synthetic-harness-token"; app.state.sessionId = "session-a"; app.state.proposal = null; app.state.busy = false; app.state.applyMode = "replace";
   fixture.result = { reply: "Báo cáo DUSN-X LLM v3 — bản rút gọn", provider_ok: true, provider_called: true,
     provider_used: "ollama", model_used: "synthetic-harness-model", response_source: "llm", intent: "chat", routing_source: "model" };
   global.fetch = async (url, options) => { fixture.request = { url, body: JSON.parse(options.body) }; return { ok: true, headers: { get: () => "application/json" }, json: async () => fixture.result }; };
@@ -48,6 +49,29 @@ test("Apply preserves a trailing paragraph break from the selection", async () =
   const fixture = officeFixture(); fixture.text = "Đoạn gốc.\r"; fixture.end = 12 + fixture.text.length; fixture.result.reply = "Đoạn mới.";
   await app.ask(); await app.applyProposal();
   assert.equal(fixture.writes, 1); assert.equal(fixture.text, "Đoạn mới.\r");
+});
+
+test("insert-after mode adds a new paragraph and keeps the selection unchanged", async () => {
+  const fixture = officeFixture();
+  app.state.applyMode = "insertAfter";
+  await app.ask();
+  assert.equal(fixture.writes, 0);
+  assert.equal(app.state.proposal.applyMode, "insertAfter");
+  await app.applyProposal();
+  assert.equal(fixture.writes, 1);
+  assert.equal(fixture.inserted, "Báo cáo DUSN-X LLM v3 — bản rút gọn");
+  assert.equal(fixture.text, ORIGINAL);
+  assert.equal(app.state.proposal, null);
+});
+
+test("insert-after apply still refuses a changed selection", async () => {
+  const fixture = officeFixture();
+  app.state.applyMode = "insertAfter";
+  await app.ask();
+  fixture.text = "Changed after review";
+  await assert.rejects(app.applyProposal(), /Selection or text changed/);
+  assert.equal(fixture.writes, 0);
+  assert.equal(fixture.inserted, undefined);
 });
 
 for (const field of ["text", "start", "end"]) {

@@ -25,7 +25,9 @@ Office.js task pane cho Microsoft Word. Người dùng đăng nhập DUSN-X, ch�
   làm thay đổi text gốc.
 - Apply đọc lại selection và từ chối nếu text/start/end, session hoặc trạng thái đăng nhập
   đã đổi; proposal bị xóa sau mọi lần Apply (kể cả khi từ chối).
-- Giữ paragraph break cuối của selection để không nối đoạn với đoạn kế tiếp.
+- Chọn được chế độ Apply: **Replace selected text** hoặc **Insert new paragraph after
+  selection**. Chế độ được chốt lúc tạo proposal; đổi chế độ sẽ xóa proposal cũ.
+- Giữ paragraph break cuối của selection khi Replace để không nối đoạn với đoạn kế tiếp.
 - Logout xóa token + proposal ngay, hủy request đang bay bằng `AbortController` và làm mất
   hiệu lực response đến muộn.
 - Request mặc định same-origin (`/v1/...`); chỉ đặt `DUSNX_GATEWAY` khi chạy sau reverse proxy
@@ -42,4 +44,4 @@ thật: [docs/evidence/word-addin-desktop-20261106](../docs/evidence/word-addin-
 node --test word-addin/word-taskpane.test.js word-addin/dev-server.test.js
 ```
 
-Kết quả hiện tại: 24/24 pass (15 task pane + 9 dev server; tổng Node suite 58/58).
+Kết quả hiện tại: 26/26 pass (17 task pane + 9 dev server; tổng Node suite 66/66).

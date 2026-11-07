@@ -320,6 +320,24 @@ def test_answer_formatting_follows_requested_reply_language():
     assert none == []
 
 
+def test_first_message_titles_session_even_on_deterministic_path(client: TestClient):
+    """Calendar answers return before response assembly; the sidebar title must still update."""
+    _, token = _register_and_login(client, "test_session_title")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+
+    chat = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "20/11 là ngày gì?",
+    })
+    assert chat.status_code == 200
+    assert chat.json()["response_source"] == "observance_calendar"
+
+    sessions = client.get("/v1/sessions", headers=headers).json()
+    titled = next(item for item in sessions if item["session_id"] == sid)
+    assert titled["title"] == "20/11 là ngày gì?"
+
+
 def test_grounded_template_follows_saved_english_preference(client: TestClient):
     _, token = _register_and_login(client, "test_grounding_english")
     headers = {"Authorization": f"Bearer {token}"}
@@ -378,3 +396,18 @@ def test_general_entities_non_cloud_substitution(client: TestClient):
     assert "MongoDB" in q["reply"]
     assert "PostgreSQL" not in q["reply"]
     assert not q["reply"].endswith("..")
+
+
+def test_repeated_remember_instruction_does_not_duplicate_the_memory(client: TestClient):
+    _, token = _register_and_login(client, "test_memory_dedup")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+    for _ in range(2):
+        response = client.post("/v1/chat", headers=headers, json={
+            "session_id": sid,
+            "message": "Nhớ rằng tôi thích cà phê đen.",
+        })
+        assert response.status_code == 200, response.text
+    memories = client.get("/v1/memories", headers=headers).json()
+    matches = [m for m in memories if m["content"] == "tôi thích cà phê đen"]
+    assert len(matches) == 1

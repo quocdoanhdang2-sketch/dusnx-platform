@@ -26,7 +26,7 @@ from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessRespo
 
 from .auth import get_auth_db
 from .memory import get_memory_db
-from .provider import generate_response, get_provider_health
+from .provider import check_ollama_health, generate_response, get_provider_health
 from .llm_evaluation import EvaluationRequest, evaluate as evaluate_llm
 from .grounding import memory_answer_with_selection, select_memories
 from .decision_updater import (
@@ -36,6 +36,9 @@ from .decision_updater import (
 )
 from .language import detect_language, preference_instruction, response_language
 from .runtime_clock import answer_clock_query, detect_clock_query, stated_date_correction
+from .observances import answer_observance_question
+from .arithmetic import answer_arithmetic_question
+from . import model_profile
 from . import rag
 
 # ── Model loading ─────────────────────────────────────────────────────────────
@@ -43,7 +46,8 @@ SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
 SOURCE_HASHES = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                  for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py",
-                              "language.py", "runtime_clock.py", "rag.py", "model_profile.py")}
+                              "language.py", "runtime_clock.py", "rag.py", "model_profile.py",
+                              "observances.py", "arithmetic.py")}
 
 def resolve_default_checkpoint() -> str:
     env_ckpt = os.getenv("DUSNX_CHECKPOINT")
@@ -187,6 +191,12 @@ def health():
     p_health = get_provider_health()
     model_loaded = (LOADED_CHECKPOINT is not None) or (MODEL is not None)
     provider_ok = bool(p_health.get("available", False))
+    fallback = p_health.get("fallback_provider")
+    if not provider_ok and fallback == "ollama":
+        fallback_health = check_ollama_health()
+        p_health["fallback"] = fallback_health
+        p_health["fallback_ready"] = bool(fallback_health.get("available"))
+        provider_ok = p_health["fallback_ready"]
     return {
         "status": "ok",
         "service": "dusnx-ai-api",
@@ -640,6 +650,22 @@ def _is_translation_request(text: str) -> bool:
         text, re.IGNORECASE))
 
 
+_OFFICE_MARKER = re.compile(
+    r"\[(?:Word selected text[^\]]*|PowerPoint selected text shape|PowerPoint slide generation)\]"
+)
+
+
+def _is_office_request(text: str) -> bool:
+    """True for add-in requests, which require a generated answer.
+
+    Word and PowerPoint reject any response that is not a real provider
+    generation (provenance check). Deterministic fast paths, retrieval
+    quotations and clarification guards must not intercept these messages,
+    even when the selected text happens to mention a date, a sum or DUSN-X.
+    """
+    return bool(_OFFICE_MARKER.search(text or ""))
+
+
 def _has_conversational_topic(history: list[dict]) -> bool:
     """Ignore control turns such as language-preference commands as topic context."""
     return any(
@@ -884,6 +910,43 @@ class ChatResponse(BaseModel):
     inspector: Optional[dict] = None
 
 
+_MODEL_IDENTITY = re.compile(r"(?i)\b(?:model|mô\s*hình|checkpoint)\b")
+_MODEL_SUBJECT = re.compile(
+    r"(?i)\b(?:dusn[-\s]?x|hệ\s*thống\s+này|chatbot\s+này|trợ\s*lý\s+này|"
+    r"this\s+(?:system|assistant|chatbot))\b"
+)
+_MODEL_TASK = re.compile(
+    r"(?i)\b(?:chọn|đổi|cấu\s*hình|cài\s*đặt|pull|tải|xóa|thay\s*thế|"
+    r"switch|change|install|remove|replace)\b"
+)
+
+
+def answer_runtime_model_question(message: str, language: str = "vi") -> Optional[str]:
+    """Answer which model this deployment runs from runtime state, not from docs.
+
+    Repository docs mention the 0.5B evaluation candidate, so retrieval alone
+    can report a model that is not the one answering. Runtime identity is
+    authoritative here.
+    """
+    text = (message or "").strip()
+    if not text or len(text) > 200:
+        return None
+    if not _MODEL_IDENTITY.search(text) or not _MODEL_SUBJECT.search(text):
+        return None
+    if _MODEL_TASK.search(text):
+        return None
+    profile = model_profile.resolve_model_profile()
+    model = profile.get("model") or "unknown"
+    tier = profile.get("tier") or "auto"
+    vram = profile.get("vram_gb")
+    vram_text = f", VRAM ~{vram:g} GB" if isinstance(vram, (int, float)) else ""
+    if language == "en":
+        return (f"This DUSN-X deployment runs router `{MODEL_VERSION}` "
+                f"with the LLM `{model}` (profile {tier}{vram_text}).")
+    return (f"DUSN-X trên máy này đang chạy router `{MODEL_VERSION}` "
+            f"và LLM `{model}` (hồ sơ {tier}{vram_text}).")
+
+
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, user: CurrentUser):
     db = get_memory_db()
@@ -996,6 +1059,15 @@ def _chat_impl(req: ChatRequest, user: dict):
     history = db.get_recent_messages(user_id, req.session_id, limit=12)
     # Exclude the just-added user message from history (it's the current input)
     history = history[:-1] if history else []
+    # Fast paths (calendar, runtime identity, corrections) return before the
+    # final response assembly, so title the session here instead.
+    if len(history) == 0:
+        title = req.message[:60].strip()
+        if title:
+            db.update_session_title(user_id, req.session_id, title)
+    # Add-in messages must reach the provider; the task panes reject anything
+    # else as unverified. Guarded branches below check this flag.
+    office_request = _is_office_request(req.message)
     detected_language = detect_language(req.message)
     if detected_language == "unknown":
         for previous in reversed(history):
@@ -1016,7 +1088,7 @@ def _chat_impl(req: ChatRequest, user: dict):
     # Language preference is an explicit, durable user preference. Supersede the
     # previous language record so translations never create duplicate memories.
     language_change = preference_instruction(req.message)
-    if language_change:
+    if language_change and not office_request:
         content = f"language:{language_change}"
         existing_mem = db.get_active_language_preference_memory(user_id, project_id=req.project_id)
         # Reading may fall back to the global preference; writing must only
@@ -1050,7 +1122,7 @@ def _chat_impl(req: ChatRequest, user: dict):
     # A small model has a fixed training cutoff and cannot know today's date.
     # Answer direct clock questions from the server clock, without a provider
     # call, so the result is always correct and instant.
-    clock_kind = detect_clock_query(req.message)
+    clock_kind = None if office_request else detect_clock_query(req.message)
     if clock_kind is not None:
         reply_text = answer_clock_query(clock_kind, reply_language)
         s_ver, _, _, _, _, _, _ = advance(
@@ -1068,7 +1140,7 @@ def _chat_impl(req: ChatRequest, user: dict):
 
     # A stated "today" that contradicts the clock is corrected deterministically:
     # small models tend to agree with the user's latest claim instead of the clock.
-    stated_correction = stated_date_correction(req.message, reply_language)
+    stated_correction = None if office_request else stated_date_correction(req.message, reply_language)
     if stated_correction is not None:
         s_ver, _, _, _, _, _, _ = advance(
             db, user_id, req.message, req.feedback_value, platform="web",
@@ -1083,6 +1155,56 @@ def _chat_impl(req: ChatRequest, user: dict):
             memory_ids_used=[], session_id=req.session_id,
             provider_called=False, response_source="runtime_clock")
 
+    # Known observance dates are answered from a small verified calendar:
+    # the local model otherwise invents an answer for Vietnamese holidays.
+    observance_reply = None if office_request else answer_observance_question(req.message, reply_language)
+    if observance_reply is not None:
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", observance_reply,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=observance_reply,
+            intent="observance_calendar", selected_agent="conversation", next_action="reply",
+            confidence=1.0, runtime_mode=RUNTIME_MODE, routing_source="observance_calendar",
+            provider_used=None, provider_ok=True, state_version=s_ver,
+            memory_ids_used=[], session_id=req.session_id,
+            provider_called=False, response_source="observance_calendar")
+
+    # Which model this deployment is running is runtime state, not documentation.
+    model_reply = None if office_request else answer_runtime_model_question(req.message, reply_language)
+    if model_reply is not None:
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", model_reply,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=model_reply,
+            intent="runtime_model_identity", selected_agent="conversation", next_action="reply",
+            confidence=1.0, runtime_mode=RUNTIME_MODE, routing_source="runtime_identity",
+            provider_used=None, provider_ok=True, state_version=s_ver,
+            memory_ids_used=[], session_id=req.session_id,
+            provider_called=False, response_source="runtime_identity")
+
+    # Simple arithmetic is evaluated, not generated: the local model otherwise
+    # answers even basic sums incorrectly (2+2 -> 5 was observed).
+    arithmetic_reply = None if office_request else answer_arithmetic_question(req.message, reply_language)
+    if arithmetic_reply is not None:
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", arithmetic_reply,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=arithmetic_reply,
+            intent="arithmetic", selected_agent="conversation", next_action="reply",
+            confidence=1.0, runtime_mode=RUNTIME_MODE, routing_source="calculator",
+            provider_used=None, provider_ok=True, state_version=s_ver,
+            memory_ids_used=[], session_id=req.session_id,
+            provider_called=False, response_source="calculator")
+
     # ── Grounded retrieval ────────────────────────────────────────────────────
     # Questions about this repository are answered from indexed documentation
     # and code, with citations. General knowledge questions skip retrieval so
@@ -1091,8 +1213,8 @@ def _chat_impl(req: ChatRequest, user: dict):
     rag_context = ""
     # Translation/rewrite prompts must operate on the user's sentence alone;
     # retrieved passages would become the text being translated.
-    transform_request = _is_transform_request(req.message)
-    if not _is_translation_request(req.message) and rag.should_retrieve(req.message):
+    transform_request = _is_transform_request(req.message) or office_request
+    if not office_request and not _is_translation_request(req.message) and rag.should_retrieve(req.message):
         candidate_hits = rag.retrieve(req.message, top_k=5)
         if rag.has_evidence(candidate_hits):
             rag_hits = candidate_hits
@@ -1108,7 +1230,7 @@ def _chat_impl(req: ChatRequest, user: dict):
                       and rag.has_strong_evidence(rag_hits) else None)
 
     # ── Missing context guard ─────────────────────────────────────────────────
-    if _detect_unverified_dusnx_product_question(req.message) and rag_extractive is None:
+    if not office_request and _detect_unverified_dusnx_product_question(req.message) and rag_extractive is None:
         reply_text = (
             "I don't have verified documentation about DUSN-X's product features. Please share the relevant spec or documentation, and I can summarize it."
             if reply_language == "en" else
@@ -1134,7 +1256,7 @@ def _chat_impl(req: ChatRequest, user: dict):
     topic_memories = [m for m in memories if not (
         m.get("info_type") == "preference" and str(m.get("content", "")).startswith("language:")
     )]
-    if (_detect_missing_context_query(req.message)
+    if not office_request and (_detect_missing_context_query(req.message)
             or (ambiguous_followup and (multiple_topic_candidates or (not topic_history and not topic_memories)))
             or _detect_project_scoped_question(req.message, req.project_id)):
         has_context = ((topic_history or bool(topic_memories)) and not multiple_topic_candidates) if ambiguous_followup else (bool(history) or bool(memories))
@@ -1165,20 +1287,34 @@ def _chat_impl(req: ChatRequest, user: dict):
             )
 
     # ── Explicit memory instruction flow ──────────────────────────────────────
-    remember_intent = _detect_remember_intent(req.message)
+    remember_intent = None if office_request else _detect_remember_intent(req.message)
     if remember_intent is not None:
         itype, clean_content = remember_intent
-        new_mem = db.create_memory(
-            user_id=user_id,
-            info_type=itype,
-            content=clean_content,
-            source_session=req.session_id,
-            project_id=req.project_id,
+        # Repeating the same instruction must not fork duplicate rows; a memory
+        # edit goes through the update/decision flow, which keeps version history.
+        normalized = " ".join(clean_content.split()).casefold()
+        existing = next(
+            (m for m in db.list_memories(user_id, project_id=req.project_id, limit=100)
+             if m.get("info_type") == itype
+             and (m.get("project_id") or None) == (req.project_id or None)
+             and " ".join(str(m.get("content", "")).split()).casefold() == normalized),
+            None,
         )
+        if existing is not None:
+            new_mem = existing
+            reply_text = f"Trí nhớ này đã được lưu trước đó: \"{existing['content']}\"."
+        else:
+            new_mem = db.create_memory(
+                user_id=user_id,
+                info_type=itype,
+                content=clean_content,
+                source_session=req.session_id,
+                project_id=req.project_id,
+            )
+            reply_text = f"Đã ghi nhớ {itype}: \"{clean_content}\"."
         s_ver, _, _, _, _, _, _ = advance(
             db, user_id, req.message, req.feedback_value, platform="web", event_type="memory_create", project_id=req.project_id
         )
-        reply_text = f"Đã ghi nhớ {itype}: \"{clean_content}\"."
         msg = db.append_message(
             req.session_id, user_id, "assistant", reply_text,
             memory_ids_used=[new_mem["memory_id"]], state_version=s_ver,
@@ -1195,8 +1331,8 @@ def _chat_impl(req: ChatRequest, user: dict):
 
     # ── Decision modification flow ────────────────────────────────────────────
     # First check: is there a pending confirmation waiting?
-    pending = db.get_session_pending_decision(user_id, req.session_id)
-    if pending is None and req.is_retry:
+    pending = None if office_request else db.get_session_pending_decision(user_id, req.session_id)
+    if not office_request and pending is None and req.is_retry:
         last_p = db.get_last_pending_decision_in_session(user_id, req.session_id)
         if last_p and last_p.get("status") == "confirmed":
             if _detect_confirm(req.message) is True:
@@ -1299,7 +1435,7 @@ def _chat_impl(req: ChatRequest, user: dict):
             )
 
     # Second check: does the new message request a decision modification?
-    if _detect_decision_modify_intent(req.message):
+    if not office_request and _detect_decision_modify_intent(req.message):
         matched, is_ambiguous, candidates = _find_best_matching_decision(memories, req.message)
         s_ver, _, _, _, _, _, _ = advance(
             db, user_id, req.message, req.feedback_value, platform="web", event_type="decision_modify_request", project_id=req.project_id
@@ -1404,7 +1540,8 @@ def _chat_impl(req: ChatRequest, user: dict):
 
     # A template is selected before any provider call. Never discard generated
     # text while attributing a deterministic quotation to its model/provider.
-    grounded_answer, selected = memory_answer_with_selection(req.message, memories, reply_language)
+    grounded_answer, selected = ((None, []) if office_request else
+                                 memory_answer_with_selection(req.message, memories, reply_language))
     prompt_ids = []
     provider_called = False
     provider_call_count = 0
@@ -1443,6 +1580,7 @@ def _chat_impl(req: ChatRequest, user: dict):
                 session_history=history, project_name=project_name,
                 response_language=reply_language,
                 knowledge_context=rag_context or None,
+                force_provider=office_request,
             )
             reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
             provider_called = getattr(generated, "provider_called", False)
@@ -1482,12 +1620,6 @@ def _chat_impl(req: ChatRequest, user: dict):
         msg_id = f"err_{_uuid.uuid4().hex[:12]}"
         if not reply_text.startswith("["):
             reply_text = f"[Lỗi Provider {provider_used}]: {reply_text}"
-
-    # Auto-update session title from first user message
-    if len(history) == 0:
-        title = req.message[:60].strip()
-        if title:
-            db.update_session_title(user_id, req.session_id, title)
 
     # Only expose passages the answer actually cites; a source list that the
     # reply never references implies evidence that was not used.

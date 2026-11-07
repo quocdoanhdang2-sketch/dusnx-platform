@@ -81,6 +81,18 @@ def get_ollama_timeout() -> float:
     return min(configured, override) if override is not None else configured
 
 
+def get_openai_timeout() -> float:
+    configured = float(os.getenv("DUSNX_OPENAI_TIMEOUT", os.getenv("DUSNX_OLLAMA_TIMEOUT", "60.0")))
+    override = _PROVIDER_CALL_TIMEOUT.get()
+    return min(configured, override) if override is not None else configured
+
+
+def get_fallback_provider() -> str:
+    """Provider used when the primary external API fails. Empty disables fallback."""
+    raw = os.getenv("DUSNX_PROVIDER_FALLBACK", "ollama").strip().lower()
+    return "" if raw in ("", "none", "off", "0") else raw
+
+
 def get_generation_total_timeout() -> float:
     """Keep all attempts within the Gateway request deadline, with response margin."""
     gateway_timeout = float(os.getenv("DUSNX_GATEWAY_TIMEOUT", "90"))
@@ -94,7 +106,8 @@ def _provider_call_with_deadline(generate, system_prompt: str, user_message: str
     remaining = deadline - time.monotonic()
     if remaining <= 0.1:
         return ProviderCall("[Provider generation deadline exceeded (timeout)]", False, None, None), 0.0, False
-    call_timeout = min(get_ollama_timeout(), remaining)
+    provider_timeout = get_openai_timeout() if generate is _openai_generate else get_ollama_timeout()
+    call_timeout = min(provider_timeout, remaining)
     token = _PROVIDER_CALL_TIMEOUT.set(call_timeout)
     started = time.monotonic()
     try:
@@ -281,20 +294,25 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
                             done_reason=diagnostics.get("done_reason"), diagnostics=diagnostics)
 
 def _openai_generate(system_prompt: str, user_message: str) -> ProviderCall:
-    """Call OpenAI-compatible API. Returns (text, success, model_used, tokens_generated)."""
+    """Call an OpenAI-compatible chat API (OpenAI, Gemini compat, LM Studio, vLLM)."""
     if not OPENAI_API_KEY:
         return ProviderCall("[Provider OpenAI chưa được cấu hình. Đặt DUSNX_OPENAI_API_KEY.]", False, None, None)
+    try:
+        temperature = float(os.getenv("DUSNX_OPENAI_TEMPERATURE", "0.3"))
+        max_tokens = int(os.getenv("DUSNX_OPENAI_MAX_TOKENS", "1024"))
+    except ValueError:
+        return ProviderCall("[Cấu hình OpenAI không hợp lệ: temperature/max_tokens]", False, None, None)
     payload = json.dumps({
         "model": OPENAI_MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ],
-        "temperature": 0.7,
-        "max_tokens": 1024,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
     }).encode("utf-8")
     req = urllib.request.Request(
-        f"{OPENAI_BASE_URL}/chat/completions",
+        OPENAI_BASE_URL.rstrip("/") + "/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",
@@ -302,16 +320,36 @@ def _openai_generate(system_prompt: str, user_message: str) -> ProviderCall:
         },
         method="POST",
     )
+    diagnostics = {"configured_model": OPENAI_MODEL, "http_completed": False, "error_category": None}
     try:
-        with urllib.request.urlopen(req, timeout=get_ollama_timeout()) as resp:
-            data = json.loads(resp.read().decode())
-            text = data["choices"][0]["message"]["content"].strip()
-            model_used = data.get("model")
-            eval_count = data.get("usage", {}).get("completion_tokens")
-            finish_reason = data["choices"][0].get("finish_reason")
-            return ProviderCall(text, True, model_used, eval_count, done_reason=finish_reason)
+        with urllib.request.urlopen(req, timeout=get_openai_timeout()) as resp:
+            raw_body = resp.read()
+        diagnostics["http_completed"] = True
+        diagnostics["response_bytes"] = len(raw_body)
+        data = json.loads(raw_body.decode("utf-8"))
+        choices = data.get("choices") if isinstance(data, dict) else None
+        if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+            raise ValueError("invalid_schema")
+        message = choices[0].get("message")
+        if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+            raise ValueError("invalid_schema")
+        text = message["content"].strip()
+        if not text:
+            raise ValueError("empty_content")
+        usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+        completion_tokens = usage.get("completion_tokens")
+        eval_count = completion_tokens if type(completion_tokens) is int else None
+        finish_reason = choices[0].get("finish_reason")
+        model_used = data.get("model") if isinstance(data.get("model"), str) else OPENAI_MODEL
+        diagnostics["schema_valid"] = True
+        return ProviderCall(text, True, model_used, eval_count,
+                            done_reason=finish_reason if isinstance(finish_reason, str) else None,
+                            diagnostics=diagnostics)
     except Exception as exc:
-        return ProviderCall(f"[Lỗi OpenAI ({ollama_error(exc)})]", False, None, None)
+        category = ollama_error(exc)
+        diagnostics["error_category"] = category
+        diagnostics["exception_type"] = type(exc).__name__
+        return ProviderCall(f"[Lỗi API AI ngoài ({category})]", False, None, None, diagnostics=diagnostics)
 
 
 def get_provider_health() -> dict:
@@ -327,9 +365,11 @@ def get_provider_health() -> dict:
             "provider": "openai",
             "available": False,
             "configured_model": OPENAI_MODEL,
+            "base_url": OPENAI_BASE_URL,
             "api_key_set": has_key,
             "reachable": False,
             "model_available": False,
+            "fallback_provider": get_fallback_provider() or None,
         }
         if not has_key:
             info["error"] = "missing_api_key"
@@ -337,12 +377,23 @@ def get_provider_health() -> dict:
         try:
             request = urllib.request.Request(OPENAI_BASE_URL.rstrip("/") + "/models",
                                              headers={"Authorization": "Bearer " + OPENAI_API_KEY})
-            with urllib.request.urlopen(request, timeout=1.0) as response:
+            with urllib.request.urlopen(request, timeout=2.0) as response:
                 data = json.load(response)
             if not isinstance(data, dict) or not isinstance(data.get("data"), list):
                 raise ValueError("invalid_schema")
             models = [m.get("id") for m in data["data"] if isinstance(m, dict)]
-            info.update(reachable=True, available=OPENAI_MODEL in models, model_available=OPENAI_MODEL in models)
+            known = OPENAI_MODEL in models
+            info.update(reachable=True, available=known, model_available=known,
+                        status="ok" if known else "model_not_listed")
+        except urllib.error.HTTPError as exc:
+            if exc.code in (401, 403):
+                info["error"] = "unauthorized"
+            elif exc.code == 404:
+                # Some OpenAI-compatible gateways do not implement /models.
+                info.update(reachable=True, available=True, model_available=None,
+                            status="unverified_models_endpoint")
+            else:
+                info["error"] = f"http_{exc.code}"
         except Exception as exc:
             info["error"] = ollama_error(exc)
         return info
@@ -369,6 +420,12 @@ def sanitize_generated_reply(text: str) -> str:
     patterns = [
         r"^(?:Quan trọng|BẮT BUỘC|Chỉ thị hệ thống|Quy tắc|Rules|Instructions|CRITICAL MANDATORY INSTRUCTION):\s*",
         r"^(?:Trả lời thẳng vào câu hỏi|Trả lời trực tiếp câu hỏi)[^\n]*\n*",
+        # The bounded corrective retry sometimes makes the model narrate that
+        # it fixed its language/draft. That note is process noise, not an answer.
+        r"(?im)^(?:câu (?:trả lời|này)|bản (?:trả lời|dịch)|this (?:response|answer|reply)|"
+        r"the (?:response|answer|reply))\b[^\n]*?"
+        r"(?:bản nháp|sửa đổi|trộn ngôn ngữ|failed draft|correction|mixing languages|"
+        r"language compliance|written in (?:english|vietnamese))\b[^\n]*\n?",
     ]
     for pat in patterns:
         cleaned = re.sub(pat, "", cleaned, flags=re.IGNORECASE).strip()
@@ -562,6 +619,7 @@ def generate_response(
     project_name: Optional[str] = None,
     response_language: str = "vi",
     knowledge_context: Optional[str] = None,
+    force_provider: bool = False,
 ) -> tuple[str, bool, str, Optional[str], Optional[int]]:
     """
     Generate an AI response using the configured provider.
@@ -659,7 +717,7 @@ Answer the user's current request directly and naturally, preserving its task ty
 For questions about the date, weekday, or current time, use the current date and time above and never guess. If the user or the conversation history states that "today" is a different date than the runtime clock, briefly state the correct date from the clock. Do not derive the current date from saved memories or earlier user claims. Do not mention the date or time at all unless the user asks about them.
 Use recent conversation history only to resolve references in the current request. Treat statements in history as user-provided context, not independently verified facts. Use active memories only as saved user facts and do not let unrelated memories change the topic.
 If the recent context does not identify what a follow-up refers to, ask a short clarifying question instead of guessing. For a follow-up after an explicit topic change, resolve references to the latest topic and name that topic in the first sentence. Never infer product-specific features, architecture, or capabilities from a product name; when no supporting information is available, state that and ask for documentation.
-Preserve names, identifiers, URLs, and code exactly when they are relevant; allow quoted source text and literal code to retain their original language. Do not repeat the user's request as a substitute for completing it. Do not invent facts.
+Preserve names, identifiers, URLs, and code exactly when they are relevant; allow quoted source text and literal code to retain their original language. Do not repeat the user's request as a substitute for completing it. Do not invent facts. For specific historical events, dates, people, statistics, or named details, state only what you are confident about; if you are not sure, say so plainly instead of building a narrative. Do not add details the user did not ask for.
 When asked to write an email, message, or draft, write it immediately; never claim you cannot send messages or lack the tool. For a bare greeting or thanks, answer briefly and naturally without asking a follow-up question.
 
 {project_line_en}Active user memories:
@@ -695,7 +753,7 @@ Hoàn thành đúng yêu cầu hiện tại một cách trực tiếp, tự nhi�
 Khi người dùng hỏi ngày, thứ hoặc giờ hiện tại, dùng đúng thời điểm ở trên và không được đoán. Nếu người dùng hoặc lịch sử trò chuyện nói "hôm nay" là một ngày khác với đồng hồ hệ thống, hãy nêu ngắn gọn ngày đúng theo đồng hồ. Không suy ra ngày hiện tại từ trí nhớ đã lưu hoặc từ phát biểu trước đó của người dùng. Không nhắc đến ngày hoặc giờ nếu người dùng không hỏi.
 Chỉ dùng lịch sử cùng phiên để hiểu đại từ hoặc câu hỏi tiếp nối; ưu tiên yêu cầu hiện tại. Phát biểu người dùng là bối cảnh do họ cung cấp, không phải sự kiện đã xác minh độc lập. Câu trả lời trợ lý trước đây là nội dung sinh, không dùng làm sự thật nếu người dùng chưa xác nhận. Chỉ dùng trí nhớ hiệu lực như thông tin đã lưu của người dùng; trí nhớ không liên quan không được đổi chủ đề.
 Nếu lịch sử gần đây không xác định được câu hỏi tiếp nối đang nói về điều gì, hãy hỏi ngắn gọn để làm rõ thay vì đoán. Sau một lần đổi chủ đề rõ ràng, đại từ trong câu hỏi tiếp theo nói về chủ đề mới nhất; nêu tên chủ đề đó ở câu đầu. Không bao giờ suy ra tính năng, kiến trúc hoặc khả năng riêng của một sản phẩm chỉ từ tên sản phẩm; nếu không có thông tin hỗ trợ, hãy nêu rõ điều đó và yêu cầu tài liệu. Không bịa thông tin.
-Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù hợp. Trích dẫn và code được phép giữ nguyên ngôn ngữ gốc. Không lặp lại yêu cầu của người dùng thay cho việc hoàn thành tác vụ.
+Giữ nguyên chính xác tên riêng, mã định danh, URL và code khi phù hợp. Trích dẫn và code được phép giữ nguyên ngôn ngữ gốc. Không lặp lại yêu cầu của người dùng thay cho việc hoàn thành tác vụ. Không bịa thông tin. Với sự kiện lịch sử, mốc thời gian, nhân vật, số liệu hoặc chi tiết cụ thể, chỉ nêu điều bạn chắc chắn; nếu không chắc, hãy nói rõ là chưa chắc chắn thay vì dựng ra một câu chuyện. Không thêm chi tiết người dùng không hỏi.
 Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết ngay; không được nói mình không gửi được tin nhắn hay thiếu công cụ. Khi người dùng chỉ chào hoặc cảm ơn, đáp lại ngắn gọn, tự nhiên và không hỏi dồn thêm.
 
 {project_line}Trí nhớ hiệu lực:
@@ -722,7 +780,7 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                 f"Yêu cầu người dùng:\n{user_message}"
             )
 
-    formatted_config = _application_env_format(user_message, response_language)
+    formatted_config = None if force_provider else _application_env_format(user_message, response_language)
     if formatted_config is not None:
         formatted_text, formatted_source = formatted_config
         result = ProviderResult(formatted_text, True, None, None, None, called=False,
@@ -755,6 +813,32 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
         attempt_diagnostics = getattr(result, "diagnostics", {})
         sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
         text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
+        if (not ok and p == "openai" and get_fallback_provider() == "ollama"
+                and bool(OPENAI_API_KEY)):
+            # The operator asked for a stronger hosted model. If it is configured
+            # but not reachable, keep the chat working on the local model and
+            # report the provider that actually answered. A missing key is a
+            # configuration error and must surface instead of silently degrading.
+            fallback_result, fallback_elapsed_ms, fallback_did_call = _provider_call_with_deadline(
+                _ollama_generate, system_prompt, attempt_prompt, provider_deadline)
+            if fallback_did_call:
+                provider_attempts.append({
+                    "provider": "ollama", "fallback_from": "openai", "called": True,
+                    "elapsed_ms": round(fallback_elapsed_ms, 2),
+                    "primary_error": attempt_diagnostics.get("error_category"),
+                    "model_used": fallback_result[2], "tokens_generated": fallback_result[3],
+                })
+                call_count += 1
+                called = True
+                if fallback_result[1]:
+                    generate = _ollama_generate
+                    provider_used = "ollama"
+                    raw_provider_reply, ok, model_used, tokens_generated = fallback_result
+                    done_reason = getattr(fallback_result, "done_reason", None)
+                    attempt_diagnostics = getattr(fallback_result, "diagnostics", {})
+                    sanitizer_changed = (raw_provider_reply
+                                         != sanitize_generated_reply(raw_provider_reply))
+                    text = sanitize_generated_reply(raw_provider_reply)
         task_text_without_urls = re.sub(r"https?://\S+", " ", user_message)
         content_lookup = bool(re.search(
             r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b",
@@ -786,22 +870,41 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
             if (not assessment["passed"] or assessment["drafting"]["status"] == "deferred") and call_count:
                 issue = assessment["entities"]["status"]
                 language_issue = assessment["language"]["status"]
-                correction = ("\n\nCorrection required: attempt 1 failed response checks. "
-                    "Write a fresh, concise answer to the original user request. Do not quote or copy the failed draft. "
-                    "Use the selected response language for prose, preserve code/URLs/identifiers, and follow the latest topic context.")
-                if language_issue in {"divergent", "mixed"}:
-                    correction += " The prior prose used the wrong or mixed language; use only the selected prose language."
-                if issue in ("missing", "mutated", "echo_only"):
-                    entities = extract_required_entities(entity_prompt)
-                    literals = [*entities["urls"], *(f"{key}={value}" for key, value in entities["assignments"])]
-                    correction += " Exact required literals: " + "; ".join(literals)
-                if assessment["repetition_flags"]:
-                    correction += " Remove repeated lines and answer each point once."
-                if assessment["drafting"]["status"] == "deferred":
-                    correction += (" The prior reply did not write the requested message: it refused or asked"
-                        " for details. Write the complete email/message now. Use [square-bracket placeholders]"
-                        " for details the user did not provide. Do not ask questions, do not refuse, and do not"
-                        " mention technical problems or missing tools.")
+                if response_language == "vi":
+                    correction = ("\n\nYêu cầu sửa: câu trả lời lần 1 chưa đạt kiểm tra. "
+                        "Hãy viết lại câu trả lời mới, ngắn gọn cho đúng yêu cầu gốc của người dùng. "
+                        "Không sao chép lại bản nháp lỗi. Toàn bộ phần văn xuôi phải bằng tiếng Việt, "
+                        "kể cả khi câu hỏi được viết bằng ngôn ngữ khác; giữ nguyên code, URL và mã định danh.")
+                    if language_issue in {"divergent", "mixed"}:
+                        correction += (" Bản trước dùng sai hoặc trộn ngôn ngữ. Chỉ dùng tiếng Việt cho văn xuôi; "
+                            "dịch ý của câu hỏi sang tiếng Việt rồi trả lời.")
+                    if issue in ("missing", "mutated", "echo_only"):
+                        entities = extract_required_entities(entity_prompt)
+                        literals = [*entities["urls"], *(f"{key}={value}" for key, value in entities["assignments"])]
+                        correction += " Giữ nguyên chính xác các giá trị này: " + "; ".join(literals)
+                    if assessment["repetition_flags"]:
+                        correction += " Bỏ các dòng lặp và trả lời mỗi ý đúng một lần."
+                    if assessment["drafting"]["status"] == "deferred":
+                        correction += (" Bản trước chưa viết nội dung được yêu cầu mà từ chối hoặc hỏi lại. "
+                            "Hãy viết đầy đủ email/tin nhắn ngay. Dùng [chỗ trống] cho thông tin chưa có. "
+                            "Không hỏi lại, không từ chối, không nhắc đến lỗi kỹ thuật hay thiếu công cụ.")
+                else:
+                    correction = ("\n\nCorrection required: attempt 1 failed response checks. "
+                        "Write a fresh, concise answer to the original user request. Do not quote or copy the failed draft. "
+                        "Use the selected response language for prose, preserve code/URLs/identifiers, and follow the latest topic context.")
+                    if language_issue in {"divergent", "mixed"}:
+                        correction += " The prior prose used the wrong or mixed language; use only the selected prose language."
+                    if issue in ("missing", "mutated", "echo_only"):
+                        entities = extract_required_entities(entity_prompt)
+                        literals = [*entities["urls"], *(f"{key}={value}" for key, value in entities["assignments"])]
+                        correction += " Exact required literals: " + "; ".join(literals)
+                    if assessment["repetition_flags"]:
+                        correction += " Remove repeated lines and answer each point once."
+                    if assessment["drafting"]["status"] == "deferred":
+                        correction += (" The prior reply did not write the requested message: it refused or asked"
+                            " for details. Write the complete email/message now. Use [square-bracket placeholders]"
+                            " for details the user did not provide. Do not ask questions, do not refuse, and do not"
+                            " mention technical problems or missing tools.")
                 retry_result, retry_elapsed_ms, retry_called = _provider_call_with_deadline(
                     generate, system_prompt, attempt_prompt + correction, provider_deadline)
                 if retry_called:
@@ -827,6 +930,42 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                 else:
                     provider_attempts.append({"attempt": 2, "called": False,
                         "skip_reason": "total_generation_timeout_budget_exhausted", "elapsed_ms": 0.0})
+            # Small local models often keep the language of the question even
+            # when an explicit response language is selected. A translation
+            # pass is more reliable than asking again for a fresh answer.
+            if (ok and assessment["language"]["status"] in {"divergent", "mixed"}
+                    and response_language in {"vi", "en"}):
+                target = "tiếng Việt" if response_language == "vi" else "English"
+                translation_system = (
+                    "Bạn là trình dịch chính xác. Chỉ dịch văn bản người dùng sang ngôn ngữ đích, "
+                    "giữ nguyên code, URL, tên riêng và số liệu. Không thêm giải thích."
+                    if response_language == "vi" else
+                    "You are a precise translator. Translate the user's text into the target "
+                    "language, preserving code, URLs, names and numbers. Return only the translation.")
+                translation_prompt = (
+                    f"Dịch toàn bộ nội dung sau sang {target}. Chỉ trả về bản dịch:\n\n{text}"
+                    if response_language == "vi" else
+                    f"Translate the following text into {target}. Return only the translation:\n\n{text}")
+                tr_result, tr_elapsed_ms, tr_called = _provider_call_with_deadline(
+                    generate, translation_system, translation_prompt, provider_deadline)
+                if tr_called:
+                    call_count += 1
+                    tr_raw, tr_ok, tr_model, tr_tokens = tr_result
+                    if tr_ok:
+                        tr_text = sanitize_generated_reply(tr_raw)
+                        tr_assessment = _quality_assessment(entity_prompt, tr_text, response_language)
+                        provider_attempts.append({
+                            "attempt": 3, "translation_pass": True, "called": True,
+                            "elapsed_ms": round(tr_elapsed_ms, 2), "model_used": tr_model,
+                            "tokens_generated": tr_tokens,
+                            "quality_status": tr_assessment["language"]["status"],
+                            "entity_status": tr_assessment["entities"]["status"],
+                        })
+                        if tr_assessment["language"]["status"] in ("matched", "uncertain"):
+                            raw_provider_reply, model_used, tokens_generated = tr_raw, tr_model, tr_tokens
+                            text = tr_text
+                            assessment = tr_assessment
+                            sanitizer_changed = tr_raw != tr_text
             sanitized_provider_reply = text
             quality_status = assessment["language"]["status"] if assessment["passed"] else "failed"
             if ok and not assessment["passed"]:

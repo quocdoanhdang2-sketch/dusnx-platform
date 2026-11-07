@@ -11,9 +11,10 @@ tiên. Có hai chế độ:
   vẫn khớp. Proposal phải là text không rỗng, khác bản gốc và có provenance LLM hợp lệ.
 - **Generate slides from instruction**: gửi chỉ dẫn + số slide (1–6), nhận outline
   `# Title` / `- bullet` dạng chặt, hiện preview; Apply chèn N slide từ
-  `deck-template.pptx` sau slide cuối, điền các shape có tên `DUSN-X Title`,
-  `DUSN-X Body`, `DUSN-X Footer`. Ảnh/template tải same-origin; lỗi chèn sẽ xóa các
-  slide vừa thêm.
+  `deck-template.pptx` sau slide cuối hoặc sau slide đang chọn (tùy chọn), điền các
+  shape có tên `DUSN-X Title`, `DUSN-X Body`, `DUSN-X Footer`. Vị trí được chốt lúc
+  tạo preview; nếu slide đích bị xóa trước khi Apply, thao tác bị từ chối. Ảnh/template
+  tải same-origin; lỗi chèn sẽ xóa các slide vừa thêm.
 
 `insertSlidesFromBase64` chèn vào đầu deck, nên code chèn ngược với `targetSlideId`
 rồi điền theo thứ tự deck. Parser bỏ qua preamble ngắn và nhãn `Slide N`/`Title:`/

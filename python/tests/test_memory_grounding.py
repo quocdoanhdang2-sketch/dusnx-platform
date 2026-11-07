@@ -5,6 +5,13 @@ from apps.ai_api.grounding import memory_answer
 from test_week2_acceptance import isolated_week2_env, client, _register_and_login
 
 
+def test_product_model_question_is_not_a_memory_question():
+    from apps.ai_api.grounding import is_memory_question as is_memory_q
+    assert is_memory_q("DUSN-X dùng model nào?") is False
+    assert memory_answer("DUSN-X dùng model nào?", [{"content": "Dùng Qwen"}]) is None
+    assert is_memory_q("Dự án của tôi dùng gì?") is True
+
+
 def test_question_cannot_promote_unconfirmed_entity():
     result=memory_answer("Tôi nghe dự án đã chọn Sanic?",[{"content":"Dự án dùng Tornado"}])
     assert "Tornado" in result and "Sanic" not in result

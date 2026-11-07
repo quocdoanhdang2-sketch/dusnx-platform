@@ -118,7 +118,7 @@ test("plan validation enforces slide, bullet and length limits", () => {
   }
 });
 
-function planFixture({ missingTitle = false } = {}) {
+function planFixture({ missingTitle = false, existing = 1 } = {}) {
   const elements = {}; let created = 0;
   global.document = { getElementById(id) { return elements[id] ||= { value: "", textContent: "", disabled: false, style: {} }; } };
   const slideFactory = fresh => {
@@ -128,13 +128,15 @@ function planFixture({ missingTitle = false } = {}) {
       { name: "DUSN-X Body", textFrame: { textRange: { text: "" } } },
       { name: "DUSN-X Footer", textFrame: { textRange: { text: "DUSN-X" } } },
     ];
-    const slide = { id: fresh ? `new-${++created}` : "existing", shapes: { load() {}, get items() { return shapes; } },
+    const slide = { id: fresh ? `new-${++created}` : `existing-${++created}`, shapes: { load() {}, get items() { return shapes; } },
       delete() { const index = slides.indexOf(slide); if (index >= 0) slides.splice(index, 1); } };
     return slide;
   };
-  const slides = [slideFactory(false)];
+  const slides = Array.from({ length: existing }, () => slideFactory(false));
+  const selected = [];
   global.PowerPoint = { run: async fn => fn({ sync: async () => {}, presentation: {
     slides: { load() {}, get items() { return slides; } },
+    getSelectedSlides() { return { load() {}, get items() { return selected; } }; },
     insertSlidesFromBase64(_base64, options = {}) {
       const fresh = slideFactory(true);
       if (options.targetSlideId) {
@@ -146,6 +148,7 @@ function planFixture({ missingTitle = false } = {}) {
   } }) };
   elements.mode = { value: "generate", disabled: false, style: {} };
   elements.count = { value: "2", disabled: false, style: {} };
+  elements.afterSelected = { checked: false, disabled: false, style: {} };
   elements.prompt = { value: "Tạo 2 slide tóm tắt kế hoạch", disabled: false, style: {} };
   const result = { reply: "# Mở đầu\n- Ý một\n- Ý hai\n# Kết luận\n- Ý ba", provider_ok: true, provider_called: true,
     provider_used: "ollama", model_used: "synthetic-harness-model", response_source: "llm" };
@@ -153,7 +156,7 @@ function planFixture({ missingTitle = false } = {}) {
     ? { ok: true, arrayBuffer: async () => new Uint8Array(2048).buffer }
     : { ok: true, headers: { get: () => "application/json" }, json: async () => result };
   app.state.token = "synthetic-harness-token"; app.state.sessionId = "session-a"; app.state.proposal = null; app.state.busy = false;
-  return { slides, elements, result };
+  return { slides, selected, elements, result };
 }
 
 test("generate mode previews an outline and appends template slides only on Apply", async () => {
@@ -183,6 +186,35 @@ test("generate Apply rolls back inserted slides when a template shape is missing
   await app.ask();
   await assert.rejects(app.applyProposal(), /missing its named title or body shape/);
   assert.equal(fixture.slides.length, 1); assert.equal(app.state.proposal, null);
+});
+
+test("generate mode can insert new slides after the selected slide", async () => {
+  const fixture = planFixture({ existing: 3 });
+  fixture.selected.push(fixture.slides[1]);
+  fixture.elements.afterSelected.checked = true;
+  await app.ask();
+  assert.equal(app.state.proposal.targetLabel, "after slide 2");
+  assert.equal(app.state.proposal.targetId, `${fixture.slides[1].id}#`);
+  await app.applyProposal();
+  assert.equal(fixture.slides.length, 5);
+  assert.equal(fixture.slides[0].id, "existing-1");
+  assert.equal(fixture.slides[1].id, "existing-2");
+  assert.deepEqual(fixture.slides.slice(2, 4).map(slide => slide.shapes.items.find(s => s.name === "DUSN-X Title").textFrame.textRange.text),
+    ["Mở đầu", "Kết luận"]);
+  assert.deepEqual(fixture.slides.slice(2, 4).map(slide => slide.shapes.items.find(s => s.name === "DUSN-X Footer").textFrame.textRange.text),
+    ["DUSN-X · 3", "DUSN-X · 4"]);
+  assert.equal(fixture.slides[4].id, "existing-3");
+});
+
+test("generate Apply refuses when the reviewed target slide was deleted", async () => {
+  const fixture = planFixture({ existing: 2 });
+  fixture.selected.push(fixture.slides[1]);
+  fixture.elements.afterSelected.checked = true;
+  await app.ask();
+  fixture.slides.splice(1, 1);
+  await assert.rejects(app.applyProposal(), /target slide no longer exists/);
+  assert.equal(fixture.slides.length, 1);
+  assert.equal(app.state.proposal, null);
 });
 
 test("generate mode rejects non-outline model replies before any proposal", async () => {

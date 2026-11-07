@@ -5,6 +5,7 @@
 <label for="username">Username</label><input id="username" autocomplete="username"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password">
 <div class="row"><button id="login">Sign in</button><button id="logout">Sign out</button></div><label for="session">Session</label><select id="session"></select><button id="newSession">New session</button>
 <label for="language">Response language</label><select id="language"><option value="auto">Auto</option><option value="vi">Tiếng Việt</option><option value="en">English</option></select>
+<label for="applyMode">Apply mode</label><select id="applyMode"><option value="replace">Replace selected text</option><option value="insertAfter">Insert new paragraph after selection</option></select>
 <label for="prompt">Instruction</label><textarea id="prompt" rows="4">Viết lại đoạn đang chọn, giữ nguyên ý. Chỉ trả về nội dung mới, không kèm giải thích.</textarea><button id="ask">Create proposal from selected text</button>
 <h2>Proposal</h2><pre id="proposal"></pre><button id="apply" disabled>Apply to selected text</button><details><summary>Provenance</summary><pre id="provenance"></pre></details>
 <script src="word-taskpane.js"></script></body></html>

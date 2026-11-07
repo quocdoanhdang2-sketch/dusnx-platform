@@ -1,14 +1,14 @@
 (function (root) {
   "use strict";
   const MAX_TEXT = 4000;
-  const state = { token: null, sessionId: null, proposal: null, language: "auto", generation: 0, busy: false, controller: null };
+  const state = { token: null, sessionId: null, proposal: null, language: "auto", applyMode: "replace", generation: 0, busy: false, controller: null };
   const byId = id => typeof document === "undefined" ? null : document.getElementById(id);
   const safe = value => String(value == null ? "" : value).replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, MAX_TEXT);
   const cleanText = value => String(value == null ? "" : value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ");
   const trailingBreak = text => (String(text).match(/[\r\n]+$/) || [""])[0];
   function clearProposal() { state.generation++; state.proposal = null; renderProposal(null); }
   function controls() {
-    for (const id of ["ask", "newSession", "session", "language", "login"]) if (byId(id)) byId(id).disabled = state.busy;
+    for (const id of ["ask", "newSession", "session", "language", "applyMode", "login"]) if (byId(id)) byId(id).disabled = state.busy;
     if (byId("apply")) byId("apply").disabled = state.busy || !state.proposal;
   }
   async function api(path, options = {}) {
@@ -106,9 +106,12 @@
         preferred_language: state.language, request_id: requestId }), signal: controller?.signal });
       if (generation !== state.generation || token !== state.token || sessionId !== state.sessionId) return;
       state.proposal = { text: validateProposal(result, context.text), target: context, sessionId, trailingBreak: trailingBreak(context.text),
+        applyMode: state.applyMode === "insertAfter" ? "insertAfter" : "replace",
         provenance: { intent: result.intent, routing_source: result.routing_source, response_source: result.response_source,
           provider_used: result.provider_used, model_used: result.model_used } }; renderProposal(state.proposal);
-      status("Review the proposal, then Apply to the selected text.", false);
+      status(state.proposal.applyMode === "insertAfter"
+        ? "Review the proposal, then insert it as a new paragraph after the selection."
+        : "Review the proposal, then Apply to the selected text.", false);
     } finally { endRequest(controller); state.busy = false; controls(); }
   }
   async function applyProposal() {
@@ -123,20 +126,34 @@
         if (!state.token || generation !== state.generation || proposal.sessionId !== state.sessionId ||
             target.text !== proposal.target.text || target.start !== proposal.target.start || target.end !== proposal.target.end)
           throw new Error("Selection or text changed. Create and review a new proposal before Apply.");
-        target.selection.insertText(proposal.text + proposal.trailingBreak, root.Word.InsertLocation?.replace || "Replace");
+        if (proposal.applyMode === "insertAfter") {
+          if (typeof target.selection.insertParagraph !== "function")
+            throw new Error("This Word version cannot insert a paragraph; use Replace selection.");
+          target.selection.insertParagraph(proposal.text, root.Word.InsertLocation?.after || "After");
+        } else {
+          target.selection.insertText(proposal.text + proposal.trailingBreak, root.Word.InsertLocation?.replace || "Replace");
+        }
         await context.sync();
-      }); clearProposal(); status("Proposal applied after confirmation.", false);
+      }); clearProposal(); status(proposal.applyMode === "insertAfter"
+        ? "New paragraph inserted after the selection."
+        : "Proposal applied after confirmation.", false);
     } catch (error) { clearProposal(); throw error; }
     finally { state.busy = false; controls(); }
   }
   function renderProposal(value) { if (!byId("proposal")) return; byId("proposal").textContent = value ? value.text : "";
-    byId("provenance").textContent = value ? JSON.stringify(value.provenance, null, 2) : ""; byId("apply").disabled = !value; }
+    byId("provenance").textContent = value ? JSON.stringify(value.provenance, null, 2) : "";
+    if (byId("apply")) {
+      byId("apply").disabled = !value;
+      byId("apply").textContent = value && value.applyMode === "insertAfter"
+        ? "Insert new paragraph after selection" : "Apply to selected text";
+    } }
   function status(message, error) { if (byId("status")) { byId("status").textContent = safe(message); byId("status").className = error ? "error" : "ok"; } }
   async function guarded(fn) { try { status("Working…", false); await fn(); } catch (error) { if (error && error.name === "AbortError") return; status(error.message, true); } }
   function bind() { byId("login").onclick = () => guarded(login); byId("logout").onclick = logout; byId("newSession").onclick = () => guarded(createSession);
     byId("ask").onclick = () => guarded(ask); byId("apply").onclick = () => guarded(applyProposal);
     byId("session").onchange = event => { cancelInFlight(); state.sessionId = event.target.value; clearProposal(); status("Session changed. Create a new proposal.", false); };
-    byId("language").onchange = event => { state.language = event.target.value; clearProposal(); status("Language changed. Create a new proposal.", false); }; }
+    byId("language").onchange = event => { state.language = event.target.value; clearProposal(); status("Language changed. Create a new proposal.", false); };
+    if (byId("applyMode")) byId("applyMode").onchange = event => { state.applyMode = event.target.value; clearProposal(); status("Apply mode changed. Create a new proposal.", false); }; }
   if (root.Office?.onReady) root.Office.onReady(info => { if (info.host === root.Office.HostType.Word) bind(); });
   const exported = { safe, cleanText, state, api, login, logout, cancelInFlight, readWordContext, ask, applyProposal, renderProposal, validateProposal };
   if (typeof module !== "undefined") module.exports = exported; else root.DusnxWord = exported;

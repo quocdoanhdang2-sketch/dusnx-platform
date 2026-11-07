@@ -33,7 +33,7 @@ $AiOwner = Get-DusnxListeningProcess $AiPort
 $GatewayOwner = Get-DusnxListeningProcess $GatewayPort
 if ($AiOwner) {
     $h = Assert-DusnxFastApiCheckpoint -Owner $AiOwner -ExpectedCheckpoint $Checkpoint -Uri "$AiUrl/health"
-    foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py','language.py','runtime_clock.py','rag.py','model_profile.py')) {
+    foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py','language.py','runtime_clock.py','rag.py','model_profile.py','observances.py','arithmetic.py')) {
         $sha = (Get-FileHash (Join-Path $ProjectRoot "python/apps/ai_api/$sourceName") -Algorithm SHA256).Hash
         if ($h.source_hashes.$sourceName -ine $sha) { throw "Verified FastAPI PID $($AiOwner.ProcessId) has stale source $sourceName. Recheck PID and restart; no process was stopped." }
     }

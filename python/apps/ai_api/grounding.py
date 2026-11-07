@@ -39,11 +39,23 @@ def select_memories(message: str, memories: list[dict], *, recall=False) -> list
     return []
 
 
+_TECHNICAL_SUBJECT = re.compile(
+    r"(?i)\b(?:dusn[-\s]?x|model|mô\s*hình|checkpoint|gateway|api|rag|ollama|qwen|"
+    r"provider|phiên\s*bản|version|kiến\s*trúc|mã\s*nguồn|code)\b"
+)
+_PERSONAL_ANCHOR = re.compile(r"(?i)\b(?:của\s+tôi|chúng\s+tôi|tôi\s+đã|đã\s+chốt|quyết\s+định)\b")
+
+
 def is_memory_question(message: str) -> bool:
     text = message.casefold().strip()
     # Translation/transform instructions can contain personal-memory vocabulary
     # and URL query markers. They are tasks over supplied text, not memory queries.
     if re.match(r"^(?:please\s+)?(?:translate|translation|dịch)\b", text):
+        return False
+    # Product/system questions ("DUSN-X dùng model nào?") share the verbs used
+    # for personal decisions ("dùng", "nào") but must reach documentation
+    # retrieval, not the memory clarification path.
+    if _TECHNICAL_SUBJECT.search(text) and not _PERSONAL_ANCHOR.search(text):
         return False
     question_text = re.sub(r"https?://\S+", " ", text)
     question = "?" in question_text or any(p in text for p in ("nhắc lại", "đã chọn gì", "đang dùng gì", "chọn gì", "dùng gì", "là gì", "nào"))

@@ -94,7 +94,7 @@ describe("Provider health through Gateway", () => {
     try {
       await app.checkProviderHealth();
       assert.ok(requested.endsWith("/v1/health"));
-      assert.match(elements.modelStatus.textContent, /Trained/);
+      assert.match(elements.modelStatus.textContent, /trained/i);
       assert.match(elements.providerStatus.textContent, /sẵn sàng/);
     } finally {
       global.fetch = previousFetch;
@@ -223,6 +223,64 @@ describe("appendMessageBubble — XSS safety", () => {
       (el._children || []).forEach(checkNoInnerHTML);
     }
     elements["messageList"]._children.forEach(checkNoInnerHTML);
+  });
+});
+
+describe("renderMarkdown — safe DOM rendering", () => {
+  const flatten = (el) => [el, ...(el._children || []).flatMap(flatten)];
+
+  it("renders headings, lists, emphasis, inline code and fenced code without innerHTML", () => {
+    const host = makeEl("div");
+    app.renderMarkdown(host,
+      "# Tiêu đề\n\nĐoạn **đậm** và *nghiêng* với `code`.\n\n- một\n- hai\n\n1. đầu\n2. cuối\n\n```js\nconst x = 1;\n```");
+    const nodes = flatten(host);
+    for (const tag of ["h1", "p", "strong", "em", "code", "ul", "li", "ol", "pre"]) {
+      assert.ok(nodes.some(node => node.tag === tag), `missing <${tag}>`);
+    }
+    const text = nodes.map(node => node._text).join(" ");
+    assert.ok(text.includes("Tiêu đề"));
+    assert.ok(text.includes("đậm"));
+    assert.ok(text.includes("nghiêng"));
+    assert.ok(text.includes("const x = 1;"));
+    assert.equal(host._html_set, undefined);
+  });
+
+  it("keeps raw HTML and javascript: links as literal text", () => {
+    const host = makeEl("div");
+    app.renderMarkdown(host, "**<img src=x onerror=alert(1)>** [click](javascript:alert(1))");
+    const nodes = flatten(host);
+    const text = nodes.map(node => node._text).join(" ");
+    assert.ok(text.includes("<img src=x onerror=alert(1)>"));
+    assert.ok(text.includes("[click](javascript:alert(1))"));
+    assert.ok(!nodes.some(node => node.tag === "img" || node.tag === "a"));
+    assert.equal(host._html_set, undefined);
+  });
+
+  it("renders only http(s) links with safe rel", () => {
+    const host = makeEl("div");
+    app.renderMarkdown(host, "[tài liệu](https://example.com/doc)");
+    const link = flatten(host).find(node => node.tag === "a");
+    assert.ok(link);
+    assert.equal(link.href, "https://example.com/doc");
+    assert.equal(link.rel, "noopener noreferrer");
+    assert.equal(link.target, "_blank");
+  });
+});
+
+describe("copyMessageText", () => {
+  it("writes the assistant content to the clipboard and confirms", async () => {
+    let copied = null;
+    const previous = navigator.clipboard;
+    navigator.clipboard = { writeText: async value => { copied = value; } };
+    try {
+      const button = makeEl("button");
+      app.copyMessageText(button, "nội dung trả lời");
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(copied, "nội dung trả lời");
+      assert.equal(button.textContent, "Đã sao chép");
+    } finally {
+      navigator.clipboard = previous;
+    }
   });
 });
 

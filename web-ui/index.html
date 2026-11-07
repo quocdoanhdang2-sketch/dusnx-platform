@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DUSN-X — Trợ lý AI cá nhân hóa</title>
   <meta name="description" content="DUSN-X: Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20261107h" />
 </head>
 <body>
 
@@ -69,16 +69,16 @@
 
     <div class="sidebar-footer">
       <button class="sidebar-nav-item" onclick="showView('memory')" id="navMemory">
-        <span class="nav-icon">🧠</span> Trí nhớ của tôi
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg></span> Trí nhớ của tôi
       </button>
       <button class="sidebar-nav-item" onclick="showView('projects')" id="navProjects">
-        <span class="nav-icon">📁</span> Dự án
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> Dự án
       </button>
       <button class="sidebar-nav-item" onclick="showView('timeline')" id="navTimeline">
-        <span class="nav-icon">📡</span> Quan sát hệ thống
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span> Quan sát hệ thống
       </button>
       <button class="sidebar-nav-item logout-btn" onclick="handleLogout()">
-        <span class="nav-icon">↩</span> Đăng xuất
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span> Đăng xuất
       </button>
     </div>
   </aside>
@@ -103,11 +103,11 @@
       <div id="welcomeState" class="welcome-state">
         <div class="welcome-icon">⬡</div>
         <h2 class="welcome-title">Xin chào! Tôi là DUSN-X</h2>
-        <p class="welcome-sub">Trợ lý AI cá nhân hóa thích ứng của bạn. Tôi nhớ những gì bạn chia sẻ và học cách hỗ trợ bạn tốt hơn theo thời gian.</p>
+        <p class="welcome-sub">Trợ lý AI cá nhân hóa thích ứng của bạn. Tôi nhớ những gì bạn chia sẻ, tra cứu tài liệu dự án và trả lời bằng ngôn ngữ bạn chọn.</p>
         <div class="welcome-hints">
           <button class="hint-chip" onclick="useHint(this)">Dự án tôi đang làm là gì?</button>
-          <button class="hint-chip" onclick="useHint(this)">Tóm tắt những gì tôi đã chia sẻ</button>
-          <button class="hint-chip" onclick="useHint(this)">Tôi đang ưu tiên gì?</button>
+          <button class="hint-chip" onclick="useHint(this)">DUSN-X đang dùng model nào?</button>
+          <button class="hint-chip" onclick="useHint(this)">20/11 là ngày gì?</button>
         </div>
       </div>
 
@@ -230,6 +230,6 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=20261107h"></script>
 </body>
 </html>

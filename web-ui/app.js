@@ -292,7 +292,10 @@ async function checkProviderHealth() {
 
     if (modelEl) {
       if (modelLoaded) {
-        modelEl.textContent = `⬡ DUSN-X: ${health.model_version || "v2"} (${health.runtime_mode === "trained_dusnx" ? "Trained" : "Bootstrap"})`;
+        const checkpoint = (health.model_version || "").match(/[^:/]+\.pt/);
+        const label = checkpoint ? checkpoint[0] : (health.model_version || "v2");
+        modelEl.textContent = `⬡ Router: ${label} (${health.runtime_mode === "trained_dusnx" ? "trained" : "bootstrap"})`;
+        modelEl.title = health.model_version || "";
         modelEl.className = "model-status ok";
       } else {
         modelEl.textContent = `⬡ DUSN-X: Bootstrap`;
@@ -301,7 +304,12 @@ async function checkProviderHealth() {
     }
 
     if (providerOk) {
-      statusEl.textContent = `✓ LLM: ${provider.configured_model || provider.provider} (sẵn sàng)`;
+      const fallback = provider.fallback;
+      if (fallback && fallback.available) {
+        statusEl.textContent = `✓ LLM dự phòng: ${fallback.configured_model || "ollama"} (sẵn sàng)`;
+      } else {
+        statusEl.textContent = `✓ LLM: ${provider.configured_model || provider.provider} (sẵn sàng)`;
+      }
       statusEl.className = "provider-status ok";
     } else {
       const pName = provider.provider || "none";
@@ -338,7 +346,16 @@ async function loadSessions() {
 function renderSessionList(sessions) {
   const list = el("sessionList");
   list.replaceChildren();
-  for (const sess of sessions) {
+  // Empty sessions are hidden unless they are the one currently open.
+  const visible = sessions.filter(sess =>
+    sess.message_count === undefined || sess.message_count > 0 || sess.session_id === currentSessionId);
+  if (visible.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "session-empty";
+    empty.textContent = "Chưa có phiên chat";
+    list.appendChild(empty);
+  }
+  for (const sess of visible) {
     const li = document.createElement("li");
     li.role = "listitem";
     const btn = document.createElement("button");
@@ -356,7 +373,22 @@ function renderSessionList(sessions) {
 
 async function startNewSession() {
   if (isSending || isResolving || isCreatingSession) return;
-  const generation = authGeneration;
+  // A session row is created only when the first message is sent. Creating it
+  // here left a trail of empty "Phiên chat mới" rows on every login.
+  currentSessionId = null;
+  resetMessageHistory();
+  el("messageList").replaceChildren();
+  el("welcomeState").style.display = "";
+  el("chatTitle").textContent = "Phiên chat mới";
+  el("chatMeta").textContent = "";
+  el("mobileTitle").textContent = "DUSN-X";
+  renderPendingBanner(null);
+  showView("chat");
+  el("messageInput").focus();
+}
+
+async function ensureSession() {
+  if (currentSessionId || isCreatingSession) return;
   isCreatingSession = true;
   try {
     const sess = await apiFetch("/v1/sessions", {
@@ -364,22 +396,8 @@ async function startNewSession() {
       body: JSON.stringify({ title: "Phiên chat mới" }),
     });
     currentSessionId = sess.session_id;
-    resetMessageHistory();
-    el("messageList").replaceChildren();
-    el("welcomeState").style.display = "";
-    el("chatTitle").textContent = "Phiên chat mới";
-    el("chatMeta").textContent = "";
-    el("mobileTitle").textContent = "DUSN-X";
-    await loadSessions();
-    if (generation !== authGeneration) return;
-    renderPendingBanner(null);
-    showView("chat");
-    el("messageInput").focus();
-  } catch (err) {
-    if (err.name === "SessionChangedError") return;
-    showError(`Không tạo được phiên mới: ${err.message}`);
   } finally {
-    if (generation === authGeneration) isCreatingSession = false;
+    isCreatingSession = false;
   }
 }
 
@@ -616,7 +634,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
     return;
   }
   if (!currentSessionId) {
-    await startNewSession();
+    await ensureSession();
   }
 
   if (generation !== authGeneration) return;
@@ -632,6 +650,12 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
   if (overrideText === null) {
     input.value = "";
     input.style.height = "auto";
+  }
+  // Match the backend's first-message title so the header and sidebar agree.
+  if (el("chatTitle").textContent === "Phiên chat mới") {
+    const sessionTitle = text.slice(0, 60);
+    el("chatTitle").textContent = sessionTitle;
+    el("mobileTitle").textContent = sessionTitle;
   }
   el("sendBtn").disabled = true;
   el("projectSelect").disabled = true;
@@ -745,6 +769,189 @@ function appendProviderErrorCard(errorText, providerName, failedMessage, request
   list.appendChild(card);
 }
 
+function textSpan(value) {
+  if (typeof document.createTextNode === "function") return document.createTextNode(value);
+  const span = document.createElement("span");
+  span.textContent = value;
+  return span;
+}
+
+// Inline markdown is tokenized with DOM nodes only: no string of HTML is ever
+// produced, so model output cannot inject elements or attributes.
+function appendInline(parent, value) {
+  const text = String(value ?? "");
+  const token = /`([^`\n]+)`|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|\*([^*\n]+)\*|_([^_\n]+)_/g;
+  let last = 0;
+  let match;
+  while ((match = token.exec(text)) !== null) {
+    if (match.index > last) parent.appendChild(textSpan(text.slice(last, match.index)));
+    if (match[1] !== undefined) {
+      const code = document.createElement("code");
+      code.textContent = match[1];
+      parent.appendChild(code);
+    } else if (match[2] !== undefined || match[3] !== undefined) {
+      const strong = document.createElement("strong");
+      appendInline(strong, match[2] !== undefined ? match[2] : match[3]);
+      parent.appendChild(strong);
+    } else if (match[4] !== undefined) {
+      // Only http(s) URLs reach this branch; javascript: stays literal text.
+      const link = document.createElement("a");
+      link.textContent = match[4];
+      link.href = match[5];
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      parent.appendChild(link);
+    } else {
+      const em = document.createElement("em");
+      appendInline(em, match[6] !== undefined ? match[6] : match[7]);
+      parent.appendChild(em);
+    }
+    last = token.lastIndex;
+  }
+  if (last < text.length) parent.appendChild(textSpan(text.slice(last)));
+}
+
+function isMarkdownBlock(line) {
+  return /^\s*```/.test(line) || /^#{1,4}\s/.test(line) || /^\s*[-*+]\s+/.test(line) ||
+    /^\s*\d+[.)]\s+/.test(line) || /^\s*>\s?/.test(line);
+}
+
+function renderMarkdown(container, text) {
+  const lines = String(text ?? "").replace(/\r\n?/g, "\n").split("\n");
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i += 1; continue; }
+
+    const fence = line.match(/^\s*```([\w+-]*)\s*$/);
+    if (fence) {
+      const body = [];
+      i += 1;
+      while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) { body.push(lines[i]); i += 1; }
+      if (i < lines.length) i += 1;
+      const pre = document.createElement("pre");
+      const code = document.createElement("code");
+      if (fence[1]) code.className = `language-${fence[1]}`;
+      code.textContent = body.join("\n");
+      pre.appendChild(code);
+      container.appendChild(pre);
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,4})\s+(.+?)\s*#*\s*$/);
+    if (heading) {
+      const node = document.createElement(`h${heading[1].length}`);
+      appendInline(node, heading[2]);
+      container.appendChild(node);
+      i += 1;
+      continue;
+    }
+
+    if (/^\s*[-*+]\s+/.test(line)) {
+      const list = document.createElement("ul");
+      while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
+        const item = document.createElement("li");
+        appendInline(item, lines[i].replace(/^\s*[-*+]\s+/, ""));
+        list.appendChild(item);
+        i += 1;
+      }
+      container.appendChild(list);
+      continue;
+    }
+
+    if (/^\s*\d+[.)]\s+/.test(line)) {
+      const list = document.createElement("ol");
+      while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
+        const item = document.createElement("li");
+        appendInline(item, lines[i].replace(/^\s*\d+[.)]\s+/, ""));
+        list.appendChild(item);
+        i += 1;
+      }
+      container.appendChild(list);
+      continue;
+    }
+
+    if (/^\s*>\s?/.test(line)) {
+      const quote = document.createElement("blockquote");
+      let first = true;
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+        if (!first) quote.appendChild(document.createElement("br"));
+        appendInline(quote, lines[i].replace(/^\s*>\s?/, ""));
+        first = false;
+        i += 1;
+      }
+      container.appendChild(quote);
+      continue;
+    }
+
+    const paragraph = [];
+    while (i < lines.length && lines[i].trim() && !isMarkdownBlock(lines[i])) {
+      paragraph.push(lines[i]);
+      i += 1;
+    }
+    const p = document.createElement("p");
+    paragraph.forEach((entry, index) => {
+      if (index > 0) p.appendChild(document.createElement("br"));
+      appendInline(p, entry);
+    });
+    container.appendChild(p);
+  }
+}
+
+function copyMessageText(button, text) {
+  const done = label => {
+    button.textContent = label;
+    const timer = setTimeout(() => { button.textContent = "Sao chép"; }, 1600);
+    if (timer && typeof timer.unref === "function") timer.unref();
+  };
+  const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : null;
+  if (!clipboard || typeof clipboard.writeText !== "function") {
+    done("Không hỗ trợ");
+    return;
+  }
+  Promise.resolve(clipboard.writeText(text)).then(() => done("Đã sao chép"), () => done("Lỗi sao chép"));
+}
+
+let memoryLookupPromise = null;
+async function ensureMemoryLookup() {
+  if (allMemories.length) return allMemories;
+  if (!memoryLookupPromise) {
+    memoryLookupPromise = apiFetch("/v1/memories?include_inactive=false&limit=100")
+      .then(items => { allMemories = Array.isArray(items) ? items : []; return allMemories; })
+      .catch(() => [])
+      .finally(() => { memoryLookupPromise = null; });
+  }
+  return memoryLookupPromise;
+}
+
+function buildUsedMemoryCard(ids) {
+  const details = document.createElement("details");
+  details.className = "memory-used-card";
+  const summary = document.createElement("summary");
+  summary.textContent = `Trí nhớ đã dùng (${ids.length})`;
+  const list = document.createElement("ul");
+  details.appendChild(summary);
+  details.appendChild(list);
+  const fill = (loaded = false) => {
+    list.replaceChildren();
+    const used = ids.map(id => allMemories.find(mem => mem.memory_id === id)).filter(Boolean);
+    for (const mem of used) {
+      const item = document.createElement("li");
+      // SAFE: textContent — memory content is user-owned data, never HTML
+      item.textContent = `${mem.info_type}: ${mem.content}`;
+      list.appendChild(item);
+    }
+    if (!used.length) {
+      const item = document.createElement("li");
+      item.textContent = loaded ? "Không tìm thấy nội dung trí nhớ đã dùng." : "Đang tải nội dung trí nhớ…";
+      list.appendChild(item);
+    }
+    return used.length;
+  };
+  if (fill() === 0) ensureMemoryLookup().then(() => fill(true)).catch(() => fill(true));
+  return details;
+}
+
 function appendMessageBubble(role, content, meta = {}, append = true) {
   const list = el("messageList");
   const wrapper = document.createElement("div");
@@ -759,8 +966,12 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  // SAFE: textContent — never innerHTML
-  bubble.textContent = content;
+  if (role === "assistant") {
+    renderMarkdown(bubble, content);
+  } else {
+    // SAFE: textContent — never innerHTML
+    safeText(bubble, content);
+  }
 
   const metaEl = document.createElement("div");
   metaEl.className = "message-meta";
@@ -772,16 +983,10 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
   }
 
   if (role === "assistant") {
-    if (meta.intent) {
-      const tag = document.createElement("span");
-      tag.className = "meta-tag";
-      tag.textContent = `intent: ${meta.intent}`;
-      metaEl.appendChild(tag);
-    }
     if (meta.runtime) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
-      tag.textContent = meta.runtime === "trained_dusnx" ? "model" : "bootstrap";
+      tag.textContent = meta.runtime === "trained_dusnx" ? "DUSN-X" : "bootstrap";
       metaEl.appendChild(tag);
     }
     if (meta.provider) {
@@ -795,6 +1000,9 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
       tag.className = "meta-tag";
       tag.textContent = meta.response_source === "grounded_template" ? "Trích trí nhớ đã lưu" :
         meta.response_source === "rag_extract" ? "Trích tài liệu nội bộ" :
+        meta.response_source === "observance_calendar" ? "Lịch ngày lễ đã kiểm tra" :
+        meta.response_source === "runtime_identity" ? "Thông tin runtime đã xác minh" :
+        meta.response_source === "calculator" ? "Kết quả tính đã kiểm tra" :
         meta.response_source === "replay" ? "Phản hồi đã xác nhận trước đó" :
         meta.response_source === "clarification" ? "Cần làm rõ" :
         meta.response_source === "mock" ? "Phản hồi thử nghiệm" : "Thao tác ứng dụng";
@@ -827,12 +1035,23 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
       details.append(summary, pre, copy);
       col.appendChild(details);
     }
+    if (String(content ?? "").trim()) {
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "copy-btn";
+      copyBtn.textContent = "Sao chép";
+      copyBtn.onclick = () => copyMessageText(copyBtn, String(content ?? ""));
+      metaEl.appendChild(copyBtn);
+    }
   }
 
   col.appendChild(bubble);
   col.appendChild(metaEl);
   if (role === "assistant" && Array.isArray(meta.sources) && meta.sources.length > 0) {
     col.appendChild(buildSourcesCard(meta.sources));
+  }
+  if (role === "assistant" && Array.isArray(meta.memory_ids_used) && meta.memory_ids_used.length > 0) {
+    col.appendChild(buildUsedMemoryCard(meta.memory_ids_used));
   }
   wrapper.appendChild(avatar);
   wrapper.appendChild(col);
@@ -1431,6 +1650,8 @@ if (typeof module !== "undefined") {
     renderTimelineItem,
     renderMemoryCard,
     appendMessageBubble,
+    renderMarkdown,
+    copyMessageText,
     safeText,
     formatDate,
     checkProviderHealth,

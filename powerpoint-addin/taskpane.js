@@ -6,9 +6,10 @@
   const byId = id => typeof document === "undefined" ? null : document.getElementById(id);
   const safe = value => String(value == null ? "" : value).replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 4000);
   const mode = () => byId("mode")?.value === "generate" ? "generate" : "edit";
+  const afterSelected = () => byId("afterSelected")?.checked === true;
   function clearProposal() { state.generation++; state.proposal = null; renderProposal(null); }
   function controls() {
-    for (const id of ["ask", "newSession", "session", "language", "login", "mode", "count"]) if (byId(id)) byId(id).disabled = state.busy;
+    for (const id of ["ask", "newSession", "session", "language", "login", "mode", "count", "afterSelected"]) if (byId(id)) byId(id).disabled = state.busy;
     if (byId("apply")) byId("apply").disabled = state.busy || !state.proposal;
   }
   async function api(path, options = {}) {
@@ -195,16 +196,36 @@
       if (instruction.length > 2000) throw new Error("Instruction must be at most 2000 characters.");
       const requested = Number(byId("count")?.value || 3);
       if (!Number.isInteger(requested) || requested < 1 || requested > MAX_SLIDES) throw new Error(`Slide count must be between 1 and ${MAX_SLIDES}.`);
+      const target = await plannedTarget();
+      if (generation !== state.generation || token !== state.token) return;
       const requestId = root.crypto?.randomUUID?.() || `ppt-${Date.now()}`;
       const result = await api("/v1/chat", { method: "POST", body: JSON.stringify({ session_id: sessionId,
         message: outlineMessage(instruction, requested, state.language), preferred_language: state.language, request_id: requestId }) });
       if (generation !== state.generation || token !== state.token || sessionId !== state.sessionId) return;
       validateProvenance(result);
       const plan = validatePlan(parseOutline(result.reply), requested);
-      state.proposal = { kind: "plan", plan, text: formatPlan(plan), sessionId, requested, provenance: provenance(result) };
+      state.proposal = { kind: "plan", plan, text: formatPlan(plan), sessionId, requested,
+        targetId: target.id, targetLabel: target.label, provenance: provenance(result) };
       renderProposal(state.proposal);
-      status(`Review ${plan.length} slide(s), then append them to the presentation.`, false);
+      status(`Review ${plan.length} slide(s), then insert them ${target.label}.`, false);
     } finally { state.busy = false; controls(); }
+  }
+  async function plannedTarget() {
+    if (!root.PowerPoint?.run) throw new Error("Office API is unavailable.");
+    return root.PowerPoint.run(async context => {
+      const slides = context.presentation.slides; slides.load("items/id");
+      // Only request the selection when the user asked for it; older hosts that
+      // can generate slides still work without PowerPointApi selection support.
+      const selected = afterSelected() ? context.presentation.getSelectedSlides() : null;
+      if (selected) selected.load("items/id");
+      await context.sync();
+      if (!slides.items.length) return { id: null, label: "into the empty presentation" };
+      const chosen = selected ? selected.items[0] : null;
+      const index = chosen ? slides.items.findIndex(slide => slide.id === chosen.id) : -1;
+      if (index >= 0) return { id: `${chosen.id}#`, label: `after slide ${index + 1}` };
+      const last = slides.items[slides.items.length - 1];
+      return { id: `${last.id}#`, label: `after slide ${slides.items.length}` };
+    });
   }
   function bytesBase64(bytes) {
     let binary = "";
@@ -220,12 +241,15 @@
     templateCache = bytesBase64(new Uint8Array(buffer));
     return templateCache;
   }
-  async function insertPlan(plan, base64, guard) {
+  async function insertPlan(plan, base64, guard, requestedTargetId) {
     return root.PowerPoint.run(async context => {
       const slides = context.presentation.slides;
       slides.load("items/id"); await context.sync();
       const beforeCount = slides.items.length, beforeIds = new Set(slides.items.map(slide => slide.id));
-      const targetSlideId = beforeCount ? `${slides.items[beforeCount - 1].id}#` : null;
+      const targetIdPart = requestedTargetId ? String(requestedTargetId).replace(/#.*$/, "") : null;
+      if (targetIdPart && !beforeIds.has(targetIdPart))
+        throw new Error("The target slide no longer exists. Create and review a new outline before Apply.");
+      const targetSlideId = targetIdPart ? requestedTargetId : null;
       const added = [], addedIds = new Set();
       try {
         for (let index = plan.length - 1; index >= 0; index--) {
@@ -251,7 +275,8 @@
           title.textFrame.textRange.text = plan[index].title;
           body.textFrame.textRange.text = plan[index].bullets.map(bullet => `• ${bullet}`).join("\r");
           const footer = shapes.get("DUSN-X Footer");
-          if (footer) footer.textFrame.textRange.text = `DUSN-X · ${beforeCount + index + 1}`;
+          const position = slides.items.findIndex(item => item.id === slide.id) + 1;
+          if (footer) footer.textFrame.textRange.text = `DUSN-X · ${position}`;
           await context.sync();
         }
         return { before: beforeCount, added: added.length };
@@ -279,10 +304,10 @@
             throw new Error("Session changed. Create and review a new outline before Apply.");
         };
         guard();
-        const result = await insertPlan(plan, base64, guard);
+        const result = await insertPlan(plan, base64, guard, proposal.targetId);
         clearProposal();
-        status(result.before ? `Appended ${result.added} slide(s) after slide ${result.before} of the presentation.`
-          : `Appended ${result.added} slide(s) to the empty presentation.`, false);
+        status(result.before ? `Inserted ${result.added} slide(s) ${proposal.targetLabel}.`
+          : `Inserted ${result.added} slide(s) into the empty presentation.`, false);
         return;
       }
       await root.PowerPoint.run(async context => {
@@ -302,6 +327,7 @@
   function updateMode() {
     const generate = mode() === "generate";
     if (byId("countRow")) byId("countRow").style.display = generate ? "" : "none";
+    if (byId("targetRow")) byId("targetRow").style.display = generate ? "" : "none";
     if (byId("ask")) byId("ask").textContent = generate ? "Create slide outline" : "Create proposal from selected text shape";
     if (byId("apply")) byId("apply").textContent = generate ? "Append slides to presentation" : "Apply to original text shape";
     if (byId("prompt")) byId("prompt").placeholder = generate
@@ -312,9 +338,10 @@
   function bind() { byId("login").onclick = () => guarded(login); byId("logout").onclick = logout; byId("newSession").onclick = () => guarded(createSession);
     byId("ask").onclick = () => guarded(ask); byId("apply").onclick = () => guarded(applyProposal);
     byId("session").onchange = event => { state.sessionId = event.target.value; clearProposal(); }; byId("language").onchange = event => { state.language = event.target.value; clearProposal(); };
-    if (byId("mode")) byId("mode").onchange = updateMode; updateMode(); }
+    if (byId("mode")) byId("mode").onchange = updateMode; updateMode();
+    if (byId("afterSelected")) byId("afterSelected").onchange = () => { clearProposal(); status("Insertion target changed. Create a new outline.", false); }; }
   if (root.Office?.onReady) root.Office.onReady(info => { if (info.host === root.Office.HostType.PowerPoint) bind(); });
   const exported = { safe, state, api, login, logout, readSlideContext, ask, applyProposal, renderProposal, validateProposal,
-    parseOutline, validatePlan, formatPlan, outlineMessage, MAX_SLIDES, MAX_BULLETS, MAX_TITLE, MAX_BULLET, MAX_TOTAL };
+    parseOutline, validatePlan, formatPlan, outlineMessage, plannedTarget, MAX_SLIDES, MAX_BULLETS, MAX_TITLE, MAX_BULLET, MAX_TOTAL };
   if (typeof module !== "undefined") module.exports = exported; else root.DusnxPowerPoint = exported;
 })(typeof window !== "undefined" ? window : globalThis);
