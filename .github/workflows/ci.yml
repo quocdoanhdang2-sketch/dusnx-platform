@@ -84,3 +84,5 @@ jobs:
         run: node --test web-ui/app.test.js web-ui/auth.test.js
       - name: Test PowerPoint proposal and Apply guards (Office mock only)
         run: node --test powerpoint-addin/taskpane.test.js
+      - name: Test Word proposal/Apply guards and same-origin dev server
+        run: node --test word-addin/word-taskpane.test.js word-addin/dev-server.test.js

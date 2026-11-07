@@ -9,25 +9,30 @@ không được inject. Không yêu cầu gửi secret vào chat.
 |---|---|---|
 | Web | Web tĩnh, Gateway auth/chat/memory/project | HTTP và Chromium local thật |
 | PowerPoint | Office.js task pane, manifest, proposal/Apply | Office mock; HTTPS local/CORS thật; chưa Desktop |
-| Word | Chưa thấy add-in riêng hoặc Word.run | Chỉ kiểm kê mã; chưa triển khai |
+| Word | Office.js task pane, manifest, proposal/Apply, guard selection | Word Desktop thật, WordApi 1.1; xem `docs/evidence/word-addin-desktop-20261106` |
 | Teams | Chưa thấy bot/adapter/manifest Teams | Chỉ kiểm kê mã; chưa có tenant credential |
 | Zalo | /webhooks/zalo, normalized payload, channel worker, dedupe local | HTTP local khi chưa cấu hình bị 503; chưa OA thật |
 | Ảnh | Text provider Ollama/OpenAI-compatible | Không có vision/image-edit adapter; chưa chỉnh ảnh |
 
-## Word: tích hợp tối thiểu, chưa viết backend mới
+## Word: task pane Office.js đã chạy trên Word Desktop
 
-Tạo manifest/task pane Office.js riêng sau khi có Word Desktop và HTTPS được tin cậy.
-Dùng lại Gateway `/v1/auth/*`, `/v1/sessions`, `/v1/chat`, `/v1/memories` và
-`/v1/me/events`; token opaque chỉ trong RAM. Không nhận user_id tự khai làm danh tính.
-Chỉ gửi đoạn văn đang chọn và lệnh người dùng; không gửi toàn tài liệu mặc định.
-Proposal phải tách khỏi tài liệu; trước Apply kiểm tra tài liệu/range/text gốc vẫn
-khớp, từ chối selection đã đổi, kết quả rỗng/metadata/không đổi hoặc provider lỗi.
-Người dùng review rồi chủ động Apply; không tự ghi tài liệu.
+Đã triển khai `word-addin/` dùng lại Gateway `/v1/auth/*`, `/v1/sessions`, `/v1/chat`; token
+opaque chỉ trong RAM. Chỉ gửi đoạn đang chọn và instruction, không gửi toàn tài liệu.
+Proposal tách khỏi tài liệu; trước Apply kiểm tra lại text/start/end, session và trạng thái
+đăng nhập, từ chối selection đã đổi, kết quả rỗng/metadata/không đổi hoặc thiếu provenance
+LLM thực. Người dùng chủ động Apply; paragraph break cuối được giữ.
 
-Cần xác định Office requirement set, hành vi range tracking và chính sách thông tin
-nhạy cảm trước khi code. Acceptance: đăng nhập chung, memory isolation, nguồn trả
-lời đúng, selection/text change guard, undo và thử trực tiếp trên Word Desktop.
-Harness không thay bằng chứng Desktop.
+Đã kiểm chứng trên Microsoft Word 16.0.20527.20112 (WordApi 1.1/1.3): task pane nạp qua HTTPS
+local, đăng nhập, proposal + provenance `response_source: "llm"`, Apply đúng một lần, guard từ
+chối khi đổi selection và tài liệu không đổi. Bằng chứng và ảnh chụp:
+`docs/evidence/word-addin-desktop-20261106`. Runbook: `docs/WORD_ADDIN_RUNBOOK.md`.
+
+Còn thiếu trước production: manifest đã ký/central deployment thay vì sideload registry; HTTPS
+cùng origin cho WebView2 (dev đã chạy `word-addin/dev-server.js` proxy `/v1/*`; production cần
+reverse proxy và CA nội bộ thay certificate localhost); chính sách dữ liệu nhạy cảm và retention;
+xử lý bảng/field/tracked changes; undo/telemetry; và model chất lượng cao hơn (bằng chứng hiện
+tại dùng `qwen2.5:1.5b-instruct`, chưa đủ ổn định để coi nội dung là bản cuối). Harness mock
+không thay bằng chứng Desktop.
 
 ## Teams và Zalo
 
