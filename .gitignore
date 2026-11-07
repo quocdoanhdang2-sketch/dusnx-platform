@@ -35,3 +35,13 @@ training-results/
 **/*.gguf
 **/*.safetensors
 llm-artifacts/
+
+# Local test runs, logs and editor/backup scratch files
+.test-runs-*/
+.codex-tmp-*/
+pytest-cache-files-*/
+full-pytest-*.log
+*.bak-*
+lineage-test-fixtures-*/
+test-output-provider-diagnostics-*/
+**/.tmp-*/
