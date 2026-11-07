@@ -461,6 +461,43 @@ def _repetition_flags(text: str) -> list[str]:
     return ["repeated_lines"] if any(lines.count(line) >= 3 for line in set(lines)) else []
 
 
+_DRAFTING_REQUEST = re.compile(
+    r"(?:^|[\s,;:])(?:hãy\s+|giúp\s+(?:tôi|tao|mình)\s+|please\s+|can you\s+|could you\s+)?"
+    r"(?:viết|soạn|draft|write|compose)\s+(?:một\s+|a\s+|an\s+)?"
+    r"(?:email|e-mail|thư|tin nhắn|message|letter|đơn)\b",
+    re.IGNORECASE,
+)
+
+# Strong draft structure: a salutation, subject line, or sign-off. A bare
+# "Chào bạn," opener is not enough because deferrals often start the same way.
+_DRAFT_STRUCTURE = re.compile(
+    r"(?im)^\s*(?:kính gửi|thưa\s|dear\s+\S+|subject\s*:|tiêu đề\s*:|"
+    r"trân trọng|best regards|kind regards|sincerely)",
+)
+
+_DRAFT_DEFERRAL = re.compile(
+    r"(?i)(?:không thể|không có khả năng|không gửi được|sự cố kỹ thuật|gặp vấn đề|"
+    r"thiếu công cụ|không có công cụ|"
+    r"cho biết thêm|cần thêm thông tin|vui lòng (?:cung cấp|cho biết)|hãy cho tôi biết|"
+    r"i (?:cannot|can't|am unable|'m unable)|unable to|"
+    r"please provide|let me know|could you (?:provide|tell))"
+)
+
+
+def assess_drafting_completion(prompt: str, text: str) -> dict:
+    """Flag a direct drafting request that was refused or deferred instead of written."""
+    if not _DRAFTING_REQUEST.search(prompt or ""):
+        return {"status": "not_applicable"}
+    if _DRAFT_STRUCTURE.search(text or ""):
+        return {"status": "completed"}
+    # A refusal or a request for details is normally short. Long text that
+    # merely mentions a limitation (for example inside a completed draft) is
+    # not treated as a refusal.
+    if _DRAFT_DEFERRAL.search(text or "") and len((text or "").strip()) < 800:
+        return {"status": "deferred"}
+    return {"status": "completed"}
+
+
 def _without_prompt_echo(text: str, prompt: str) -> str:
     normalized = " ".join(prompt.split())
     if not normalized:
@@ -509,8 +546,9 @@ def _quality_assessment(prompt: str, text: str, expected_language: str) -> dict:
     language = assess_response_language(text, expected_language)
     entities = assess_entity_preservation(prompt, text)
     repetition = _repetition_flags(text)
+    drafting = assess_drafting_completion(prompt, text)
     return {"language": language, "entities": entities,
-            "repetition_flags": repetition,
+            "repetition_flags": repetition, "drafting": drafting,
             "passed": language["status"] in ("matched", "uncertain")
                       and entities["status"] in ("not_applicable", "passed")
                       and not repetition}
@@ -639,8 +677,12 @@ When asked to write an email, message, or draft, write it immediately; never cla
                 f"User request: {user_message}"
             )
         else:
+            drafting_line = ("This is a direct drafting task: write the complete email/message now, "
+                "use [square-bracket placeholders] for details the user did not provide, "
+                "and do not ask questions or add meta commentary.\n\n"
+                if _DRAFTING_REQUEST.search(user_message) else "")
             llm_user_message = (
-                "Respond in English. Complete the request below without changing its task. "
+                drafting_line + "Respond in English. Complete the request below without changing its task. "
                 "If the user asks to translate, follow the requested target language; otherwise keep explanatory prose in English. "
                 "Preserve code, URLs, names, and quoted source text when relevant.\n\n"
                 f"User request:\n{user_message}"
@@ -670,8 +712,11 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                 f"Yêu cầu của người dùng: {user_message}"
             )
         else:
+            drafting_line = ("Đây là tác vụ soạn thảo trực tiếp: viết đầy đủ email/tin nhắn ngay, "
+                "dùng [chỗ trống] cho thông tin chưa có; không hỏi lại và không thêm ghi chú kỹ thuật.\n\n"
+                if _DRAFTING_REQUEST.search(user_message) else "")
             llm_user_message = (
-                "Hãy trả lời bằng tiếng Việt. Hoàn thành yêu cầu bên dưới, không tự đổi loại tác vụ. "
+                drafting_line + "Hãy trả lời bằng tiếng Việt. Hoàn thành yêu cầu bên dưới, không tự đổi loại tác vụ. "
                 "Nếu người dùng yêu cầu dịch, hãy dùng đúng ngôn ngữ đích; nếu không, giữ văn xuôi giải thích bằng tiếng Việt. "
                 "Giữ nguyên code, URL, tên riêng và trích dẫn khi phù hợp.\n\n"
                 f"Yêu cầu người dùng:\n{user_message}"
@@ -734,9 +779,11 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                 "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
                 "quality_status": assessment["language"]["status"],
                 "entity_status": assessment["entities"]["status"],
+                "drafting_status": assessment["drafting"]["status"],
                 "repetition_flags": assessment["repetition_flags"]})
-            # One bounded corrective attempt for a clear language mix or a changed literal.
-            if not assessment["passed"] and call_count:
+            # One bounded corrective attempt for a clear language mix, a changed
+            # literal, or a direct drafting request that was refused/deferred.
+            if (not assessment["passed"] or assessment["drafting"]["status"] == "deferred") and call_count:
                 issue = assessment["entities"]["status"]
                 language_issue = assessment["language"]["status"]
                 correction = ("\n\nCorrection required: attempt 1 failed response checks. "
@@ -750,6 +797,11 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                     correction += " Exact required literals: " + "; ".join(literals)
                 if assessment["repetition_flags"]:
                     correction += " Remove repeated lines and answer each point once."
+                if assessment["drafting"]["status"] == "deferred":
+                    correction += (" The prior reply did not write the requested message: it refused or asked"
+                        " for details. Write the complete email/message now. Use [square-bracket placeholders]"
+                        " for details the user did not provide. Do not ask questions, do not refuse, and do not"
+                        " mention technical problems or missing tools.")
                 retry_result, retry_elapsed_ms, retry_called = _provider_call_with_deadline(
                     generate, system_prompt, attempt_prompt + correction, provider_deadline)
                 if retry_called:
@@ -770,6 +822,7 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                         "sanitized_output": text if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" else None,
                         "quality_status": assessment["language"]["status"] if ok else None,
                         "entity_status": assessment["entities"]["status"] if ok else None,
+                        "drafting_status": assessment["drafting"]["status"] if ok else None,
                         "repetition_flags": assessment["repetition_flags"] if ok else []})
                 else:
                     provider_attempts.append({"attempt": 2, "called": False,

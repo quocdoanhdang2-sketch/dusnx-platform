@@ -762,3 +762,80 @@ def test_strict_modes_fail_mixed_uncertain_and_execution_failed_summaries():
     assert evaluation_exit_code({**base, "linguistic_mixed": 1}, strict_language=True) == 1
     assert evaluation_exit_code({**base, "task_uncertain": 1}, strict_quality=True) == 1
     assert evaluation_exit_code({**base, "execution_status": "execution_failed"}) == 1
+
+
+def test_drafting_completion_flags_refusal_or_deferral_but_accepts_a_real_draft():
+    deferred = "Bạn muốn viết email cho ai? Hãy cho biết thêm chi tiết nhé!"
+    refusal = ("Xin lỗi vì sự cố kỹ thuật, tôi sẽ không thể giúp bạn viết email "
+               "cho đến khi tình trạng này được khắc phục.")
+    draft = ("Kính gửi [Quản lý],\n\nTôi xin phép nghỉ một ngày vào [ngày].\n"
+             "Tôi sẽ bàn giao công việc trước khi nghỉ.\n\nTrân trọng,\n[Tên]")
+    prompt = "viết email xin nghỉ phép 1 ngày"
+    assert provider.assess_drafting_completion(prompt, deferred)["status"] == "deferred"
+    assert provider.assess_drafting_completion(prompt, refusal)["status"] == "deferred"
+    assert provider.assess_drafting_completion(
+        prompt, "Chào bạn, mình cần thêm thông tin về người nhận trước đã.")["status"] == "deferred"
+    assert provider.assess_drafting_completion(prompt, draft)["status"] == "completed"
+    long_text = ("Nếu cần thêm thông tin, vui lòng cho tôi biết. " + "Chi tiết bổ sung. " * 45)
+    assert len(long_text) > 800
+    assert provider.assess_drafting_completion(prompt, long_text)["status"] == "completed"
+    assert provider.assess_drafting_completion("hôm nay thế nào?", deferred)["status"] == "not_applicable"
+    assert provider.assess_drafting_completion("viết lại email này ngắn hơn", deferred)["status"] == "not_applicable"
+
+
+def test_drafting_request_retries_when_model_defers(monkeypatch):
+    monkeypatch.setenv("DUSNX_PROVIDER", "ollama")
+    calls = []
+    draft = ("Kính gửi [Quản lý],\n\nTôi xin phép nghỉ một ngày vào [ngày] để giải quyết việc gia đình.\n"
+             "Tôi đã bàn giao công việc cho đồng nghiệp.\n\nTrân trọng,\n[Tên]")
+
+    def reply(system, user):
+        calls.append(user)
+        if len(calls) == 1:
+            return ("Chào bạn! Bạn muốn viết email để xin nghỉ phép? "
+                    "Hãy cho biết thêm chi tiết nhé!", True, "qwen-test", 30)
+        return (draft, True, "qwen-test", 60)
+
+    with patch("apps.ai_api.provider._ollama_generate", side_effect=reply):
+        result = provider.generate_response("viết email xin nghỉ phép 1 ngày", [], "recommendation",
+                                            response_language="vi")
+    assert len(calls) == 2
+    assert "square-bracket placeholders" in calls[1]
+    assert result[1] is True
+    assert result[0].startswith("Kính gửi")
+    assert [a.get("drafting_status") for a in result.provider_attempts] == ["deferred", "completed"]
+
+
+def test_drafting_request_retries_after_a_capability_refusal(monkeypatch):
+    monkeypatch.setenv("DUSNX_PROVIDER", "ollama")
+    calls = []
+    draft = ("Kính gửi [Quản lý],\n\nTôi xin phép nghỉ một ngày vào [ngày].\n"
+             "Tôi sẽ hoàn thành công việc trước khi nghỉ.\n\nTrân trọng,\n[Tên]")
+
+    def reply(system, user):
+        calls.append(user)
+        if len(calls) == 1:
+            return ("Xin lỗi vì sự cố kỹ thuật nhưng tôi sẽ không thể giúp bạn viết email "
+                    "cho đến khi tình trạng này được khắc phục.", True, "qwen-test", 40)
+        return (draft, True, "qwen-test", 50)
+
+    with patch("apps.ai_api.provider._ollama_generate", side_effect=reply):
+        result = provider.generate_response("viết email xin nghỉ phép 1 ngày", [], "recommendation",
+                                            response_language="vi")
+    assert len(calls) == 2
+    assert result[1] is True
+    assert "sự cố kỹ thuật" not in result[0]
+
+
+def test_non_drafting_clarification_is_not_retried(monkeypatch):
+    monkeypatch.setenv("DUSNX_PROVIDER", "ollama")
+    calls = []
+
+    def reply(system, user):
+        calls.append(user)
+        return ("Bạn muốn hỏi về khía cạnh nào của hệ thống?", True, "qwen-test", 20)
+
+    with patch("apps.ai_api.provider._ollama_generate", side_effect=reply):
+        result = provider.generate_response("còn cái đó thì sao?", [], "followup", response_language="vi")
+    assert len(calls) == 1
+    assert result[1] is True

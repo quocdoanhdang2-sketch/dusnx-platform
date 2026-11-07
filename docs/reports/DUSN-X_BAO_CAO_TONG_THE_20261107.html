@@ -242,7 +242,7 @@
 
       <div class="callout ok">
         <b>Kết luận ngắn</b>
-        DUSN-X hiện là một hệ thống chạy được end-to-end: Web UI tĩnh, Gateway ASP.NET Core 8, FastAPI AI API, router trạng thái PyTorch, trí nhớ SQLite có grounding, provider Ollama, cùng hai Office add-in. Luồng chat, ghi/đọc trí nhớ, sửa quyết định có xác nhận, lưu ngôn ngữ, idempotency, proxy same-origin và event ingestion đều đã được chạy thật ngày 07/11/2026. Tuy vậy, chất lượng nội dung của LLM baseline còn yếu: đã quan sát trực tiếp hallucination và contamination giữa các lượt; quality gate hiện chỉ đo ngôn ngữ, thực thể và lặp lại, không đo tính đúng sự thật. Candidate SFT v3 có cải thiện một số tiêu chí nhưng có regression, nên quyết định là <b>không promote</b>.
+        DUSN-X hiện là một hệ thống chạy được end-to-end: Web UI tĩnh, Gateway ASP.NET Core 8, FastAPI AI API, router trạng thái PyTorch, trí nhớ SQLite có grounding, provider Ollama, cùng hai Office add-in. Luồng chat, ghi/đọc trí nhớ, sửa quyết định có xác nhận, lưu ngôn ngữ, idempotency, proxy same-origin và event ingestion đều đã được chạy thật ngày 07/11/2026. Tuy vậy, chất lượng nội dung của LLM baseline còn yếu: đã quan sát trực tiếp hallucination và contamination giữa các lượt; quality gate hiện đo ngôn ngữ, thực thể, lặp lại và mức hoàn thành yêu cầu soạn thảo trực tiếp, nhưng không đo tính đúng sự thật. Candidate SFT v3 có cải thiện một số tiêu chí nhưng có regression, nên quyết định là <b>không promote</b>.
       </div>
 
       <div class="grid2">
@@ -293,7 +293,7 @@
         </div>
         <div class="card">
           <h3 style="margin-top:0">3. Sinh ngôn ngữ</h3>
-          <p>Ollama native hoặc OpenAI-compatible, có timeout, sanitizer, quality gate và provenance. LLM chỉ sinh văn bản; nó không được phép tự nhận đã lưu hay đã cập nhật.</p>
+          <p>Ollama native hoặc OpenAI-compatible, có timeout, sanitizer, quality gate và provenance. LLM chỉ sinh văn bản; nó không được phép tự nhận đã lưu hay đã cập nhật. Với yêu cầu soạn thảo trực tiếp (email, tin nhắn, thư), gate kiểm tra bản nháp có được viết hay không: nếu mô hình từ chối hoặc hỏi lại thay vì viết, hệ thống gửi một lượt sửa có giới hạn và ghi lại <code>drafting_status</code> trong provenance.</p>
           <p class="small">Mỗi máy tự chọn Qwen2.5 theo VRAM: dưới 6 GB dùng 1.5B, 6–12 GB dùng 7B, từ 12 GB dùng 14B (chỉ trong model đã cài; ép bằng <code>DUSNX_OLLAMA_MODEL</code> hoặc <code>DUSNX_MODEL_PROFILE</code>). Máy kiểm chứng 4 GB chọn <code>qwen2.5:1.5b-instruct</code>.</p>
         </div>
       </div>
