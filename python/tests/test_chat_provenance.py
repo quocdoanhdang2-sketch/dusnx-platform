@@ -89,7 +89,9 @@ def test_llm_transport_failure_and_retry_preserve_state(client,monkeypatch):
     assert result["provider_used"]=="ollama" and result["model_used"]=="test-llm"
     assert result["state_version"]==failed["state_version"]
     assert client.get("/v1/me/events",headers=h).json()["events"]==events_before
-    assert len(calls)==2  # One failed native request, then one explicit retry; no silent fallback.
+    # One failed generation, then one explicit retry; model discovery
+    # (GET /api/tags) is not a generation attempt and must be ignored here.
+    assert len([url for url in calls if url.endswith("/api/chat")]) == 2
 
 
 def test_openai_without_configuration_is_not_called(client,monkeypatch):

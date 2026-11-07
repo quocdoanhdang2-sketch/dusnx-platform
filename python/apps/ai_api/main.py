@@ -43,7 +43,7 @@ SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = SOURCE_ROOT.parent if SOURCE_ROOT.name == "python" else SOURCE_ROOT
 SOURCE_HASHES = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                  for name in ("main.py", "memory.py", "provider.py", "auth.py", "llm_evaluation.py",
-                              "language.py", "runtime_clock.py", "rag.py")}
+                              "language.py", "runtime_clock.py", "rag.py", "model_profile.py")}
 
 def resolve_default_checkpoint() -> str:
     env_ckpt = os.getenv("DUSNX_CHECKPOINT")
@@ -210,6 +210,7 @@ def health():
         "metadata": META,
         "model_version": MODEL_VERSION,
         "provider": p_health,
+        "model_profile": p_health.get("model_profile"),
         "rag": rag.index_status(),
     }
 

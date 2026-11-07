@@ -25,7 +25,7 @@ $GatewayDataDir = Resolve-ProjectPath $GatewayDataDir
 $AiUrl = "http://127.0.0.1:$AiPort"
 $GatewayUrl = "http://127.0.0.1:$GatewayPort"
 $Provider = if ($env:DUSNX_PROVIDER) { $env:DUSNX_PROVIDER } else { "ollama" }
-$Model = if ($env:DUSNX_OLLAMA_MODEL) { $env:DUSNX_OLLAMA_MODEL } else { "qwen2.5:0.5b" }
+$Model = if ($env:DUSNX_OLLAMA_MODEL) { $env:DUSNX_OLLAMA_MODEL } else { $null }
 $OllamaUrl = if ($env:DUSNX_OLLAMA_URL) { $env:DUSNX_OLLAMA_URL.TrimEnd('/') } else { "http://127.0.0.1:11434" }
 
 # Inspect both ports before launching anything. Never terminate an existing service.
@@ -33,13 +33,20 @@ $AiOwner = Get-DusnxListeningProcess $AiPort
 $GatewayOwner = Get-DusnxListeningProcess $GatewayPort
 if ($AiOwner) {
     $h = Assert-DusnxFastApiCheckpoint -Owner $AiOwner -ExpectedCheckpoint $Checkpoint -Uri "$AiUrl/health"
-    foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py','language.py','runtime_clock.py','rag.py')) {
+    foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py','language.py','runtime_clock.py','rag.py','model_profile.py')) {
         $sha = (Get-FileHash (Join-Path $ProjectRoot "python/apps/ai_api/$sourceName") -Algorithm SHA256).Hash
         if ($h.source_hashes.$sourceName -ine $sha) { throw "Verified FastAPI PID $($AiOwner.ProcessId) has stale source $sourceName. Recheck PID and restart; no process was stopped." }
     }
+    $providerMatches = $h.provider.provider -eq $Provider
+    if ($Provider -eq "ollama") {
+        # An unset DUSNX_OLLAMA_MODEL means auto: accept whichever model the
+        # AI API resolved for this machine's GPU.
+        $providerMatches = $providerMatches -and [bool]$h.provider.configured_model -and
+            (-not $Model -or $h.provider.configured_model -eq $Model)
+    }
     if ($h.api_contract -ne "week4-v1" -or $h.configuration.data_dir -ine $AiDataDir -or
-        $h.configuration.device_requested -ne $Device -or $h.provider.provider -ne $Provider -or
-        ($Provider -eq "ollama" -and ($h.provider.configured_model -ne $Model -or $h.configuration.ollama_url -ne $OllamaUrl)) -or
+        $h.configuration.device_requested -ne $Device -or -not $providerMatches -or
+        ($Provider -eq "ollama" -and $h.configuration.ollama_url -ne $OllamaUrl) -or
         $h.configuration.evaluation_enabled -ne ($env:DUSNX_ENABLE_LLM_EVAL -eq '1')) {
         throw "Verified DUSN-X FastAPI PID $($AiOwner.ProcessId) has stale code/configuration. Recheck PID and restart this DUSN-X process; no process was stopped."
     }
@@ -89,4 +96,6 @@ $null = Wait-DusnxHttpService -Name Web -Uri $GatewayUrl -TimeoutSeconds 15 -Pro
     param($uri) Invoke-WebRequest $uri -UseBasicParsing -TimeoutSec 3
 } -Validate { param($r) if ($r.StatusCode -ne 200 -or $r.Content -notlike '*DUSN-X*') { throw 'Wrong Web content' } }
 if (-not $AiHealth.provider_ok) { throw "Stack started, but provider unavailable: $($AiHealth.provider | ConvertTo-Json -Compress). Inspect the verified PIDs above; no process was stopped." }
-Write-Host "Native stack verified. Router: $($AiHealth.model_version); LLM: $($AiHealth.provider.configured_model). Open $GatewayUrl"
+$profileInfo = $AiHealth.provider.model_profile
+$vramText = if ($profileInfo.vram_gb) { "$($profileInfo.vram_gb) GB" } else { "unknown" }
+Write-Host "Native stack verified. Router: $($AiHealth.model_version); LLM: $($AiHealth.provider.configured_model) (tier $($profileInfo.tier), VRAM $vramText). Open $GatewayUrl"

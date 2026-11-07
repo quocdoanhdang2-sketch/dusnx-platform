@@ -8,6 +8,11 @@ services:
       DUSNX_DATA_DIR: /app/data
       DUSNX_PROVIDER: ${DUSNX_PROVIDER:-ollama}
       DUSNX_OLLAMA_URL: ${DUSNX_OLLAMA_URL:-http://host.docker.internal:11434}
+      # Auto fits the model to the machine. Inside a container the host GPU is
+      # invisible, so set DUSNX_MODEL_VRAM_GB (for example 4 or 12) to let the
+      # profile pick the right Qwen2.5 tier; an explicit DUSNX_OLLAMA_MODEL wins.
+      DUSNX_MODEL_PROFILE: ${DUSNX_MODEL_PROFILE:-auto}
+      DUSNX_MODEL_VRAM_GB: ${DUSNX_MODEL_VRAM_GB:-}
       PYTHONPATH: /app/src
       DUSNX_TRUSTED_HOSTS: localhost,127.0.0.1,ai-api
     volumes:

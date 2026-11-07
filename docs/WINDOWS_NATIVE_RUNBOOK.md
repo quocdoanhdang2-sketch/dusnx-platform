@@ -2,9 +2,11 @@
 
 ## Chuẩn bị và setup
 
-Git, Python 3.11–3.13, .NET 8, Node (chạy tests), Ollama đã cài base
-`qwen2.5:0.5b`. CPU được hỗ trợ. Router Colab giữ local, không tải lại/train lại
-trong nghiệm thu Tuần 4. Chromium/Playwright chỉ cần cho nghiệm thu Web.
+Git, Python 3.11–3.13, .NET 8, Node (chạy tests), Ollama cùng ít nhất một model
+Qwen2.5. AI API tự chọn theo VRAM: dưới 6 GB dùng `qwen2.5:1.5b-instruct`,
+6–12 GB dùng 7B, từ 12 GB dùng 14B; chỉ chọn trong model đã cài, không tự tải.
+CPU được hỗ trợ. Router Colab giữ local, không tải lại/train lại trong nghiệm thu
+Tuần 4. Chromium/Playwright chỉ cần cho nghiệm thu Web.
 
 ```powershell
 Set-Location D:\Projects\dusnx-platform
@@ -12,8 +14,10 @@ Set-Location D:\Projects\dusnx-platform
 py -3.12 -m venv .venv
 & .venv/Scripts/python.exe -m pip install -e './python[dev]'
 ollama list
-# Chỉ khi chưa có base trên máy mới:
-# ollama pull qwen2.5:0.5b
+# Máy 4 GB (mặc định low tier):
+# ollama pull qwen2.5:1.5b-instruct
+# Máy 8 GB muốn chất lượng cao hơn:
+# ollama pull qwen2.5:7b-instruct
 ```
 
 `.env.example` là danh mục cấu hình, script native **không tự đọc .env**.
@@ -27,10 +31,15 @@ $env:DUSNX_CHECKPOINT = 'training-results/colab-run-01/extracted/dusnx-router-fu
 $env:DUSNX_DEVICE = 'cpu'
 $env:DUSNX_PROVIDER = 'ollama'
 $env:DUSNX_OLLAMA_URL = 'http://127.0.0.1:11434'
-$env:DUSNX_OLLAMA_MODEL = 'qwen2.5:0.5b'
+# Bỏ trống để tự chọn theo máy; hoặc ép cụ thể:
+# $env:DUSNX_OLLAMA_MODEL = 'qwen2.5:3b-instruct'
+# $env:DUSNX_MODEL_PROFILE = 'low'   # auto | low | mid | high
+# $env:DUSNX_MODEL_VRAM_GB = '4'     # khi CPU-only/Docker/Apple Silicon
 $env:DUSNX_ENABLE_LLM_EVAL = '0'
 ./start-local.ps1
 Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 5
+# Kiểm tra model đã chọn + tier + VRAM:
+(Invoke-RestMethod http://127.0.0.1:8000/health).model_profile | ConvertTo-Json
 Invoke-RestMethod http://127.0.0.1:8080/health | ConvertTo-Json -Depth 5
 Invoke-RestMethod http://127.0.0.1:8080/v1/health | ConvertTo-Json -Depth 5
 Start-Process http://127.0.0.1:8080

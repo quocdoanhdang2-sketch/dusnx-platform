@@ -21,6 +21,7 @@ import urllib.error
 from .grounding import is_memory_question
 from .language import assess_response_language
 from .runtime_clock import clock_context
+from . import model_profile
 
 _PROVIDER_CALL_TIMEOUT = ContextVar("provider_call_timeout", default=None)
 
@@ -65,7 +66,9 @@ def get_ollama_url() -> str:
 
 
 def get_ollama_model() -> str:
-    return os.getenv("DUSNX_OLLAMA_MODEL", "qwen2.5:0.5b").strip()
+    # Explicit DUSNX_OLLAMA_MODEL wins; otherwise pick the best model this
+    # machine can run from those already installed (see model_profile.py).
+    return model_profile.get_model()
 
 
 def _ollama_model_tag_matches(configured: str, available: str) -> bool:
@@ -103,7 +106,6 @@ def _provider_call_with_deadline(generate, system_prompt: str, user_message: str
 
 PROVIDER = get_current_provider()
 OLLAMA_URL = get_ollama_url()
-OLLAMA_MODEL = get_ollama_model()
 OLLAMA_TIMEOUT = get_ollama_timeout()
 OPENAI_BASE_URL = os.getenv("DUSNX_OPENAI_BASE_URL", os.getenv("DUSNX_OPENAI_URL", "https://api.openai.com/v1"))
 OPENAI_MODEL = os.getenv("DUSNX_OPENAI_MODEL", "gpt-4o-mini")
@@ -115,7 +117,6 @@ OPENAI_API_KEY = os.getenv("DUSNX_OPENAI_API_KEY", os.getenv("DUSNX_OPENAI_KEY",
 def check_ollama_health() -> dict:
     """Check if Ollama is reachable and what models are available."""
     url = get_ollama_url()
-    target_model = get_ollama_model()
     try:
         req = urllib.request.Request(f"{url}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=1.0) as resp:
@@ -123,6 +124,9 @@ def check_ollama_health() -> dict:
             if not isinstance(data, dict) or not isinstance(data.get("models"), list):
                 raise ValueError("invalid_schema")
             models = [m["name"] for m in data["models"] if isinstance(m, dict) and isinstance(m.get("name"), str)]
+            model_profile.remember_installed(models)
+            profile = model_profile.resolve_model_profile(installed=models)
+            target_model = profile["model"]
             available = any(_ollama_model_tag_matches(target_model, name) for name in models)
             health = {
                 "reachable": True,
@@ -130,12 +134,16 @@ def check_ollama_health() -> dict:
                 "models_available": models,
                 "configured_model": target_model,
                 "model_available": available,
+                "model_profile": profile,
             }
             if not available:
                 health["error"] = "model_missing"
             return health
     except Exception as exc:
-        return {"reachable": False, "available": False, "error": ollama_error(exc), "model_available": False, "configured_model": target_model}
+        profile = model_profile.resolve_model_profile(installed=[])
+        return {"reachable": False, "available": False, "error": ollama_error(exc),
+                "model_available": False, "configured_model": profile["model"],
+                "model_profile": profile}
 
 
 def validate_ollama_response(data: object) -> tuple[str, str, Optional[int], Optional[str]]:

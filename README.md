@@ -14,7 +14,8 @@ Chạy/stop/restart Windows: [runbook](docs/WINDOWS_NATIVE_RUNBOOK.md).
 Demo 6 phút và bảy bước học máy: [kịch bản bàn giao](docs/WEEK4_DEMO_AND_ML_REPORT.md).
 Web → Gateway HttpClient → FastAPI → router/state/memory → Ollama đã được nghiệm thu
 native và Chromium thật; xem bằng chứng trong báo cáo, không dùng mock làm runtime.
-Base giữ `qwen2.5:0.5b`, evaluation mặc định tắt. Router Colab hash `56f56e6d…`
+Runtime tự chọn Qwen2.5 theo VRAM của máy (low `qwen2.5:1.5b-instruct`, mid 7B,
+high 14B), evaluation mặc định tắt. Router Colab hash `56f56e6d…`
 được nạp; LoRA artifact đã training_complete epoch3/checkpoint21, candidate đã có
 trong Ollama nhưng **không được promote**. Pair 01 thành công transport8/8 mỗi model;
 chưa có independent human content review. [Bằng chứng LLM](docs/evidence/llm-sft/evaluation-01/README.md).
@@ -72,7 +73,7 @@ phủ định và việc phân biệt nhớ đúng với đoán đúng. Chi ti�
 
 ## Các thành phần Tuần 2
 
-- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập với Opaque Bearer Token an toàn (lưu SQLite `tokens`), quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng và kết nối trực tiếp với Ollama LLM thật cục bộ (`qwen2.5:0.5b`).
+- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập với Opaque Bearer Token an toàn (lưu SQLite `tokens`), quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng và kết nối trực tiếp với Ollama LLM thật cục bộ (Qwen2.5, tự chọn theo VRAM).
 - **Điểm gọi API thống nhất qua Gateway ASP.NET Core:** Toàn bộ request Web UI (`:8080` ở chế độ Native hoặc `:3000` qua Nginx reverse-proxy ở Docker Compose) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
 - **Một danh tính & state có thẩm quyền cho người dùng:** Các endpoint `/v1/me/events`, `/v1/me/state`, `/v1/me/events` trích xuất `user_id` trực tiếp từ token, tính toán `time_gap_hours`, chống giả mạo danh tính trong body.
 - **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint (phân biệt rõ với Office Add-in tích hợp thực tế) gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
@@ -211,6 +212,29 @@ Mở:
 
 Lần chạy đầu chưa cần checkpoint. API sẽ báo `runtime_mode=bootstrap_rules`.
 
+## Model thích nghi theo máy
+
+Cùng một bản code chạy được trên laptop 4 GB VRAM và máy desktop 16 GB: AI API
+tự chọn model Qwen2.5 vừa với GPU, không cần sửa code hay file cấu hình.
+
+| VRAM | Tier | Model ưu tiên (thiếu thì lùi dần) |
+| --- | --- | --- |
+| dưới 6 GB | `low` | `qwen2.5:1.5b-instruct` → 3B → 0.5B |
+| 6–12 GB | `mid` | `qwen2.5:7b-instruct` → 3B → 1.5B |
+| từ 12 GB | `high` | `qwen2.5:14b-instruct` → 7B → 3B |
+
+- Chỉ chọn trong các model **đã cài sẵn**; không tự tải về. Muốn máy 8 GB dùng 7B
+  thì chạy `ollama pull qwen2.5:7b-instruct` rồi khởi động lại AI API.
+- Ép model: đặt `DUSNX_OLLAMA_MODEL=qwen2.5:3b-instruct` (luôn thắng auto).
+  Ép tier: `DUSNX_MODEL_PROFILE=low|mid|high`.
+- Máy không thấy GPU (CPU-only, Docker, Apple Silicon dùng unified memory): đặt
+  `DUSNX_MODEL_VRAM_GB=4` (hoặc 8/16) để resolver chọn đúng tier.
+- Kiểm tra lựa chọn thực tế:
+  `Invoke-RestMethod http://127.0.0.1:8000/health | Select-Object -ExpandProperty model_profile`.
+- Auto **không** chọn `qwen3:*` (luôn phát `<think>` trên Ollama hiện tại) và
+  không chọn candidate `dusnx-vi-*` (chưa được promote); hai loại này chỉ dùng khi
+  đặt `DUSNX_OLLAMA_MODEL` tường minh.
+
 ## Ghi chú về checkpoint cũ
 
 ```powershell
@@ -294,7 +318,8 @@ Template trích memory không gọi Ollama: provider/model=null; Web hiển th�
 
 ## Đọc tiếp
 
-Pipeline **SFT LLM riêng**: [notebook Colab](notebooks/finetune_llm_colab.ipynb), [hướng dẫn](docs/WEEK3_LLM_TRAINING.md), [mẫu viết test độc lập](docs/LLM_TEST_AUTHORING_TEMPLATE.md) và [báo cáo bàn giao Tuần 3](docs/WEEK3_HANDOFF.md). LoRA Qwen2.5-0.5B-Instruct, không thay router.pt; mặc định Ollama vẫn `qwen2.5:0.5b`. Development data có 43 train/49 cặp, 12 validation/12 cặp và 6 test AI nháp; tất cả vẫn `needs_human_review`. Gói xuất/nhập duyệt con người qua Markdown/CSV được quản lý bởi `python python/scripts/review_llm_data.py`. Audit dùng exact tokenizer, contract future/obsolete/clarification và near-duplicate split. Full train chỉ mở sau review thật và test độc lập do người viết. Không dùng holdout v3; chưa chạy GPU Colab hoặc có candidate để công bố chất lượng.
+Pipeline **SFT LLM riêng**: [notebook Colab](notebooks/finetune_llm_colab.ipynb), [hướng dẫn](docs/WEEK3_LLM_TRAINING.md), [mẫu viết test độc lập](docs/LLM_TEST_AUTHORING_TEMPLATE.md) và [báo cáo bàn giao Tuần 3](docs/WEEK3_HANDOFF.md). LoRA Qwen2.5-0.5B-Instruct, không thay router.pt; runtime tự chọn Qwen2.5 theo VRAM
+(xem [Model thích nghi theo máy](#model-thích-nghi-theo-máy)). Development data có 43 train/49 cặp, 12 validation/12 cặp và 6 test AI nháp; tất cả vẫn `needs_human_review`. Gói xuất/nhập duyệt con người qua Markdown/CSV được quản lý bởi `python python/scripts/review_llm_data.py`. Audit dùng exact tokenizer, contract future/obsolete/clarification và near-duplicate split. Full train chỉ mở sau review thật và test độc lập do người viết. Không dùng holdout v3; chưa chạy GPU Colab hoặc có candidate để công bố chất lượng.
 
 Audit: `python python/scripts/prepare_llm_data.py` (PYTHONPATH=python/src), output `runtime/llm-audit/`. Smoke SFT chạy trong venv riêng với `requirements/llm-sft.txt`: `python python/scripts/finetune_llm.py --smoke --output runtime/llm-smoke`. Run ZIP/checkpoint nằm cạnh/thư mục output; không commit weights. Import Windows dùng `scripts/import_llm_ollama.ps1` (đặt tag candidate tường minh, hiện tại `dusnx-vi-v2-20261105`); so sánh thực qua Gateway dùng `python/scripts/evaluate_llm_pair.py --candidate <tag>` và người chấm CSV. Chỉ chọn candidate sau gate không hồi quy; hiện giữ base.
 

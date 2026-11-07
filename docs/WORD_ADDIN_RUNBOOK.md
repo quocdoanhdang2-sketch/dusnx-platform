@@ -100,7 +100,11 @@ khởi động AI API):
 # Ollama (mặc định)
 $env:DUSNX_PROVIDER = "ollama"
 $env:DUSNX_OLLAMA_URL = "http://127.0.0.1:11434"
-$env:DUSNX_OLLAMA_MODEL = "qwen2.5:1.5b-instruct"   # hoặc dusnx-vi-v3-20261107, qwen3:4b, ...
+# Tự chọn Qwen2.5 theo VRAM của máy (4 GB -> 1.5B, 8 GB -> 7B, 16 GB -> 14B)
+# nếu không đặt DUSNX_OLLAMA_MODEL. Muốn ép:
+# $env:DUSNX_OLLAMA_MODEL = "qwen2.5:1.5b-instruct"
+# $env:DUSNX_MODEL_PROFILE = "low"      # auto | low | mid | high
+# $env:DUSNX_MODEL_VRAM_GB = "4"        # CPU-only/Docker/Apple Silicon
 
 # Hoặc OpenAI-compatible
 $env:DUSNX_PROVIDER = "openai"
@@ -109,10 +113,11 @@ $env:DUSNX_OPENAI_MODEL = "gpt-4o-mini"
 $env:DUSNX_OPENAI_API_KEY = "..."   # do operator đặt, không ghi vào repo
 ```
 
-- Model phải đã có trên máy (`ollama list`) hoặc đã import; máy khác nhau có thể dùng model khác.
-- Đổi model phải **restart AI API** (biến được đọc lúc khởi động), rồi restart Gateway nếu URL đổi.
-- Xác minh đúng máy: `curl http://127.0.0.1:8180/health` → `provider.configured_model` và
-  `provider.model_available: true`.
+- Auto chỉ chọn model đã có trên máy (`ollama list`); muốn chất lượng cao hơn thì pull model
+  của tier đó rồi restart AI API. Máy khác nhau có thể chạy model khác nhau với cùng bản code.
+- Đổi biến môi trường phải **restart AI API**, rồi restart Gateway nếu URL đổi.
+- Xác minh đúng máy: `curl http://127.0.0.1:8180/health` → `provider.configured_model`,
+  `provider.model_available: true`, và `model_profile` (tier, `vram_gb`, model đã chọn).
 - Trong Word, provenance của proposal trả `model_used` thực tế; nếu lệch với cấu hình thì task pane
   đang nối nhầm Gateway/API. Model không có sẵn → provider lỗi, không có proposal (guard chặn).
 

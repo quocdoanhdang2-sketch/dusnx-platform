@@ -225,7 +225,7 @@
         <div class="meta-card"><div class="k">Repository</div><div class="v">D:\Projects\dusnx-platform</div></div>
         <div class="meta-card"><div class="k">Commit / CI</div><div class="v">719aa90 · run 42367019556 (success)</div></div>
         <div class="meta-card"><div class="k">Runtime stack</div><div class="v">Gateway :8181 → AI :8180 → Ollama :11434</div></div>
-        <div class="meta-card"><div class="k">Model đang phục vụ</div><div class="v">qwen2.5:1.5b-instruct (baseline)</div></div>
+        <div class="meta-card"><div class="k">Model đang phục vụ</div><div class="v">qwen2.5:1.5b-instruct (auto: low tier, 4 GB)</div></div>
       </div>
     </section>
 
@@ -294,7 +294,7 @@
         <div class="card">
           <h3 style="margin-top:0">3. Sinh ngôn ngữ</h3>
           <p>Ollama native hoặc OpenAI-compatible, có timeout, sanitizer, quality gate và provenance. LLM chỉ sinh văn bản; nó không được phép tự nhận đã lưu hay đã cập nhật.</p>
-          <p class="small">Base mặc định trong repo là <code>qwen2.5:0.5b</code>; máy đang kiểm chứng cấu hình <code>qwen2.5:1.5b-instruct</code>.</p>
+          <p class="small">Mỗi máy tự chọn Qwen2.5 theo VRAM: dưới 6 GB dùng 1.5B, 6–12 GB dùng 7B, từ 12 GB dùng 14B (chỉ trong model đã cài; ép bằng <code>DUSNX_OLLAMA_MODEL</code> hoặc <code>DUSNX_MODEL_PROFILE</code>). Máy kiểm chứng 4 GB chọn <code>qwen2.5:1.5b-instruct</code>.</p>
         </div>
       </div>
 

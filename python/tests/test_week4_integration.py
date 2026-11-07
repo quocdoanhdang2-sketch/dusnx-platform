@@ -23,7 +23,9 @@ def test_provider_rejects_malformed_without_retry_or_leak(monkeypatch, raw, cate
     text, ok, model, tokens = provider._ollama_generate("context", "question")
     assert not ok and category in text
     assert model == ("qwen" if b'"model":"qwen"' in raw else None)
-    assert len(calls) == 1
+    # A malformed chat response must not be retried. Model discovery
+    # (GET /api/tags) is a separate lookup, not a generation attempt.
+    assert len([url for url in calls if url.endswith("/api/chat")]) == 1
 
 
 def test_qwen_thinking_only_response_is_empty_content_with_metadata(monkeypatch):
