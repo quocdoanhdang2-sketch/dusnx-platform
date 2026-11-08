@@ -15,7 +15,7 @@ Local `runtime/` artifacts stay outside the repository.
 | Vietnamese observance dates | Known dates (20/11, 2/9, 30/4, …) are answered from a checked local calendar without a provider call; follow-ups, bare dates, and other-year questions get the recurring observance plus an explicit "not verified for that year" caveat instead of invented details. | `python/apps/ai_api/observances.py`, `python/tests/test_observances.py`; isolated live probe on 8046/8180. |
 | Runtime model identity | "DUSN-X dùng model nào?" is answered from runtime state (`model_profile.resolve_model_profile()`), not retrieval, so documentation about the 0.5B candidate cannot be reported as the running model. | `answer_runtime_model_question`, live probe on 8180: `qwen2.5:1.5b-instruct`, profile `low`. |
 | Language control | Deterministic language policy plus one bounded corrective retry; a divergent/mixed draft gets a dedicated translation pass. Sanitizer strips leaked prompt headers and correction meta-commentary. | `language.py`, `provider.py`; live probes: en→en, vi→vi, English question with Vietnamese preference → Vietnamese answer, no meta text. |
-| External AI provider | OpenAI-compatible client supports OpenAI, Gemini compatibility endpoint, LM Studio, and vLLM. Fallback to local Ollama only when the external provider is configured but unreachable; a missing key surfaces as a configuration error. | `provider.py`, `.env.example`; unit suites. **Live since 2026-11-07** with an operator-supplied Gemini key: provider `openai`, model `gemini-3.8-flash` (2.5-flash is retired for new keys), fallback `ollama`. Live probes: "Thủ đô của Úc" → `Canberra` via `provider_used=openai`; Word-marked request answered by Gemini. Thinking latency on the free tier needs `DUSNX_OPENAI_TIMEOUT=150` and `DUSNX_GATEWAY_TIMEOUT=200`; observed 44–68 s per answer. |
+| External AI provider | OpenAI-compatible client supports OpenAI, Gemini compatibility endpoint, LM Studio, and vLLM. Fallback to local Ollama only when the external provider is configured but unreachable; a missing key surfaces as a configuration error. | `provider.py`, `.env.example`; unit suites. **Live since 2026-11-07** with an operator-supplied Gemini key: provider `openai`, model `gemini-3.1-flash-lite` (3.8-flash and 2.5-flash are retired or slower on this key), fallback `ollama`. Live probes: "Thủ đô của Úc" → `Canberra` and a Word-marked rewrite both answered by Gemini in ~1 s through the Gateway. `DUSNX_OPENAI_TIMEOUT=150` and `DUSNX_GATEWAY_TIMEOUT=200` stay as headroom. |
 | Simple arithmetic | Plain expressions are evaluated deterministically (AST-based, no `eval`); observed `2+2 -> 5` from the local model is no longer possible. Non-arithmetic questions are not hijacked. | `python/apps/ai_api/arithmetic.py`, `python/tests/test_arithmetic.py`; live probe on 8180: `2+2 = 4`, provider not called. |
 | Chat sessions | Sessions are created lazily on the first message; empty sessions are hidden. The first message titles the session on every reply path, including deterministic fast paths, and the header updates with the sidebar. | `web-ui/app.js`, `main.py`; live 8180 probe: one row per session, title `20/11 là ngày gì?`. |
 | Chat rendering | Assistant replies render headings, lists, emphasis, inline code, fenced code and http(s) links through DOM nodes only; raw HTML and other URL schemes stay literal text. Each reply has a copy action. | `renderMarkdown`, `copyMessageText`; `web-ui/app.test.js` XSS and markdown tests. Not yet re-checked in a visible browser this round. |
@@ -62,9 +62,10 @@ not a Desktop Office re-verification.
 
 ## Still open
 
-1. Optional tuning now that Gemini is live: the free tier answers in 44–68 s because the model
-   reasons before replying; switch `DUSNX_OPENAI_MODEL` to a lighter tier (e.g. `gemini-3.1-flash-lite`)
-   or raise limits if latency or quotas become a problem, then restart the AI API.
+1. Optional tuning now that Gemini is live: the runtime model is `gemini-3.1-flash-lite`
+   (~1 s per answer on 2026-11-07 probes). If a heavier model is ever wanted, set
+   `DUSNX_OPENAI_MODEL` (e.g. `gemini-3.8-flash`) and restart the AI API; expect free-tier
+   queueing to make latency jump around.
 2. Promote a candidate only after the frozen evaluation gate passes; Holdout v3 stays closed
    until then. Explicit consent does not replace missing evaluation evidence.
 3. Teams, Zalo OA, and vision/image editing remain separate integrations that need real
