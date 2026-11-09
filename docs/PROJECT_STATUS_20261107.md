@@ -4,6 +4,11 @@ This update records the retrieval, model-selection, and drafting-gate work compl
 2026-11-07. It distinguishes verified local runtime evidence from work that is still open.
 Local `runtime/` artifacts stay outside the repository.
 
+Desktop Office re-verification was completed on **2026-11-09** with the live Gemini provider
+(`openai` / `gemini-3.1-flash-lite`) for both Word and PowerPoint; see
+`docs/evidence/word-addin-desktop-20261109` and
+`docs/evidence/powerpoint-addin-desktop-20261109`.
+
 ## Status at a glance
 
 | Area | Status | Evidence |
@@ -21,8 +26,8 @@ Local `runtime/` artifacts stay outside the repository.
 | Chat rendering | Assistant replies render headings, lists, emphasis, inline code, fenced code and http(s) links through DOM nodes only; raw HTML and other URL schemes stay literal text. Each reply has a copy action. | `renderMarkdown`, `copyMessageText`; `web-ui/app.test.js` XSS and markdown tests. Not yet re-checked in a visible browser this round. |
 | Long-term memory | Repeating the same explicit "remember" instruction reuses the existing row instead of creating a duplicate; edits still go through versioned supersede. The chat shows which saved memories were used. | `main.py` explicit memory flow, `buildUsedMemoryCard`; `test_memory_quality.py`, `web-ui/app.test.js`. |
 | Office request routing | Word/PowerPoint messages carry a marker and are routed straight to the provider: calendar, calculator, runtime identity, RAG quotations, clarification guards and memory/decision flows cannot answer them, so the add-in provenance check always receives a real LLM result. | `_is_office_request`, `force_provider`; `python/tests/test_office_routing.py`. |
-| Word add-in | Proposal/Apply guards verified on Word Desktop (WordApi 1.1/1.3). Apply now supports Replace selection or Insert new paragraph after selection; both re-check the selection before writing. | `docs/evidence/word-addin-desktop-20261106`; insert-after covered by the Node harness, not yet re-verified on Desktop. |
-| PowerPoint add-in | Edit-selected-text and generate-slides modes verified on PowerPoint Desktop 16.0.20527. Generation can insert after the currently selected slide (or after the last slide) and refuses if the reviewed target slide was deleted. | `docs/evidence/powerpoint-addin-generate-20261107`; target selection/deletion covered by the Node harness, not yet re-verified on Desktop. |
+| Word add-in | Proposal/Apply guards verified on Word Desktop (WordApi 1.1/1.3). Apply supports Replace selection or Insert new paragraph after selection; both re-check the selection before writing. **Re-verified on Desktop 2026-11-09 with Gemini** (`openai` / `gemini-3.1-flash-lite`): proposal + provenance, replace apply, insert-after apply, and the selection-changed guard refusal with the document unchanged. | `docs/evidence/word-addin-desktop-20261106` (Ollama round); `docs/evidence/word-addin-desktop-20261109` (Gemini round, screenshots + saved document hash). |
+| PowerPoint add-in | Edit-selected-text and generate-slides modes verified on PowerPoint Desktop 16.0.20527. Generation inserts after the selected/last slide and refuses if the reviewed target slide was deleted. **Re-verified on Desktop 2026-11-09 with Gemini**: 3 generated slides inserted after slide 1 with template shapes and footers `DUSN-X · 2/3/4`. Fixed a real-host id bug: slide ids can contain `#` (e.g. `256#3520995159`), so the reviewed id is now used verbatim instead of being split at `#`. | `docs/evidence/powerpoint-addin-generate-20261107` (earlier round); `docs/evidence/powerpoint-addin-desktop-20261109` (Gemini round + bug); `powerpoint-addin/taskpane.test.js` 21/21 including composite-id cases. |
 | SFT v3 candidate | Evaluation complete with `promote=false` (n=6). The base `qwen2.5:1.5b-instruct` remains the runtime model. | Paired evaluation report; candidate `dusnx-vi-v3-20261107`. |
 | Production restart | Completed on 2026-11-07 with explicit consent, twice: first for `25034d5`, then for `7792ffc` which adds safe Markdown rendering, memory recall/dedup, Office request routing, Word insert-after and PowerPoint selected-slide insertion. | `/health` source hashes match the working tree at `7792ffc`; live chat probes through Gateway on 2026-11-07. |
 
@@ -39,9 +44,11 @@ Local `runtime/` artifacts stay outside the repository.
 | Isolated Web UI on 8180 | Lazy session creation, empty-state row, one titled session per conversation after refresh, header/sidebar title agreement, compact router label, runtime-identity chip. Structural inspection only — the in-app browser had no visible surface, so no screenshot was taken. |
 | Upgrade round on branch `fix/quality-context-evidence` | Python 425/1 skipped, Node 66/66. Office request routing, Word insert-after, PowerPoint target selection, Markdown rendering and memory dedup are covered by unit/Node harnesses. No Desktop Office re-verification and no visible-browser run this round. |
 | Production 8000/8080 after restart to `7792ffc` | `/v1/health` source hashes match the working tree (`main.py` `0e7d1b49…`); `provider_ok=true`, model `qwen2.5:1.5b-instruct`, tier `low`. Live probes through Gateway: `2 + 2` answered `4` with `provider_called=false`; repeated explicit remember kept one memory row; a Word-marked request returned `response_source=llm` with `provider_called=true`; a RAG question returned `rag_extract` with cited sources; served Web UI ships `app.js?v=20261107h`. |
+| Desktop Office re-verification with Gemini (2026-11-09) | Word 16.0.20527: proposal + provenance, replace apply, insert-after apply, guard refusal with document unchanged; saved `.docx` SHA-256 `2e8f4684…fb803ccfd7e609`. PowerPoint 16.0.20527: outline review, Apply inserted 3 slides after slide 1 with footers `DUSN-X · 2/3/4`, slide 1 preserved; saved `.pptx` SHA-256 `fa2e5125…47ef58e20b`. Both panes reported `response_source=llm`, `provider_used=openai`, `model_used=gemini-3.1-flash-lite`. Found and fixed the PowerPoint real-host slide-id bug (ids contain `#`). | `docs/evidence/word-addin-desktop-20261109`, `docs/evidence/powerpoint-addin-desktop-20261109`; screenshots from the real Office windows, no mocks. |
+| Suites re-run after the Desktop fixes (2026-11-09) | Python `426 passed`; Node `68/68` (PowerPoint 21/21 incl. composite-id, Word 15+7, Web); Gateway console runner `7/7`. | Commands recorded in the two evidence folders. |
 
-These are local harnesses and live local probes. They are not a GitHub Actions run and
-not a Desktop Office re-verification.
+These are local harnesses and live local probes. They are not a GitHub Actions run. The
+Desktop Office evidence above is a separate manual run against real Word/PowerPoint windows.
 
 ## Known limits
 

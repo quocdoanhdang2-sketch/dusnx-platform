@@ -221,10 +221,10 @@
       await context.sync();
       if (!slides.items.length) return { id: null, label: "into the empty presentation" };
       const chosen = selected ? selected.items[0] : null;
-      const index = chosen ? slides.items.findIndex(slide => slide.id === chosen.id) : -1;
-      if (index >= 0) return { id: `${chosen.id}#`, label: `after slide ${index + 1}` };
+      const index = chosen ? slides.items.findIndex(slide => String(slide.id) === String(chosen.id)) : -1;
+      if (index >= 0) return { id: String(chosen.id), label: `after slide ${index + 1}` };
       const last = slides.items[slides.items.length - 1];
-      return { id: `${last.id}#`, label: `after slide ${slides.items.length}` };
+      return { id: String(last.id), label: `after slide ${slides.items.length}` };
     });
   }
   function bytesBase64(bytes) {
@@ -245,11 +245,11 @@
     return root.PowerPoint.run(async context => {
       const slides = context.presentation.slides;
       slides.load("items/id"); await context.sync();
-      const beforeCount = slides.items.length, beforeIds = new Set(slides.items.map(slide => slide.id));
-      const targetIdPart = requestedTargetId ? String(requestedTargetId).replace(/#.*$/, "") : null;
-      if (targetIdPart && !beforeIds.has(targetIdPart))
+      const beforeCount = slides.items.length, beforeIds = new Set(slides.items.map(slide => String(slide.id)));
+      // Real hosts can return slide ids such as "256#3520995159"; keep them intact.
+      const targetSlideId = requestedTargetId ? String(requestedTargetId) : null;
+      if (targetSlideId && !beforeIds.has(targetSlideId))
         throw new Error("The target slide no longer exists. Create and review a new outline before Apply.");
-      const targetSlideId = targetIdPart ? requestedTargetId : null;
       const added = [], addedIds = new Set();
       try {
         for (let index = plan.length - 1; index >= 0; index--) {
@@ -260,10 +260,10 @@
           slides.load("items/id"); await context.sync();
           if (slides.items.length !== beforeCount + plan.length - index)
             throw new Error("The slide template did not insert exactly one slide.");
-          for (const slide of slides.items) if (!beforeIds.has(slide.id) && !addedIds.has(slide.id)) { addedIds.add(slide.id); added.push(slide); }
+          for (const slide of slides.items) if (!beforeIds.has(String(slide.id)) && !addedIds.has(String(slide.id))) { addedIds.add(String(slide.id)); added.push(slide); }
         }
         if (added.length !== plan.length) throw new Error("The slide template did not insert the expected slides.");
-        const deckOrder = slides.items.filter(slide => !beforeIds.has(slide.id));
+        const deckOrder = slides.items.filter(slide => !beforeIds.has(String(slide.id)));
         if (deckOrder.length !== plan.length) throw new Error("The inserted slides are not in the presentation.");
         for (let index = 0; index < plan.length; index++) {
           guard();
@@ -275,7 +275,7 @@
           title.textFrame.textRange.text = plan[index].title;
           body.textFrame.textRange.text = plan[index].bullets.map(bullet => `• ${bullet}`).join("\r");
           const footer = shapes.get("DUSN-X Footer");
-          const position = slides.items.findIndex(item => item.id === slide.id) + 1;
+          const position = slides.items.findIndex(item => String(item.id) === String(slide.id)) + 1;
           if (footer) footer.textFrame.textRange.text = `DUSN-X · ${position}`;
           await context.sync();
         }

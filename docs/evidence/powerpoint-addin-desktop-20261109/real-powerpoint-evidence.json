@@ -1,0 +1,117 @@
+{
+  "evidence_date": "2026-11-09",
+  "host": {
+    "application": "Microsoft PowerPoint",
+    "version": "16.0",
+    "build": "20527",
+    "platform": "PC (Win32)"
+  },
+  "taskpane": {
+    "url": "https://localhost:3001/taskpane.html",
+    "server": "word-addin/dev-server.js (same-origin HTTPS, no-store, CSP, proxy /v1/*)",
+    "manifest_sideload": "HKCU\\Software\\Microsoft\\Office\\16.0\\WEF\\Developer",
+    "manifest_guid": "8fbb6156-fd66-4d28-8b54-4f44ec970001"
+  },
+  "stack": {
+    "gateway": "http://127.0.0.1:8080",
+    "ai_api": "http://127.0.0.1:8000",
+    "provider": "openai-compatible Gemini endpoint",
+    "model": "gemini-3.1-flash-lite"
+  },
+  "account": {
+    "username": "geminidesktop1",
+    "type": "synthetic test account"
+  },
+  "edit_mode": {
+    "mode": "Edit selected text",
+    "instruction": "Chi tra ve dung mot cau duy nhat da viet lai, khong giai thich, khong liet ke phuong an.",
+    "proposal_status": "Review the proposal, then Apply to the original selected text shape.",
+    "proposal_text": "DUSN-X là hệ thống trợ lý thông minh dành cho doanh nghiệp.",
+    "apply": "applied once to the selected text shape; proposal cleared and Apply disabled",
+    "screenshot": "powerpoint-desktop-edit-applied.png",
+    "provenance": {
+      "intent": "recommendation",
+      "routing_source": "model",
+      "response_source": "llm",
+      "provider_used": "openai",
+      "model_used": "gemini-3.1-flash-lite"
+    },
+    "provenance_screenshot": "powerpoint-desktop-provenance-edit.png"
+  },
+  "generate_mode": {
+    "mode": "Generate slides from instruction",
+    "instruction": "Tom tat tien do du an DUSN-X: da tich hop RAG vao chat, nang cap giao dien, va ke hoach tiep theo.",
+    "requested_slides": 3,
+    "target": "after slide 1 (append after the last slide)",
+    "review_status": "Review 3 slide(s), then insert them after slide 1.",
+    "apply_status": "Inserted 3 slide(s) after slide 1.",
+    "slides_before": 1,
+    "slides_after": 4,
+    "screenshot_outline": "powerpoint-desktop-outline.png",
+    "screenshot_applied": "powerpoint-desktop-appended.png",
+    "provenance": {
+      "intent": "summarize",
+      "routing_source": "model",
+      "response_source": "llm",
+      "provider_used": "openai",
+      "model_used": "gemini-3.1-flash-lite"
+    },
+    "provenance_screenshot": "powerpoint-desktop-provenance-generate.png",
+    "inserted_slides": [
+      {
+        "position": 2,
+        "title": "DUSN-X Project Progress Overview",
+        "bullets": [
+          "Successfully integrated RAG (Retrieval-Augmented Generation) into the chat module",
+          "Enhanced data retrieval accuracy and context relevance for user queries",
+          "Improved system response latency during complex information processing"
+        ],
+        "footer": "DUSN-X · 2"
+      },
+      {
+        "position": 3,
+        "title": "User Interface Enhancements",
+        "bullets": [
+          "Completed comprehensive UI/UX redesign for a more intuitive dashboard",
+          "Optimized layout for better accessibility and mobile responsiveness",
+          "Streamlined navigation flow to reduce user interaction steps"
+        ],
+        "footer": "DUSN-X · 3"
+      },
+      {
+        "position": 4,
+        "title": "Future Roadmap",
+        "bullets": [
+          "Implement advanced analytics dashboard for user interaction insights",
+          "Expand RAG knowledge base to include multi-format document support",
+          "Begin beta testing phase for upcoming collaborative features"
+        ],
+        "footer": "DUSN-X · 4"
+      }
+    ],
+    "slide1_preserved": {
+      "shape": "TextBox 1",
+      "text": "DUSN-X là hệ thống trợ lý thông minh dành cho doanh nghiệp."
+    }
+  },
+  "bug_fixed": {
+    "symptom": "Every generated Apply failed with: The target slide no longer exists. Create and review a new outline before Apply.",
+    "root_cause": "Real PowerPoint hosts return slide ids that already contain '#' (observed id: 256#3520995159). The add-in appended a '#' delimiter to the reviewed target id and then stripped from the first '#', producing '256' which never matched the host id.",
+    "fix": "Keep the host slide id verbatim, compare stringified ids, and stamp footers with stringified id comparison. The mock host now mirrors composite ids and no longer strips at '#'.",
+    "regression_tests": "node --test powerpoint-addin/taskpane.test.js -> 21/21 pass (includes composite-id and numeric-id cases)",
+    "verified_on_desktop": true
+  },
+  "saved_deck": {
+    "file": "dusn-x-gemini.pptx (local runtime artifact, not committed)",
+    "sha256": "fa2e5125d6da253ca556b9fa425e263a56ca90fbd13a693eefa1ac47ef58e20b",
+    "bytes": 41004,
+    "slides": 4,
+    "saved_at": "2026-11-09T16:31:09+07:00"
+  },
+  "honest_notes": [
+    "This evidence proves the add-in integration, guards, template insertion and provenance on real PowerPoint Desktop; it does not prove content quality.",
+    "The edit-mode proposal was written in the pane and applied once; a later proposal used only for the provenance screenshot was not applied.",
+    "The second generate outline (after the deck had 4 slides) was created only to capture provenance and was not applied; the saved deck remains 4 slides.",
+    "The synthetic account password, session token and provider key are not stored in this folder."
+  ]
+}

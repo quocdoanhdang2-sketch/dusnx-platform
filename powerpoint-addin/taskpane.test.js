@@ -118,7 +118,7 @@ test("plan validation enforces slide, bullet and length limits", () => {
   }
 });
 
-function planFixture({ missingTitle = false, existing = 1 } = {}) {
+function planFixture({ missingTitle = false, existing = 1, numericIds = false, compositeIds = false } = {}) {
   const elements = {}; let created = 0;
   global.document = { getElementById(id) { return elements[id] ||= { value: "", textContent: "", disabled: false, style: {} }; } };
   const slideFactory = fresh => {
@@ -128,7 +128,8 @@ function planFixture({ missingTitle = false, existing = 1 } = {}) {
       { name: "DUSN-X Body", textFrame: { textRange: { text: "" } } },
       { name: "DUSN-X Footer", textFrame: { textRange: { text: "DUSN-X" } } },
     ];
-    const slide = { id: fresh ? `new-${++created}` : `existing-${++created}`, shapes: { load() {}, get items() { return shapes; } },
+    const id = compositeIds ? `${++created}#${3520995159 + created}` : numericIds ? ++created : (fresh ? `new-${++created}` : `existing-${++created}`);
+    const slide = { id, shapes: { load() {}, get items() { return shapes; } },
       delete() { const index = slides.indexOf(slide); if (index >= 0) slides.splice(index, 1); } };
     return slide;
   };
@@ -140,8 +141,7 @@ function planFixture({ missingTitle = false, existing = 1 } = {}) {
     insertSlidesFromBase64(_base64, options = {}) {
       const fresh = slideFactory(true);
       if (options.targetSlideId) {
-        const id = String(options.targetSlideId).replace(/#.*$/, "");
-        const index = slides.findIndex(slide => slide.id === id);
+        const index = slides.findIndex(slide => String(slide.id) === String(options.targetSlideId));
         slides.splice(index + 1, 0, fresh);
       } else slides.unshift(fresh);
     },
@@ -194,7 +194,7 @@ test("generate mode can insert new slides after the selected slide", async () =>
   fixture.elements.afterSelected.checked = true;
   await app.ask();
   assert.equal(app.state.proposal.targetLabel, "after slide 2");
-  assert.equal(app.state.proposal.targetId, `${fixture.slides[1].id}#`);
+  assert.equal(app.state.proposal.targetId, String(fixture.slides[1].id));
   await app.applyProposal();
   assert.equal(fixture.slides.length, 5);
   assert.equal(fixture.slides[0].id, "existing-1");
@@ -204,6 +204,31 @@ test("generate mode can insert new slides after the selected slide", async () =>
   assert.deepEqual(fixture.slides.slice(2, 4).map(slide => slide.shapes.items.find(s => s.name === "DUSN-X Footer").textFrame.textRange.text),
     ["DUSN-X · 3", "DUSN-X · 4"]);
   assert.equal(fixture.slides[4].id, "existing-3");
+});
+
+test("generate Apply matches host slide ids that contain # from the real host", async () => {
+  const fixture = planFixture({ existing: 3, compositeIds: true });
+  fixture.selected.push(fixture.slides[1]);
+  fixture.elements.afterSelected.checked = true;
+  assert.match(String(fixture.slides[1].id), /^2#\d+$/);
+  await app.ask();
+  assert.equal(app.state.proposal.targetId, String(fixture.slides[1].id));
+  assert.equal(app.state.proposal.targetLabel, "after slide 2");
+  await app.applyProposal();
+  assert.equal(fixture.slides.length, 5);
+  assert.deepEqual(fixture.slides.slice(2, 4).map(slide => slide.shapes.items.find(s => s.name === "DUSN-X Footer").textFrame.textRange.text),
+    ["DUSN-X · 3", "DUSN-X · 4"]);
+});
+
+test("generate Apply matches numeric slide ids from the real host", async () => {
+  const fixture = planFixture({ existing: 3, numericIds: true });
+  fixture.selected.push(fixture.slides[1]);
+  fixture.elements.afterSelected.checked = true;
+  assert.equal(typeof fixture.slides[1].id, "number");
+  await app.ask();
+  assert.equal(app.state.proposal.targetLabel, "after slide 2");
+  await app.applyProposal();
+  assert.equal(fixture.slides.length, 5);
 });
 
 test("generate Apply refuses when the reviewed target slide was deleted", async () => {

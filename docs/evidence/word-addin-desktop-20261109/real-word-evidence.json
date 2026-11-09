@@ -1,0 +1,75 @@
+{
+  "evidence_date": "2026-11-09",
+  "host": {
+    "application": "Microsoft Word",
+    "version": "16.0",
+    "build": "16.0.20527",
+    "platform": "PC (Win32)"
+  },
+  "taskpane": {
+    "url": "https://localhost:3001/word-taskpane.html",
+    "server": "word-addin/dev-server.js (same-origin HTTPS, no-store, CSP, proxy /v1/*)",
+    "manifest_sideload": "HKCU\\Software\\Microsoft\\Office\\16.0\\WEF\\Developer",
+    "manifest_guid": "fa2eca6f-d75f-4381-8c0a-d010bf31aba1"
+  },
+  "stack": {
+    "gateway": "http://127.0.0.1:8080",
+    "ai_api": "http://127.0.0.1:8000",
+    "provider": "openai-compatible Gemini endpoint",
+    "model": "gemini-3.1-flash-lite"
+  },
+  "account": {
+    "username": "geminidesktop1",
+    "type": "synthetic test account"
+  },
+  "document": {
+    "file": "word-gemini-test.docx (local runtime artifact, not committed)",
+    "sha256": "2e8f468401ed08b4b7192b8c58f1b89b99a5acbce47d95e317fb803ccfd7e609",
+    "bytes": 17701,
+    "paragraphs": [
+      "Báo cáo tiến độ dự án DUSN-X",
+      "Tuần này, nhóm đã hoàn tất việc tích hợp RAG vào hệ thống chat và cập nhật giao diện người dùng theo thiết kế mới.",
+      "Tuần này, nhóm đã hoàn tất việc tích hợp RAG vào hệ thống chat và cập nhật giao diện người dùng theo thiết kế mới. Tiến độ công việc đang bám sát kế hoạch đề ra.",
+      "",
+      "Phan con lai cua tai lieu khong duoc gui len gateway."
+    ],
+    "saved_at": "2026-11-09T16:11:37+07:00"
+  },
+  "replace_mode": {
+    "mode": "Replace selected text",
+    "instruction": "Viết lại đoạn đang chọn, giữ nguyên ý. Chỉ trả về nội dung mới, không kèm giải thích.",
+    "proposal_status": "Review the proposal, then Apply to the selected text.",
+    "proposal": "Tuần này, nhóm đã hoàn tất việc tích hợp RAG vào hệ thống chat và cập nhật giao diện người dùng theo thiết kế mới.",
+    "apply": "applied once to the selected paragraph; proposal cleared and Apply disabled",
+    "screenshot_proposal": "word-desktop-proposal.png",
+    "screenshot_applied": "word-desktop-applied.png"
+  },
+  "insert_after_mode": {
+    "mode": "Insert new paragraph after selection",
+    "result": "a new paragraph was inserted after the selected paragraph; the selected paragraph stayed intact",
+    "screenshot": "word-desktop-insert-after.png",
+    "document_paragraphs_after": 5
+  },
+  "guard": {
+    "scenario": "create a proposal for the selected paragraph, move the selection to another paragraph, then Apply",
+    "status": "Selection or text changed. Create and review a new proposal before Apply.",
+    "document_changed": false,
+    "screenshot": "word-desktop-guard.png",
+    "screenshot_status": "word-desktop-guard-status.png"
+  },
+  "provenance": {
+    "intent": "followup",
+    "routing_source": "model",
+    "response_source": "llm",
+    "provider_used": "openai",
+    "model_used": "gemini-3.1-flash-lite",
+    "screenshot": "word-desktop-provenance.png",
+    "note": "Captured from a proposal that was reviewed but not applied; all apply rounds required the same provenance contract (response_source=llm, provider_called=true)."
+  },
+  "honest_notes": [
+    "This evidence proves the add-in integration, apply paths, guard and provenance on real Word Desktop; it does not prove content quality.",
+    "The final saved document reflects the replace + insert-after rounds. The last proposal (used only for the provenance screenshot) was not applied.",
+    "The synthetic account password, session token and provider key are not stored in this folder.",
+    "The Word window had to be restored/maximized between screenshots because another app took the foreground; this did not change the document."
+  ]
+}
