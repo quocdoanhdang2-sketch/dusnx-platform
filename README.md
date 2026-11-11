@@ -54,7 +54,7 @@ Bắt buộc cho đường native:
 
 - Windows 10/11 + PowerShell.
 - Git.
-- Python 3.11–3.13 (repo đang dùng `python/.venv`; máy mới có thể tạo `.venv` ở root).
+- Python 3.11–3.14 (repo đang dùng `python/.venv`; máy mới có thể tạo `.venv` ở root).
 - .NET 8 SDK.
 - Một provider LLM:
   - **Ollama** + ít nhất một model Qwen2.5 (mặc định, chạy local), hoặc
@@ -73,19 +73,33 @@ Tùy chọn:
 ```powershell
 cd D:\Projects\dusnx-platform
 
-# Nếu repo đã có python\.venv thì bỏ qua bước tạo venv
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e ".\python[dev]"
+# Chọn venv đang có: .venv ở root trước, rồi python\.venv
+$py = if (Test-Path ".\.venv\Scripts\python.exe") {
+    ".\.venv\Scripts\python.exe"
+} elseif (Test-Path ".\python\.venv\Scripts\python.exe") {
+    ".\python\.venv\Scripts\python.exe"
+} else {
+    $null
+}
 
-# Kiểm tra công cụ
-python --version
+# Chỉ tạo .venv ở root khi máy chưa có venv nào.
+# Nếu không có py 3.12, thay bằng bản đã cài trong khoảng 3.11–3.14 (py -0p để xem).
+if (-not $py) {
+    py -3.12 -m venv .venv
+    $py = ".\.venv\Scripts\python.exe"
+}
+
+# Không cần Activate: gọi trực tiếp python của venv
+& $py -m pip install -e ".\python[dev]"
+& $py --version
 dotnet --version
 ollama list        # nếu dùng Ollama
 ```
 
-Repo hiện có sẵn `python/.venv`; `start-local.ps1` tự dùng `.venv` ở root trước, rồi
-`python/.venv`. Không cần cài lại nếu môi trường đã chạy được test.
+Repo hiện có sẵn `python/.venv` (Python 3.12); `start-local.ps1` tự dùng `.venv` ở root
+trước, rồi `python/.venv`. Không cần cài lại nếu môi trường đã chạy được test. `$py` chỉ
+sống trong cửa sổ PowerShell hiện tại; mở cửa sổ mới thì chạy lại đoạn gán `$py`.
+Máy chưa có venv nào sẽ tạo `.venv` ở root, và `$py` trỏ vào đó.
 
 ### Provider: Ollama (mặc định, local)
 
@@ -134,8 +148,7 @@ Chỉ muốn xem pipeline ở chế độ `bootstrap_rules` (không có checkpoi
 
 ```powershell
 $env:PYTHONPATH = "$PWD\python;$PWD\python\src"
-cd python
-.\.venv\Scripts\python.exe -m uvicorn apps.ai_api.main:app --host 127.0.0.1 --port 8000
+& $py -m uvicorn apps.ai_api.main:app --host 127.0.0.1 --port 8000
 ```
 
 Khi đó `/health` báo `runtime_mode=bootstrap_rules`; không được báo đây là kết quả model
@@ -162,7 +175,8 @@ Invoke-RestMethod http://127.0.0.1:8080/health | ConvertTo-Json -Depth 6
 
 # Phải thấy: service=dusnx-ai-api, runtime_mode=trained_dusnx,
 # checkpoint_loaded=true, model_version khác rỗng, provider_ok=true.
-(Invoke-RestMethod http://127.0.0.1:8000/health).model_profile | ConvertTo-Json
+(Invoke-RestMethod http://127.0.0.1:8000/health).provider | ConvertTo-Json
+# Với Gemini, model_profile có thể null; model thật nằm ở provider.configured_model.
 ```
 
 `start-local.ps1` kiểm tra:
@@ -182,7 +196,8 @@ Stop/restart:
 Chạy stack thử ở cổng khác, không đụng production:
 
 ```powershell
-.\start-local.ps1 -AiPort 8100 -GatewayPort 8180
+# Stack phụ dùng data riêng, không đụng DB production
+.\start-local.ps1 -AiPort 8100 -GatewayPort 8180 -AiDataDir runtime\alt\ai -GatewayDataDir runtime\alt\gateway
 .\scripts\stop-local.ps1 -AiPort 8100 -GatewayPort 8180
 ```
 
@@ -203,13 +218,15 @@ Mở:
 
 Lưu ý Docker:
 
+- Cả hai đường dùng cổng `8000/8080`. Nếu stack native đang chạy, dừng trước:
+  `.\scripts\stop-local.ps1`; chạy xong Docker thì `docker compose down` rồi
+  `.\start-local.ps1` để quay lại native. Cổng `3000` chỉ thuộc Docker.
 - Compose mount `./artifacts` vào `/app/artifacts` (read-only). Checkpoint mặc định là
   `/app/artifacts/dusnx_smoke_v2.pt`; thiếu file thì AI API báo `bootstrap_rules`.
   Không đặt đường dẫn Windows trong `.env` dùng cho container.
 - Provider mặc định là Ollama qua `http://host.docker.internal:11434`.
 - Trong container không thấy VRAM host; đặt `DUSNX_MODEL_VRAM_GB=4` (hoặc 8/16) để
   resolver chọn đúng tier, hoặc ép `DUSNX_OLLAMA_MODEL`.
-- `docker compose down` để dừng.
 - Profile mở rộng `infra` (Redis, SQL Server, MinIO) và `rag` (ChromaDB) chỉ để thử,
   chưa phải nguồn lưu trữ chính:
   `docker compose --profile infra up --build`.
@@ -243,14 +260,16 @@ Index RAG nằm ở `python/data/rag.db` (không commit). Corpus là tài liệu
 trong repo, **không** lấy từ dataset huấn luyện hay dữ liệu người dùng.
 
 ```powershell
-# Rebuild index local (chỉ khi cần; thao tác này ghi đè rag.db local)
+# Rebuild index local (chỉ khi cần; ghi đè rag.db local và cần stack dừng)
+.\scripts\stop-local.ps1
 $env:PYTHONPATH = "$PWD\python;$PWD\python\src"
-.\python\.venv\Scripts\python.exe -c "from apps.ai_api import rag; print(rag.build_index(force=True))"
+& $py -c "from apps.ai_api import rag; print(rag.build_index(force=True))"
+.\start-local.ps1
 ```
 
 - Câu trả lời có bằng chứng mạnh sẽ trích `[S1]`, `[S2]`… và chỉ hiển thị nguồn đã dùng.
 - Câu hỏi dịch/viết lại và yêu cầu Office bỏ qua retrieval để tránh trích tài liệu sai ngữ cảnh.
-- Kiểm tra runtime: `python scripts/verify_rag_web.py http://127.0.0.1:8080`.
+- Kiểm tra runtime: `& $py scripts/verify_rag_web.py http://127.0.0.1:8080`.
 
 ## Model thích nghi theo máy
 
@@ -268,31 +287,34 @@ AI API tự chọn Qwen2.5 vừa VRAM, chỉ trong các model **đã cài** (kh�
 - Auto không chọn `qwen3:*` (phát `<think>`) và không chọn candidate `dusnx-vi-*`
   (chưa promote); chỉ dùng khi đặt tên tường minh.
 - Kiểm tra: `(Invoke-RestMethod http://127.0.0.1:8000/health).model_profile`.
+- Bảng này áp dụng khi `DUSNX_PROVIDER=ollama`. Với Gemini, `model_profile` là `null`
+  và model lấy từ `DUSNX_OPENAI_MODEL`.
 
 ## Kiểm thử
 
-Dừng stack trước khi build/test Gateway, vì process đang chạy giữ khóa
-`gateway-dotnet/bin/Release/net8.0/Dusnx.Gateway.dll`.
+Chạy từ thư mục gốc. Các lệnh dưới đây không cần dừng stack đang chạy.
 
 ```powershell
 cd D:\Projects\dusnx-platform
+$py = if (Test-Path ".\.venv\Scripts\python.exe") { ".\.venv\Scripts\python.exe" } else { ".\python\.venv\Scripts\python.exe" }
 
 # Python
-.\python\.venv\Scripts\python.exe -m pytest python\tests -q
+& $py -m pytest python\tests -q
 
 # JavaScript (Node built-in test runner, không cần npm install)
 node --test web-ui/app.test.js web-ui/auth.test.js word-addin/dev-server.test.js word-addin/word-taskpane.test.js powerpoint-addin/taskpane.test.js
 
-# Gateway
-dotnet build gateway-dotnet\Dusnx.Gateway.csproj -c Release
-dotnet run --project gateway-dotnet.tests\Dusnx.Gateway.Tests.csproj -c Release
-```
-
-Nếu vẫn muốn build khi production Gateway đang chạy, xuất ra thư mục khác:
-
-```powershell
+# Gateway: build/test vào thư mục riêng để không khóa binary production
 dotnet build gateway-dotnet.tests\Dusnx.Gateway.Tests.csproj -c Release -p:OutDir="$PWD\runtime\tmp\gwtest\"
 dotnet "$PWD\runtime\tmp\gwtest\Dusnx.Gateway.Tests.dll"
+```
+
+Nếu cần thay binary Gateway production, dừng stack rồi build vào đường mặc định:
+
+```powershell
+.\scripts\stop-local.ps1
+dotnet build gateway-dotnet\Dusnx.Gateway.csproj -c Release
+.\start-local.ps1
 ```
 
 Kỳ vọng: toàn bộ pass, 0 fail. Unit test chỉ là kiểm tra hồi quy; nghiệm thu runtime

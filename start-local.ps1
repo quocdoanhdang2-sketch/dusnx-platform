@@ -24,6 +24,12 @@ $AiDataDir = Resolve-ProjectPath $AiDataDir
 $GatewayDataDir = Resolve-ProjectPath $GatewayDataDir
 $AiUrl = "http://127.0.0.1:$AiPort"
 $GatewayUrl = "http://127.0.0.1:$GatewayPort"
+# The default port owns the main Release output. A secondary stack must build to
+# its own directory so it can start while production keeps that DLL locked.
+$DefaultGatewayDll = Join-Path $ProjectRoot 'gateway-dotnet/bin/Release/net8.0/Dusnx.Gateway.dll'
+$ScopedGatewayDir = Join-Path $ProjectRoot "runtime/gateway-$GatewayPort"
+$ScopedGatewayDll = Join-Path $ScopedGatewayDir 'Dusnx.Gateway.dll'
+$GatewayDll = if ($GatewayPort -eq 8080) { $DefaultGatewayDll } else { $ScopedGatewayDll }
 $Provider = if ($env:DUSNX_PROVIDER) { $env:DUSNX_PROVIDER } else { "ollama" }
 $Model = if ($env:DUSNX_OLLAMA_MODEL) { $env:DUSNX_OLLAMA_MODEL } else { $null }
 $OllamaUrl = if ($env:DUSNX_OLLAMA_URL) { $env:DUSNX_OLLAMA_URL.TrimEnd('/') } else { "http://127.0.0.1:11434" }
@@ -35,7 +41,10 @@ if ($AiOwner) {
     $h = Assert-DusnxFastApiCheckpoint -Owner $AiOwner -ExpectedCheckpoint $Checkpoint -Uri "$AiUrl/health"
     foreach ($sourceName in @('main.py','memory.py','provider.py','auth.py','llm_evaluation.py','language.py','runtime_clock.py','rag.py','model_profile.py','observances.py','arithmetic.py')) {
         $sha = (Get-FileHash (Join-Path $ProjectRoot "python/apps/ai_api/$sourceName") -Algorithm SHA256).Hash
-        if ($h.source_hashes.$sourceName -ine $sha) { throw "Verified FastAPI PID $($AiOwner.ProcessId) has stale source $sourceName. Recheck PID and restart; no process was stopped." }
+        if ($h.source_hashes.$sourceName -ine $sha) {
+            $pidLabel = if ($AiOwner.ProcessId) { "PID $($AiOwner.ProcessId)" } else { "PID unknown" }
+            throw "Verified FastAPI $pidLabel has stale source $sourceName. Recheck PID and restart; no process was stopped."
+        }
     }
     $providerMatches = $h.provider.provider -eq $Provider
     if ($Provider -eq "ollama") {
@@ -55,8 +64,15 @@ if ($GatewayOwner) {
     try { $h = Invoke-RestMethod "$GatewayUrl/health" -TimeoutSec 3 } catch { throw "Port $GatewayPort occupied by PID $($GatewayOwner.ProcessId); identity unverified. No process was stopped." }
     if ($h.service -ne "dusnx-gateway") { throw "Port $GatewayPort is not DUSN-X Gateway (PID $($GatewayOwner.ProcessId)). Choose another port; no process was stopped." }
     if ($h.api_contract -ne "week4-v1" -or $h.ai_api_url.TrimEnd('/') -ne $AiUrl) { throw "Verified DUSN-X Gateway PID $($GatewayOwner.ProcessId) has stale binary/configuration. Rebuild and restart this verified process." }
-    $binary = Join-Path $ProjectRoot 'gateway-dotnet/bin/Release/net8.0/Dusnx.Gateway.dll'
-    if (-not (Test-Path $binary) -or $h.binary_sha256 -ine (Get-FileHash $binary -Algorithm SHA256).Hash) { throw "Verified Gateway PID $($GatewayOwner.ProcessId) differs from current Release binary. Rebuild and restart this verified process." }
+    $candidateBinaries = @($GatewayDll, $DefaultGatewayDll, $ScopedGatewayDll) | Select-Object -Unique
+    $binaryMatches = $false
+    foreach ($binary in $candidateBinaries) {
+        if ((Test-Path $binary) -and $h.binary_sha256 -ieq (Get-FileHash $binary -Algorithm SHA256).Hash) {
+            $binaryMatches = $true
+            break
+        }
+    }
+    if (-not $binaryMatches) { throw "Verified Gateway PID $($GatewayOwner.ProcessId) differs from current Release binary. Rebuild and restart this verified process." }
 }
 $LogDir = Join-Path $ProjectRoot "runtime/startup"
 New-Item -ItemType Directory -Force $LogDir | Out-Null
@@ -75,13 +91,17 @@ $AiHealth = Wait-DusnxHttpService -Name FastAPI -Uri "$AiUrl/health" -TimeoutSec
     if ($h.runtime_mode -ne 'trained_dusnx' -or -not $h.checkpoint_loaded -or $h.checkpoint_path -ine $Checkpoint -or -not $h.model_version) { throw "Checkpoint not loaded: $($h.metadata.warning)" }
 }
 if (-not $GatewayOwner) {
-    & dotnet build (Join-Path $ProjectRoot 'gateway-dotnet/Dusnx.Gateway.csproj') -c Release --nologo
+    if ($GatewayPort -eq 8080) {
+        & dotnet build (Join-Path $ProjectRoot 'gateway-dotnet/Dusnx.Gateway.csproj') -c Release --nologo
+    } else {
+        New-Item -ItemType Directory -Force $ScopedGatewayDir | Out-Null
+        & dotnet build (Join-Path $ProjectRoot 'gateway-dotnet/Dusnx.Gateway.csproj') -c Release --nologo -p:OutDir="$ScopedGatewayDir\"
+    }
     if ($LASTEXITCODE -ne 0) { throw 'Gateway build failed; inspect FastAPI PID above before restart.' }
     $env:AI_API_URL = $AiUrl
     $env:DUSNX_DATA_DIR = $GatewayDataDir
     $env:DUSNX_WEB_UI_DIR = Join-Path $ProjectRoot 'web-ui'
-    $dll = Join-Path $ProjectRoot 'gateway-dotnet/bin/Release/net8.0/Dusnx.Gateway.dll'
-    $gw = Start-Process dotnet -ArgumentList @('"' + $dll + '"','--urls',$GatewayUrl) -WorkingDirectory $ProjectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput "$LogDir/$RunId-gateway.out.log" -RedirectStandardError "$LogDir/$RunId-gateway.err.log"
+    $gw = Start-Process dotnet -ArgumentList @('"' + $GatewayDll + '"','--urls',$GatewayUrl) -WorkingDirectory $ProjectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput "$LogDir/$RunId-gateway.out.log" -RedirectStandardError "$LogDir/$RunId-gateway.err.log"
     Write-Host "Started Gateway PID $($gw.Id): $GatewayUrl"
 }
 $GatewayHealth = Wait-DusnxHttpService -Name Gateway -Uri "$GatewayUrl/health" -TimeoutSeconds 45 -Validate {
