@@ -24,7 +24,14 @@ function Wait-DusnxHttpService {
 
 function Get-DusnxListeningProcess {
     param([Parameter(Mandatory)][int]$Port)
-    $connection = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    # On some Windows hosts the AI API listener reports a blank State in the CIM
+    # table, so -State Listen finds nothing even though the port accepts TCP.
+    # Identify the listener by RemotePort 0 instead and keep the state filter as
+    # a fallback for hosts that report it normally.
+    $connections = @(Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue)
+    $connection = $connections |
+        Where-Object { $_.State -eq 'Listen' -or $_.RemotePort -eq 0 } |
+        Select-Object -First 1
     if ($null -eq $connection) {
         $client = [System.Net.Sockets.TcpClient]::new()
         try {
