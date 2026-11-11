@@ -1,343 +1,332 @@
-# DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng cho chatbot và ứng dụng đa nền tảng
+# DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng
 
-Kiểm tra cloud và sửa lịch sử chat dài ngày 02/11/2026; cập nhật RAG, model thích nghi và
-gate soạn thảo ngày 07/11/2026:
-[trạng thái hiện tại, kiểm chứng và phần còn thiếu](docs/PROJECT_STATUS_20261107.md).
+DUSN-X là hệ thống chat đa nền tảng gồm Web UI, Gateway ASP.NET Core, AI API FastAPI,
+bộ định tuyến neural đã train (DUSN-X Core), trí nhớ SQLite và truy xuất RAG có trích nguồn.
+Router chọn ý định/agent/hành động; router **không sinh văn bản**. Câu trả lời do provider
+bên ngoài (Gemini) hoặc Ollama cục bộ sinh ra.
 
-Giai đoạn sau Tuần 4 bổ sung Inspector opt-in, chính sách VI/EN/auto, PowerPoint task pane,
-data SFT v2 draft và template triển khai an toàn. Xem [roadmap](docs/POST_WEEK4_ROADMAP.md).
-Web vẫn là sản phẩm chính; PowerPoint là tích hợp minh chứng. Router không sinh văn bản,
-SQLite memory không phải hidden state, và rule/template không phải năng lực neural model.
-Candidate v1 chưa promote; candidate v2 chưa train; holdout v3 chưa được mở.
+**Không cần Docker Desktop để chạy bài.** Chế độ đang vận hành và đã nghiệm thu là
+**native Windows** (AI API `:8000`, Gateway + Web `:8080`). Docker Compose chỉ là đường
+tùy chọn cho ai muốn chạy container; máy hiện tại không bật Docker engine và điều đó
+không ảnh hưởng gì.
 
-Trạng thái hiện hành và acceptance: [báo cáo Tuần 4](docs/WEEK4_COMPLETION_REPORT.md).
-Chạy/stop/restart Windows: [runbook](docs/WINDOWS_NATIVE_RUNBOOK.md).
-Demo 6 phút và bảy bước học máy: [kịch bản bàn giao](docs/WEEK4_DEMO_AND_ML_REPORT.md).
-Web → Gateway HttpClient → FastAPI → router/state/memory → Ollama đã được nghiệm thu
-native và Chromium thật; xem bằng chứng trong báo cáo, không dùng mock làm runtime.
-Runtime tự chọn Qwen2.5 theo VRAM của máy (low `qwen2.5:1.5b-instruct`, mid 7B,
-high 14B), evaluation mặc định tắt. Router Colab hash `56f56e6d…`
-được nạp; LoRA artifact đã training_complete epoch3/checkpoint21, candidate đã có
-trong Ollama nhưng **không được promote**. Pair 01 thành công transport8/8 mỗi model;
-chưa có independent human content review. [Bằng chứng LLM](docs/evidence/llm-sft/evaluation-01/README.md).
+Trạng thái chi tiết: [PROJECT_STATUS_20261107](docs/PROJECT_STATUS_20261107.md).
+Vận hành native, stop/restart, backup: [WINDOWS_NATIVE_RUNBOOK](docs/WINDOWS_NATIVE_RUNBOOK.md).
 
-Các mục Phase1/Tuần2/Tuần3 bên dưới giữ bối cảnh lịch sử. Những câu “chưa có
-candidate/chưa chạy Colab” mô tả thời điểm bàn giao cũ; dùng báo cáo Tuần4 để biết
-trạng thái hiện tại. Không chạy lệnh train/benchmark cũ để mở demo Tuần4.
+## Trạng thái hiện tại
 
-**DUSN-X — Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng**
+| Hạng mục | Hiện trạng |
+| --- | --- |
+| Web chat | Chạy native tại `http://127.0.0.1:8080`; Gateway phục vụ static Web và proxy `/v1/*` sang FastAPI |
+| Router | `runtime_mode=trained_dusnx`, checkpoint Colab `router.pt` (`model_version=checkpoint:router.pt:sha256-56f56e6d61af:config-03b14389ce98`) |
+| Provider | Production dùng Gemini `gemini-3.1-flash-lite` qua endpoint OpenAI-compatible; fallback Ollama/Qwen2.5 |
+| Trí nhớ | SQLite `python/data/memory.db`: memory, chat session/message, project, receipt, event |
+| RAG | SQLite FTS5 tại `python/data/rag.db`: 161 tài liệu / 1.415 chunk; câu trả lời trích `[S1]…` |
+| Office | Word và PowerPoint Desktop đã nghiệm thu 09/11/2026 với Gemini; xem [bằng chứng Word](docs/evidence/word-addin-desktop-20261109/README.md), [bằng chứng PowerPoint](docs/evidence/powerpoint-addin-desktop-20261109/README.md) |
+| SFT LLM | LoRA Qwen2.5-0.5B v3 đã train/đánh giá nhưng `promote=false`; model nền vẫn là model trả lời |
+| Auth | Mật khẩu scrypt (nâng cấp từ SHA-256 cũ), opaque bearer token trong `python/data/auth.db`; **không phải JWT** |
+| Docker | Tùy chọn, không bắt buộc; không phải nguồn lưu trữ chính |
 
-## Tuần 2 và benchmark pilot Tuần 3
+## Kiến trúc ngắn
 
-Bằng chứng thực chạy ngày 28/09/2026: [nghiệm thu HTTP và Web Tuần 2](docs/WEEK2_ACCEPTANCE.md),
-[kết quả và giới hạn pilot Tuần 3](docs/WEEK3_PILOT.md). Nhãn pilot **chưa được duyệt độc lập**.
-Gateway dùng HttpClient proxy; auth dùng opaque token trong bảng SQLite `tokens`.
-Từ bản sửa provenance, recall là template không gọi LLM; script HTTP/UI kiểm tra
-thêm một câu generation riêng. Bằng chứng cũ là lịch sử, không gán metadata cũ cho code hiện tại.
-
-```powershell
-# Từ thư mục gốc, sau khi activate virtualenv đã cài ./python[dev]
-$env:PYTHONPATH="python/src;python;.;scripts"
-python scripts/verify_real_ollama_week2.py --output runtime/week2-http.json
-# UI thật: cần Playwright và Chromium (cài một lần)
-python -m pip install playwright
-python -m playwright install chromium
-python scripts/verify_web_week2.py --output-dir runtime/week2-ui
-
-python python/scripts/evaluate_personalization.py --validate-only
-python python/scripts/evaluate_personalization.py --provider ollama --device cpu --output-dir runtime/week3-pilot
-# Chỉ kiểm tra pipeline, không dùng số mock làm chất lượng LLM:
-python python/scripts/evaluate_personalization.py --provider mock --device cpu --output-dir runtime/week3-mock
-
-python -m pytest python/tests -q
-node --test web-ui/app.test.js
-dotnet build gateway-dotnet/Dusnx.Gateway.csproj -c Release
-dotnet run --project gateway-dotnet.tests/Dusnx.Gateway.Tests.csproj -c Release
-git diff --check
+```text
+Browser (web-ui)
+   │  http://127.0.0.1:8080
+   ▼
+ASP.NET Core Gateway (:8080) ── static Web + proxy /v1/*, /api/v1/*
+   │  Authorization được giữ nguyên
+   ▼
+FastAPI AI API (:8000)
+   ├─ DUSN-X Core router  (intent / agent / next_action)
+   ├─ State + SQLite memory + receipt
+   ├─ RAG FTS5 (trích nguồn, không gọi provider cho câu hỏi dịch/viết lại)
+   └─ Provider: Gemini (OpenAI-compatible) hoặc Ollama/Qwen2.5
 ```
 
-HTTP/UI cần dịch vụ chạy bằng `start-local.ps1`; benchmark dùng app FastAPI trong
-process, DB riêng tại `runtime/week3-scratch/<run-id>`, Ollama thật ở `:11434`,
-checkpoint local theo `DUSNX_CHECKPOINT` hoặc thứ tự tự nhận diện bên dưới. Không có checkpoint thì ghi
-`bootstrap_rules`, không báo là kết quả model đã train. Script mặc định dùng CPU;
-GPU là tùy chọn. Máy kiểm chứng dùng virtualenv có sẵn `python/.venv`, không cần
-tạo lại nếu đã cài dependencies.
+- Dữ liệu người dùng: `python/data` (`auth.db`, `memory.db`, `rag.db`).
+- Dữ liệu Gateway: `runtime/gateway-data`.
+- Checkpoint, database, dataset và RAG index đều **không commit**.
+- SQLite memory là kho dữ liệu quan sát được, **không phải hidden state** của model.
 
-Pilot duy nhất về personalization là `benchmarks/week3_personalization_pilot.jsonl`
-(12 chuỗi/36 bước), chuyển từ bản nháp phiên trước và bổ sung hai tình huống thiếu.
-Các `benchmark_v1/v2_*` có sẵn là bộ chẩn đoán routing riêng, không bị thay thế.
-Output: `predictions.jsonl`, `cases.json`, `summary.json`, `summary.md`, `errors.json`.
-Dùng output-dir mới cho mỗi lượt để giữ bằng chứng trước. Nhãn không vào đầu vào
-predict; không dùng dữ liệu benchmark để train. Đây là pilot AI biên soạn, không
-phải holdout do người độc lập tạo; reviewer cần duyệt nhãn, diễn đạt tương đương,
-phủ định và việc phân biệt nhớ đúng với đoán đúng. Chi tiết trong báo cáo Tuần 3.
+## Yêu cầu
 
-## Các thành phần Tuần 2
+Bắt buộc cho đường native:
 
-- **Web Chatbot Cá nhân hóa chạy thật:** Đăng ký, đăng nhập với Opaque Bearer Token an toàn (lưu SQLite `tokens`), quản lý đa phiên (`/v1/sessions`), trò chuyện với trí nhớ thích ứng và kết nối trực tiếp với Ollama LLM thật cục bộ (Qwen2.5, tự chọn theo VRAM).
-- **Điểm gọi API thống nhất qua Gateway ASP.NET Core:** Toàn bộ request Web UI (`:8080` ở chế độ Native hoặc `:3000` qua Nginx reverse-proxy ở Docker Compose) đều đi qua Gateway (`:8080`), giữ nguyên Authorization Bearer, error status code và body.
-- **Một danh tính & state có thẩm quyền cho người dùng:** Các endpoint `/v1/me/events`, `/v1/me/state`, `/v1/me/events` trích xuất `user_id` trực tiếp từ token, tính toán `time_gap_hours`, chống giả mạo danh tính trong body.
-- **Client thứ hai dùng chung state:** Client HTTP mô phỏng connector PowerPoint (phân biệt rõ với Office Add-in tích hợp thực tế) gửi event bằng token của tài khoản, đồng bộ và tăng `state_version` nhất quán với Web chat.
-- **Trí nhớ có giải thích & Cô lập Project:** Lọc theo owner/project/active rồi chọn theo chủ đề; `candidate_memory_ids` là retrieval, `prompt_memory_ids` là prompt, `memory_ids_used` là bằng chứng được trích. Không đồng nhất ba danh sách.
-- **Quản lý quyết định & Giải quyết mơ hồ:** Hỗ trợ lưu quyết định từ hội thoại ("Hãy nhớ rằng..."), sửa quyết định với bước xác nhận nguyên tử (đồng ý thì thay 1 lần, từ chối giữ bản cũ). Khi có 2 quyết định tương tự, hệ thống hỏi lại làm rõ thay vì sửa nhầm.
-- **Xử lý lỗi Provider an toàn:** Khi LLM provider mất kết nối, lỗi được hiển thị dưới dạng thẻ lỗi chuyên dụng trên UI kèm nút Thử lại (Retry), tuyệt đối không lưu chuỗi lỗi vào lịch sử DB như câu trả lời AI hợp lệ.
-- **Giao dịch nguyên tử & Idempotent Retry:** Cập nhật state và ghi user event trong một SQLite transaction thực sự; retry chat không nhân đôi tin nhắn/event/state version.
+- Windows 10/11 + PowerShell.
+- Git.
+- Python 3.11–3.13 (repo đang dùng `python/.venv`; máy mới có thể tạo `.venv` ở root).
+- .NET 8 SDK.
+- Một provider LLM:
+  - **Ollama** + ít nhất một model Qwen2.5 (mặc định, chạy local), hoặc
+  - **Gemini/OpenAI-compatible** + API key (production hiện dùng cách này).
+- Checkpoint router local (`training-results/colab-run-01/.../router.pt` hoặc
+  `artifacts/dusnx_smoke_v2.pt`). File `.pt` không có trong Git.
 
----
+Tùy chọn:
 
-## Checkpoint v2 (default runtime)
+- Node.js 18+ — chỉ cần cho test JS và dev server của Office add-in.
+- Docker Desktop + WSL2 — chỉ khi chọn đường Docker.
+- Chromium/Playwright — chỉ cho nghiệm thu Web UI tự động.
 
-Checkpoint resolution prefers `DUSNX_CHECKPOINT`, then the local Colab Run 01 artifact when present, then the legacy smoke/local artifacts. Checkpoints remain local-only: do not commit them, datasets, `.env`, or secrets. See [verified Colab artifact and response provenance](docs/CHECKPOINT_COLAB_RUN_01.md).
-
-Windows native and Docker use different paths for the same mounted artifact:
-
-- Native: `D:\Projects\dusnx-platform\artifacts\dusnx_smoke_v2.pt` (or another host path through `DUSNX_CHECKPOINT`).
-- Docker Compose: `/app/artifacts/dusnx_smoke_v2.pt` (or another **container** path through `.env`). Do not put a Windows path in `.env` for Docker.
-
-### Create the v2 dataset and checkpoint on Windows
+## Cài đặt lần đầu
 
 ```powershell
 cd D:\Projects\dusnx-platform
+
+# Nếu repo đã có python\.venv thì bỏ qua bước tạo venv
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-Push-Location .\python
-python -m pip install -e ".[dev]"
-Pop-Location
-python .\python\scripts\generate_synthetic.py --events 30000 --users 1000 --out .\data\synthetic_30k_v2.jsonl --seed 42
-$env:PYTHONPATH="python/src;python;."
-python .\python\scripts\train.py --config .\configs\smoke_v2.yaml
+python -m pip install -e ".\python[dev]"
+
+# Kiểm tra công cụ
+python --version
+dotnet --version
+ollama list        # nếu dùng Ollama
 ```
 
-### Run and verify native Windows
+Repo hiện có sẵn `python/.venv`; `start-local.ps1` tự dùng `.venv` ở root trước, rồi
+`python/.venv`. Không cần cài lại nếu môi trường đã chạy được test.
+
+### Provider: Ollama (mặc định, local)
+
+```powershell
+ollama pull qwen2.5:1.5b-instruct   # máy 4 GB VRAM
+# hoặc qwen2.5:7b-instruct / qwen2.5:14b-instruct nếu máy đủ VRAM
+ollama list
+```
+
+`start-local.ps1` mặc định `DUSNX_PROVIDER=ollama`, URL `http://127.0.0.1:11434`.
+Model được chọn tự động theo VRAM; xem bảng bên dưới.
+
+### Provider: Gemini / OpenAI-compatible (production)
+
+Đặt biến môi trường trong PowerShell hiện tại hoặc biến user-level. Không ghi key vào
+repo, file `.env` bị gitignore, log hay URL.
+
+```powershell
+$env:DUSNX_PROVIDER = "openai"
+$env:DUSNX_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+$env:DUSNX_OPENAI_MODEL = "gemini-3.1-flash-lite"
+$env:DUSNX_OPENAI_API_KEY = "<key-cua-ban>"
+$env:DUSNX_OPENAI_TIMEOUT = "150"
+$env:DUSNX_GATEWAY_TIMEOUT = "200"
+```
+
+Ghi chú:
+
+- `start-local.ps1` **không tự đọc `.env`**; biến phải có trong môi trường chạy script.
+- Provider ngoài lỗi/timeout sẽ fallback Ollama, trừ khi đặt `DUSNX_PROVIDER_FALLBACK=none`.
+- Thiếu key sẽ báo lỗi cấu hình, không âm thầm coi là thành công.
+- Có thể dùng OpenAI, LM Studio hoặc vLLM bằng cùng bộ biến `DUSNX_OPENAI_*`.
+
+## Checkpoint router
+
+`start-local.ps1` chọn checkpoint theo thứ tự:
+
+1. `DUSNX_CHECKPOINT` nếu được đặt.
+2. `training-results/colab-run-01/extracted/dusnx-router-full-01/router.pt`.
+3. `artifacts/dusnx_smoke_v2.pt`.
+
+Nếu không tìm thấy file, script **dừng trước khi launch** và báo thiếu checkpoint.
+Đây là chủ ý: Web chat chỉ được coi là `trained_dusnx` khi router đã nạp thật.
+
+Chỉ muốn xem pipeline ở chế độ `bootstrap_rules` (không có checkpoint), chạy riêng FastAPI:
+
+```powershell
+$env:PYTHONPATH = "$PWD\python;$PWD\python\src"
+cd python
+.\.venv\Scripts\python.exe -m uvicorn apps.ai_api.main:app --host 127.0.0.1 --port 8000
+```
+
+Khi đó `/health` báo `runtime_mode=bootstrap_rules`; không được báo đây là kết quả model
+đã train. Muốn có Web UI đầy đủ vẫn cần Gateway và checkpoint.
+
+## Chạy bài (native — khuyến nghị)
 
 ```powershell
 cd D:\Projects\dusnx-platform
 .\start-local.ps1
-Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
+Start-Process http://127.0.0.1:8080
 ```
 
-`/health` must show `runtime_mode=trained_dusnx`, `checkpoint_loaded=true`, the correct `checkpoint_path`, and a non-empty `model_version`. The same `model_version` is written to each `state_snapshot`.
+Mở:
 
-### Timeline local và smoke test xuyên nền tảng
+- Web UI + Gateway: `http://127.0.0.1:8080`
+- FastAPI docs: `http://127.0.0.1:8000/docs`
 
-Endpoint timeline là công cụ quan sát **dev/local**, chưa có authentication production.
-Mặc định Gateway chỉ trả endpoint này cho request loopback. Không bật
-`DUSNX_ALLOW_REMOTE_DEV_HISTORY=true` ngoài môi trường development được kiểm soát.
+Kiểm tra:
 
 ```powershell
-cd D:\Projects\dusnx-platform
-.\start-local.ps1
+Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 6
+Invoke-RestMethod http://127.0.0.1:8080/health | ConvertTo-Json -Depth 6
 
-# Gửi một event và đọc trang timeline mới nhất (tối đa 100 record/trang).
-$body = @{
-  platform = "web"
-  platformUserId = "web-demo"
-  linkedUserId = "local-demo-shared"
-  content = "Tìm tài liệu về DUSN-X"
-  eventType = "message"
-  feedbackValue = 0.0
-} | ConvertTo-Json
-Invoke-RestMethod http://127.0.0.1:8080/api/v1/events -Method Post -ContentType application/json -Body $body
-Invoke-RestMethod "http://127.0.0.1:8080/api/v1/history/web/web-demo?linkedUserId=local-demo-shared&limit=25"
-
-# Smoke test tự tạo linked key duy nhất rồi gửi Web → Zalo → PowerPoint.
-.\smoke-test.ps1
+# Phải thấy: service=dusnx-ai-api, runtime_mode=trained_dusnx,
+# checkpoint_loaded=true, model_version khác rỗng, provider_ok=true.
+(Invoke-RestMethod http://127.0.0.1:8000/health).model_profile | ConvertTo-Json
 ```
 
-Kết quả timeline được sắp mới nhất trước. Nếu response có `next_cursor`, truyền nó qua
-query `before` để lấy trang cũ hơn. Cùng `linkedUserId` cho ba platform sẽ dùng chung
-identity; khác linked key sẽ tách lịch sử. `known_feedback_value` luôn là feedback đã
-biết trước event hiện tại.
+`start-local.ps1` kiểm tra:
 
-Các lựa chọn Zalo/PowerPoint trong Web UI chỉ mô phỏng request đầu vào. Router chỉ đề
-xuất `next_action`; phiên bản này chưa gửi tin Zalo, chưa chỉnh file PowerPoint, chưa
-thực hiện Internet search/RAG retrieval thật. `routing_source=business_rule_override`
-cho biết route cuối đã được rule thay đổi, nhưng API hiện không trả thêm dự đoán model
-thuần cho từng event.
+- Hai cổng `8000/8080` có đúng service DUSN-X không; không kill process lạ.
+- Hash source FastAPI và binary Gateway có khớp working tree không; process cũ bị từ chối.
+- Proxy `/v1/health` và trang Web trả đúng nội dung trước khi báo thành công.
+- Log khởi động ở `runtime/startup` (không commit).
 
-Smoke test ghi record với prefix/run ID duy nhất vào `runtime/gateway-data`. Có thể xóa
-toàn bộ thư mục đó khi chắc chắn không cần giữ bất kỳ state local nào; script không tự
-xóa hoặc đụng dữ liệu có sẵn.
+Stop/restart:
 
-### Run and verify Docker Compose
+```powershell
+.\scripts\stop-local.ps1
+.\start-local.ps1
+```
+
+Chạy stack thử ở cổng khác, không đụng production:
+
+```powershell
+.\start-local.ps1 -AiPort 8100 -GatewayPort 8180
+.\scripts\stop-local.ps1 -AiPort 8100 -GatewayPort 8180
+```
+
+## Chạy bằng Docker (tùy chọn)
+
+Chỉ dùng khi đã bật Docker Desktop/WSL2. Không cần cho đường native.
 
 ```powershell
 cd D:\Projects\dusnx-platform
 docker compose up --build
-Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 10
 ```
 
-For Docker, `.env` uses `/app/artifacts/dusnx_smoke_v2.pt`; `checkpoint_path` reports the container path. If the checkpoint is absent, FastAPI reports `bootstrap_rules` and a diagnostic in `metadata.warning`.
-
-Starter project cho **Cross-Platform Dynamic User State Network for Adaptive Multi-Agent Systems**.
-
-## Phase 1 đã có gì?
-
-- DUSN-X Core viết bằng PyTorch: Event Encoder, Time-Aware State Update, Global/Platform/Task State và Agent Router.
-- FastAPI AI Service chạy được ở hai chế độ:
-  - `bootstrap_rules`: demo ngay khi chưa có checkpoint.
-  - `trained_dusnx`: tự chuyển sang model đã train khi có `artifacts/dusnx_smoke_v2.pt`.
-- ASP.NET Core API Gateway với `/api/v1`, Problem Details và event validation.
-- State được lưu xuống `runtime/gateway-data`, không mất ngay khi Gateway restart.
-- Presentation job bất đồng bộ: `queued → processing → completed/failed`.
-- SignalR Hub skeleton tại `/hubs/jobs`.
-- Zalo webhook queue skeleton tại `/webhooks/zalo`.
-- Web demo cho event và Presentation Job.
-- PowerPoint Add-in skeleton gọi Presentation Job API.
-- Script tạo dữ liệu synthetic có nhãn rõ ràng.
-- Training hỗ trợ FP16/mixed precision và gradient accumulation, cấu hình linh hoạt tự động nhận diện phần cứng GPU (CUDA) hoặc CPU fallback (`device: auto`).
-- Docker Compose có profile `infra` và `rag` để tránh ngốn RAM khi chưa cần.
-
-## Chạy nhanh trên Windows
-
-Yêu cầu: Docker Desktop, Git, Python 3.12 và .NET 8.
-
-### Đường 1: Chạy Native (Windows PowerShell)
-```powershell
-cd D:\Projects\dusnx-platform
-.\start-local.ps1
-```
 Mở:
-- Web UI & Gateway: `http://localhost:8080` (Gateway phục vụ cả static Web lẫn proxy `/v1/*` tới FastAPI)
-- FastAPI: `http://localhost:8000/docs`
 
-### Đường 2: Chạy Docker Compose
-```powershell
-cd D:\Projects\dusnx-platform
-docker compose up --build
-```
-Mở:
-- Web UI (Nginx reverse proxy): `http://localhost:3000` (Nginx proxy `/v1/*` và `/api/v1/*` tới Gateway)
+- Web qua Nginx: `http://localhost:3000`
 - Gateway: `http://localhost:8080/health`
 - FastAPI docs: `http://localhost:8000/docs`
 
-Lần chạy đầu chưa cần checkpoint. API sẽ báo `runtime_mode=bootstrap_rules`.
+Lưu ý Docker:
+
+- Compose mount `./artifacts` vào `/app/artifacts` (read-only). Checkpoint mặc định là
+  `/app/artifacts/dusnx_smoke_v2.pt`; thiếu file thì AI API báo `bootstrap_rules`.
+  Không đặt đường dẫn Windows trong `.env` dùng cho container.
+- Provider mặc định là Ollama qua `http://host.docker.internal:11434`.
+- Trong container không thấy VRAM host; đặt `DUSNX_MODEL_VRAM_GB=4` (hoặc 8/16) để
+  resolver chọn đúng tier, hoặc ép `DUSNX_OLLAMA_MODEL`.
+- `docker compose down` để dừng.
+- Profile mở rộng `infra` (Redis, SQL Server, MinIO) và `rag` (ChromaDB) chỉ để thử,
+  chưa phải nguồn lưu trữ chính:
+  `docker compose --profile infra up --build`.
+
+## Sử dụng Web UI
+
+1. Đăng ký tài khoản mới rồi đăng nhập (không dùng tài khoản thật của người khác).
+2. Chat: mỗi phiên có trí nhớ riêng theo user; câu trả lời có thể hiển thị nguồn RAG,
+   thẻ "Trí nhớ đã dùng (n)" và nút sao chép.
+3. Ghi nhớ bằng câu lệnh rõ ràng:
+   - `nhớ rằng tôi thích trà sen vàng`
+   - `nhớ là ngày mai họp lúc 9 giờ`
+   - `ghi nhớ quyết định dùng SQLite cho bản local`
+   Nếu chỉ gõ tiền tố mà không có nội dung (`nhớ rằng`, `nhớ là`), hệ thống hỏi lại
+   thay vì lưu chuỗi rỗng nghĩa.
+4. Màn **Trí nhớ**: xem, tìm, thêm tay, hiện cả bản đã bị thay thế.
+5. Màn **Dự án**: quyết định đang hiệu lực và lịch sử quyết định.
+6. **Timeline** là công cụ dev/local, chỉ loopback; không bật
+   `DUSNX_ALLOW_REMOTE_DEV_HISTORY=true` ngoài môi trường kiểm soát.
+
+Office add-in:
+
+- Word: [WORD_ADDIN_RUNBOOK](docs/WORD_ADDIN_RUNBOOK.md) — task pane HTTPS `:3001`,
+  proposal được duyệt trước khi Apply, kiểm tra lại selection trước khi ghi.
+- PowerPoint: [POWERPOINT_ADDIN_RUNBOOK](docs/POWERPOINT_ADDIN_RUNBOOK.md) — tạo outline,
+  duyệt rồi chèn slide; chưa có tạo ảnh.
+
+## RAG và trích nguồn
+
+Index RAG nằm ở `python/data/rag.db` (không commit). Corpus là tài liệu và mã nguồn
+trong repo, **không** lấy từ dataset huấn luyện hay dữ liệu người dùng.
+
+```powershell
+# Rebuild index local (chỉ khi cần; thao tác này ghi đè rag.db local)
+$env:PYTHONPATH = "$PWD\python;$PWD\python\src"
+.\python\.venv\Scripts\python.exe -c "from apps.ai_api import rag; print(rag.build_index(force=True))"
+```
+
+- Câu trả lời có bằng chứng mạnh sẽ trích `[S1]`, `[S2]`… và chỉ hiển thị nguồn đã dùng.
+- Câu hỏi dịch/viết lại và yêu cầu Office bỏ qua retrieval để tránh trích tài liệu sai ngữ cảnh.
+- Kiểm tra runtime: `python scripts/verify_rag_web.py http://127.0.0.1:8080`.
 
 ## Model thích nghi theo máy
 
-Cùng một bản code chạy được trên laptop 4 GB VRAM và máy desktop 16 GB: AI API
-tự chọn model Qwen2.5 vừa với GPU, không cần sửa code hay file cấu hình.
+AI API tự chọn Qwen2.5 vừa VRAM, chỉ trong các model **đã cài** (không tự tải):
 
-| VRAM | Tier | Model ưu tiên (thiếu thì lùi dần) |
+| VRAM | Tier | Thứ tự ưu tiên |
 | --- | --- | --- |
 | dưới 6 GB | `low` | `qwen2.5:1.5b-instruct` → 3B → 0.5B |
 | 6–12 GB | `mid` | `qwen2.5:7b-instruct` → 3B → 1.5B |
 | từ 12 GB | `high` | `qwen2.5:14b-instruct` → 7B → 3B |
 
-- Chỉ chọn trong các model **đã cài sẵn**; không tự tải về. Muốn máy 8 GB dùng 7B
-  thì chạy `ollama pull qwen2.5:7b-instruct` rồi khởi động lại AI API.
-- Ép model: đặt `DUSNX_OLLAMA_MODEL=qwen2.5:3b-instruct` (luôn thắng auto).
-  Ép tier: `DUSNX_MODEL_PROFILE=low|mid|high`.
-- Máy không thấy GPU (CPU-only, Docker, Apple Silicon dùng unified memory): đặt
-  `DUSNX_MODEL_VRAM_GB=4` (hoặc 8/16) để resolver chọn đúng tier.
-- Kiểm tra lựa chọn thực tế:
-  `Invoke-RestMethod http://127.0.0.1:8000/health | Select-Object -ExpandProperty model_profile`.
-- Auto **không** chọn `qwen3:*` (luôn phát `<think>` trên Ollama hiện tại) và
-  không chọn candidate `dusnx-vi-*` (chưa được promote); hai loại này chỉ dùng khi
-  đặt `DUSNX_OLLAMA_MODEL` tường minh.
+- Ép model: `DUSNX_OLLAMA_MODEL=qwen2.5:3b-instruct` (thắng auto).
+- Ép tier: `DUSNX_MODEL_PROFILE=low|mid|high`.
+- Không thấy GPU (CPU-only, Docker, Apple Silicon): đặt `DUSNX_MODEL_VRAM_GB=4|8|16`.
+- Auto không chọn `qwen3:*` (phát `<think>`) và không chọn candidate `dusnx-vi-*`
+  (chưa promote); chỉ dùng khi đặt tên tường minh.
+- Kiểm tra: `(Invoke-RestMethod http://127.0.0.1:8000/health).model_profile`.
 
-## Ghi chú về checkpoint cũ
+## Kiểm thử
+
+Dừng stack trước khi build/test Gateway, vì process đang chạy giữ khóa
+`gateway-dotnet/bin/Release/net8.0/Dusnx.Gateway.dll`.
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\setup.ps1
-.\.venv\Scripts\Activate.ps1
-$env:PYTHONPATH="$PWD\python\src;$PWD\python;$PWD"
-python .\python\scripts\train.py --config .\configs\smoke_v2.yaml
+cd D:\Projects\dusnx-platform
+
+# Python
+.\python\.venv\Scripts\python.exe -m pytest python\tests -q
+
+# JavaScript (Node built-in test runner, không cần npm install)
+node --test web-ui/app.test.js web-ui/auth.test.js word-addin/dev-server.test.js word-addin/word-taskpane.test.js powerpoint-addin/taskpane.test.js
+
+# Gateway
+dotnet build gateway-dotnet\Dusnx.Gateway.csproj -c Release
+dotnet run --project gateway-dotnet.tests\Dusnx.Gateway.Tests.csproj -c Release
 ```
 
-Sau khi sinh `artifacts/dusnx_smoke_v2.pt`:
+Nếu vẫn muốn build khi production Gateway đang chạy, xuất ra thư mục khác:
 
 ```powershell
-docker compose down
-docker compose up --build
+dotnet build gateway-dotnet.tests\Dusnx.Gateway.Tests.csproj -c Release -p:OutDir="$PWD\runtime\tmp\gwtest\"
+dotnet "$PWD\runtime\tmp\gwtest\Dusnx.Gateway.Tests.dll"
 ```
 
-Kiểm tra `http://localhost:8000/health`. `runtime_mode` phải chuyển thành `trained_dusnx`.
+Kỳ vọng: toàn bộ pass, 0 fail. Unit test chỉ là kiểm tra hồi quy; nghiệm thu runtime
+phải dùng `/health` và chat thật qua Gateway, không dùng mock làm bằng chứng.
 
-## Chạy hạ tầng mở rộng
+## Bảo mật và giới hạn đã biết
 
-Chỉ bật khi cần:
+- Không commit `.env`, API key, token, database, dataset, checkpoint hay RAG index.
+  Key chỉ đặt trong biến môi trường hoặc file local đã gitignore.
+- Auth dùng scrypt + opaque bearer token (tối đa 10 token/user), chưa có JWT/refresh token.
+- `/api/v1/history/...` và Timeline là endpoint dev/local, mặc định chỉ loopback.
+- Router không sinh văn bản. Chất lượng câu trả lời phụ thuộc provider và RAG.
+- SFT v3 (0.5B LoRA) chưa được promote; không báo cáo là model production.
+- RAG chỉ trả lời từ corpus repo; không bảo đảm thông tin thời sự bên ngoài.
+- Office add-in chưa có tạo ảnh và chưa có guard cho tracked changes.
+- Redis, SQL Server, MinIO, ChromaDB chỉ là profile thử nghiệm, chưa phải storage chính.
+- Không chạy lại benchmark/holdout đã xem prediction để tune hoặc promote model.
 
-```powershell
-# Redis + SQL Server + MinIO
-docker compose --profile infra up --build
+## Tài liệu
 
-# Thêm ChromaDB
-docker compose --profile infra --profile rag up --build
-```
+- [Kiến trúc](docs/ARCHITECTURE.md)
+- [Vận hành native Windows](docs/WINDOWS_NATIVE_RUNBOOK.md)
+- [Hợp đồng phản hồi chat](docs/CHAT_RESPONSE_CONTRACT.md)
+- [Trạng thái dự án](docs/PROJECT_STATUS_20261107.md)
+- [Roadmap sau Tuần 4](docs/POST_WEEK4_ROADMAP.md)
+- [Báo cáo Tuần 4](docs/WEEK4_COMPLETION_REPORT.md)
+- [Checkpoint Colab Run 01](docs/CHECKPOINT_COLAB_RUN_01.md)
+- [Hướng dẫn train router trên Colab](docs/TRAIN_COLAB_TUNG_BUOC.md)
+- [Runbook Word add-in](docs/WORD_ADDIN_RUNBOOK.md)
+- [Runbook PowerPoint add-in](docs/POWERPOINT_ADDIN_RUNBOOK.md)
+- [Độ tin cậy vận hành](docs/OPERATIONS_RELIABILITY.md)
+- [Hiệu năng và bảo mật](docs/PERFORMANCE_AND_SECURITY_REPORT.md)
+- [Hành vi VI/EN/auto](docs/BILINGUAL_BEHAVIOR.md)
 
-## Tạo GitHub repository
-
-Mày có thể tự đặt tên repository. Tên đề xuất:
-
-- `dusnx-platform`
-- `DUSN-X`
-- `cross-platform-dusnx`
-
-Sau khi tạo repository rỗng trên GitHub:
-
-```powershell
-git init -b main
-git add .
-git commit -m "feat: initialize DUSN-X phase 1"
-git remote add origin git@github.com:quocdoanhdang2-sketch/TEN_REPOSITORY.git
-git push -u origin main
-```
-
-Thay `TEN_REPOSITORY` bằng tên mày chọn. Không commit `.env`, dataset thật, checkpoint hoặc secret.
-
-## Dữ liệu và train state/router trên local hoặc Colab
-
-Notebook [train_dusnx_colab.ipynb](notebooks/train_dusnx_colab.ipynb), [hướng dẫn từng cú nhấp chuột](docs/TRAIN_COLAB_TUNG_BUOC.md) và [báo cáo sẵn sàng huấn luyện](docs/TRAIN_READINESS.md) phục vụ huấn luyện recurrent state và các đầu intent/agent/action, **không fine-tune LLM**. Artifact Colab Run 01 do người dùng cung cấp đã được xác minh SHA, nạp và kiểm tra local; không train lại trong nhiệm vụ sửa metadata. Xem [báo cáo checkpoint](docs/CHECKPOINT_COLAB_RUN_01.md). Không yêu cầu một loại GPU cụ thể.
-
-```powershell
-$env:PYTHONPATH='python/src;python;.;scripts'
-python python/scripts/fetch_sources.py --source all
-python python/scripts/import_data.py --source massive --input runtime/external-data/massive/vi-VN.jsonl --output-dir runtime/imported/massive
-python python/scripts/prepare_data.py --legacy data/synthetic_30k_v2.jsonl
-python python/scripts/pipeline_smoke.py --output runtime/new-smoke-run
-python python/scripts/train.py --config configs/router_colab.yaml --checkpoint artifacts/new-router.pt
-# Đánh giá 5 nhánh độc lập trên tập chẩn đoán holdout v2:
-python python/scripts/evaluate_personalization.py --benchmark benchmarks/holdout_v2.jsonl --holdout-manifest benchmarks/holdout_v2.manifest.json --all-systems --include-model-only --provider mock --checkpoint artifacts/new-router.pt --output-dir runtime/eval_holdout_v2
-```
-
-Chọn output mới hoặc `--resume` cho train, không ghi đè checkpoint cũ. Pipeline dữ liệu xuất `runtime/prepared/{train,validation}.jsonl` và `manifest.json`; train xuất best `.pt`, `.last.pt`, config, metric/epoch; đánh giá xuất `predictions.jsonl`, `cases.json`, `summary.json/.md`, `errors.json`. Với dữ liệu chuẩn bị mới nhất: 4,185 sự kiện train (371 chuỗi, 73 họ template, 596 mẫu `clarify`) và 203 sự kiện validation (46 chuỗi). Xem [nguồn/license/revision](docs/DATA_SOURCES.md).
-
-- **Holdout v1 (8 chuỗi/29 bước):** Đã bị xem xét và dùng để chẩn đoán hệ thống, nên không dùng để chọn model/rule (Development Set).
-- **Holdout v2 (10 chuỗi/38 bước, SHA-256 `1dfd8f1b...`):** Đã chạy đánh giá chẩn đoán (Diagnostic Set), phục vụ chẩn đoán căn nguyên của model-only và clarification.
-- **Holdout v3 (20 chuỗi/311 bước, SHA-256 `094268aa...`):** Tập dự kiến dùng đánh giá độc lập, đã khóa manifest/hash nhưng **chưa có reviewer thật duyệt**. Chỉ kiểm tra toàn vẹn và package blind trong nhiệm vụ này. **KHÔNG CHẠY MODEL, RULE, BASELINE HOẶC SCORER TRÊN V3** trước khi hoàn tất thẩm định.
-- **MASSIVE vi-VN:** Đã tải nhưng toàn bộ mapping chờ reviewer duyệt nên bị loại hoàn toàn khỏi tập train; CSConDa chưa có quyền và được bỏ qua an toàn.
-- **Đánh giá 5 nhánh:** Tách riêng `baseline_a` (no-memory), `baseline_b` (static-memory), `model_only` (pure checkpoint không qua rule), `dusnx_no_state` (ablation xóa recurrent state mỗi bước), và `dusnx` (full system). Kết quả cho thấy năng lực hiện tại của hệ thống đến chủ yếu từ SQLite CRUD và rules; giả thuyết recurrent state tốt hơn ablation cần kiểm chứng trên chuỗi dài độc lập (Holdout v3).
-- **Thẩm định nhãn độc lập:** Gói v3 chưa được người thật duyệt. Làm theo [hướng dẫn PowerShell](docs/HOLDOUT_V3_REVIEW_GUIDE.md): chỉ gửi blind CSV và hướng dẫn, validate bài nộp với `--template`, rồi agreement/phân xử/khóa sau review thật. Không mở đánh giá v3 lúc này.
-
-## Kiểm chứng memory và nguồn câu trả lời
-
-`python scripts/verify_chat_provenance.py --output runtime/chat-provenance.json` chạy qua Gateway với user thử mới, bốn câu hỏi memory và một câu Ollama generation thật. [Bằng chứng đã chạy](docs/evidence/chat-provenance/gateway.json) và [hợp đồng API](docs/CHAT_RESPONSE_CONTRACT.md) phân biệt `candidate_memory_ids`, `prompt_memory_ids`, `memory_ids_used`, `provider_called`, `response_source`.
-
-Template trích memory không gọi Ollama: provider/model=null; Web hiển thị “Trích trí nhớ đã lưu”. LLM thành công có response_source=llm và model thực trả về. `provider_ok` giữ nghĩa tương thích là lượt thành công, không chứng minh đã gọi LLM. Không dùng health hoặc routing_source=model làm bằng chứng nguồn sinh văn bản.
-
-## Đọc tiếp
-
-Pipeline **SFT LLM riêng**: [notebook Colab](notebooks/finetune_llm_colab.ipynb), [hướng dẫn](docs/WEEK3_LLM_TRAINING.md), [mẫu viết test độc lập](docs/LLM_TEST_AUTHORING_TEMPLATE.md) và [báo cáo bàn giao Tuần 3](docs/WEEK3_HANDOFF.md). LoRA Qwen2.5-0.5B-Instruct, không thay router.pt; runtime tự chọn Qwen2.5 theo VRAM
-(xem [Model thích nghi theo máy](#model-thích-nghi-theo-máy)). Development data có 43 train/49 cặp, 12 validation/12 cặp và 6 test AI nháp; tất cả vẫn `needs_human_review`. Gói xuất/nhập duyệt con người qua Markdown/CSV được quản lý bởi `python python/scripts/review_llm_data.py`. Audit dùng exact tokenizer, contract future/obsolete/clarification và near-duplicate split. Full train chỉ mở sau review thật và test độc lập do người viết. Không dùng holdout v3; chưa chạy GPU Colab hoặc có candidate để công bố chất lượng.
-
-Audit: `python python/scripts/prepare_llm_data.py` (PYTHONPATH=python/src), output `runtime/llm-audit/`. Smoke SFT chạy trong venv riêng với `requirements/llm-sft.txt`: `python python/scripts/finetune_llm.py --smoke --output runtime/llm-smoke`. Run ZIP/checkpoint nằm cạnh/thư mục output; không commit weights. Import Windows dùng `scripts/import_llm_ollama.ps1` (đặt tag candidate tường minh, hiện tại `dusnx-vi-v2-20261105`); so sánh thực qua Gateway dùng `python/scripts/evaluate_llm_pair.py --candidate <tag>` và người chấm CSV. Chỉ chọn candidate sau gate không hồi quy; hiện giữ base.
-
-- `docs/WEEK3_HANDOFF.md`: Báo cáo bàn giao chi tiết Tuần 3, thống kê dữ liệu v2.1, bằng chứng kiểm thử và 5 cổng hành động tiếp theo.
-- `docs/TRAIN_READINESS.md`: Báo cáo chi tiết về dữ liệu, leakage, 5 nhánh đánh giá và tình trạng sẵn sàng huấn luyện.
-- `docs/TRAIN_COLAB_TUNG_BUOC.md`: Hướng dẫn 5 bước thao tác trên Google Colab lưu kết quả vào Google Drive.
-- `docs/START_HERE_PHASE1.md`: thứ tự làm từng bước.
-- `docs/INDEPENDENT_BENCHMARK_GUIDE.md`: schema và quy trình hai người để soạn benchmark độc lập.
-- `docs/GITHUB_VA_MO_RONG.md`: cách đặt tên GitHub và thêm tính năng/connector.
-- `docs/ARCHITECTURE.md`: kiến trúc tổng quan.
-- `docs/GUIDE_TUNG_BUOC.md`: hướng dẫn MVP chi tiết cũ để tham khảo.
-
-## Giới hạn Phase 1
-
-- Chưa có JWT/refresh token. `/v1/me/state` yêu cầu opaque token; endpoint lịch sử
-  `/api/v1/history/...` cũ vẫn là development-only.
-- Zalo mới có normalized webhook skeleton, chưa ký request theo Zalo OA production.
-- PowerPoint mới tạo outline/job; bước chèn slide bằng Office.js sẽ làm ở Phase 2.
-- SQL Server, Redis, MinIO và ChromaDB đã có container profile nhưng chưa phải nguồn lưu trữ chính.
-- `bootstrap_rules` chỉ để kiểm tra pipeline, không được báo cáo là kết quả model đã train.
+Lịch sử nghiệm thu Tuần 2/3/4 và các quyết định cũ nằm trong `docs/`; README này mô tả
+trạng thái và cách chạy hiện hành. Khi tài liệu lịch sử mâu thuẫn với README, ưu tiên
+`/health`, mã nguồn và bằng chứng runtime mới nhất.
