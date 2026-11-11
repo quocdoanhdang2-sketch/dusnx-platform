@@ -54,7 +54,8 @@ Bắt buộc cho đường native:
 
 - Windows 10/11 + PowerShell.
 - Git.
-- Python 3.11–3.14 (repo đang dùng `python/.venv`; máy mới có thể tạo `.venv` ở root).
+- Python 3.12 (repo đang dùng `python/.venv` 3.12; pyproject cho phép 3.11–3.14 nhưng
+  3.12 là bản đã chạy test trên máy này).
 - .NET 8 SDK.
 - Một provider LLM:
   - **Ollama** + ít nhất một model Qwen2.5 (mặc định, chạy local), hoặc
@@ -83,7 +84,8 @@ $py = if (Test-Path ".\.venv\Scripts\python.exe") {
 }
 
 # Chỉ tạo .venv ở root khi máy chưa có venv nào.
-# Nếu không có py 3.12, thay bằng bản đã cài trong khoảng 3.11–3.14 (py -0p để xem).
+# Khuyến nghị py 3.12 (bản đã kiểm chứng); máy chỉ có bản khác trong 3.11–3.14
+# thì thay số phiên bản cho khớp (py -0p để xem bản đã cài).
 if (-not $py) {
     py -3.12 -m venv .venv
     $py = ".\.venv\Scripts\python.exe"
