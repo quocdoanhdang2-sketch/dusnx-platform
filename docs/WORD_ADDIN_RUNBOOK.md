@@ -1,13 +1,14 @@
 # Word Add-in runbook
 
-Task pane dùng Office.js `WordApi 1.1`, đăng nhập DUSN-X bằng token opaque chỉ giữ trong RAM,
-chọn/tạo session, đọc đúng đoạn đang chọn, gửi `/v1/chat`, hiển thị proposal kèm provenance và
-chỉ ghi khi người dùng bấm **Apply**. Không gửi toàn tài liệu, không tự ghi, không fallback sang
-đoạn khác.
+Task pane dùng Office.js `WordApi 1.1` (nâng lên 1.5 khi cần đọc `changeTrackingMode`), đăng nhập
+DUSN-X bằng token opaque chỉ giữ trong RAM, chọn/tạo session, đọc đúng đoạn đang chọn, gửi
+`/v1/chat`, hiển thị proposal kèm provenance và chỉ ghi khi người dùng bấm **Apply**. Không gửi
+toàn tài liệu, không tự ghi, không fallback sang đoạn khác.
 
-Đã kiểm chứng trên Word Desktop thật ngày 2026-11-06/07 (xem
-[evidence](../evidence/word-addin-desktop-20261106/README.md)): Word 16.0.20527.20112,
-WordApi 1.1 và 1.3, task pane nạp từ `https://localhost:3001`, proposal/apply/guard chạy thật.
+Đã kiểm chứng trên Word Desktop thật ngày 2026-11-06/07 và 2026-11-12 (xem
+[evidence](../evidence/word-addin-desktop-20261106/README.md) và
+[evidence mới](../evidence/office-desktop-20261112/README.md)): Word 16.0.20527.20150,
+task pane nạp từ `https://localhost:3001`, proposal/apply/guard chạy thật.
 
 ## 1. Chuẩn bị
 
@@ -89,6 +90,13 @@ Chuẩn bị tài liệu có 3 đoạn: tiêu đề, đoạn đích, đoạn cu�
 6. Logout hoặc đổi session/language giữa lúc request đang chạy: request bị abort, response đến
    muộn không được render thành proposal.
 7. Thử chọn vùng rỗng hoặc >4000 ký tự: không có request provider.
+8. Đặt **Output = Table** và Apply: bảng native chèn tại con trỏ/vùng chọn; trên build hiện tại
+   `Range.insertTable` trả `InvalidArgument` nên add-in dựng HTML đã escape rồi `insertHtml`.
+9. Bật **Review > Track Changes** rồi Apply: add-in từ chối, xóa draft và không đổi tài liệu:
+   `Track Changes is on. Turn it off ...`.
+10. Instruction chứa chuỗi giống API key: bị chặn trước khi gọi provider.
+11. Sau Apply, `POST /v1/me/events` ghi sự kiện `apply` (nội dung-free) và sự kiện hiện trong
+    Web UI Timeline của đúng tài khoản.
 
 ## 5. Model theo từng máy
 
@@ -123,14 +131,17 @@ $env:DUSNX_OPENAI_API_KEY = "..."   # do operator đặt, không ghi vào repo
 
 ## 6. Giới hạn đã biết
 
-- Chỉ xử lý **plain text** của selection. Bảng, ảnh, field, footnote, tracked changes có thể
-  bị Word chuẩn hóa khi đọc/ghi; chưa có test cho các cấu trúc này.
+- Đường text chỉ xử lý **plain text** của selection; bảng đi đường riêng **Output = Table**.
+  Ảnh, field, footnote chưa hỗ trợ.
+- Bật Track Changes thì Apply bị từ chối (WordApi 1.5); add-in không tạo tracked changes ngoài ý
+  người dùng.
 - Không tự cuộn/khôi phục selection sau Apply; Undo dùng undo stack gốc của Word.
 - Chất lượng nội dung phụ thuộc model. Harness và bằng chứng Desktop dùng
   `qwen2.5:1.5b-instruct`; model nhỏ này viết lại chưa ổn định (có thể thêm bullet hoặc suy diễn
   ngoài đoạn gốc). Đây là giới hạn model, không phải lỗi guard; production nên dùng model lớn hơn
   và vẫn giữ bước review thủ công.
-- Chưa có undo/redo tích hợp trong pane, chưa có batch nhiều đoạn, chưa có telemetry.
+- Telemetry apply gửi qua `/v1/me/events` (platform `word`, nội dung-free); không có batch nhiều
+  đoạn và không có undo/redo riêng trong pane.
 - Manifest dev không ký; chỉ sideload theo user. Phân phối doanh nghiệp cần AppSource hoặc
   central deployment với manifest đã ký và URL HTTPS ổn định.
 - Sideload và task pane chạy được với certificate localhost tin cậy; máy khác cần lặp lại bước

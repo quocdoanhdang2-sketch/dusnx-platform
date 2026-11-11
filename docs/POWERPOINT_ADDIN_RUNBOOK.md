@@ -1,15 +1,17 @@
 # PowerPoint Add-in runbook
 
-Task pane dùng Office.js PowerPointApi 1.5 (cần `getSelectedShapes`), đăng nhập DUSN-X bằng
-opaque token chỉ giữ trong RAM, chọn/tạo session, gọi `/v1/chat` same-origin qua dev server
-HTTPS, hiện proposal/provenance và chỉ ghi sau khi người dùng bấm Apply.
+Task pane dùng Office.js PowerPointApi 1.5 (cần `getSelectedShapes` và `insertSlidesFromBase64`),
+đăng nhập DUSN-X bằng opaque token chỉ giữ trong RAM, chọn/tạo session, gọi `/v1/chat` same-origin
+qua dev server HTTPS, hiện proposal/provenance và chỉ ghi sau khi người dùng bấm Apply.
 
-Có hai mode:
+Các mode:
 
 | Mode | Đầu vào | Ghi vào deck |
 |---|---|---|
 | Edit selected text | đúng một slide + một text shape đang chọn | thay text của shape đó |
-| Generate slides from instruction | chỉ dẫn + số slide 1–6 + ngôn ngữ | chèn N slide từ `deck-template.pptx` sau slide cuối |
+| Generate slides from instruction | chỉ dẫn + số slide 1–6 + ngôn ngữ + layout | chèn N slide từ `deck-template.pptx` sau slide cuối |
+| Generate slides — layout `table` | outline dạng bảng | slide chứa bảng native (PowerPointApi 1.8) |
+| Native chart from user data | tiêu đề, loại chart, nhãn và giá trị người dùng nhập | slide chứa chart native, chèn bằng `insertSlidesFromBase64` |
 
 ## Chạy local
 
@@ -50,22 +52,38 @@ lại test và kiểm tra ảnh render.
 
 Không tạo request/Apply chồng nhau. Khi request đang chạy, các nút bị khóa.
 
+## Native table và chart
+
+- Layout `table`: pane yêu cầu 2 cột × 1–6 hàng, dựng bảng native bằng `ShapeCollection.addTable`
+  sau khi Apply; thiếu PowerPointApi 1.8 thì từ chối trước khi gọi provider.
+- **Chart native:** Office.js không có API tạo chart. Add-in gửi nhãn/giá trị **người dùng nhập**
+  tới `POST /v1/office/chart-slide`; AI API dựng file một slide chứa chart native (OOXML) và trả
+  base64; add-in gọi `presentation.insertSlidesFromBase64`, kiểm đúng một slide được thêm rồi mới
+  báo `Inserted one native chart slide ...`. Không có số liệu nào do model sinh.
+- **Undo last slide insertion** xóa đúng slide vừa chèn; apply/undo gửi telemetry nội dung-free
+  qua `/v1/me/events`.
+- Instruction, selection, chart title/data giống secret bị chặn trước khi gọi provider.
+
 ## Đã kiểm chứng trên Desktop
 
-Bằng chứng ngày 2026-11-07, PowerPoint `16.0.20527`, task pane thật:
+Bằng chứng 2026-11-09:
 [`docs/evidence/powerpoint-addin-generate-20261107`](../docs/evidence/powerpoint-addin-generate-20261107/README.md).
+Bằng chứng 2026-11-12 (bảng, chart, Undo, telemetry, secret guard):
+[`docs/evidence/office-desktop-20261112`](../docs/evidence/office-desktop-20261112/README.md).
 
 - Sinh 3 slide vào deck trống: title/body/footer đúng, footer `1`–`3`.
 - Append 3 slide sau slide 3 (outline inject bởi harness để kiểm riêng đường Apply):
   thứ tự giữ nguyên, footer `4`–`6`, không có slide thừa.
 - Edit mode: chọn `DUSN-X Body`, proposal/provenance hiện trong pane, Apply ghi đúng shape,
   proposal bị xóa.
+- Layout bảng: chèn 1 slide bảng native 5×2; Undo trả deck về 1 slide.
+- Chart: nhập `Q1 12.5 / Q2 18 / Q3 9.75`, nhận slide chart native, Undo xóa đúng slide.
 - Unit test phủ guard đổi slide/shape/text/session, Apply lần hai, rollback khi template
-  thiếu shape, preamble/nhãn outline và giới hạn kích thước.
+  thiếu shape, preamble/nhãn outline, giới hạn kích thước, parse chart và secret guard.
 
 ## Còn mở
 
-- Chưa kiểm Undo/Redo sau Apply, nhiều cửa sổ PowerPoint, và lưu deck ra `.pptx` bàn giao.
+- Chưa hỗ trợ chèn ảnh vào slide; chưa kiểm nhiều cửa sổ PowerPoint đồng thời.
 - Model local (baseline `qwen2.5:1.5b-instruct`, candidate v3) chưa ổn định định dạng outline:
   có lần trả sai số slide hoặc đổi từ ngữ. Preview là bước bắt buộc; không tự Apply.
 - Bằng chứng dùng candidate để chạy tích hợp; candidate không được promote, stack đã khôi

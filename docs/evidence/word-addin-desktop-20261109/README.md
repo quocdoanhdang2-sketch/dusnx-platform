@@ -77,9 +77,19 @@ Tạo proposal trên đoạn đích, sau đó đổi selection sang đoạn khá
 - Proposal bị xóa, Apply bị khóa.
 - Tài liệu không đổi (không có write).
 
+
+### 5. Viết nội dung mới tại con trỏ (bổ sung 2026-11-09)
+
+![Insert at cursor](word-desktop-write-at-cursor.png)
+
+Tài liệu trắng (0 từ), không bôi đen gì — chỉ đặt con trỏ. Nhập instruction, bấm **Create proposal**:
+pane sinh proposal từ Gemini, nút đổi thành **Insert at cursor**; sau khi bấm, Word có đoạn 92 từ.
+Đây là bản sửa cho lỗi trước đó: pane từ chối mọi yêu cầu khi chưa bôi đen ("Select text in the
+document first."), nên không thể tạo chữ trong tài liệu mới.
+
 ## Kiểm thử tự động đi kèm
 
-- `word-addin/word-taskpane.test.js`: 15/15 pass (proposal/apply/guard/logout/race/abort/provenance).
+- `word-addin/word-taskpane.test.js`: 19/19 pass (proposal/apply/guard/logout/race/abort/provenance).
 - `word-addin/dev-server.test.js`: 7/7 pass (allowlist, Gateway URL, header, CSP, body limit).
 - Các suite khác của repo được chạy lại ở lượt bàn giao (xem `docs/PROJECT_STATUS_20261107.md`).
 

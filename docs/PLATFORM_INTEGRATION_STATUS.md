@@ -1,5 +1,11 @@
 # Kiểm kê tích hợp và phần còn thiếu
 
+> **Cập nhật 12/11/2026:** bảng dưới giữ nguyên làm ảnh chụp lúc kiểm kê. Các mục tưởng còn
+> thiếu ở Word/PowerPoint nay đã có trong add-in và đã chụp Windows Desktop:
+> bảng native, chặn Track Changes, Undo lần chèn, telemetry apply/undo, secret guard và chart
+> native từ số liệu người dùng nhập (`docs/evidence/office-desktop-20261112`). Ảnh vẫn chưa
+> được chèn vào tài liệu/slide. Manifest ký, CA nội bộ và model 7B/14B vẫn còn mở.
+
 Phạm vi: mã trong checkout cloud `121d946` và patch đang bàn giao; không truy cập
 tenant/OA/dịch vụ trả phí hay gửi tin nhắn ra ngoài. Không có secret binding của
 Teams/Zalo/image provider trong cấu hình instance; các biến ứng dụng tương ứng cũng

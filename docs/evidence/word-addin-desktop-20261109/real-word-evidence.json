@@ -71,5 +71,15 @@
     "The final saved document reflects the replace + insert-after rounds. The last proposal (used only for the provenance screenshot) was not applied.",
     "The synthetic account password, session token and provider key are not stored in this folder.",
     "The Word window had to be restored/maximized between screenshots because another app took the foreground; this did not change the document."
-  ]
+  ],
+  "write_at_cursor": {
+    "tested_at": "2026-11-09T12:05Z",
+    "document": "unsaved blank Document1 (0 words before Apply)",
+    "selection": "empty — cursor placed in the body",
+    "instruction": "Viết một đoạn mở đầu 3 câu giới thiệu hệ thống DUSN-X cho tài liệu mô tả sản phẩm. Chỉ trả về nội dung.",
+    "proposal_button": "Insert at cursor",
+    "result": "92-word paragraph inserted at the cursor after explicit Apply",
+    "screenshot": "word-desktop-write-at-cursor.png",
+    "fix": "Word pane previously required a non-empty selection; empty selection is now a cursor insertion path with the same provenance and changed-selection guard."
+  }
 }
