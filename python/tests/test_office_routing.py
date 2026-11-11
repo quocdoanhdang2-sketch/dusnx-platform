@@ -113,6 +113,27 @@ def test_office_selection_never_creates_a_memory_or_language_preference(client):
     assert memories == []
 
 
+def test_word_cursor_insert_gets_web_memory_and_real_generation(client):
+    headers = _login(client, "office_word_cursor_memory")
+    session_id = _session(client, headers)
+    memory = client.post("/v1/memories", headers=headers, json={
+        "info_type": "decision",
+        "content": "Quyết định: dùng SQLite FTS5 cho tìm kiếm tài liệu nội bộ",
+    }).json()
+    message = ("Viết một đoạn mở đầu về quyết định dùng SQLite FTS5 cho tìm kiếm tài liệu nội bộ.\n\n"
+               "[Word cursor — no text is selected. Write new document content to insert at the cursor. "
+               "Return only the content, no commentary.]")
+
+    with patch("apps.ai_api.provider._ollama_generate",
+               side_effect=_fake_model("Hệ thống dùng SQLite FTS5 để tìm kiếm tài liệu nội bộ.")) as model:
+        data = _chat(client, headers, session_id, message)
+
+    assert model.called
+    assert data["response_source"] == "llm"
+    assert data["provider_called"] is True
+    assert data["prompt_memory_ids"] == [memory["memory_id"]]
+
+
 def test_office_request_skips_retrieval_quotation(client):
     headers = _login(client, "office_no_rag")
     session_id = _session(client, headers)

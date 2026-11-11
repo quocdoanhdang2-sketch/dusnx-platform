@@ -1,11 +1,12 @@
 <!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DUSN-X Word</title><script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<style>body{font:14px system-ui;padding:14px;color:#172033}label{display:block;font-weight:600;margin-top:10px}input,textarea,select,button{width:100%;box-sizing:border-box;margin:4px 0;padding:9px}button{cursor:pointer}.row{display:flex;gap:8px}.row>*{flex:1}pre{white-space:pre-wrap;word-break:break-word;background:#f4f6fa;padding:8px}.error{color:#b42318}.ok{color:#067647}</style></head>
+<style>body{font:14px system-ui;padding:14px;color:#172033}label{display:block;font-weight:600;margin-top:10px}input,textarea,select,button{width:100%;box-sizing:border-box;margin:4px 0;padding:9px}button{cursor:pointer}.row{display:flex;gap:8px}.row>*{flex:1}pre{white-space:pre-wrap;word-break:break-word;background:#f4f6fa;padding:8px}.error{color:#b42318}.ok{color:#067647}.hint{color:#5b6472;font-size:12px;margin:2px 0 6px}</style></head>
 <body><h1>DUSN-X</h1><p id="status" role="status">Disconnected</p>
 <label for="username">Username</label><input id="username" autocomplete="username"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password">
 <div class="row"><button id="login">Sign in</button><button id="logout">Sign out</button></div><label for="session">Session</label><select id="session"></select><button id="newSession">New session</button>
 <label for="language">Response language</label><select id="language"><option value="auto">Auto</option><option value="vi">Tiếng Việt</option><option value="en">English</option></select>
+<label for="contentMode">Output</label><select id="contentMode"><option value="text">Text</option><option value="table">Table</option></select>
 <label for="applyMode">Apply mode</label><select id="applyMode"><option value="replace">Replace selected text</option><option value="insertAfter">Insert new paragraph after selection</option></select>
-<label for="prompt">Instruction</label><textarea id="prompt" rows="4">Viết lại đoạn đang chọn, giữ nguyên ý. Chỉ trả về nội dung mới, không kèm giải thích.</textarea><button id="ask">Create proposal from selected text</button>
+<label for="prompt">Instruction</label><p class="hint">Bôi đen đoạn cần sửa, hoặc đặt con trỏ vào chỗ muốn viết nội dung mới.</p><textarea id="prompt" rows="4">Viết lại đoạn đang chọn, giữ nguyên ý. Chỉ trả về nội dung mới, không kèm giải thích.</textarea><button id="ask">Create proposal</button>
 <h2>Proposal</h2><pre id="proposal"></pre><button id="apply" disabled>Apply to selected text</button><details><summary>Provenance</summary><pre id="provenance"></pre></details>
 <script src="word-taskpane.js"></script></body></html>

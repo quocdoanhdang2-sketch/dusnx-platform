@@ -272,6 +272,7 @@ function showView(view) {
   } else if (view === "timeline") {
     el("viewTimeline").classList.add("active");
     el("navTimeline").classList.add("active");
+    loadTimeline();
   }
 }
 
@@ -623,6 +624,74 @@ async function resolvePending(pendingId, accepted) {
   }
 }
 
+async function streamChat(payload, onToken) {
+  const base = window.DUSNX_GATEWAY || "";
+  const generation = authGeneration;
+  const requestToken = authToken;
+  const assertCurrentSession = () => {
+    if (generation !== authGeneration || requestToken !== authToken) {
+      const error = new Error("Phiên đăng nhập đã thay đổi; bỏ qua phản hồi cũ.");
+      error.name = "SessionChangedError";
+      throw error;
+    }
+  };
+  const headers = { "Content-Type": "application/json", Accept: "text/event-stream" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  let resp;
+  try {
+    resp = await fetch(`${base}/v1/chat/stream`, {
+      method: "POST", headers, body: JSON.stringify(payload),
+    });
+  } catch {
+    assertCurrentSession();
+    return { fallback: true };
+  }
+  assertCurrentSession();
+  const contentType = resp.headers.get("content-type") || "";
+  if (!resp.ok || !contentType.includes("text/event-stream") || !resp.body) {
+    return { fallback: true };
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result = null;
+  let failure = null;
+  const handleBlock = block => {
+    let event = "message";
+    let data = "";
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) data += line.slice(5).trim();
+    }
+    if (!data) return;
+    let parsed;
+    try { parsed = JSON.parse(data); } catch { return; }
+    if (event === "token") {
+      if (typeof parsed.text === "string" && parsed.text) onToken(parsed.text);
+    } else if (event === "done") {
+      result = parsed;
+    } else if (event === "error") {
+      failure = parsed;
+    }
+  };
+  for (;;) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    buffer += decoder.decode(chunk.value, { stream: true });
+    let index;
+    while ((index = buffer.indexOf("\n\n")) >= 0) {
+      handleBlock(buffer.slice(0, index));
+      buffer = buffer.slice(index + 2);
+    }
+  }
+  buffer += decoder.decode();
+  if (buffer.trim()) handleBlock(buffer);
+  assertCurrentSession();
+  if (failure) throw new Error(failure.detail || "Lỗi khi nhận phản hồi stream.");
+  if (!result) throw new Error("Phản hồi stream không có kết quả cuối.");
+  return { fallback: false, response: result };
+}
+
 async function sendMessage(overrideText = null, { isRetry = false, retryRequest = null } = {}) {
   if (isSending || isResolving || historyLoading) return;
   const generation = authGeneration;
@@ -671,19 +740,35 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
   // Show typing indicator
   showStatus("Đang xử lý…");
 
+  let liveBubble = null;
   try {
-    const response = await apiFetch("/v1/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        session_id: sessionId,
-        request_id: requestId,
-        message: text,
-        project_id: projectId || null,
-        feedback_value: 0,
-        is_retry: isRetry,
-        preferred_language: preferredLanguage,
-      }),
+    const payload = {
+      session_id: sessionId,
+      request_id: requestId,
+      message: text,
+      project_id: projectId || null,
+      feedback_value: 0,
+      is_retry: isRetry,
+      preferred_language: preferredLanguage,
+    };
+    let streamedText = "";
+    let previewShown = false;
+    const streamed = await streamChat(payload, delta => {
+      streamedText += delta;
+      if (!liveBubble) {
+        liveBubble = appendMessageBubble("assistant", "", { created_at: new Date().toISOString() });
+      }
+      if (!previewShown) { previewShown = true; hideStatus(); }
+      const bubble = liveBubble.querySelector ? liveBubble.querySelector(".bubble") : null;
+      if (bubble) safeText(bubble, streamedText);
+      scrollToBottom();
     });
+    const response = streamed.fallback
+      ? await apiFetch("/v1/chat", { method: "POST", body: JSON.stringify(payload) })
+      : streamed.response;
+    // The streamed preview is raw provider text; the done payload is validated,
+    // so the preview is replaced by the final rendered bubble.
+    if (liveBubble) { liveBubble.remove(); liveBubble = null; }
 
     hideStatus();
 
@@ -719,6 +804,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
     await loadSessions();
   } catch (err) {
     if (err.name === "SessionChangedError") return;
+    if (liveBubble) { liveBubble.remove(); liveBubble = null; }
     hideStatus();
     if (!input.value.trim()) input.value = text;
     appendProviderErrorCard(`Lỗi gửi tin: ${err.message}`, null, text, submission);

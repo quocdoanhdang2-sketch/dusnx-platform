@@ -1,20 +1,24 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import math
 import os
+import queue
 import re
 import sqlite3
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Optional
 
 import torch
 from fastapi import Depends, FastAPI, HTTPException, Header, Request, Query
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from dusnx_core.checkpoint import load_checkpoint, model_identifier
@@ -35,6 +39,7 @@ from .decision_updater import (
     extract_modify_components,
 )
 from .language import detect_language, preference_instruction, response_language
+from .office_charts import build_chart_slide, validate_chart_request
 from .runtime_clock import answer_clock_query, detect_clock_query, stated_date_correction
 from .observances import answer_observance_question
 from .arithmetic import answer_arithmetic_question
@@ -556,6 +561,46 @@ _REMEMBER_EXPLICIT_PATTERNS = [
     r"^(?:nhớ|ghi nhớ)\s+giúp\s+tôi\s+(?:rằng|là)?\s*[:：,]?\s*(.+)$",
 ]
 
+# A bare prefix ("nhớ rằng", "nhớ là", "ghi nhớ") carries no content. Saving the
+# prefix itself as a memory produced meaningless rows, so it is answered with a
+# clarification instead.
+_REMEMBER_PREFIX_WORDS = {
+    "nhớ", "rằng", "là", "ghi", "lưu", "lại", "giúp", "hộ", "dùm", "mình",
+    "tôi", "quyết", "định", "lựa", "chọn", "kế", "hoạch", "chốt",
+}
+
+
+def _is_remember_prefix_only(content: str) -> bool:
+    """True when the captured text contains only remember-prefix words."""
+    import re as _re
+    words = _re.findall(r"\w+", content.casefold())
+    return bool(words) and all(word in _REMEMBER_PREFIX_WORDS for word in words)
+
+
+def _detect_bare_remember_intent(text: str) -> bool:
+    """True when the message is only a remember prefix with no content."""
+    import re as _re
+    raw = _re.sub(r"[,，:：.!?。？]", " ", " ".join(text.strip().split()).casefold())
+    tokens = raw.split()
+    if tokens and tokens[0] == "hãy":
+        tokens = tokens[1:]
+    # "nhớ lại" is a recall request, not an instruction to save something.
+    if tokens[:2] == ["nhớ", "lại"]:
+        return False
+    i = 0
+    while i < len(tokens):
+        if tokens[i] in {"nhớ", "lưu"}:
+            i += 1
+            if i < len(tokens) and tokens[i] == "lại":
+                i += 1
+        elif tokens[i] == "ghi" and i + 1 < len(tokens) and tokens[i + 1] == "nhớ":
+            i += 2
+        else:
+            return False
+        while i < len(tokens) and tokens[i] in _REMEMBER_PREFIX_WORDS:
+            i += 1
+    return True
+
 
 def _detect_remember_intent(text: str) -> Optional[tuple[str, str]]:
     """
@@ -570,6 +615,8 @@ def _detect_remember_intent(text: str) -> Optional[tuple[str, str]]:
             content = m.group(1).strip()
             content = _re.sub(r"[.?!]+$", "", content).strip()
             if not content or len(content) < 3:
+                continue
+            if _is_remember_prefix_only(content):
                 continue
             lower = t.lower()
             if any(w in lower for w in ("quyết định", "lựa chọn", "kế hoạch", "chốt")):
@@ -651,7 +698,7 @@ def _is_translation_request(text: str) -> bool:
 
 
 _OFFICE_MARKER = re.compile(
-    r"\[(?:Word selected text[^\]]*|PowerPoint selected text shape|PowerPoint slide generation)\]"
+    r"\[(?:Word selected text[^\]]*|Word cursor[^\]]*|PowerPoint selected text shape|PowerPoint slide generation)\]"
 )
 
 
@@ -947,55 +994,129 @@ def answer_runtime_model_question(message: str, language: str = "vi") -> Optiona
             f"và LLM `{model}` (hồ sơ {tier}{vram_text}).")
 
 
+def _reserve_chat_receipt(db, req: ChatRequest, user: dict) -> Optional[ChatResponse]:
+    """Durably reserve this request; return a replayed response when one exists."""
+    if req.request_id is None:
+        return None
+    fingerprint = hashlib.sha256(json.dumps(
+        [req.session_id, req.message, req.project_id, req.feedback_value],
+        ensure_ascii=False, separators=(",", ":")
+    ).encode()).hexdigest()
+    row = db._conn.execute(
+        "SELECT * FROM chat_receipts WHERE user_id=? AND request_id=?",
+        (user["user_id"], req.request_id),
+    ).fetchone()
+    if row:
+        if row["fingerprint"] != fingerprint:
+            raise HTTPException(409, "Request ID đã dùng cho nội dung khác")
+        previous = json.loads(row["response"])
+        if previous.get("status") == "in_progress":
+            raise HTTPException(409, "Kết quả thao tác chưa xác định. Kiểm tra lịch sử và trí nhớ trước khi gửi yêu cầu mới.")
+        if previous.get("provider_ok") or not req.is_retry:
+            if db.get_session(user["user_id"], req.session_id) is None:
+                raise HTTPException(404, "Session not found")
+            return ChatResponse(**{**previous, "replayed": True,
+                "original_provenance": {k: previous.get(k) for k in
+                    ("response_source", "provider_called", "provider_call_count", "provider_used", "model_used",
+                     "tokens_generated", "done_reason", "sanitizer_changed", "raw_output_sha256", "quality_status",
+                     "provider_attempts", "provider_elapsed_ms")},
+                "response_source": "replay", "provider_called": False,
+                "provider_call_count": 0, "provider_attempts": [], "provider_elapsed_ms": 0.0,
+                "done_reason": None, "sanitizer_changed": False,
+                "raw_provider_reply": None, "provider_sanitized_reply": None,
+                "provider_used": None, "model_used": None, "tokens_generated": None})
+        # A retry over a stored provider failure keeps the existing receipt and
+        # runs again; only a first attempt reserves a new row.
+        return None
+    if db.get_session(user["user_id"], req.session_id) is None:
+        raise HTTPException(404, "Session not found")
+    db._conn.execute("INSERT INTO chat_receipts VALUES(?,?,?,?)",
+                     (user["user_id"], req.request_id, fingerprint, '{"status":"in_progress"}'))
+    db._conn.commit()
+    return None
+
+
+def _store_chat_receipt(db, req: ChatRequest, user: dict, result: ChatResponse) -> None:
+    if req.request_id is None:
+        return
+    db._conn.execute("UPDATE chat_receipts SET response=? WHERE user_id=? AND request_id=?",
+                     (result.model_dump_json(), user["user_id"], req.request_id))
+    db._conn.commit()
+
+
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, user: CurrentUser):
     db = get_memory_db()
     # Serialize this SQLite connection; a durable reservation prevents a mutation
     # from being repeated after an ambiguous network/process failure.
     with db._lock:
-        if req.request_id is None:
-            return _chat_impl(req, user)
-        fingerprint = hashlib.sha256(json.dumps(
-            [req.session_id, req.message, req.project_id, req.feedback_value],
-            ensure_ascii=False, separators=(",", ":")
-        ).encode()).hexdigest()
-        row = db._conn.execute(
-            "SELECT * FROM chat_receipts WHERE user_id=? AND request_id=?",
-            (user["user_id"], req.request_id),
-        ).fetchone()
-        if row:
-            if row["fingerprint"] != fingerprint:
-                raise HTTPException(409, "Request ID đã dùng cho nội dung khác")
-            previous = json.loads(row["response"])
-            if previous.get("status") == "in_progress":
-                raise HTTPException(409, "Kết quả thao tác chưa xác định. Kiểm tra lịch sử và trí nhớ trước khi gửi yêu cầu mới.")
-            if previous.get("provider_ok") or not req.is_retry:
-                if db.get_session(user["user_id"], req.session_id) is None:
-                    raise HTTPException(404, "Session not found")
-                return ChatResponse(**{**previous, "replayed": True,
-                    "original_provenance": {k: previous.get(k) for k in
-                        ("response_source", "provider_called", "provider_call_count", "provider_used", "model_used",
-                         "tokens_generated", "done_reason", "sanitizer_changed", "raw_output_sha256", "quality_status",
-                         "provider_attempts", "provider_elapsed_ms")},
-                    "response_source": "replay", "provider_called": False,
-                    "provider_call_count": 0, "provider_attempts": [], "provider_elapsed_ms": 0.0,
-                    "done_reason": None, "sanitizer_changed": False,
-                    "raw_provider_reply": None, "provider_sanitized_reply": None,
-                    "provider_used": None, "model_used": None, "tokens_generated": None})
-        else:
-            if db.get_session(user["user_id"], req.session_id) is None:
-                raise HTTPException(404, "Session not found")
-            db._conn.execute("INSERT INTO chat_receipts VALUES(?,?,?,?)",
-                             (user["user_id"], req.request_id, fingerprint, '{"status":"in_progress"}'))
-            db._conn.commit()
+        replayed = _reserve_chat_receipt(db, req, user)
+        if replayed is not None:
+            return replayed
         result = _chat_impl(req, user)
-        db._conn.execute("UPDATE chat_receipts SET response=? WHERE user_id=? AND request_id=?",
-                         (result.model_dump_json(), user["user_id"], req.request_id))
-        db._conn.commit()
+        _store_chat_receipt(db, req, user, result)
         return result
 
 
-def _chat_impl(req: ChatRequest, user: dict):
+STREAM_HEADERS = {"Cache-Control": "no-cache", "Connection": "keep-alive",
+                  "X-Accel-Buffering": "no"}
+
+
+def _sse(event: str, payload: str) -> str:
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+@app.post("/v1/chat/stream")
+def chat_stream(req: ChatRequest, user: CurrentUser):
+    """Stream one chat turn as SSE: token deltas, then the authoritative response.
+
+    Tokens are raw provider deltas; the final `done` event carries the validated
+    reply, so the client must replace any preview with that text. Single-pass
+    only: corrective retry and translation passes are skipped in stream mode.
+    """
+    db = get_memory_db()
+    with db._lock:
+        replayed = _reserve_chat_receipt(db, req, user)
+    if replayed is not None:
+        def replay_frames():
+            yield _sse("token", json.dumps({"text": replayed.reply}, ensure_ascii=False))
+            yield _sse("done", replayed.model_dump_json())
+        headers = {**STREAM_HEADERS, "X-DUSNX-Replay": "1"}
+        return StreamingResponse(replay_frames(), media_type="text/event-stream", headers=headers)
+
+    events: queue.Queue = queue.Queue()
+
+    def worker():
+        try:
+            def emit(text: str) -> None:
+                events.put(("token", json.dumps({"text": text}, ensure_ascii=False)))
+            result = _chat_impl(req, user, on_token=emit)
+            with db._lock:
+                _store_chat_receipt(db, req, user, result)
+            events.put(("done", result.model_dump_json()))
+        except HTTPException as exc:
+            events.put(("error", json.dumps({"status": exc.status_code, "detail": exc.detail},
+                                            ensure_ascii=False)))
+        except Exception:
+            events.put(("error", json.dumps({"status": 500,
+                                             "detail": "Lỗi nội bộ khi xử lý yêu cầu."},
+                                            ensure_ascii=False)))
+        finally:
+            events.put(None)
+
+    threading.Thread(target=worker, daemon=True, name="chat-stream").start()
+
+    async def frames():
+        while True:
+            item = await run_in_threadpool(events.get)
+            if item is None:
+                break
+            yield _sse(item[0], item[1])
+
+    return StreamingResponse(frames(), media_type="text/event-stream", headers=STREAM_HEADERS)
+
+
+def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     db = get_memory_db()
     user_id = user["user_id"]
 
@@ -1059,6 +1180,10 @@ def _chat_impl(req: ChatRequest, user: dict):
     history = db.get_recent_messages(user_id, req.session_id, limit=12)
     # Exclude the just-added user message from history (it's the current input)
     history = history[:-1] if history else []
+    # Turns older than the 6-message prompt window are kept as a compact
+    # extractive summary (keep_recent counts the current message too).
+    conversation_summary = db.get_session_summary(
+        user_id, req.session_id, keep_recent=7)["summary"]
     # Fast paths (calendar, runtime identity, corrections) return before the
     # final response assembly, so title the session here instead.
     if len(history) == 0:
@@ -1287,6 +1412,34 @@ def _chat_impl(req: ChatRequest, user: dict):
             )
 
     # ── Explicit memory instruction flow ──────────────────────────────────────
+    # A prefix without content must ask for the content instead of accepting it
+    # as a memory; otherwise "nhớ rằng" creates a row that means nothing.
+    bare_remember = None if office_request else _detect_bare_remember_intent(req.message)
+    if bare_remember:
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        reply_text = (
+            "What should I remember? Send the instruction with the detail, for example: "
+            "\"remember that I prefer green tea\"."
+            if reply_language == "en" else
+            "Bạn muốn tôi nhớ nội dung gì? Hãy gửi kèm thông tin cụ thể, ví dụ: "
+            "\"nhớ rằng tôi thích trà xanh\"."
+        )
+        msg = db.append_message(
+            req.session_id, user_id, "assistant", reply_text,
+            memory_ids_used=[], state_version=s_ver,
+        )
+        return chat_response(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="memory_create_missing_content", selected_agent="memory",
+            next_action="clarify", confidence=1.0,
+            runtime_mode=RUNTIME_MODE, routing_source="explicit_memory",
+            provider_used=None, provider_ok=True,
+            state_version=s_ver, memory_ids_used=[],
+            session_id=req.session_id, provider_called=False,
+        )
+
     remember_intent = None if office_request else _detect_remember_intent(req.message)
     if remember_intent is not None:
         itype, clean_content = remember_intent
@@ -1580,7 +1733,9 @@ def _chat_impl(req: ChatRequest, user: dict):
                 session_history=history, project_name=project_name,
                 response_language=reply_language,
                 knowledge_context=rag_context or None,
+                conversation_summary=conversation_summary or None,
                 force_provider=office_request,
+                on_token=on_token,
             )
             reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
             provider_called = getattr(generated, "provider_called", False)
@@ -1665,6 +1820,43 @@ def _chat_impl(req: ChatRequest, user: dict):
 
 
 # ── Authenticated User State & Event endpoints (/v1/me/...) ───────────────────
+
+class ChartSlideRequest(BaseModel):
+    title: str
+    chart_type: str = "bar"
+    labels: list[str]
+    values: list[float]
+
+
+class ChartSlideResponse(BaseModel):
+    file_base64: str
+    bytes: int
+    slide_count: int
+    chart_type: str
+    categories: int
+
+
+@app.post("/v1/office/chart-slide", response_model=ChartSlideResponse)
+def create_chart_slide(req: ChartSlideRequest, user: CurrentUser):
+    """Build a native PowerPoint chart slide from explicit user-supplied data.
+
+    Office.js exposes no chart API; the add-in inserts this one-slide file with
+    insertSlidesFromBase64. No model reads or invents the numbers.
+    """
+    try:
+        _, chart_type, labels, _ = validate_chart_request(
+            req.title, req.chart_type, req.labels, req.values)
+        data = build_chart_slide(req.title, chart_type, labels, req.values)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return ChartSlideResponse(
+        file_base64=base64.b64encode(data).decode("ascii"),
+        bytes=len(data),
+        slide_count=1,
+        chart_type=chart_type,
+        categories=len(labels),
+    )
+
 
 class UserEventCreateRequest(BaseModel):
     platform: str = Field(default="web", description="Platform: web, powerpoint, zalo, ...")

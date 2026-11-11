@@ -411,3 +411,44 @@ def test_repeated_remember_instruction_does_not_duplicate_the_memory(client: Tes
     memories = client.get("/v1/memories", headers=headers).json()
     matches = [m for m in memories if m["content"] == "tôi thích cà phê đen"]
     assert len(matches) == 1
+
+
+def test_nho_rang_and_nho_la_save_the_actual_content(client: TestClient):
+    _, token = _register_and_login(client, "test_memory_phrasing")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+
+    first = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "nhớ rằng tôi thích trà sen vàng",
+    }).json()
+    assert first["intent"] == "memory_create"
+    assert "tôi thích trà sen vàng" in first["reply"]
+
+    second = client.post("/v1/chat", headers=headers, json={
+        "session_id": sid,
+        "message": "nhớ là ngày mai họp lúc 9 giờ",
+    }).json()
+    assert second["intent"] == "memory_create"
+    assert "ngày mai họp lúc 9 giờ" in second["reply"]
+
+    contents = {m["content"] for m in client.get("/v1/memories", headers=headers).json()}
+    assert "tôi thích trà sen vàng" in contents
+    assert "ngày mai họp lúc 9 giờ" in contents
+
+
+def test_bare_remember_prefix_asks_for_content_instead_of_saving_it(client: TestClient):
+    _, token = _register_and_login(client, "test_memory_bare")
+    headers = {"Authorization": f"Bearer {token}"}
+    sid = client.post("/v1/sessions", headers=headers, json={}).json()["session_id"]
+
+    for message in ("nhớ rằng", "nhớ là:", "Nhớ rằng, nhớ là", "ghi nhớ"):
+        response = client.post("/v1/chat", headers=headers, json={
+            "session_id": sid,
+            "message": message,
+        }).json()
+        assert response["intent"] == "memory_create_missing_content", message
+        assert response["next_action"] == "clarify", message
+        assert response["provider_called"] is False, message
+
+    assert client.get("/v1/memories", headers=headers).json() == []

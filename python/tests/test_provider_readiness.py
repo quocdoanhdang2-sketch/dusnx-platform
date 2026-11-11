@@ -42,3 +42,32 @@ def test_ollama_readiness_accepts_only_the_implicit_latest_tag(monkeypatch):
     monkeypatch.setenv("DUSNX_OLLAMA_MODEL", "dusnx-vi-candidate:1.0")
     health = provider.check_ollama_health()
     assert health["model_available"] is False
+
+
+def test_openai_health_matches_models_prefixed_ids(monkeypatch):
+    """Gemini's OpenAI-compatible /models lists "models/<id>"; that must still count as available."""
+    monkeypatch.setenv("DUSNX_PROVIDER", "openai")
+    monkeypatch.setattr(provider, "OPENAI_API_KEY", "synthetic-key")
+    monkeypatch.setattr(provider, "OPENAI_MODEL", "gemini-3.1-flash-lite")
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda *args, **kwargs:
+                        io.BytesIO(json.dumps({"data": [
+                            {"id": "models/gemini-2.5-flash"},
+                            {"id": "models/gemini-3.1-flash-lite"},
+                        ]}).encode()))
+    health = provider.get_provider_health()
+    assert health["reachable"] is True
+    assert health["available"] is True
+    assert health["model_available"] is True
+    assert health["status"] == "ok"
+
+
+def test_openai_health_reports_unlisted_models(monkeypatch):
+    monkeypatch.setenv("DUSNX_PROVIDER", "openai")
+    monkeypatch.setattr(provider, "OPENAI_API_KEY", "synthetic-key")
+    monkeypatch.setattr(provider, "OPENAI_MODEL", "missing-model")
+    monkeypatch.setattr(provider.urllib.request, "urlopen", lambda *args, **kwargs:
+                        io.BytesIO(json.dumps({"data": [{"id": "models/gemini-2.5-flash"}]}).encode()))
+    health = provider.get_provider_health()
+    assert health["reachable"] is True
+    assert health["available"] is False
+    assert health["status"] == "model_not_listed"

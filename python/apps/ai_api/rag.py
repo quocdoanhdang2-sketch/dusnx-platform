@@ -612,9 +612,10 @@ _RETRIEVAL_HINTS = [
 ]
 _RETRIEVAL_HINT = re.compile(
     r"\b(?:" + "|".join(re.escape(hint) for hint in _RETRIEVAL_HINTS) + r")\b")
-# Code identifiers ("answer_from_hits", "ChatResponse") name repository
-# symbols even when no prose hint appears in the question.
-_IDENTIFIER_HINT = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][a-z0-9]+[A-Z]")
+# Code identifiers ("answer_from_hits", "ChatResponse", "validateProposal")
+# name repository symbols even when no prose hint appears in the question.
+_IDENTIFIER_HINT = re.compile(
+    r"[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][a-z0-9]+[A-Z]|[a-z][a-z0-9]*[A-Z][a-z0-9]+")
 
 
 def should_retrieve(query: str) -> bool:

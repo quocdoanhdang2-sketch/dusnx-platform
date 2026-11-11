@@ -56,7 +56,10 @@ def state_to_snapshot(state, version: int, schema_version: int, model_version: s
 def process_one(model, cfg, req, model_version: str, device):
     """Process one event using only feedback known before that event."""
     token_ids = torch.tensor([encode_text(req.content, cfg.vocab_size, cfg.max_tokens)], dtype=torch.long, device=device)
-    platform_ids = torch.tensor([PLATFORM_TO_ID[req.platform]], dtype=torch.long, device=device)
+    # The checkpoint only has the three trained platform embeddings; newer
+    # surfaces reuse the "web" bucket for inference while storage keeps the real name.
+    platform_id = PLATFORM_TO_ID.get(req.platform, PLATFORM_TO_ID["web"])
+    platform_ids = torch.tensor([platform_id], dtype=torch.long, device=device)
     event_type_ids = torch.tensor([EVENT_TYPE_TO_ID.get(req.event_type, 0)], dtype=torch.long, device=device)
     gap = torch.tensor([[float(req.time_gap_hours)]], dtype=torch.float32, device=device)
     known_feedback = torch.tensor([[float(req.feedback_value)]], dtype=torch.float32, device=device)

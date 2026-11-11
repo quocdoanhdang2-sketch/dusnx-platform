@@ -132,6 +132,17 @@ def _init_db(conn: sqlite3.Connection) -> None:
             response TEXT NOT NULL,
             PRIMARY KEY(user_id, request_id)
         );
+        -- Rolling extractive summary of older turns per session. Deterministic:
+        -- no model output is stored here, so a summary can never invent facts.
+        CREATE TABLE IF NOT EXISTS chat_summaries (
+            session_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            through_rowid INTEGER NOT NULL DEFAULT 0,
+            summarized_messages INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(session_id, user_id)
+        );
     """)
     # Schema migration: ensure existing databases get the new columns if created earlier
     existing_pending_cols = {
@@ -148,6 +159,26 @@ def _init_db(conn: sqlite3.Connection) -> None:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+SUMMARY_KEEP_RECENT = 6
+SUMMARY_MAX_CHARS = 2000
+_SUMMARY_USER_CHARS = 180
+_SUMMARY_ASSISTANT_CHARS = 220
+_SUMMARY_BRACKET_BLOCK = re.compile(
+    r"\n?\[(?:Word|PowerPoint)[^\]]{0,400}\](?:\n?Text:.*)?\s*$", re.S)
+
+
+def _summary_line(role: str, content: str) -> Optional[str]:
+    """One compact, whitespace-normalized line for a summarized turn."""
+    text = _SUMMARY_BRACKET_BLOCK.sub("", content or "")
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return None
+    limit = _SUMMARY_USER_CHARS if role == "user" else _SUMMARY_ASSISTANT_CHARS
+    if len(text) > limit:
+        text = text[:limit].rstrip() + "…"
+    return f"{'Người dùng' if role == 'user' else 'Trợ lý'}: {text}"
 
 
 def _row_to_memory(row: sqlite3.Row) -> dict:
@@ -604,6 +635,63 @@ class MemoryDB:
                     item["memory_ids_used"] = []
                 result.append(item)
             return result
+
+    def get_session_summary(self, user_id: str, session_id: str,
+                            keep_recent: int = SUMMARY_KEEP_RECENT) -> dict:
+        """Extractive rolling summary of turns that fell out of the recent window.
+
+        Only messages older than the last `keep_recent` turns are folded in, so
+        the summary never duplicates text the prompt already carries. Lines are
+        verbatim excerpts, trimmed to a fixed budget and evicted oldest-first.
+        """
+        with self._lock:
+            cutoff_row = self._conn.execute(
+                """SELECT rowid FROM chat_messages WHERE session_id=? AND user_id=?
+                   ORDER BY rowid DESC LIMIT 1 OFFSET ?""",
+                (session_id, user_id, max(0, keep_recent)),
+            ).fetchone()
+            stored = self._conn.execute(
+                "SELECT summary, through_rowid, summarized_messages FROM chat_summaries "
+                "WHERE session_id=? AND user_id=?",
+                (session_id, user_id),
+            ).fetchone()
+            summary = stored["summary"] if stored else ""
+            through = stored["through_rowid"] if stored else 0
+            summarized = stored["summarized_messages"] if stored else 0
+            if cutoff_row is None:
+                return {"summary": summary, "through_rowid": through,
+                        "summarized_messages": summarized, "added": 0}
+            cutoff = cutoff_row[0]
+            rows = self._conn.execute(
+                """SELECT rowid, role, content FROM chat_messages
+                   WHERE session_id=? AND user_id=? AND rowid>? AND rowid<=?
+                   ORDER BY rowid ASC""",
+                (session_id, user_id, through, cutoff),
+            ).fetchall()
+            lines = summary.splitlines() if summary else []
+            added = 0
+            for row in rows:
+                line = _summary_line(row["role"], row["content"])
+                if line:
+                    lines.append(line)
+                    added += 1
+            while lines and sum(len(line) + 1 for line in lines) > SUMMARY_MAX_CHARS:
+                lines.pop(0)
+            summary = "\n".join(lines)
+            summarized += added
+            if added or stored is None or cutoff != through:
+                self._conn.execute(
+                    """INSERT INTO chat_summaries(session_id, user_id, summary,
+                       through_rowid, summarized_messages, updated_at) VALUES(?,?,?,?,?,?)
+                       ON CONFLICT(session_id, user_id) DO UPDATE SET
+                       summary=excluded.summary, through_rowid=excluded.through_rowid,
+                       summarized_messages=excluded.summarized_messages,
+                       updated_at=excluded.updated_at""",
+                    (session_id, user_id, summary, cutoff, summarized, _now()),
+                )
+                self._conn.commit()
+            return {"summary": summary, "through_rowid": cutoff,
+                    "summarized_messages": summarized, "added": added}
 
 
     # ── DUSN-X Persistent State ────────────────────────────────────────────────

@@ -26,6 +26,7 @@ def test_gate_accepts_vietnamese_english_and_accentless_domain_questions():
         "mat khau duoc hash bang gi?",
         "What does the DUSN-X gateway do?",
         "answer_from_hits trả về gì?",
+        "word-taskpane validateProposal",
     ):
         assert rag.should_retrieve(query), query
 
