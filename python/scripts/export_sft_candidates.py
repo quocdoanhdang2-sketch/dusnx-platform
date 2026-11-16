@@ -9,6 +9,7 @@ they can enter a locked dataset.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import sqlite3
@@ -62,6 +63,12 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=500)
     parser.add_argument("--min-turns", type=int, default=2)
     parser.add_argument("--max-turns", type=int, default=16)
+    parser.add_argument(
+        "--require-signal",
+        choices=["any", "correction", "memory_write", "correction_or_memory"],
+        default="any",
+        help="Filter candidates requiring specific interaction signals",
+    )
     args = parser.parse_args()
 
     conn = connect(Path(args.db).resolve())
@@ -101,6 +108,15 @@ def main() -> int:
 
         signal = session_signal.encode_session(cleaned)
         record_signal = signal.as_record()
+
+        # Signal filtering if required by training policy
+        if args.require_signal == "correction" and not signal.has_correction:
+            continue
+        if args.require_signal == "memory_write" and not signal.has_memory_write:
+            continue
+        if args.require_signal == "correction_or_memory" and not (signal.has_correction or signal.has_memory_write):
+            continue
+
         candidate_id = hashlib.sha256(session_id.encode("utf-8")).hexdigest()[:16]
         candidates.append({
             "id": candidate_id,
@@ -124,14 +140,22 @@ def main() -> int:
     (out_dir / "candidates.jsonl").write_text(
         "".join(json.dumps(candidate, ensure_ascii=False) + "\n" for candidate in candidates),
         encoding="utf-8")
-    review_rows = ["candidate_id,turns,intents,outcomes,decision,notes"]
-    for candidate in candidates:
-        signal = candidate["signal"]
-        review_rows.append(
-            f"{candidate['id']},{signal['turn_count']},"
-            f"\"{json.dumps(signal['intents'], ensure_ascii=False)}\","
-            f"\"{json.dumps(signal['outcomes'], ensure_ascii=False)}\",,")
-    (out_dir / "review_queue.csv").write_text("\n".join(review_rows) + "\n", encoding="utf-8")
+
+    # Strict RFC 4180 CSV export using csv.writer to avoid broken columns
+    with (out_dir / "review_queue.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["candidate_id", "turns", "intents", "outcomes", "decision", "notes"])
+        for candidate in candidates:
+            sig = candidate["signal"]
+            writer.writerow([
+                candidate["id"],
+                sig["turn_count"],
+                json.dumps(sig["intents"], ensure_ascii=False),
+                json.dumps(sig["outcomes"], ensure_ascii=False),
+                "",
+                "",
+            ])
+
     (out_dir / "README.md").write_text(README, encoding="utf-8")
 
     print(json.dumps({

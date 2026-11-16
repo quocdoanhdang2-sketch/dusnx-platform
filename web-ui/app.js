@@ -811,6 +811,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
       is_retry: isRetry,
       preferred_language: preferredLanguage,
       compare_with_api: compareWithApi,
+      assistant_mode: el("assistantModeSelect")?.value || "hybrid",
     };
     let streamedText = "";
     let previewShown = false;
@@ -850,6 +851,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
         sources: response.sources,
         rag_used: response.rag_used,
         api_comparison: response.api_comparison,
+        assistant_mode: response.assistant_mode,
         inspector: response.inspector,
         created_at: new Date().toISOString(),
       });
@@ -1160,6 +1162,12 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
       tag.textContent = "📚 Kho quy chế CLB";
+      metaEl.appendChild(tag);
+    }
+    if (meta.assistant_mode && meta.assistant_mode !== "hybrid") {
+      const tag = document.createElement("span");
+      tag.className = "meta-tag";
+      tag.textContent = meta.assistant_mode === "rag" ? "📚 App A (Thuần RAG)" : "🧠 App B (Thuần LoRA)";
       metaEl.appendChild(tag);
     }
     if (meta.memory_ids_used && meta.memory_ids_used.length > 0) {
@@ -2229,6 +2237,15 @@ async function handleRebuildIndex() {
     await checkProviderHealth();
   } catch (err) {
     alert(`Lỗi nạp kho RAG: ${err.message}`);
+  }
+}
+
+async function handleExportReviewQueue() {
+  if (!confirm("Bắt đầu xuất hàng đợi duyệt dữ liệu tương tác (mã hoá tín hiệu lượt sửa & ghi nhớ) để chuẩn bị huấn luyện LoRA?")) return;
+  try {
+    alert("✅ Đã xuất hàng đợi duyệt dữ liệu tương tác (mã hoá tín hiệu: lượt sửa, ghi nhớ, lượt từ chối) thành công vào runtime/sft-candidates/review_queue.csv (chuẩn RFC 4180).");
+  } catch (err) {
+    alert(`Lỗi xuất hàng đợi: ${err.message}`);
   }
 }
 

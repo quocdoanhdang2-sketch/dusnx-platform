@@ -1630,3 +1630,40 @@ body.dark-theme .badge-tag {
   color: #60a5fa;
   border-color: rgba(59, 130, 246, 0.3);
 }
+
+.mode-selector-container {
+  display: inline-flex;
+  align-items: center;
+}
+.mode-selector {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-selector:focus, .mode-selector:hover {
+  border-color: var(--accent-bright);
+}
+
+.policy-principles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.policy-item {
+  font-size: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  line-height: 1.5;
+}
+body.dark-theme .policy-item {
+  background: rgba(255, 255, 255, 0.03);
+}

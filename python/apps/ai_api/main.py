@@ -1283,6 +1283,11 @@ class ChatRequest(BaseModel):
     # Club app: also answer the same question with the external API so the UI
     # can show "So với API" side by side with the primary (trained) model.
     compare_with_api: bool = Field(default=False)
+    # Mode selection for verifying 2 APPs / architectures:
+    # "hybrid": RAG + LoRA synergy (default)
+    # "rag": App A (Pure RAG document retrieval on 18 club docs)
+    # "lora": App B (Pure LoRA workflow & behavior assistant without RAG)
+    assistant_mode: str = Field(default="hybrid", pattern="^(hybrid|rag|lora)$")
 
 
 class ChatResponse(BaseModel):
@@ -1294,6 +1299,7 @@ class ChatResponse(BaseModel):
     confidence: float
     runtime_mode: str
     routing_source: str
+    assistant_mode: str = "hybrid"
     provider_used: Optional[str] = None
     provider_ok: bool
     state_version: Optional[int]
@@ -1547,6 +1553,8 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     def chat_response(**kwargs):
         if kwargs.get("next_action") == "clarify" and "response_source" not in kwargs:
             kwargs["response_source"] = "clarification"
+        if "assistant_mode" not in kwargs:
+            kwargs["assistant_mode"] = getattr(req, "assistant_mode", "hybrid") or "hybrid"
         stored = db.get_dusnx_state(user_id)
         blob = stored["state_blob"] if stored else {}
         inspector = None
@@ -1737,12 +1745,14 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     # Questions about this repository are answered from indexed documentation
     # and code, with citations. General knowledge questions skip retrieval so
     # unrelated snippets never steer the answer.
+    current_mode = getattr(req, "assistant_mode", "hybrid") or "hybrid"
     rag_hits: list = []
     rag_context = ""
     # Translation/rewrite prompts must operate on the user's sentence alone;
     # retrieved passages would become the text being translated.
     transform_request = _is_transform_request(req.message) or office_request
-    if not office_request and not _is_translation_request(req.message) and rag.should_retrieve(req.message):
+    # When current_mode == "lora": App B skips RAG retrieval to showcase pure LoRA persona & behavior
+    if current_mode != "lora" and not office_request and not _is_translation_request(req.message) and rag.should_retrieve(req.message):
         candidate_hits = rag.retrieve(req.message, top_k=5)
         if rag.has_evidence(candidate_hits):
             rag_hits = candidate_hits
@@ -1756,6 +1766,27 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     rag_extractive = (rag.answer_from_hits(req.message, rag_hits, reply_language)
                       if rag_hits and not transform_request
                       and rag.has_strong_evidence(rag_hits) else None)
+
+    # App A (Pure RAG): strictly grounded in the 18 documents. If not in corpus, refuse immediately.
+    if current_mode == "rag" and not office_request and not transform_request and not rag_hits:
+        reply_text = (
+            "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
+            if reply_language == "en" else
+            "Kho tài liệu và quy chế CLB IT chưa có thông tin về nội dung này. Bạn vui lòng liên hệ Ban chủ nhiệm CLB để được hướng dẫn trực tiếp."
+        )
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", reply_text,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="clarify_unverified_club_information", selected_agent="conversation",
+            next_action="clarify", confidence=1.0, runtime_mode=RUNTIME_MODE,
+            routing_source="rag_corpus_strict_guard", provider_used=None,
+            provider_ok=True, state_version=s_ver, memory_ids_used=[],
+            session_id=req.session_id, provider_called=False,
+            response_source="rag_extract", assistant_mode="rag")
 
     # ── Missing context guard ─────────────────────────────────────────────────
     if not office_request and _detect_unverified_club_question(req.message) and rag_extractive is None and not rag_hits:
