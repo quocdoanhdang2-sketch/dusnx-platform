@@ -344,6 +344,10 @@ function showView(view) {
   if (view === "chat") {
     el("viewChat")?.classList.add("active");
     el("navChat")?.classList.add("active");
+  } else if (view === "announcements") {
+    el("viewAnnouncements")?.classList.add("active");
+    el("navAnnouncements")?.classList.add("active");
+    loadAnnouncements();
   } else if (view === "messages") {
     el("viewMessages")?.classList.add("active");
     el("navMessages")?.classList.add("active");
@@ -1896,6 +1900,16 @@ async function loadAnnouncements() {
     const announcements = data.announcements || [];
     listEl.replaceChildren();
     if (countEl) countEl.textContent = `${announcements.length} tin ghim`;
+    const sBadge = el("sidebarAnnounceBadge");
+    const hBadge = el("headerAnnounceBadge");
+    if (sBadge) {
+      sBadge.textContent = announcements.length;
+      sBadge.hidden = announcements.length === 0;
+    }
+    if (hBadge) {
+      hBadge.textContent = announcements.length;
+      hBadge.hidden = announcements.length === 0;
+    }
     if (!announcements.length) {
       if (previewEl) previewEl.textContent = "— Chưa có tin mới";
       const empty = document.createElement("div");
@@ -1937,8 +1951,7 @@ async function loadAnnouncements() {
       card.appendChild(body);
       listEl.appendChild(card);
     }
-    // Ensure default collapsed state
-    toggleAnnouncements(false);
+    listEl.hidden = false;
   } catch (err) {
     if (countEl) countEl.textContent = "Không tải được";
   }
@@ -2187,7 +2200,7 @@ async function showNewDmModal() {
             openClubConversation(targetConvId, m.display_name || m.username);
           }
         } catch (err) {
-          alert(`Lỗi tạo tin nhắn 1-1: ${err.message}`);
+          showError(`Không thể tạo tin nhắn với ${m.display_name || m.username}: ${err.message}`);
         }
       };
 
@@ -2217,7 +2230,7 @@ async function loadClubDocuments() {
     const data = await apiFetch("/v1/club/documents");
     allClubDocuments = data.documents || [];
     if (statusEl) {
-      statusEl.textContent = `${allClubDocuments.length} văn bản đã khóa hash SHA-256 (Toàn vẹn: ${data.verified !== false ? "Khớp 100%" : "Đang kiểm tra"})`;
+      statusEl.textContent = `${allClubDocuments.length} tài liệu quy chế & kỹ thuật chính thức`;
     }
     renderDocumentCards(allClubDocuments);
   } catch (err) {
@@ -2272,12 +2285,7 @@ function renderDocumentCards(docs) {
     catBadge.className = "badge-cat";
     catBadge.textContent = doc.category || "Quy chế CLB";
 
-    const hashBadge = document.createElement("span");
-    hashBadge.className = "badge-hash";
-    hashBadge.textContent = `🟢 SHA-256: ${String(doc.sha256 || "").slice(0, 8)}… (Đã khóa)`;
-
     meta.appendChild(catBadge);
-    meta.appendChild(hashBadge);
 
     const actions = document.createElement("div");
     actions.className = "doc-actions";

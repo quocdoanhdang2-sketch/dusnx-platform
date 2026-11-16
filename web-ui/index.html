@@ -108,9 +108,13 @@
     </button>
 
     <nav class="sidebar-nav">
-      <div class="nav-section-label">Chức năng chính (6 Tab)</div>
+      <div class="nav-section-label">Ứng dụng CLB IT</div>
       <button class="sidebar-nav-item active" onclick="showView('chat')" id="navChat">
-        <span class="nav-icon" aria-hidden="true">🤖</span> Chat AI & Bảng tin
+        <span class="nav-icon" aria-hidden="true">✦</span> Trợ lý AI
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('announcements')" id="navAnnouncements">
+        <span class="nav-icon" aria-hidden="true">📢</span> Bảng tin CLB
+        <span class="nav-badge-pill" id="sidebarAnnounceBadge" hidden>0</span>
       </button>
       <button class="sidebar-nav-item" onclick="showView('messages')" id="navMessages">
         <span class="nav-icon" aria-hidden="true">💬</span> Tin nhắn nội bộ
@@ -158,44 +162,31 @@
         <div class="chat-header-info">
           <div class="chat-title-row">
             <span class="status-dot-pulse" title="Trực tuyến"></span>
-            <h1 class="chat-title" id="chatTitle">Trợ lý AI CLB IT</h1>
-            <span class="chat-model-badge">Qwen2.5-0.5B • LoRA + RAG 26 docs</span>
+            <h1 class="chat-title" id="chatTitle">CLB IT Assistant</h1>
+            <div class="mode-selector-container">
+              <select id="assistantModeSelect" class="mode-selector" title="Chọn kiến trúc trợ lý">
+                <option value="hybrid" selected>⚡ RAG + LoRA</option>
+                <option value="rag">📚 Thuần RAG (26 văn bản)</option>
+                <option value="lora">🧠 Thuần LoRA (Quy trình)</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="chat-header-actions">
-          <div class="mode-selector-container">
-            <select id="assistantModeSelect" class="mode-selector" title="Chọn kiến trúc / chế độ kiểm chứng">
-              <option value="hybrid" selected>⚡ RAG + LoRA (Kết hợp)</option>
-              <option value="rag">📚 App A: Thuần RAG (26 văn bản)</option>
-              <option value="lora">🧠 App B: Thuần LoRA (Quy trình)</option>
-            </select>
-          </div>
-          <button class="btn-demo" id="runDemoBtn" onclick="runDemoQuestion()" title="Chạy thử câu hỏi mẫu">▶ Chạy demo</button>
+          <button class="btn-header-bell" onclick="showView('announcements')" title="Xem Bảng tin CLB" aria-label="Bảng tin">
+            <span class="bell-icon">🔔</span>
+            <span class="btn-bell-text">Bảng tin</span>
+            <span class="header-badge-count" id="headerAnnounceBadge" hidden>0</span>
+          </button>
           <input type="checkbox" id="compareWithApiToggle" style="display:none;" />
         </div>
-      </div>
-
-      <!-- Top Pinned Announcements Bulletin Board (Compact & Collapsible) -->
-      <div id="clubAnnouncementBanner" class="announcement-banner is-collapsed">
-        <div class="announcement-header" onclick="toggleAnnouncements()" title="Nhấn để mở rộng hoặc thu gọn bảng tin">
-          <div class="announcement-header-left">
-            <span class="announcement-icon" aria-hidden="true">📌</span>
-            <span class="announcement-title">Bảng tin CLB</span>
-            <span class="announcement-count" id="announcementCount">Đang tải...</span>
-            <span class="announcement-preview-text" id="announcementPreviewText"></span>
-          </div>
-          <button type="button" class="announcement-toggle-btn" id="toggleAnnouncementsBtn" aria-label="Mở rộng / thu gọn bảng tin">
-            <span id="announcementToggleIcon">▼ Mở rộng</span>
-          </button>
-        </div>
-        <div class="announcement-list" id="announcementList" hidden></div>
       </div>
 
       <!-- Welcome state (Gemini inspired) -->
       <div id="welcomeState" class="welcome-state">
         <div class="welcome-gemini-sparkle">✦</div>
         <h2 class="welcome-title">Hôm nay CLB IT có thể giúp gì cho bạn?</h2>
-        <p class="welcome-sub">Mọi thành viên dùng chung chatbot, nhưng mỗi người có một trợ lý riêng: nhớ việc riêng, tra cứu kho 26 văn bản đã khóa hash và hỗ trợ bạn chu đáo.</p>
+        <p class="welcome-sub">Trợ lý AI đồng hành cùng thành viên: tra cứu nhanh 26 văn bản quy chế, ghi nhớ việc riêng và hỗ trợ kỹ thuật.</p>
         <div class="welcome-hints" id="welcomeHints">
           <button class="hint-chip" onclick="useHint(this)">📅 Lịch sinh hoạt định kỳ CLB IT ở đâu, khi nào?</button>
           <button class="hint-chip" onclick="useHint(this)">🏆 Barem và tiêu chí chấm thi IT CodeFest 2026?</button>
@@ -217,7 +208,7 @@
           <span class="spinner" aria-hidden="true"></span>
           <span id="statusText">Trợ lý CLB đang suy nghĩ…</span>
         </div>
-        <div class="input-row gemini-capsule">
+        <div class="gemini-capsule">
           <button type="button" class="input-action-btn" onclick="runDemoQuestion()" title="Gợi ý câu hỏi nhanh" aria-label="Gợi ý">✦</button>
           <textarea
             id="messageInput"
@@ -233,10 +224,30 @@
             </svg>
           </button>
         </div>
-        <div class="input-footer">
-          <span id="modelStatus" class="model-status">🧠 Model: Qwen2.5-0.5B-CLB (LoRA)</span>
-          <span id="providerStatus" class="provider-status">✓ Sẵn sàng • Model tự train + RAG 26 văn bản</span>
+        <div class="input-footer" style="display: none !important;">
+          <span id="modelStatus" class="model-status">Qwen2.5-0.5B-CLB (trained)</span>
+          <span id="providerStatus" class="provider-status">✓ sẵn sàng</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Bảng tin CLB View (Dedicated, spacious bulletin feed) -->
+    <div id="viewAnnouncements" class="view">
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">📢 Bảng tin CLB IT</h1>
+          <p class="view-subtitle">Thông báo, lịch trình và sự kiện quan trọng gửi đến toàn thể thành viên</p>
+        </div>
+        <button class="btn-secondary btn-sm" onclick="loadAnnouncements()">🔄 Làm mới</button>
+      </div>
+      <div id="clubAnnouncementBanner" class="announcement-board-wrap">
+        <div class="announcement-header" style="display:none;">
+          <span id="announcementCount"></span>
+          <span id="announcementPreviewText"></span>
+          <span id="announcementToggleIcon"></span>
+          <button id="toggleAnnouncementsBtn"></button>
+        </div>
+        <div class="announcement-feed-list" id="announcementList"></div>
       </div>
     </div>
 
@@ -280,10 +291,10 @@
       <div class="view-header">
         <div>
           <h1 class="view-title">📚 Kho tài liệu CLB IT</h1>
-          <span class="badge-note" id="docLockStatus">Đang kiểm tra 26 văn bản đã khóa hash SHA-256…</span>
+          <p class="view-subtitle" id="docLockStatus">26 tài liệu quy chế & kỹ thuật chính thức</p>
         </div>
         <div class="doc-header-actions" id="docAdminActions">
-          <button class="btn-secondary btn-sm" onclick="handleVerifyCorpus()">🔒 Kiểm tra toàn vẹn</button>
+          <button class="btn-secondary btn-sm" onclick="handleVerifyCorpus()" title="Kiểm tra tính toàn vẹn của kho tài liệu">🔒 Kiểm tra toàn vẹn</button>
           <button class="btn-primary btn-sm" onclick="handleRebuildIndex()" id="btnRebuildIndex" hidden>⚡ Nạp kho RAG</button>
         </div>
       </div>
@@ -298,7 +309,7 @@
       <div class="view-header">
         <div>
           <h1 class="view-title">📝 Sổ tay cá nhân của tôi</h1>
-          <span class="badge-note">Những việc riêng, vai trò và mục tiêu bot nhớ về bạn</span>
+          <p class="view-subtitle">Những việc riêng, vai trò và mục tiêu bot nhớ về bạn</p>
         </div>
         <button class="btn-secondary" onclick="showAddMemoryModal()">＋ Thêm việc cần nhớ</button>
       </div>

@@ -144,6 +144,24 @@ def run_demo():
         page.screenshot(path=str(shot10_group), full_page=False)
         print(f"   Saved {shot10_group.name}")
 
+        # Step 11: Dedicated Announcements View
+        print("11. Navigating to Bảng tin CLB...")
+        page.locator("#navAnnouncements").click()
+        page.wait_for_selector("#viewAnnouncements")
+        time.sleep(1.5)
+        shot11_ann = OUT_DIR / "11_announcements_board.png"
+        page.screenshot(path=str(shot11_ann), full_page=False)
+        print(f"   Saved {shot11_ann.name}")
+
+        # Step 12: Activity Timeline (Clean view without raw debug chips)
+        print("12. Navigating to Lịch sử hoạt động...")
+        page.locator("#navTimeline").click()
+        page.wait_for_selector("#viewTimeline")
+        time.sleep(1.5)
+        shot12_time = OUT_DIR / "12_timeline_clean.png"
+        page.screenshot(path=str(shot12_time), full_page=False)
+        print(f"   Saved {shot12_time.name}")
+
         browser.close()
         print("Demo completed successfully! All screenshots captured.")
 

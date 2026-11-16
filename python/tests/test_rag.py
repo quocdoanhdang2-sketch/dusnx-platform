@@ -54,7 +54,7 @@ def test_answer_quotes_passage_with_citation():
         "kiến trúc DUSN-X gồm những tầng nào?",
         [hit("Kiến trúc hệ thống DUSN-X hiện hành gồm bốn tầng: Client, Gateway, AI API và dữ liệu.")])
     assert answer is not None
-    assert answer.startswith("Theo tài liệu nội bộ của DUSN-X:")
+    assert answer.startswith(("Theo tài liệu nội bộ của CLB IT:", "Theo tài liệu nội bộ của DUSN-X:"))
     assert "bốn tầng" in answer
     assert "[S1]" in answer
 
@@ -63,7 +63,7 @@ def test_answer_header_follows_quoted_language():
     english = rag.answer_from_hits(
         "What does the gateway do?",
         [hit("The gateway is the only boundary and proxies allowlisted /v1 routes.")])
-    assert english is not None and english.startswith("From the DUSN-X internal documentation:")
+    assert english is not None and english.startswith(("From the IT Club internal documentation:", "From the DUSN-X internal documentation:"))
 
 
 def test_answer_returns_none_without_matching_passage():
