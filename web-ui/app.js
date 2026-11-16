@@ -1288,22 +1288,30 @@ function scrollToBottom() {
 }
 
 function showStatus(msg) {
-  el("statusText").textContent = msg;
-  el("statusIndicator").hidden = false;
+  const textEl = el("statusText");
+  const indEl = el("statusIndicator");
+  if (textEl) textEl.textContent = msg;
+  if (indEl) indEl.hidden = false;
 }
 
 function hideStatus() {
-  el("statusIndicator").hidden = true;
+  const indEl = el("statusIndicator");
+  if (indEl) indEl.hidden = true;
 }
 
 function showError(msg) {
   const banner = el("errorBanner");
-  banner.textContent = msg;  // textContent — safe
-  banner.hidden = false;
+  if (banner) {
+    banner.textContent = msg;
+    banner.hidden = false;
+  } else {
+    console.warn("App Error:", msg);
+  }
 }
 
 function hideError() {
-  el("errorBanner").hidden = true;
+  const banner = el("errorBanner");
+  if (banner) banner.hidden = true;
 }
 
 // ── Memory ─────────────────────────────────────────────────────────────────────
