@@ -153,11 +153,13 @@ def _repo_root() -> Path:
 
 
 def database_path() -> Path:
-    # The index is derived from repository files, not user data: it stays in the
-    # repo so every runtime instance (including isolated test data dirs) sees it.
+    # Prefer explicit configured path, then club RAG index if present, falling back to data/rag.db
     configured = os.getenv("DUSNX_RAG_DB")
     if configured:
         return Path(configured).resolve()
+    club_db = _repo_root() / "runtime" / "club-rag" / "rag.db"
+    if club_db.is_file():
+        return club_db
     return _repo_root() / "python" / "data" / "rag.db"
 
 
@@ -621,6 +623,14 @@ _RETRIEVAL_HINTS = [
     # topic without using the word "runbook".
     "chay local", "chay web", "chay du an", "localhost", "start-local",
     "khoi dong", "cai dat",
+    # Câu lạc bộ IT vocabulary hints
+    "clb", "cau lac bo", "sinh hoat", "lich", "lich hop", "phong", "phong lab", "lab 402", "402",
+    "hackathon", "codefest", "giai thuong", "cuoc thi", "thi dau", "thiet bi", "muon thiet bi",
+    "quy che", "quy dinh", "noi quy", "dieu le", "ban chu nhiem", "chu nhiem", "pho chu nhiem",
+    "truong ban", "ban ky thuat", "ban truyen thong", "ban hau can", "dong quy", "hoi phi", "quy clb",
+    "thanh vien", "tan thanh vien", "onboarding", "workshop", "demo day", "team building", "khen thuong",
+    "ky luat", "danh gia", "tieu chi", "xuat sac", "hoat dong", "dang ky", "don dang ky", "nop quy",
+    "bao mat", "lab", "thu may", "o dau", "khi nao",
 ]
 _RETRIEVAL_HINT = re.compile(
     r"\b(?:" + "|".join(re.escape(hint) for hint in _RETRIEVAL_HINTS) + r")\b")

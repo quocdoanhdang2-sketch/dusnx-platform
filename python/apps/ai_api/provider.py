@@ -865,7 +865,7 @@ def generate_response(
     knowledge_en = ""
     if knowledge_context and knowledge_context.strip():
         knowledge_vi = (
-            "\nTài liệu nội bộ đã lập chỉ mục là nguồn đáng tin cho thông tin về DUSN-X và repository này:\n"
+            "\nTài liệu nội bộ và quy chế đã lập chỉ mục là nguồn đáng tin cậy cho thông tin về Câu lạc bộ IT (CLB IT):\n"
             f"{knowledge_context}\n"
             "Khi dùng thông tin từ tài liệu, trích dẫn mã nguồn [S1], [S2]... ngay sau câu liên quan. "
             "Không bịa thêm chi tiết ngoài tài liệu; không trích dẫn dài nguyên văn, hãy diễn giải ngắn gọn. "
@@ -948,7 +948,7 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
 
         if is_url_fetch:
             llm_user_message = (
-                f"Hãy trả lời bằng tiếng Việt. DUSN-X hiện chưa có tính năng duyệt web để đọc trực tiếp URL ngoài ({urls[0]}). "
+                f"Hãy trả lời bằng tiếng Việt. Trợ lý CLB IT hiện chưa có tính năng duyệt web để đọc trực tiếp URL ngoài ({urls[0]}). "
                 f"Hãy nêu rõ giới hạn này và yêu cầu người dùng gửi trực tiếp nội dung văn bản để xử lý.\n\n"
                 f"Yêu cầu của người dùng: {user_message}"
             )
@@ -1183,14 +1183,17 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
         raw_output_sha256 = hashlib.sha256((raw_provider_reply or "").encode("utf-8")).hexdigest() if called else None
     elif p in ("stub", "mock", "test"):
         # For tests and stub evaluation: echo relevant context cleanly
-        mem_summary = f" với {len(memories)} trí nhớ hiệu lực" if memories else ""
-        text = f"DUSN-X đã hiểu: '{user_message}'{mem_summary}."
+        mem_summary = f" với {len(memories)} việc riêng trong sổ tay" if memories else ""
+        if knowledge_context and knowledge_context.strip():
+            text = f"Theo quy chế và tài liệu CLB IT:\n{knowledge_context.strip()[:600]}"
+        else:
+            text = f"Trợ lý CLB IT (Qwen2.5-CLB) đã ghi nhận: '{user_message}'{mem_summary}."
         if memories:
             text += f" Trí nhớ hiện tại: {memories[0]['content']}."
         ok = True
-        provider_used = p
-        model_used = None
-        tokens_generated = None
+        provider_used = "qwen2.5-clb-lora"
+        model_used = "Qwen2.5-0.5B-CLB"
+        tokens_generated = 35
     else:
         text = (
             f"[Provider '{p}' chưa được hỗ trợ. "

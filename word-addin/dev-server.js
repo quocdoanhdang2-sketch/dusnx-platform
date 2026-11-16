@@ -122,9 +122,10 @@ function proxy(req, res, target) {
   req.on("error", () => { if (!res.headersSent) send(res, 400, "Bad request\n", { "content-type": "text/plain; charset=utf-8" }); });
 }
 
-function createServer({ cert, key, gateway }) {
+function createServer({ cert, key, pfx, passphrase, gateway }) {
   const target = gatewayUrl(gateway);
-  return https.createServer({ cert, key }, (req, res) => {
+  const tlsOpts = pfx ? { pfx, passphrase } : { cert, key };
+  return https.createServer(tlsOpts, (req, res) => {
     const { pathname } = new URL(req.url, "https://localhost");
     if (ASSETS.has(pathname)) {
       if (!["GET", "HEAD"].includes(req.method)) return send(res, 405, "Method not allowed\n", { "content-type": "text/plain; charset=utf-8" });
@@ -136,16 +137,27 @@ function createServer({ cert, key, gateway }) {
 }
 
 function main() {
+  const pfxPath = process.env.WORD_ADDIN_TLS_PFX;
   const certPath = process.env.WORD_ADDIN_TLS_CERT;
   const keyPath = process.env.WORD_ADDIN_TLS_KEY;
-  if (!certPath || !keyPath) {
-    console.error("Set WORD_ADDIN_TLS_CERT and WORD_ADDIN_TLS_KEY to PEM files; refusing to run without TLS.");
-    process.exit(1);
+  let tlsOptions;
+  if (pfxPath && fs.existsSync(pfxPath)) {
+    tlsOptions = { pfx: fs.readFileSync(pfxPath), passphrase: process.env.WORD_ADDIN_TLS_PASSPHRASE || "dusnx" };
+  } else if (certPath && keyPath && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    tlsOptions = { cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) };
+  } else {
+    const defaultPfx = path.resolve(__dirname, "..", "certs", "localhost.pfx");
+    if (fs.existsSync(defaultPfx)) {
+      tlsOptions = { pfx: fs.readFileSync(defaultPfx), passphrase: process.env.WORD_ADDIN_TLS_PASSPHRASE || "dusnx" };
+    } else {
+      console.error("Set WORD_ADDIN_TLS_CERT and WORD_ADDIN_TLS_KEY (or WORD_ADDIN_TLS_PFX); refusing to run without TLS.");
+      process.exit(1);
+    }
   }
   const gateway = gatewayUrl(process.env.WORD_ADDIN_GATEWAY);
   const port = Number(process.env.WORD_ADDIN_PORT || 3001);
   if (!Number.isInteger(port) || port < 1 || port > 65535) { console.error("WORD_ADDIN_PORT must be a TCP port."); process.exit(1); }
-  const server = createServer({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath), gateway });
+  const server = createServer({ ...tlsOptions, gateway });
   const host = process.env.WORD_ADDIN_HOST || "127.0.0.1";
   server.listen(port, host, () => console.log(`Word task pane: https://${host}:${port}/word-taskpane.html (gateway ${gateway})`));
   for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.close(() => process.exit(0)));

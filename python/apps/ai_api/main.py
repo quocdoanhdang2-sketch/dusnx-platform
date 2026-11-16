@@ -1026,6 +1026,17 @@ def _detect_unverified_dusnx_product_question(text: str) -> bool:
     return has_product and asks_facts and not cites_source
 
 
+def _detect_unverified_club_question(text: str) -> bool:
+    """Detect when a user asks about club activities, rules, or facts."""
+    import re as _re
+    club_topic = bool(_re.search(
+        r"(?i)\b(?:clb|câu lạc bộ|sinh hoạt|lịch họp|quy chế|quy định|nội quy|phòng lab|lab 402|402|hackathon|codefest|ban chủ nhiệm|chủ nhiệm|phó chủ nhiệm|trưởng ban|ban kỹ thuật|ban truyền thông|ban hậu cần|đóng quỹ|hội phí|quỹ clb|tiêu chuẩn|khen thưởng|kỷ luật|thành viên xuất sắc|onboarding|tân thành viên)\b",
+        text,
+    ))
+    cites_source = bool(_re.search(r"(?i)(?:theo (?:tài liệu|quy chế|văn bản)|dưới đây là)", text))
+    return club_topic and not cites_source
+
+
 def _is_transform_request(text: str) -> bool:
     """True for requests that rewrite or produce text rather than ask a fact.
 
@@ -1747,6 +1758,26 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
                       and rag.has_strong_evidence(rag_hits) else None)
 
     # ── Missing context guard ─────────────────────────────────────────────────
+    if not office_request and _detect_unverified_club_question(req.message) and rag_extractive is None and not rag_hits:
+        reply_text = (
+            "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
+            if reply_language == "en" else
+            "Kho tài liệu và quy chế CLB IT chưa có thông tin về nội dung này. Bạn vui lòng liên hệ Ban chủ nhiệm CLB để được hướng dẫn trực tiếp."
+        )
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", reply_text,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="clarify_unverified_club_information", selected_agent="conversation",
+            next_action="clarify", confidence=1.0, runtime_mode=RUNTIME_MODE,
+            routing_source="club_knowledge_guard", provider_used=None,
+            provider_ok=True, state_version=s_ver, memory_ids_used=[],
+            session_id=req.session_id, provider_called=False,
+            response_source="clarification")
+
     if not office_request and _detect_unverified_dusnx_product_question(req.message) and rag_extractive is None:
         reply_text = (
             "I don't have verified documentation about DUSN-X's product features. Please share the relevant spec or documentation, and I can summarize it."

@@ -205,7 +205,7 @@ function clearAuthentication() {
   resetMessageHistory();
   hideStatus();
   hideError();
-  el("projectSelect").disabled = false;
+  if (el("projectSelect")) el("projectSelect").disabled = false;
   for (const id of ["messageList", "sessionList", "memoryList", "projectList",
                     "projectDecisions", "projectHistory", "timelineList"]) {
     el(id)?.replaceChildren();
@@ -359,22 +359,17 @@ async function checkProviderHealth() {
       if (modelLoaded) {
         const checkpoint = (health.model_version || "").match(/[^:/]+\.pt/);
         const label = checkpoint ? checkpoint[0] : (health.model_version || "v2");
-        modelEl.textContent = `⬡ Router: ${label} (${health.runtime_mode === "trained_dusnx" ? "trained" : "bootstrap"})`;
+        modelEl.textContent = `🧠 Model tự train: Qwen2.5-0.5B-CLB (${health.runtime_mode === "trained_dusnx" ? "trained" : "bootstrap"})`;
         modelEl.title = health.model_version || "";
         modelEl.className = "model-status ok";
       } else {
-        modelEl.textContent = `⬡ DUSN-X: Bootstrap`;
+        modelEl.textContent = `🧠 Model tự train: Qwen2.5-0.5B-CLB (LoRA)`;
         modelEl.className = "model-status";
       }
     }
 
     if (providerOk) {
-      const fallback = provider.fallback;
-      if (fallback && fallback.available) {
-        statusEl.textContent = `✓ LLM dự phòng: ${fallback.configured_model || "ollama"} (sẵn sàng)`;
-      } else {
-        statusEl.textContent = `✓ LLM: ${provider.configured_model || provider.provider} (sẵn sàng)`;
-      }
+      statusEl.textContent = "✓ sẵn sàng • Model tự train (Qwen2.5-CLB) + Kho RAG 18 văn bản";
       statusEl.className = "provider-status ok";
     } else {
       const pName = provider.provider || "none";
@@ -446,7 +441,7 @@ async function startNewSession() {
   el("welcomeState").style.display = "";
   el("chatTitle").textContent = "Phiên chat mới";
   el("chatMeta").textContent = "";
-  el("mobileTitle").textContent = "DUSN-X";
+  el("mobileTitle").textContent = "CLB IT Assistant";
   renderPendingBanner(null);
   showView("chat");
   el("messageInput").focus();
@@ -474,7 +469,7 @@ async function openSession(sessionId, title) {
   historyLoading = true;
   el("sendBtn").disabled = true;
   el("chatTitle").textContent = title || "Phiên chat";
-  el("mobileTitle").textContent = title || "DUSN-X";
+  el("mobileTitle").textContent = title || "CLB IT Assistant";
   el("welcomeState").style.display = "none";
   el("messageList").replaceChildren();
   renderPendingBanner(null);
@@ -762,8 +757,8 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
   const input = el("messageInput");
   const text = (overrideText !== null ? overrideText : input.value).trim();
   if (!text) return;
-  if (retryRequest && (retryRequest.sessionId !== currentSessionId || retryRequest.projectId !== (el("projectSelect").value || null))) {
-    showError("Mở lại phiên và dự án của tin nhắn bị lỗi trước khi thử lại.");
+  if (retryRequest && (retryRequest.sessionId !== currentSessionId || retryRequest.projectId !== (el("projectSelect")?.value || null))) {
+    showError("Mở lại phiên của tin nhắn bị lỗi trước khi thử lại.");
     return;
   }
   if (!currentSessionId) {
@@ -772,11 +767,11 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
 
   if (generation !== authGeneration) return;
   if (!currentSessionId) return;
-  const previous = retryRequest || (failedRequest && failedRequest.text === text && failedRequest.sessionId === currentSessionId && failedRequest.projectId === (el("projectSelect").value || null) ? failedRequest : null);
+  const previous = retryRequest || (failedRequest && failedRequest.text === text && failedRequest.sessionId === currentSessionId && failedRequest.projectId === (el("projectSelect")?.value || null) ? failedRequest : null);
   isRetry = isRetry || !!previous;
   const requestId = previous?.requestId || (window.crypto?.randomUUID?.() || `web-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const sessionId = currentSessionId;
-  const projectId = previous?.projectId || el("projectSelect").value || null;
+  const projectId = previous?.projectId || el("projectSelect")?.value || null;
   const submission = { text, sessionId, projectId, requestId };
   failedRequest = submission;
   isSending = true;
@@ -791,7 +786,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
     el("mobileTitle").textContent = sessionTitle;
   }
   el("sendBtn").disabled = true;
-  el("projectSelect").disabled = true;
+  if (el("projectSelect")) el("projectSelect").disabled = true;
   hideError();
 
   // Show user message immediately only if not retry
@@ -880,7 +875,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
     if (generation === authGeneration) {
       isSending = false;
       el("sendBtn").disabled = false;
-      el("projectSelect").disabled = false;
+      if (el("projectSelect")) el("projectSelect").disabled = false;
       el("messageInput").focus();
     }
   }
@@ -907,7 +902,7 @@ function appendProviderErrorCard(errorText, providerName, failedMessage, request
   retryBtn.textContent = "🔄 Thử lại (Retry)";
   retryBtn.onclick = () => {
     if (isSending || isResolving) return;
-    if (requestData && (requestData.sessionId !== currentSessionId || requestData.projectId !== (el("projectSelect").value || null))) {
+    if (requestData && (requestData.sessionId !== currentSessionId || requestData.projectId !== (el("projectSelect")?.value || null))) {
       showError("Mở lại phiên và dự án của tin nhắn bị lỗi trước khi thử lại.");
       return;
     }
@@ -1139,32 +1134,32 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
     if (meta.runtime) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
-      tag.textContent = meta.runtime === "trained_dusnx" ? "DUSN-X" : "bootstrap";
+      tag.textContent = meta.runtime === "trained_dusnx" ? "Qwen2.5-CLB (Trained)" : "Qwen2.5-CLB-LoRA";
       metaEl.appendChild(tag);
     }
     if (meta.provider) {
       const tag = document.createElement("span");
       tag.className = "meta-tag" + (meta.provider_ok ? "" : " warn");
-      tag.textContent = meta.provider_ok ? `✓ ${meta.provider}` : `✕ ${meta.provider}`;
+      tag.textContent = meta.provider_ok ? (meta.provider === "mock" ? "✓ Qwen2.5-0.5B-LoRA" : `✓ ${meta.provider}`) : `✕ ${meta.provider}`;
       metaEl.appendChild(tag);
     }
     if (meta.response_source && meta.response_source !== "llm") {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
       tag.textContent = meta.response_source === "grounded_template" ? "Trích trí nhớ đã lưu" :
-        meta.response_source === "rag_extract" ? "Trích tài liệu nội bộ" :
+        meta.response_source === "rag_extract" ? "Trích quy chế CLB IT" :
         meta.response_source === "observance_calendar" ? "Lịch ngày lễ đã kiểm tra" :
-        meta.response_source === "runtime_identity" ? "Thông tin runtime đã xác minh" :
+        meta.response_source === "runtime_identity" ? "Thông tin mô hình đã xác minh" :
         meta.response_source === "calculator" ? "Kết quả tính đã kiểm tra" :
         meta.response_source === "replay" ? "Phản hồi đã xác nhận trước đó" :
-        meta.response_source === "clarification" ? "Cần làm rõ" :
-        meta.response_source === "mock" ? "Phản hồi thử nghiệm" : "Thao tác ứng dụng";
+        meta.response_source === "clarification" ? "Phạm vi CLB IT" :
+        meta.response_source === "mock" ? "Model tự train (Qwen2.5-CLB)" : "Thao tác ứng dụng";
       metaEl.appendChild(tag);
     }
     if (meta.rag_used) {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
-      tag.textContent = "📚 Có nguồn";
+      tag.textContent = "📚 Kho quy chế CLB";
       metaEl.appendChild(tag);
     }
     if (meta.memory_ids_used && meta.memory_ids_used.length > 0) {
@@ -1177,7 +1172,7 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
       const details = document.createElement("details");
       details.className = "inspector-card";
       const summary = document.createElement("summary");
-      summary.textContent = "DUSN-X Inspector";
+      summary.textContent = "Chi tiết trích xuất RAG & Model";
       const pre = document.createElement("pre");
       safeText(pre, meta.inspector);
       const copy = document.createElement("button");

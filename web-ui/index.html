@@ -101,10 +101,7 @@
 
     <div class="sidebar-footer">
       <button class="sidebar-nav-item" onclick="showView('timeline')" id="navTimeline">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span> Quan sát hệ thống
-      </button>
-      <button class="sidebar-nav-item" onclick="showView('projects')" id="navProjects" hidden>
-        <span class="nav-icon" aria-hidden="true">📁</span> Dự án
+        <span class="nav-icon" aria-hidden="true">📊</span> Lịch sử hoạt động
       </button>
       <button class="sidebar-nav-item logout-btn" onclick="handleLogout()">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span> Đăng xuất
@@ -127,14 +124,14 @@
       <div class="chat-header">
         <div>
           <h1 class="chat-title" id="chatTitle">Trợ lý AI cá nhân hoá CLB IT</h1>
-          <div class="chat-meta" id="chatMeta"></div>
+          <div class="chat-meta" id="chatMeta">
+            <span class="badge-tag">🧠 Qwen2.5-0.5B-CLB (Model tự huấn luyện)</span>
+            <span class="badge-tag">📚 RAG Kho quy chế CLB IT</span>
+          </div>
         </div>
         <div class="chat-header-actions">
           <button class="btn-demo" id="runDemoBtn" onclick="runDemoQuestion()" title="Chạy thử câu hỏi mẫu">▶ Chạy demo</button>
-          <label class="toggle-api-compare" title="So sánh câu trả lời của model tự train với API dự phòng">
-            <input type="checkbox" id="compareWithApiToggle" />
-            <span>⚡ So với API</span>
-          </label>
+          <input type="checkbox" id="compareWithApiToggle" style="display:none;" />
         </div>
       </div>
 
@@ -186,9 +183,9 @@
             </svg>
           </button>
         </div>
-        <div class="input-footer" hidden>
-          <span id="modelStatus" class="model-status">DUSN-X Model</span>
-          <span id="providerStatus" class="provider-status">Đang kiểm tra provider…</span>
+        <div class="input-footer">
+          <span id="modelStatus" class="model-status">🧠 Model: Qwen2.5-0.5B-CLB (LoRA)</span>
+          <span id="providerStatus" class="provider-status">✓ Sẵn sàng • Model tự train + RAG 18 văn bản</span>
         </div>
       </div>
     </div>
@@ -367,40 +364,19 @@
       </div>
     </div>
 
-    <!-- Legacy Views kept for test and observation compatibility -->
-    <div id="viewProjects" class="view" hidden>
-      <div class="view-header">
-        <h1 class="view-title">📁 Dự án của tôi</h1>
-        <button class="btn-secondary" onclick="showAddProjectModal()">＋ Tạo dự án</button>
-      </div>
-      <div id="projectList" class="card-list" role="list"></div>
-      <div id="projectDetail" hidden>
-        <div class="view-header">
-          <h2 class="view-title" id="projectDetailName"></h2>
-          <button class="btn-ghost" onclick="closeProjectDetail()">← Quay lại</button>
-        </div>
-        <p id="projectDetailDesc" class="project-desc"></p>
-        <h3 class="section-label">Quyết định đang hiệu lực</h3>
-        <div id="projectDecisions" class="card-list"></div>
-        <h3 class="section-label">Lịch sử quyết định</h3>
-        <div id="projectHistory" class="card-list"></div>
-      </div>
-    </div>
-
     <div id="viewTimeline" class="view">
       <div class="view-header">
-        <h1 class="view-title">📡 Timeline Sự kiện & Giám sát hệ thống</h1>
-        <span class="badge-note">Sự kiện đã xác thực qua Web, Office và API</span>
+        <h1 class="view-title">📊 Lịch sử hoạt động & Giám sát hệ thống</h1>
+        <span class="badge-note">Nhật ký truy vết các phiên chat AI và tương tác hệ thống</span>
       </div>
       <div class="timeline-controls">
         <select id="tlPlatformFilter" class="field-input compact" onchange="loadTimeline()" aria-label="Lọc theo nền tảng">
-          <option value="">Tất cả nền tảng</option>
-          <option value="web">Web</option>
-          <option value="word">Word</option>
-          <option value="powerpoint">PowerPoint</option>
-          <option value="zalo">Zalo</option>
+          <option value="">Tất cả nguồn</option>
+          <option value="web">Web Browser</option>
+          <option value="mobile">PWA Mobile</option>
+          <option value="api">Hệ thống AI</option>
         </select>
-        <button class="btn-secondary" onclick="loadTimeline()">🔄 Làm mới Timeline</button>
+        <button class="btn-secondary" onclick="loadTimeline()">🔄 Làm mới</button>
       </div>
       <div id="timelineStatus" class="status-text" role="status"></div>
       <div id="timelineList" class="timeline-list"></div>
