@@ -45,3 +45,5 @@ full-pytest-*.log
 lineage-test-fixtures-*/
 test-output-provider-diagnostics-*/
 **/.tmp-*/
+certs/
+*.pem

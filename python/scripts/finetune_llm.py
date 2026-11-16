@@ -28,7 +28,10 @@ def _run(args):
     from trl import SFTConfig, SFTTrainer
     versions={k:importlib.metadata.version(k) for k in ('torch','transformers','trl','peft','accelerate','datasets','tokenizers','huggingface-hub')}
     required={'transformers':'4.56.2','trl':'0.23.1','peft':'0.17.1','accelerate':'1.10.1','datasets':'4.1.1','tokenizers':'0.22.0','huggingface-hub':'0.35.1'}
-    if any(versions[k]!=v for k,v in required.items()) or versions['torch'].split('+')[0]!='2.8.0':raise ValueError('Install requirements/llm-sft.txt in a separate environment')
+    if any(versions[k]!=v for k,v in required.items()):raise ValueError('Install requirements/llm-sft.txt in a separate environment')
+    torch_mm=tuple(int(p) for p in versions['torch'].split('+')[0].split('.')[:2])
+    if versions['torch'].split('+')[0]!='2.8.0' and not (2,9)<=torch_mm<(2,15):
+        raise ValueError('torch must be the locked 2.8.0 or the club range 2.9-2.14 per requirements/llm-sft.txt')
     cfg=yaml.safe_load(Path(args.config).read_text(encoding='utf-8'))
     if not isinstance(cfg,dict):raise ValueError('SFT config must be a YAML mapping')
     cfg=dict(cfg)

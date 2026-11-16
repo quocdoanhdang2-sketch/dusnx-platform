@@ -309,3 +309,43 @@ describe("formatDate", () => {
     assert.equal(app.formatDate(null), "—");
   });
 });
+
+describe("Club IT Assistant Features", () => {
+  it("getRoleBadgeInfo returns correct labels and CSS classes", () => {
+    assert.deepEqual(app.getRoleBadgeInfo("owner"), { label: "Chủ nhiệm CLB", className: "role-badge role-owner" });
+    assert.deepEqual(app.getRoleBadgeInfo("deputy"), { label: "Phó chủ nhiệm", className: "role-badge role-deputy" });
+    assert.deepEqual(app.getRoleBadgeInfo("lead"), { label: "Trưởng ban", className: "role-badge role-lead" });
+    assert.deepEqual(app.getRoleBadgeInfo("member"), { label: "Thành viên", className: "role-badge role-member" });
+  });
+
+  it("initClubUI controls management tab visibility based on role", () => {
+    elements.navManagement = makeEl("button");
+    elements.userRoleBadge = makeEl("span");
+    elements.mobileRoleBadge = makeEl("span");
+    elements.userName = makeEl("span");
+
+    app.initClubUI({ username: "member1", role: "member", display_name: "Thành viên A" });
+    assert.equal(elements.navManagement.hidden, true);
+    assert.equal(elements.userRoleBadge.textContent, "Thành viên");
+
+    app.initClubUI({ username: "owner1", role: "owner", display_name: "Chủ nhiệm B" });
+    assert.equal(elements.navManagement.hidden, false);
+    assert.equal(elements.userRoleBadge.textContent, "Chủ nhiệm CLB");
+  });
+
+  it("appendMessageBubble renders API comparison card when compare_with_api is used", () => {
+    const bubble = app.appendMessageBubble("assistant", "Câu trả lời từ model tự train", {
+      api_comparison: {
+        provider: "Gemini",
+        model: "gemini-1.5-flash",
+        latency_ms: 120,
+        reply: "Câu trả lời dự phòng từ Gemini",
+      },
+    }, false);
+    assert.ok(bubble);
+    // Ensure comparison details card is present
+    const details = bubble._children[1]._children.find(c => c.className === "api-comparison-card");
+    assert.ok(details, "api-comparison-card must be attached");
+    assert.equal(details._children[0].textContent, "⚡ So sánh với API dự phòng (Gemini)");
+  });
+});

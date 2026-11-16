@@ -13,12 +13,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+import math
 import os
 import re
 import sqlite3
 import sys
 import time
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -396,13 +398,23 @@ def _title_for(path: Path, raw: str) -> str:
     return path.stem.replace("_", " ").replace("-", " ")
 
 
-def build_index(force: bool = False, verbose: bool = False) -> dict:
+def build_index(force: bool = False, verbose: bool = False,
+                paths: Optional[Iterable[str]] = None) -> dict:
+    """Index the repository, or only ``paths`` when a focused scope is given.
+
+    Explicit paths are treated as an externally locked scope (the domain-corpus
+    manifest verifies them), so repository glob and skip rules do not apply.
+    """
     root = _repo_root()
     started = time.monotonic()
     inserted_docs = inserted_chunks = skipped = removed = 0
     seen_paths: set[str] = set()
+    if paths is None:
+        candidates = _iter_files(root)
+    else:
+        candidates = {((root / relative).resolve()) for relative in paths}
     with _connect() as conn:
-        for path in sorted(_iter_files(root)):
+        for path in sorted(candidates):
             relative = path.relative_to(root).as_posix()
             seen_paths.add(relative)
             try:
@@ -640,6 +652,136 @@ def has_evidence(hits: list[Hit], min_score: float = 55.0) -> bool:
 def has_strong_evidence(hits: list[Hit], min_score: float = 70.0) -> bool:
     """Stricter gate used before injecting context into general answers."""
     return bool(hits) and hits[0].score >= min_score and hits[0].coverage >= 0.5
+
+
+_SCOPE_WORD = re.compile(r"[a-z0-9_]+")
+
+
+def _scope_tokens(text: str) -> list[str]:
+    return _SCOPE_WORD.findall(_strip_diacritics((text or "").lower()))
+
+
+def _scope_features(tokens: list[str]) -> list[str]:
+    """Unigrams and adjacent bigrams: bigrams carry the phrase-level signal that
+    separates an in-domain question from an off-topic one sharing one word."""
+    features = [token for token in tokens if len(token) >= 2]
+    features.extend(f"{left} {right}" for left, right in zip(tokens, tokens[1:]))
+    return features
+
+
+@lru_cache(maxsize=8)
+def _scope_model(db_path: str, stamp: int) -> tuple[dict[str, float], list[tuple[dict[str, float], float]]]:
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT c.text, c.heading, d.title FROM rag_chunks c "
+            "JOIN rag_documents d ON d.doc_id = c.doc_id").fetchall()
+    document_features = []
+    frequency: dict[str, int] = {}
+    for row in rows:
+        heading = (row[1] or "").strip()
+        title = (row[2] or "").strip()
+        # Headings and titles are short and topical, so they score higher for a
+        # matching question than a long chunk that merely shares common words.
+        for text in (f"{heading} {title} {row[0]}", heading, title):
+            if not text.strip():
+                continue
+            features = set(_scope_features(_scope_tokens(text)))
+            document_features.append(features)
+            for feature in features:
+                frequency[feature] = frequency.get(feature, 0) + 1
+    total = len(document_features)
+    idf = {feature: math.log((total + 1) / (count + 1)) + 1
+           for feature, count in frequency.items()}
+    vectors = []
+    for features in document_features:
+        vector = {feature: idf[feature] for feature in features if feature in idf}
+        norm = math.sqrt(sum(value * value for value in vector.values())) or 1.0
+        vectors.append((vector, norm))
+    return idf, vectors
+
+
+def scope_similarity(query: str) -> float:
+    """Highest cosine similarity between the query and a corpus chunk.
+
+    A focused index is indexed over one domain, so cosine is computed over
+    unigram/bigram TF-IDF built from the corpus itself: no extra model, no
+    network, and it still separates topics that only share generic words.
+    """
+    if not query or len(query.strip()) < 3:
+        return 0.0
+    try:
+        stamp = database_path().stat().st_mtime_ns
+    except OSError:
+        return 0.0
+    idf, vectors = _scope_model(str(database_path()), stamp)
+    features = {feature for feature in _scope_features(_scope_tokens(query)) if feature in idf}
+    if not features:
+        return 0.0
+    query_vector = {feature: idf[feature] for feature in features}
+    query_norm = math.sqrt(sum(value * value for value in query_vector.values()))
+    if not query_norm:
+        return 0.0
+    best = 0.0
+    for vector, norm in vectors:
+        dot = sum(weight * vector[feature] for feature, weight in query_vector.items()
+                  if feature in vector)
+        if dot:
+            similarity = dot / (norm * query_norm)
+            if similarity > best:
+                best = similarity
+    return best
+
+
+def _scope_anchor_terms() -> tuple[set, set]:
+    """Domain anchor terms from DUSNX_SCOPE_ANCHORS: "word, two words, ...".
+
+    Anchors are folded (diacritics stripped). A query containing a domain
+    anchor is in-scope regardless of cosine — short factoid questions
+    ("giải nhất được bao nhiêu tiền?") can cosine-match off-topic text about
+    money, and an anchor is exactly the signal that disambiguates them.
+    """
+    raw = os.getenv("DUSNX_SCOPE_ANCHORS", "")
+    unigrams: set = set()
+    bigrams: set = set()
+    for item in raw.split(","):
+        item = _strip_diacritics(item.strip().lower())
+        if not item:
+            continue
+        parts = item.split()
+        if len(parts) == 1 and len(parts[0]) >= 2:
+            unigrams.add(parts[0])
+        elif len(parts) == 2:
+            bigrams.add(f"{parts[0]} {parts[1]}")
+    return unigrams, bigrams
+
+
+def _scope_anchor_hit(query: str) -> bool:
+    unigrams, bigrams = _scope_anchor_terms()
+    if not unigrams and not bigrams:
+        return False
+    tokens = _scope_tokens(query)
+    if any(token in unigrams for token in tokens):
+        return True
+    return any(f"{left} {right}" in bigrams
+               for left, right in zip(tokens, tokens[1:]))
+
+
+def should_retrieve_scoped(query: str, min_similarity: Optional[float] = None) -> bool:
+    """Domain gate for a focused index.
+
+    The repository gate asks for a vocabulary hint and misses wording it has not
+    seen ("task pane", "release verification"); a raw FTS score accepts
+    off-topic questions because common Vietnamese words occur everywhere. The
+    default threshold sits inside the measured gap on the locked drafted ops
+    test set (out-of-domain max 0.082, in-domain min 0.111); a different corpus
+    should pass its own measured threshold via min_similarity or the
+    DUSNX_SCOPE_MIN_SIM env var, optionally with DUSNX_SCOPE_ANCHORS.
+    """
+    if _scope_anchor_hit(query):
+        return True
+    if min_similarity is None:
+        min_similarity = float(os.getenv("DUSNX_SCOPE_MIN_SIM", "0.095"))
+    return scope_similarity(query) >= min_similarity
 
 
 def _path_weight(path: str) -> float:

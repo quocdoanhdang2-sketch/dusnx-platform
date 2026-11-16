@@ -1,0 +1,21 @@
+# Corpus CLB IT (giả lập) — nguồn cho index phạm vi CLB.
+# Domain: hoạt động, quy chế, tài liệu nội bộ CLB IT (toàn dữ liệu fictitious).
+# Đổi nội dung file trong docs/ thì phải chạy lại lock_domain_corpus.py để khóa hash mới.
+datasets/club_corpus_v1/docs/01-quy-che-hoat-dong.md
+datasets/club_corpus_v1/docs/02-ban-chu-nhiem.md
+datasets/club_corpus_v1/docs/03-lich-sinh-hoat.md
+datasets/club_corpus_v1/docs/04-it-codefest-2026.md
+datasets/club_corpus_v1/docs/05-don-dang-ky-thanh-vien.md
+datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md
+datasets/club_corpus_v1/docs/07-ke-hoach-tai-chinh.md
+datasets/club_corpus_v1/docs/08-onboarding-tan-thanh-vien.md
+datasets/club_corpus_v1/docs/09-noi-quy-sinh-hoat.md
+datasets/club_corpus_v1/docs/10-lich-workshop.md
+datasets/club_corpus_v1/docs/11-danh-sach-thanh-vien.md
+datasets/club_corpus_v1/docs/12-quy-dinh-bao-mat-thiet-bi.md
+datasets/club_corpus_v1/docs/13-tuyen-thanh-vien-dot-2.md
+datasets/club_corpus_v1/docs/14-demo-day.md
+datasets/club_corpus_v1/docs/15-nhan-dien-clb.md
+datasets/club_corpus_v1/docs/16-dong-quy-clb.md
+datasets/club_corpus_v1/docs/17-team-building.md
+datasets/club_corpus_v1/docs/18-danh-gia-thanh-vien.md

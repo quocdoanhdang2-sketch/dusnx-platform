@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DUSN-X — Báo cáo tổng thể 12/11/2026</title>
+<style>
+  :root{
+    --cream:#F7F4EC;
+    --paper:#FFFFFF;
+    --ink:#16211F;
+    --muted:#5D6B66;
+    --line:#DCD5C6;
+    --teal:#0E6F62;
+    --teal-dark:#0A5349;
+    --teal-soft:#E4F0EC;
+    --amber:#B45309;
+    --amber-soft:#FBEFDD;
+    --red:#A23B2A;
+    --red-soft:#F8E7E2;
+    --shadow:0 12px 30px rgba(22,33,31,.07);
+    --radius:16px;
+    --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --serif:"Times New Roman",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, #EAF3EF 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, #F5EBDC 0%, transparent 55%),
+      var(--cream);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.65;
+  }
+  a{color:var(--teal-dark);text-decoration:none;border-bottom:1px solid rgba(14,111,98,.28)}
+  a:hover{border-bottom-color:var(--teal)}
+  code{
+    font-family:"Cascadia Mono",Consolas,"Courier New",monospace;
+    font-size:.88em;
+    background:#F0ECE0;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:1px 5px;
+  }
+  .layout{
+    max-width:1220px;
+    margin:0 auto;
+    padding:28px 24px 80px;
+    display:grid;
+    grid-template-columns:230px minmax(0,1fr);
+    gap:34px;
+    align-items:start;
+  }
+  .layout > *{min-width:0}
+  main{min-width:0}
+  .cover,.card,.table-wrap,.arch,.step{min-width:0}
+  /* ---------- TOC ---------- */
+  aside{
+    position:sticky;
+    top:24px;
+    background:rgba(255,255,255,.72);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 16px;
+    backdrop-filter:blur(6px);
+  }
+  aside .toc-title{
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--teal);
+    font-weight:800;
+    margin:0 0 10px;
+  }
+  aside nav{display:flex;flex-direction:column;gap:2px}
+  aside nav a{
+    border:0;
+    color:var(--muted);
+    font-size:13.5px;
+    padding:6px 8px;
+    border-radius:8px;
+    line-height:1.35;
+  }
+  aside nav a:hover{background:var(--teal-soft);color:var(--teal-dark)}
+  aside nav a b{color:var(--teal);font-weight:800;margin-right:6px;font-size:12px}
+  aside .toc-note{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+  /* ---------- Cover ---------- */
+  .cover{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:44px 46px 38px;
+    box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
+  }
+  .cover::before{
+    content:"";
+    position:absolute;
+    right:-120px;top:-140px;
+    width:380px;height:380px;
+    border-radius:50%;
+    background:radial-gradient(circle at 40% 40%, var(--teal-soft), transparent 70%);
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--teal);
+    font-weight:800;
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(30px,4.2vw,46px);
+    line-height:1.14;
+    margin:0 0 16px;
+    letter-spacing:-.01em;
+  }
+  h1 .thin{color:var(--teal);font-weight:400;font-style:italic}
+  .lede{
+    font-size:17.5px;
+    color:#31403C;
+    max-width:66ch;
+    margin:0 0 22px;
+  }
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px;position:relative}
+  .badge{
+    font-size:12px;
+    font-weight:700;
+    padding:6px 11px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#FCFAF5;
+    color:var(--muted);
+  }
+  .badge.ok{background:var(--teal-soft);border-color:#BFDCD4;color:var(--teal-dark)}
+  .badge.warn{background:var(--amber-soft);border-color:#EBD3AC;color:var(--amber)}
+  .badge.info{background:#EEF2F7;border-color:#D2DCE8;color:#3D556E}
+  .meta-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px;
+    position:relative;
+  }
+  .meta-card{
+    background:#FCFAF5;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+  }
+  .meta-card .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .meta-card .v{font-size:13.5px;margin-top:3px;color:var(--ink);line-height:1.45}
+  /* ---------- Sections ---------- */
+  section{margin-top:46px;scroll-margin-top:20px}
+  .sec-head{display:flex;gap:14px;align-items:baseline;margin-bottom:8px}
+  .sec-num{
+    flex:0 0 auto;
+    width:38px;height:38px;
+    border-radius:50%;
+    background:var(--teal);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:800;
+    box-shadow:0 6px 14px rgba(14,111,98,.22);
+  }
+  h2{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(23px,2.6vw,30px);
+    margin:0;
+    line-height:1.2;
+  }
+  .sub{color:var(--muted);margin:0 0 20px;max-width:78ch}
+  h3{font-size:17px;margin:24px 0 8px;color:var(--teal-dark)}
+  p{margin:0 0 12px}
+  ul{margin:0 0 12px;padding-left:20px}
+  li{margin-bottom:6px}
+  .small{font-size:13px;color:var(--muted)}
+  /* ---------- Cards & grids ---------- */
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    box-shadow:0 4px 14px rgba(22,33,31,.035);
+  }
+  .card h3{margin-top:0}
+  .card p:last-child{margin-bottom:0}
+  .card .kicker{
+    font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--teal);margin-bottom:6px;
+  }
+  .card ul{padding-left:18px;margin-bottom:0}
+  /* ---------- Callouts ---------- */
+  .callout{
+    border-radius:14px;
+    padding:16px 20px;
+    margin:18px 0;
+    border:1px solid;
+    font-size:14.5px;
+  }
+  .callout b{display:block;margin-bottom:4px}
+  .callout.ok{background:var(--teal-soft);border-color:#BFDCD4;color:#123F38}
+  .callout.warn{background:var(--amber-soft);border-color:#EBD3AC;color:#6B3A0B}
+  .callout.info{background:#EEF2F7;border-color:#D2DCE8;color:#2E445C}
+  /* ---------- Table ---------- */
+  .table-wrap{
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--paper);
+    box-shadow:0 4px 14px rgba(22,33,31,.035);
+  }
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+  th,td{text-align:left;padding:11px 14px;vertical-align:top;border-bottom:1px solid #EAE4D7}
+  th{
+    background:#F4F0E6;
+    color:#3A4744;
+    font-size:11.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  tr:last-child td{border-bottom:0}
+  td b{color:var(--teal-dark)}
+  /* ---------- Architecture ---------- */
+  .arch{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+    box-shadow:0 4px 14px rgba(22,33,31,.035);
+    overflow-x:auto;
+  }
+  .arch svg{display:block;width:100%;min-width:760px;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .dot.teal{background:var(--teal-soft);border:1px solid #9AC7BB}
+  .dot.gray{background:#F3F4F2;border:1px solid #CFD6D2}
+  /* ---------- Steps ---------- */
+  .steps{display:grid;gap:10px;counter-reset:step}
+  .step{
+    display:grid;
+    grid-template-columns:34px minmax(0,1fr);
+    gap:12px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:13px 16px;
+  }
+  .step .n{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--teal-soft);color:var(--teal-dark);
+    font-weight:800;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:2px;
+  }
+  .step b{color:var(--ink)}
+  .step p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+  /* ---------- Tags ---------- */
+  .tag{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:.06em;
+    padding:2px 7px;
+    border-radius:5px;
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+  .tag.r{background:var(--teal-soft);color:var(--teal-dark)}
+  .tag.d{background:#EEF2F7;color:#3D556E}
+  .tag.t{background:#F1EFE6;color:#6B6552}
+  .tag.x{background:var(--red-soft);color:var(--red)}
+  /* ---------- Code ---------- */
+  pre{
+    background:#1C2A27;
+    color:#E8EFEC;
+    border-radius:14px;
+    padding:18px 20px;
+    overflow-x:auto;
+    font-family:"Cascadia Mono",Consolas,"Courier New",monospace;
+    font-size:13px;
+    line-height:1.6;
+    margin:12px 0;
+  }
+  pre code{background:none;border:0;padding:0;color:inherit;font-size:inherit}
+  /* ---------- Footer ---------- */
+  .doc-footer{
+    margin-top:54px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--muted);
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 24px;
+    justify-content:space-between;
+  }
+  /* ---------- Responsive / print ---------- */
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;padding:16px 14px 60px;gap:20px}
+    aside{position:static;order:-1}
+    aside nav{display:grid;grid-template-columns:1fr 1fr}
+    .cover{padding:28px 22px}
+    .meta-grid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:520px){
+    .meta-grid{grid-template-columns:1fr}
+    aside nav{grid-template-columns:1fr}
+  }
+  @media print{
+    body{background:#fff;font-size:11pt}
+    .layout{display:block;max-width:none;padding:0}
+    aside{display:none}
+    .cover,.card,.table-wrap,.arch,.step{box-shadow:none;break-inside:avoid}
+    section{break-inside:auto}
+    a{color:#000}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ================= TOC ================= -->
+  <aside aria-label="Mục lục">
+    <p class="toc-title">Mục lục</p>
+    <nav>
+      <a href="#tom-tat"><b>0</b>Tóm tắt một phút</a>
+      <a href="#kien-truc"><b>1</b>Kiến trúc</a>
+      <a href="#nang-luc"><b>2</b>Ba năng lực chính</a>
+      <a href="#office"><b>3</b>Một vòng Office</a>
+      <a href="#bang-chung"><b>4</b>Bằng chứng 12/11</a>
+      <a href="#thay-doi"><b>5</b>Khác bản 07/11</a>
+      <a href="#gioi-han"><b>6</b>Giới hạn thật</a>
+      <a href="#huong-di"><b>7</b>Hướng đi</a>
+      <a href="#chay-nhanh"><b>8</b>Chạy nhanh</a>
+      <a href="#nguon"><b>9</b>Nguồn</a>
+    </nav>
+    <div class="toc-note">
+      Báo cáo thay thế bản 07/11. Số liệu chỉ giữ mức tối thiểu; bằng chứng chi tiết nằm trong thư mục evidence.
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ================= COVER ================= -->
+    <header class="cover">
+      <div class="eyebrow">Báo cáo tổng thể · 12/11/2026</div>
+      <h1>DUSN-X<br><span class="thin">Hệ trợ lý cá nhân hóa chạy thật</span></h1>
+      <p class="lede">
+        DUSN-X gồm một Web UI, một Gateway, một AI API và hai add-in Office. Hệ có trí nhớ
+        có cấu trúc, tra cứu tài liệu có trích dẫn và sinh văn bản qua Gemini (dự phòng Ollama).
+        Báo cáo này chỉ nêu phần đã quan sát hoặc đọc trực tiếp từ mã nguồn; phần chưa xong
+        được ghi rõ ở mục giới hạn.
+      </p>
+      <div class="badges">
+        <span class="badge ok">● Runtime 12/11/2026</span>
+        <span class="badge ok">Office Desktop thật</span>
+        <span class="badge info">Đọc trực tiếp mã nguồn</span>
+        <span class="badge warn">SFT v3: không promote</span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-card"><div class="k">Mã nguồn</div><div class="v">D:\Projects\dusnx-platform</div></div>
+        <div class="meta-card"><div class="k">Đường chạy</div><div class="v">Web/Office → Gateway :8080 → AI API :8000</div></div>
+        <div class="meta-card"><div class="k">Provider</div><div class="v">Gemini 3.1 Flash Lite, dự phòng Ollama</div></div>
+        <div class="meta-card"><div class="k">Bằng chứng</div><div class="v">docs/evidence/office-desktop-20261112</div></div>
+      </div>
+    </header>
+
+    <!-- ================= 0 ================= -->
+    <section id="tom-tat">
+      <div class="sec-head"><div class="sec-num">0</div><h2>Tóm tắt một phút</h2></div>
+      <p class="sub">Ba điều cần nhớ trước khi đọc tiếp.</p>
+
+      <div class="grid3">
+        <div class="card">
+          <div class="kicker">Đây là gì</div>
+          <p>Một hệ trợ lý chạy cục bộ, tách rõ ba lớp: giao diện, xử lý trung gian và trí tuệ.
+             Người dùng làm việc trên Web hoặc ngay trong Word/PowerPoint.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">Đã chạy thật</div>
+          <p>Đăng nhập, chat, lưu và đọc trí nhớ, tra cứu tài liệu có nguồn, hai add-in Office,
+             chèn bảng/chart native, undo, chặn secret và telemetry.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">Chưa có</div>
+          <p>Triển khai production công khai (chứng thư, manifest ký), ảnh/vision, Teams và Zalo OA thật.
+             Mô hình tự huấn luyện chưa được promote.</p>
+        </div>
+      </div>
+
+      <div class="callout ok">
+        <b>Kết luận ngắn</b>
+        DUSN-X là một hệ thống chạy được end-to-end và đã được kiểm trên Office Desktop thật.
+        Điểm mạnh là sự tách bạch: trí nhớ là dữ liệu có cấu trúc, tra cứu có trích dẫn, còn
+        văn bản do LLM sinh ra không được phép tự nhận đã lưu hay đã sửa tài liệu. Điểm còn yếu
+        là chất lượng nội dung của model và các bước đưa lên production.
+      </div>
+    </section>
+
+    <!-- ================= 1 ================= -->
+    <section id="kien-truc">
+      <div class="sec-head"><div class="sec-num">1</div><h2>Kiến trúc</h2></div>
+      <p class="sub">Một chiều đi rõ ràng: giao diện không chạm database, LLM không tự ghi dữ liệu.</p>
+
+      <div class="arch">
+        <svg viewBox="0 0 1040 400" role="img" aria-label="Sơ đồ kiến trúc DUSN-X">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#0E6F62"></path>
+            </marker>
+            <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#7C8A85"></path>
+            </marker>
+            <style>
+              .box{fill:#FFFFFF;stroke:#C9D6D1;stroke-width:1.4}
+              .boxTeal{fill:#E4F0EC;stroke:#9AC7BB;stroke-width:1.4}
+              .boxSoft{fill:#F7F4EC;stroke:#DCD5C6;stroke-width:1.4}
+              .t{font-family:"Segoe UI",Arial,sans-serif;fill:#16211F;font-size:14px;font-weight:700}
+              .s{font-family:"Segoe UI",Arial,sans-serif;fill:#5D6B66;font-size:11.5px}
+              .zone{font-family:"Segoe UI",Arial,sans-serif;fill:#0E6F62;font-size:10.5px;font-weight:800;letter-spacing:.14em}
+              .line{stroke:#0E6F62;stroke-width:1.7;fill:none;marker-end:url(#arrow)}
+              .lineGray{stroke:#7C8A85;stroke-width:1.5;fill:none;marker-end:url(#arrowGray);stroke-dasharray:5 4}
+            </style>
+          </defs>
+
+          <text class="zone" x="24" y="26">NGƯỜI DÙNG</text>
+          <rect class="box" x="24" y="40" width="190" height="62" rx="12"></rect>
+          <text class="t" x="38" y="66">Web UI</text>
+          <text class="s" x="38" y="86">chat · trí nhớ · timeline</text>
+
+          <rect class="box" x="24" y="116" width="190" height="62" rx="12"></rect>
+          <text class="t" x="38" y="142">Word task pane</text>
+          <text class="s" x="38" y="162">đề xuất → Apply</text>
+
+          <rect class="box" x="24" y="192" width="190" height="62" rx="12"></rect>
+          <text class="t" x="38" y="218">PowerPoint pane</text>
+          <text class="s" x="38" y="238">slide · bảng · chart</text>
+
+          <text class="zone" x="272" y="82">TRUNG GIAN</text>
+          <rect class="boxTeal" x="272" y="96" width="176" height="118" rx="14"></rect>
+          <text class="t" x="288" y="124">Gateway :8080</text>
+          <text class="s" x="288" y="145">phục vụ Web tĩnh</text>
+          <text class="s" x="288" y="163">proxy /v1/*</text>
+          <text class="s" x="288" y="181">auth · CORS · giới hạn</text>
+
+          <text class="zone" x="504" y="82">TRÍ TUỆ</text>
+          <rect class="boxTeal" x="504" y="96" width="196" height="118" rx="14"></rect>
+          <text class="t" x="520" y="124">AI API :8000</text>
+          <text class="s" x="520" y="145">chat pipeline</text>
+          <text class="s" x="520" y="163">routing · trí nhớ · RAG</text>
+          <text class="s" x="520" y="181">kiểm tra chất lượng</text>
+
+          <text class="zone" x="760" y="44">SINH VĂN BẢN</text>
+          <rect class="boxSoft" x="760" y="58" width="236" height="72" rx="12"></rect>
+          <text class="t" x="776" y="84">Gemini 3.1 Flash Lite</text>
+          <text class="s" x="776" y="104">endpoint OpenAI-compatible</text>
+
+          <rect class="box" x="760" y="146" width="236" height="68" rx="12"></rect>
+          <text class="t" x="776" y="172">Ollama (dự phòng)</text>
+          <text class="s" x="776" y="192">chọn model theo máy</text>
+
+          <text class="zone" x="504" y="262">DỮ LIỆU</text>
+          <rect class="box" x="504" y="276" width="300" height="86" rx="12"></rect>
+          <text class="t" x="520" y="302">SQLite</text>
+          <text class="s" x="520" y="322">auth · trí nhớ · session · quyết định</text>
+          <text class="s" x="520" y="340">chỉ mục FTS5 cho tài liệu</text>
+
+          <path class="line" d="M214 71 H266 V150 H272"></path>
+          <path class="line" d="M214 147 H272"></path>
+          <path class="line" d="M214 223 H250 V196 H272"></path>
+          <path class="line" d="M448 155 H504"></path>
+          <path class="line" d="M700 100 H760"></path>
+          <path class="line" d="M700 176 H760"></path>
+          <path class="lineGray" d="M602 214 V276"></path>
+        </svg>
+        <div class="legend">
+          <span><i class="dot teal"></i>lớp xử lý chính</span>
+          <span><i class="dot gray"></i>lưu trữ / gọi dịch vụ</span>
+          <span>Task pane Office đi qua HTTPS :3001 cùng origin rồi mới tới Gateway.</span>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Lớp</th><th>Làm gì</th><th>Không được làm</th></tr></thead>
+          <tbody>
+            <tr><td><b>Giao diện</b><br>Web, Word, PowerPoint</td><td>Hiển thị, thu ý định, xem trước đề xuất, Apply khi người dùng xác nhận</td><td>Không giữ token bền, không ghi thẳng database, không tự sửa tài liệu</td></tr>
+            <tr><td><b>Trung gian</b><br>Gateway</td><td>Phục vụ Web tĩnh, chuyển tiếp API, kiểm tra đầu vào, giới hạn kích thước</td><td>Không chứa logic trí nhớ hay sinh văn bản</td></tr>
+            <tr><td><b>Trí tuệ</b><br>AI API</td><td>Điều hướng, truy hồi trí nhớ và tài liệu, gọi provider, kiểm tra chất lượng</td><td>Không tạo receipt, không tuyên bố đã lưu thay người dùng</td></tr>
+            <tr><td><b>Dữ liệu</b><br>SQLite</td><td>Danh tính, token, trí nhớ, session, quyết định, sự kiện, chỉ mục tài liệu</td><td>Không lưu hidden state của LLM, không trộn dữ liệu giữa project</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <b>Điểm dễ hiểu sai</b>
+        Router không sinh văn bản; nó chỉ dự đoán ý định và cập nhật trạng thái. Trí nhớ là các
+        bản ghi văn bản có cấu trúc, không phải hidden state. Câu trả lời dựa trên trí nhớ là
+        template xác định, không phải model tự bịa.
+      </div>
+    </section>
+
+    <!-- ================= 2 ================= -->
+    <section id="nang-luc">
+      <div class="sec-head"><div class="sec-num">2</div><h2>Ba năng lực chính</h2></div>
+      <p class="sub">Mỗi năng lực có một nguồn sự thật riêng, không thay thế nhau.</p>
+
+      <div class="grid3">
+        <div class="card">
+          <div class="kicker">Trí nhớ</div>
+          <h3>Ghi khi được yêu cầu</h3>
+          <p>Trí nhớ lưu các mục như sở thích, mục tiêu, quyết định và dữ kiện dự án. Hệ chỉ ghi
+             khi người dùng nói rõ; mục trùng được cập nhật thay vì nhân đôi.</p>
+          <p class="small">Khi trả lời, hệ chọn các mục liên quan và ghi lại những mục đã dùng.
+             Người dùng có thể xem, sửa hoặc xóa.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">Tra cứu tài liệu</div>
+          <h3>Trả lời có nguồn</h3>
+          <p>Chỉ mục FTS5 được dựng từ tài liệu, mã nguồn và cấu hình của chính dự án. Câu trả lời
+             dựa trên tài liệu phải kèm trích dẫn, và trí nhớ cá nhân được ưu tiên khi mâu thuẫn.</p>
+          <p class="small">Bỏ qua tra cứu với yêu cầu dịch, viết lại văn bản hoặc thao tác Office.
+             Bộ kiểm thử ngoại tuyến đo khả năng tìm đúng nguồn.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">Office</div>
+          <h3>Làm trong tài liệu thật</h3>
+          <p>Word và PowerPoint nhận yêu cầu, hiện đề xuất để xem trước, chỉ ghi vào tài liệu khi
+             người dùng bấm Apply. Có chặn secret trước khi gửi và chặn ghi khi bật Track Changes.</p>
+          <p class="small">PowerPoint hỗ trợ sửa chữ, tạo slide, chèn bảng và chart native. Undo chỉ
+             áp dụng cho lần chèn gần nhất do add-in thực hiện.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3 ================= -->
+    <section id="office">
+      <div class="sec-head"><div class="sec-num">3</div><h2>Một vòng Office</h2></div>
+      <p class="sub">Cùng một nguyên tắc cho cả hai add-in: xem trước rồi mới ghi.</p>
+
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div><b>Nhập yêu cầu</b><p>Người dùng mô tả việc cần làm, chọn vùng áp dụng và định dạng đầu ra.</p></div></div>
+        <div class="step"><div class="n">2</div><div><b>Chặn secret tại client</b><p>Nếu nội dung giống API key hoặc mật khẩu, add-in dừng ngay và không gửi tới provider.</p></div></div>
+        <div class="step"><div class="n">3</div><div><b>Nhận đề xuất</b><p>AI API trả về bản nháp kèm loại thao tác. Add-in hiển thị để người dùng đọc, chưa sửa tài liệu.</p></div></div>
+        <div class="step"><div class="n">4</div><div><b>Apply có kiểm tra</b><p>Word kiểm tra Track Changes trước khi ghi. PowerPoint chỉ chèn đúng số slide đã tạo và cho undo lần chèn đó.</p></div></div>
+        <div class="step"><div class="n">5</div><div><b>Ghi nhận sự kiện</b><p>Lần Apply được ghi thành sự kiện để hiện trên Timeline của Web UI, phục vụ truy vết.</p></div></div>
+      </div>
+
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead><tr><th>Khả năng</th><th>Word</th><th>PowerPoint</th></tr></thead>
+          <tbody>
+            <tr><td>Sửa nội dung</td><td>Thay vùng chọn hoặc chèn sau vùng chọn</td><td>Sửa chữ trong shape đang chọn</td></tr>
+            <tr><td>Bảng</td><td>Bảng native, dựng từ HTML đã escape</td><td>Bảng native của PowerPoint</td></tr>
+            <tr><td>Chart</td><td>Không hỗ trợ</td><td>Chart native từ nhãn và số người dùng nhập</td></tr>
+            <tr><td>An toàn</td><td>Chặn Track Changes và secret</td><td>Chặn secret; undo lần chèn gần nhất</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <b>Vì sao chart phải đi đường vòng</b>
+        Office.js không có API tạo chart native. Add-in không vẽ chart bằng shape và không để model
+        sinh số liệu. Người dùng nhập nhãn và giá trị; AI API dựng file một slide chứa chart native
+        bằng OOXML, rồi add-in chèn file đó vào bài trình chiếu.
+      </div>
+    </section>
+
+    <!-- ================= 4 ================= -->
+    <section id="bang-chung">
+      <div class="sec-head"><div class="sec-num">4</div><h2>Bằng chứng 12/11</h2></div>
+      <p class="sub">Quan sát trên Office Desktop thật, tài khoản tổng hợp, không có dữ liệu hay secret thật.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hạng mục</th><th>Kết quả quan sát</th><th>Bằng chứng</th></tr></thead>
+          <tbody>
+            <tr><td><b>Word — bảng</b></td><td>Đề xuất hiện trong pane; Apply tạo bảng native trong văn bản</td><td><a href="../evidence/office-desktop-20261112/README.md">README mục 1</a></td></tr>
+            <tr><td><b>Word — Track Changes</b></td><td>Bật Track Changes thì Apply bị từ chối, draft bị xóa, văn bản không đổi</td><td><a href="../evidence/office-desktop-20261112/README.md">README mục 2</a></td></tr>
+            <tr><td><b>PowerPoint — bảng</b></td><td>Chèn được slide chứa bảng native; undo trả deck về trạng thái trước</td><td><a href="../evidence/office-desktop-20261112/README.md">README mục 3</a></td></tr>
+            <tr><td><b>PowerPoint — chart</b></td><td>Chart native từ dữ liệu người dùng nhập; undo hoạt động</td><td><a href="../evidence/office-desktop-20261112/README.md">README mục 4</a></td></tr>
+            <tr><td><b>Secret guard</b></td><td>Chuỗi giống API key bị chặn tại client ở cả hai add-in</td><td><a href="../evidence/office-desktop-20261112/README.md">README mục 5</a></td></tr>
+            <tr><td><b>Telemetry</b></td><td>Sự kiện Apply trong Word hiện trên Timeline của Web UI</td><td><a href="../evidence/office-desktop-20261112/README.md">README mục 6</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <b>Cách đọc bằng chứng</b>
+        <span class="tag r">RUNTIME</span> là quan sát trên hệ đang chạy. <span class="tag d">DESKTOP</span>
+        là ảnh chụp cửa sổ Word/PowerPoint thật, đối chiếu thêm bằng COM/UIA. <span class="tag t">TEST</span>
+        là kiểm thử tự động, chỉ dùng để chống hồi quy, không thay bằng chứng runtime. Bộ kiểm thử
+        tự động đều qua, nhưng báo cáo này không dùng con số test làm bằng chứng chính.
+      </div>
+    </section>
+
+    <!-- ================= 5 ================= -->
+    <section id="thay-doi">
+      <div class="sec-head"><div class="sec-num">5</div><h2>Khác bản 07/11</h2></div>
+      <p class="sub">Bản cũ đã lạc hậu ở nhiều điểm; bản này thay thế và giữ lại bản cũ để đối chiếu.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin-top:0">Đã đúng lại</h3>
+          <ul>
+            <li>Cổng chạy native là <b>:8080</b> cho Gateway/Web và <b>:8000</b> cho AI API, không còn 8181/8180.</li>
+            <li>Provider production là Gemini qua endpoint OpenAI-compatible; Ollama là dự phòng.</li>
+            <li>Word dùng WordApi 1.5 cho Track Changes; PowerPoint dùng PowerPointApi 1.8 cho bảng native.</li>
+            <li>Bảng Word đi qua <code>insertHtml</code> với HTML đã escape, không dùng <code>insertTable</code>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Đã bổ sung</h3>
+          <ul>
+            <li>Streaming cho chat, hiển thị dần câu trả lời.</li>
+            <li>Bộ đánh giá tra cứu ngoại tuyến và trích dẫn nguồn trong câu trả lời.</li>
+            <li>Chart native từ số người dùng nhập, kèm undo lần chèn gần nhất.</li>
+            <li>Telemetry Office hiện trên Timeline; sửa lỗi platform lạ gây 500.</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="small" style="margin-top:12px">
+        Bản cũ: <a href="DUSN-X_BAO_CAO_TONG_THE_20261107.html">DUSN-X_BAO_CAO_TONG_THE_20261107.html</a>.
+      </p>
+    </section>
+
+    <!-- ================= 6 ================= -->
+    <section id="gioi-han">
+      <div class="sec-head"><div class="sec-num">6</div><h2>Giới hạn thật</h2></div>
+      <p class="sub">Những việc chưa làm được hoặc chưa được chứng minh, không che giấu.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hạng mục</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+          <tbody>
+            <tr><td><b>Production công khai</b></td><td><span class="tag x">CHƯA</span></td><td>Cần chứng thư HTTPS, manifest được ký và cách triển khai tập trung</td></tr>
+            <tr><td><b>Ảnh và vision</b></td><td><span class="tag x">CHƯA</span></td><td>Không chèn ảnh vào tài liệu, không phân tích ảnh</td></tr>
+            <tr><td><b>Teams, Zalo OA thật</b></td><td><span class="tag x">CHƯA</span></td><td>Chưa có tích hợp chạy thật, chỉ có thiết kế</td></tr>
+            <tr><td><b>Model 7B / 14B</b></td><td><span class="tag x">CHƯA XÁC MINH</span></td><td>Mới kiểm trên máy dùng model nhỏ; máy khác có thể chọn model lớn hơn</td></tr>
+            <tr><td><b>SFT v3</b></td><td><span class="tag x">KHÔNG PROMOTE</span></td><td>Có cải thiện nhưng còn hồi quy; baseline vẫn là mặc định</td></tr>
+            <tr><td><b>Chart native trong Office.js</b></td><td><span class="tag x">KHÔNG CÓ API</span></td><td>Phải dựng OOXML từ dữ liệu người dùng nhập, không để model sinh số</td></tr>
+            <tr><td><b>Chất lượng nội dung LLM</b></td><td><span class="tag t">ĐÃ BIẾT YẾU</span></td><td>Đã quan sát hallucination; quality gate không đo tính đúng sự thật</td></tr>
+            <tr><td><b>Undo trong PowerPoint</b></td><td><span class="tag t">GIỚI HẠN</span></td><td>Chỉ undo lần chèn gần nhất do add-in thực hiện, không thay undo của Office</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <b>Không được suy diễn quá mức</b>
+        Ảnh chụp chứng minh tích hợp, guard và telemetry hoạt động trên Desktop thật; ảnh không
+        chứng minh chất lượng nội dung do model sinh. Kiểm thử tự động chứng minh chống hồi quy,
+        không thay thế quan sát runtime.
+      </div>
+    </section>
+
+    <!-- ================= 7 ================= -->
+    <section id="huong-di">
+      <div class="sec-head"><div class="sec-num">7</div><h2>Hướng đi</h2></div>
+      <p class="sub">Thứ tự ưu tiên dựa trên cái gì đang chặn việc dùng thật.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="kicker">Trước mắt</div>
+          <ul>
+            <li>Hoàn tất chứng thư và manifest ký để cài add-in không cần chế độ developer.</li>
+            <li>Đóng gói cách chạy và cấu hình cho máy khác, kèm kiểm tra sức khỏe hệ thống.</li>
+            <li>Đo chất lượng nội dung bằng bộ câu hỏi thật, không chỉ đo cấu trúc.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="kicker">Sau đó</div>
+          <ul>
+            <li>Bổ sung ảnh/vision theo hướng chỉ xem trước, không tự chèn số liệu.</li>
+            <li>Mở rộng Office: xử lý bảng và field phức tạp, nhiều cửa sổ PowerPoint.</li>
+            <li>Tích hợp Teams và Zalo OA khi có điều kiện xác minh thật.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 8 ================= -->
+    <section id="chay-nhanh">
+      <div class="sec-head"><div class="sec-num">8</div><h2>Chạy nhanh</h2></div>
+      <p class="sub">Đường native trên Windows; Docker chỉ là đường phụ.</p>
+
+      <pre><code># 1. Khởi động AI API và Gateway/Web
+.\start-local.ps1
+
+# 2. Mở Web UI
+#    http://127.0.0.1:8080
+
+# 3. Kiểm tra sức khỏe
+Invoke-RestMethod http://127.0.0.1:8000/health | ConvertTo-Json -Depth 6
+Invoke-RestMethod http://127.0.0.1:8080/health | ConvertTo-Json -Depth 6
+
+# 4. Dừng hệ
+.\scripts\stop-local.ps1</code></pre>
+
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin-top:0">Office add-in</h3>
+          <p>Task pane chạy qua HTTPS <code>:3001</code>. Manifest được sideload theo user để thử nghiệm.</p>
+          <p class="small">
+            <a href="../WORD_ADDIN_RUNBOOK.md">Word runbook</a> ·
+            <a href="../POWERPOINT_ADDIN_RUNBOOK.md">PowerPoint runbook</a>
+          </p>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Tài liệu kèm theo</h3>
+          <p>Bản DOCX giải thích chi tiết và bộ slide tóm tắt nằm trong thư mục <code>docs</code>.</p>
+          <p class="small">
+            <a href="../DUSN-X_Technical_2026-11-11.docx">Tài liệu kỹ thuật (DOCX)</a> ·
+            <a href="../DUSN-X_Technical_2026-11-11_Presentation.pptx">Bộ slide (PPTX)</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 9 ================= -->
+    <section id="nguon">
+      <div class="sec-head"><div class="sec-num">9</div><h2>Nguồn</h2></div>
+      <p class="sub">Mọi khẳng định trong báo cáo đều truy được về một trong các nguồn sau.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin-top:0">Mã nguồn và vận hành</h3>
+          <ul>
+            <li><a href="../../README.md">README — cách chạy và kiểm tra</a></li>
+            <li><a href="../PLATFORM_INTEGRATION_STATUS.md">Trạng thái tích hợp nền tảng</a></li>
+            <li><a href="../WORD_ADDIN_RUNBOOK.md">Word add-in runbook</a></li>
+            <li><a href="../POWERPOINT_ADDIN_RUNBOOK.md">PowerPoint add-in runbook</a></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Bằng chứng và tài liệu</h3>
+          <ul>
+            <li><a href="../../docs/evidence/office-desktop-20261112/README.md">Bằng chứng Office Desktop 12/11</a></li>
+            <li><a href="../DUSN-X_Technical_2026-11-11.docx">Tài liệu kỹ thuật 2.0 (DOCX)</a></li>
+            <li><a href="../DUSN-X_Technical_2026-11-11_Presentation.pptx">Bộ slide tóm tắt (PPTX)</a></li>
+            <li><a href="DUSN-X_BAO_CAO_TONG_THE_20261107.html">Báo cáo bản 07/11 (lưu trữ)</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      <span>DUSN-X · Báo cáo tổng thể · 12/11/2026</span>
+      <span>Tài khoản và dữ liệu trong bằng chứng là tổng hợp; không chứa secret.</span>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>

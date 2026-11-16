@@ -1,0 +1,19 @@
+# Club IT assistant SFT — QLoRA on a 4GB RTX 3050 (nf4, double quant).
+# Same immutable base revision as the locked v3 pipeline.
+base_model: Qwen/Qwen2.5-0.5B-Instruct
+base_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+base_license: Apache-2.0
+seed: 20261116
+epochs: 3
+learning_rate: 0.0001
+batch_size: 1
+eval_batch_size: 1
+gradient_accumulation_steps: 8
+max_length: 640
+gradient_checkpointing: true
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: [q_proj, k_proj, v_proj, o_proj]
+early_stopping_patience: 2
+qlora: true

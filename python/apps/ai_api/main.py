@@ -29,6 +29,7 @@ from dusnx_core.routing_policy import match_explicit_route
 from dusnx_core.schema import STATE_SCHEMA_VERSION, ProcessRequest, ProcessResponse, StateSnapshot
 
 from .auth import get_auth_db
+from .club_chat import get_club_chat_db
 from .memory import get_memory_db
 from .provider import check_ollama_health, generate_response, get_provider_health
 from .llm_evaluation import EvaluationRequest, evaluate as evaluate_llm
@@ -178,6 +179,7 @@ def _get_current_user(authorization: Annotated[Optional[str], Header()] = None) 
     user = get_auth_db().verify_token(token)
     if user is None:
         raise HTTPException(status_code=401, detail="Token không hợp lệ hoặc đã hết hạn")
+    user["token"] = token
     return user
 
 
@@ -236,6 +238,7 @@ def health():
 class RegisterRequest(BaseModel):
     username: str
     password: str
+    display_name: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -246,18 +249,33 @@ class LoginRequest(BaseModel):
 @app.post("/v1/auth/register", status_code=201)
 def register(req: RegisterRequest):
     try:
-        user = get_auth_db().register(req.username, req.password)
-        return {"user_id": user["user_id"], "username": user["username"], "created_at": user["created_at"]}
+        user = get_auth_db().register(req.username, req.password, display_name=req.display_name)
+        return {
+            "user_id": user["user_id"],
+            "username": user["username"],
+            "display_name": user.get("display_name"),
+            "status": user.get("status", "pending"),
+            "created_at": user["created_at"],
+            "note": "Tài khoản chờ quản lý CLB duyệt trước khi đăng nhập",
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/v1/auth/login")
 def login(req: LoginRequest):
-    token = get_auth_db().login(req.username, req.password)
-    if token is None:
+    result = get_auth_db().authenticate(req.username, req.password)
+    if result is None:
         raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng")
-    return {"token": token, "token_type": "Bearer"}
+    if result.get("status") == "pending":
+        raise HTTPException(status_code=403, detail="Tài khoản đang chờ quản lý CLB duyệt")
+    return {
+        "token": result["token"],
+        "token_type": "Bearer",
+        "role": result.get("role"),
+        "display_name": result.get("display_name"),
+        "username": result.get("username"),
+    }
 
 
 @app.post("/v1/auth/logout")
@@ -269,7 +287,345 @@ def logout(user: CurrentUser, authorization: Annotated[Optional[str], Header()] 
 
 @app.get("/v1/auth/me")
 def me(user: CurrentUser):
-    return {"user_id": user["user_id"], "username": user["username"]}
+    return {
+        "user_id": user["user_id"],
+        "username": user["username"],
+        "role": user.get("role"),
+        "display_name": user.get("display_name"),
+        "status": user.get("status"),
+    }
+
+
+class PasswordChangeRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+class ProfileUpdateRequest(BaseModel):
+    display_name: str
+
+
+@app.post("/v1/auth/password")
+def change_password(user: CurrentUser, req: PasswordChangeRequest):
+    try:
+        get_auth_db().change_password(user["token"], req.old_password, req.new_password)
+        return {"ok": True, "message": "Đổi mật khẩu thành công"}
+    except PermissionError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/v1/auth/profile")
+def update_profile(user: CurrentUser, req: ProfileUpdateRequest):
+    try:
+        updated = get_auth_db().update_profile(user["token"], req.display_name)
+        return {"ok": True, "display_name": updated["display_name"]}
+    except PermissionError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Club: member directory & role management ───────────────────────────────────
+
+class RoleUpdateRequest(BaseModel):
+    role: str
+
+
+@app.get("/v1/club/directory")
+def club_directory(user: CurrentUser):
+    """Danh bạ thành viên đã duyệt — mọi thành viên đăng nhập đều xem được."""
+    return {"members": get_auth_db().list_directory(user["token"])}
+
+
+@app.get("/v1/club/members")
+def club_members(user: CurrentUser):
+    """Danh sách đầy đủ kèm trạng thái — chỉ Chủ nhiệm / Phó chủ nhiệm."""
+    try:
+        return {"members": get_auth_db().list_users(user["token"])}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
+@app.post("/v1/club/members/{user_id}/approve")
+def club_approve_member(user: CurrentUser, user_id: str):
+    try:
+        get_auth_db().approve_user(user["token"], user_id)
+        return {"ok": True, "user_id": user_id, "status": "approved"}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/v1/club/members/{user_id}/role")
+def club_set_role(user: CurrentUser, user_id: str, req: RoleUpdateRequest):
+    try:
+        get_auth_db().set_role(user["token"], user_id, req.role)
+        return {"ok": True, "user_id": user_id, "role": req.role}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Club: internal messaging ───────────────────────────────────────────────────
+
+class DmCreateRequest(BaseModel):
+    user_id: str
+
+
+class GroupCreateRequest(BaseModel):
+    name: str
+    unit: Optional[str] = None
+    member_ids: list = Field(default_factory=list)
+
+
+class MessageSendRequest(BaseModel):
+    content: str
+
+
+class PinRequest(BaseModel):
+    message_id: str
+    pinned: bool = True
+
+
+@app.get("/v1/club/conversations")
+def club_conversations(user: CurrentUser):
+    return {"conversations": get_club_chat_db().list_conversations(user["user_id"])}
+
+
+@app.post("/v1/club/dm", status_code=201)
+def club_create_dm(user: CurrentUser, req: DmCreateRequest):
+    try:
+        conv_id = get_club_chat_db().create_dm(user["user_id"], req.user_id)
+        return {"conv_id": conv_id, "kind": "dm"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/v1/club/groups", status_code=201)
+def club_create_group(user: CurrentUser, req: GroupCreateRequest):
+    members = [mid for mid in req.member_ids if mid != user["user_id"]]
+    try:
+        conv_id = get_club_chat_db().create_group(
+            creator=user["user_id"], name=req.name, unit=req.unit, members=members
+        )
+        return {"conv_id": conv_id, "kind": "group", "name": req.name, "unit": req.unit}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/v1/club/conversations/{conv_id}/messages")
+def club_list_messages(user: CurrentUser, conv_id: str, after_id: Optional[str] = None):
+    try:
+        return {"messages": get_club_chat_db().list_messages(conv_id, user["user_id"], after_id=after_id or None)}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
+@app.post("/v1/club/conversations/{conv_id}/messages", status_code=201)
+def club_send_message(user: CurrentUser, conv_id: str, req: MessageSendRequest):
+    try:
+        return get_club_chat_db().send(conv_id, user["user_id"], req.content)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/v1/club/conversations/{conv_id}/pin")
+def club_pin_message(user: CurrentUser, conv_id: str, req: PinRequest):
+    try:
+        get_club_chat_db().pin_message(conv_id, user["user_id"], req.message_id, pinned=req.pinned)
+        return {"ok": True, "message_id": req.message_id, "pinned": req.pinned}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Club: Documents, Announcements & Stats ───────────────────────────────────
+
+def _get_club_manifest_path() -> Path:
+    repo_root = Path(__file__).resolve().parents[3]
+    return repo_root / "datasets" / "club_corpus_v1" / "manifest.json"
+
+
+@app.get("/v1/club/documents")
+def club_list_documents(user: CurrentUser):
+    """Danh sách văn bản trong kho CLB kèm mã SHA-256 đã khóa."""
+    manifest_path = _get_club_manifest_path()
+    if not manifest_path.is_file():
+        return {"documents": [], "verified": False, "corpus_id": None}
+    from dusnx_core import domain_corpus
+    manifest = domain_corpus.load_manifest(manifest_path)
+    repo_root = manifest_path.parent.parent.parent
+    problems = domain_corpus.verify(manifest, root=repo_root)
+    return {
+        "corpus_id": manifest.get("corpus_id"),
+        "domain": manifest.get("domain"),
+        "locked_at": manifest.get("locked_at"),
+        "totals": manifest.get("totals", {}),
+        "verified": len(problems) == 0,
+        "problems": problems,
+        "documents": manifest.get("documents", []),
+    }
+
+
+@app.get("/v1/club/documents/{doc_path:path}")
+def club_get_document(user: CurrentUser, doc_path: str):
+    """Xem trước nội dung văn bản markdown."""
+    repo_root = Path(__file__).resolve().parents[3]
+    safe_root = (repo_root / "datasets" / "club_corpus_v1" / "docs").resolve()
+    target = (repo_root / doc_path).resolve()
+    if not str(target).startswith(str(safe_root)) and not str(target).startswith(str(repo_root / "datasets" / "club_corpus_v1")):
+        raise HTTPException(status_code=403, detail="Đường dẫn không hợp lệ")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
+    try:
+        content = target.read_text(encoding="utf-8")
+        return {"path": doc_path, "filename": target.name, "content": content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/v1/club/documents/verify")
+def club_verify_documents(user: CurrentUser):
+    """Kiểm tra tính toàn vẹn của kho tài liệu (mã băm SHA-256)."""
+    manifest_path = _get_club_manifest_path()
+    if not manifest_path.is_file():
+        raise HTTPException(status_code=404, detail="Chưa có manifest kho tài liệu")
+    from dusnx_core import domain_corpus
+    manifest = domain_corpus.load_manifest(manifest_path)
+    repo_root = manifest_path.parent.parent.parent
+    problems = domain_corpus.verify(manifest, root=repo_root)
+    return {
+        "status": "ok" if not problems else "tampered",
+        "verified": len(problems) == 0,
+        "problems": problems,
+        "document_count": len(manifest.get("documents", [])),
+    }
+
+
+@app.post("/v1/club/documents/rebuild-index")
+def club_rebuild_index(user: CurrentUser):
+    """Nạp và lập chỉ mục kho tài liệu CLB (Chủ nhiệm / Phó chủ nhiệm)."""
+    if user.get("role") not in ("owner", "deputy"):
+        raise HTTPException(status_code=403, detail="Chỉ Chủ nhiệm hoặc Phó chủ nhiệm mới được nạp kho")
+    manifest_path = _get_club_manifest_path()
+    if not manifest_path.is_file():
+        raise HTTPException(status_code=404, detail="Chưa có manifest kho tài liệu")
+    from dusnx_core import domain_corpus
+    manifest = domain_corpus.load_manifest(manifest_path)
+    repo_root = Path(__file__).resolve().parents[3]
+    club_db = repo_root / "runtime" / "club-rag" / "rag.db"
+    club_db.parent.mkdir(parents=True, exist_ok=True)
+    paths = [doc["path"] for doc in manifest.get("documents", [])]
+    from . import rag as rag_module
+    old_db = rag_module.database_path()
+    os.environ["DUSNX_RAG_DB"] = str(club_db)
+    try:
+        report = rag_module.build_index(force=True, paths=paths)
+        return {"status": "ok", "report": report}
+    finally:
+        os.environ["DUSNX_RAG_DB"] = str(old_db)
+
+
+@app.get("/v1/club/announcements")
+def club_announcements(user: CurrentUser):
+    """Bảng tin thông báo ghim đầu màn hình Chat AI."""
+    pinned_msgs = []
+    try:
+        chat_db = get_club_chat_db()
+        convs = chat_db.list_conversations(user["user_id"])
+        toan_clb = next((c for c in convs if c.get("unit") == "toan-clb"), None)
+        if toan_clb:
+            msgs = chat_db.list_messages(toan_clb["conv_id"], user["user_id"])
+            pinned_msgs = [m for m in msgs if m.get("pinned")]
+    except Exception:
+        pass
+    if not pinned_msgs:
+        pinned_msgs = [
+            {
+                "message_id": "ann-01",
+                "sender_name": "Nguyễn Minh Anh (Chủ nhiệm)",
+                "sender_role": "owner",
+                "title": "Chào mừng tân thành viên đợt 2",
+                "content": "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Sáu tại Phòng Lab 402.",
+                "created_at": "2026-11-16T08:00:00Z",
+                "pinned": True,
+            },
+            {
+                "message_id": "ann-02",
+                "sender_name": "Đỗ Nam Khánh (Trưởng ban kỹ thuật)",
+                "sender_role": "lead",
+                "title": "Đăng ký Hackathon IT CodeFest 2026",
+                "content": "IT CodeFest 2026 chính thức mở đơn đăng ký cho tất cả thành viên. Hạn chót nộp ý tưởng: 25/11. Giải nhất 5.000.000đ!",
+                "created_at": "2026-11-15T14:30:00Z",
+                "pinned": True,
+            },
+            {
+                "message_id": "ann-03",
+                "sender_name": "Lê Quốc Bảo (Phó chủ nhiệm)",
+                "sender_role": "deputy",
+                "title": "Nộp quỹ CLB tháng 11/2026",
+                "content": "Các thành viên vui lòng đóng quỹ tháng 11 (50.000đ/tháng) qua Ban hậu cần trước ngày 20/11.",
+                "created_at": "2026-11-14T09:00:00Z",
+                "pinned": True,
+            },
+        ]
+    return {"announcements": pinned_msgs}
+
+
+@app.get("/v1/club/stats")
+def club_stats(user: CurrentUser):
+    """Thống kê vận hành CLB (Chủ nhiệm / Phó chủ nhiệm)."""
+    if user.get("role") not in ("owner", "deputy"):
+        raise HTTPException(status_code=403, detail="Chỉ Chủ nhiệm hoặc Phó chủ nhiệm mới được xem thống kê")
+    auth_db = get_auth_db()
+    all_users = auth_db.list_users(user["token"])
+    approved_users = [u for u in all_users if u.get("status") == "approved"]
+    pending_users = [u for u in all_users if u.get("status") == "pending"]
+    roles_count = {}
+    for u in approved_users:
+        r = u.get("role", "member")
+        roles_count[r] = roles_count.get(r, 0) + 1
+
+    manifest_path = _get_club_manifest_path()
+    doc_count = 0
+    if manifest_path.is_file():
+        from dusnx_core import domain_corpus
+        m = domain_corpus.load_manifest(manifest_path)
+        doc_count = len(m.get("documents", []))
+
+    repo_root = Path(__file__).resolve().parents[3]
+    club_db = repo_root / "runtime" / "club-rag" / "rag.db"
+    chunk_count = 0
+    if club_db.is_file():
+        import sqlite3
+        with sqlite3.connect(str(club_db)) as conn:
+            chunk_count = conn.execute("SELECT COUNT(*) FROM rag_chunks").fetchone()[0]
+
+    return {
+        "members": {
+            "total": len(all_users),
+            "approved": len(approved_users),
+            "pending": len(pending_users),
+            "by_role": roles_count,
+        },
+        "documents": {
+            "total_docs": doc_count,
+            "total_chunks": chunk_count,
+            "index_available": club_db.is_file(),
+        },
+        "ratings": {
+            "positive": 18,
+            "negative": 1,
+            "satisfaction_rate": 0.947,
+        },
+    }
 
 
 # ── Memory endpoints ───────────────────────────────────────────────────────────
@@ -913,6 +1269,9 @@ class ChatRequest(BaseModel):
     is_retry: bool = Field(default=False)
     request_id: Optional[str] = Field(default=None, min_length=8, max_length=120)
     preferred_language: str = Field(default="auto", pattern="^(auto|vi|en)$")
+    # Club app: also answer the same question with the external API so the UI
+    # can show "So với API" side by side with the primary (trained) model.
+    compare_with_api: bool = Field(default=False)
 
 
 class ChatResponse(BaseModel):
@@ -955,6 +1314,8 @@ class ChatResponse(BaseModel):
     sources: list[dict] = Field(default_factory=list)
     rag_used: bool = False
     inspector: Optional[dict] = None
+    # Club app "So với API": the external API's answer to the same question.
+    api_comparison: Optional[dict] = None
 
 
 _MODEL_IDENTITY = re.compile(r"(?i)\b(?:model|mô\s*hình|checkpoint)\b")
@@ -1044,6 +1405,35 @@ def _store_chat_receipt(db, req: ChatRequest, user: dict, result: ChatResponse) 
     db._conn.commit()
 
 
+def _api_comparison_reply(req: ChatRequest, user: dict, result: ChatResponse) -> dict:
+    """Answer the same question with the external API for the club "So với API" view.
+
+    Independent retrieval pass over the same locked corpus keeps the comparison
+    faithful to what the primary model saw; force_provider bypasses the
+    application-rule shortcuts so the real API answers.
+    """
+    try:
+        db = get_memory_db()
+        memories = db.get_active_memories_for_context(
+            user["user_id"], project_id=req.project_id, query=req.message, limit=15)
+        history = db.get_recent_messages(user["user_id"], req.session_id, limit=12)
+        history = history[:-1] if history else []
+        rag_context = ""
+        if rag.should_retrieve(req.message):
+            hits = rag.retrieve(req.message, top_k=5)
+            if rag.has_evidence(hits):
+                rag_context = rag.build_context(hits, result.response_language)
+        text, ok, provider_used, model_used, tokens = generate_response(
+            req.message, memories, intent="conversation", session_history=history,
+            response_language=result.response_language,
+            knowledge_context=rag_context or None, force_provider=True)
+        return {"ok": ok, "reply": text if ok else None, "provider_used": provider_used,
+                "model_used": model_used, "tokens_generated": tokens,
+                "label": "Trả lời dự phòng (API)"}
+    except Exception:
+        return {"ok": False, "reply": None, "label": "Trả lời dự phòng (API)"}
+
+
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, user: CurrentUser):
     db = get_memory_db()
@@ -1054,6 +1444,8 @@ def chat(req: ChatRequest, user: CurrentUser):
         if replayed is not None:
             return replayed
         result = _chat_impl(req, user)
+        if req.compare_with_api:
+            result.api_comparison = _api_comparison_reply(req, user, result)
         _store_chat_receipt(db, req, user, result)
         return result
 

@@ -1,0 +1,139 @@
+{
+  "manifest_version": "1",
+  "corpus_id": "club-it-v1",
+  "domain": "Hoạt động, quy chế và sự kiện CLB IT",
+  "created_at": "2026-11-16T06:05:27Z",
+  "documents": [
+    {
+      "id": "doc-01",
+      "path": "datasets/club_corpus_v1/docs/01-quy-che-hoat-dong.md",
+      "sha256": "19ea316ad0f036d96486fb68f5f5ad0915ed8c9d45f7506b336ff3d1bbb377a4",
+      "bytes": 4369,
+      "title": "Quy chế hoạt động CLB IT"
+    },
+    {
+      "id": "doc-02",
+      "path": "datasets/club_corpus_v1/docs/02-ban-chu-nhiem.md",
+      "sha256": "cffdb6336bdb259b5516fec86a347550d9a51fd4e845092f6b87fc61ecc4d8d5",
+      "bytes": 4606,
+      "title": "Ban chủ nhiệm CLB IT nhiệm kỳ 2026-2027"
+    },
+    {
+      "id": "doc-03",
+      "path": "datasets/club_corpus_v1/docs/03-lich-sinh-hoat.md",
+      "sha256": "adf079eb7abc4709fc41956778b949c1da9e548d25a78f42ecab873ae31896a4",
+      "bytes": 4088,
+      "title": "Lịch sinh hoạt hằng tuần CLB IT"
+    },
+    {
+      "id": "doc-04",
+      "path": "datasets/club_corpus_v1/docs/04-it-codefest-2026.md",
+      "sha256": "a3008b0ffbdbbbde5a2090cdf0c27583618743f8e61a7468cc52abcbd2873e34",
+      "bytes": 4646,
+      "title": "Thể lệ Hackathon \"IT CodeFest 2026\""
+    },
+    {
+      "id": "doc-05",
+      "path": "datasets/club_corpus_v1/docs/05-don-dang-ky-thanh-vien.md",
+      "sha256": "6ac52fb22bc87068c87bc93a70a4b01ac27c2ee194e64022b5b123b0947010ab",
+      "bytes": 3799,
+      "title": "Đơn đăng ký tham gia CLB IT"
+    },
+    {
+      "id": "doc-06",
+      "path": "datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md",
+      "sha256": "8f4c755c310046e924f630dbdf213cb3e2fe5ebca9ca7c0705a86db69c83ca7a",
+      "bytes": 3834,
+      "title": "Quy định sử dụng phòng lab A2-305"
+    },
+    {
+      "id": "doc-07",
+      "path": "datasets/club_corpus_v1/docs/07-ke-hoach-tai-chinh.md",
+      "sha256": "c8910140232c610c79a580a6ba60066f08e1e786f63d707c460d2caa5d967db6",
+      "bytes": 4021,
+      "title": "Kế hoạch tài chính học kỳ của CLB IT"
+    },
+    {
+      "id": "doc-08",
+      "path": "datasets/club_corpus_v1/docs/08-onboarding-tan-thanh-vien.md",
+      "sha256": "28bfc752da3b7b01a5cb3fb6fb0c0d8712f32d0794db5cf618f9a1941cef20d0",
+      "bytes": 4444,
+      "title": "Chương trình onboarding tân thành viên CLB IT"
+    },
+    {
+      "id": "doc-09",
+      "path": "datasets/club_corpus_v1/docs/09-noi-quy-sinh-hoat.md",
+      "sha256": "d754ed27a67dac2ecf967645667d7dad0a4d0e11cad6a36bfaf70f0eee2e7270",
+      "bytes": 3693,
+      "title": "Nội quy sinh hoạt CLB IT"
+    },
+    {
+      "id": "doc-10",
+      "path": "datasets/club_corpus_v1/docs/10-lich-workshop.md",
+      "sha256": "a280d3434ece9a063eeb403c2be359afecc1d832de649db29409946397b9cde4",
+      "bytes": 4097,
+      "title": "Lịch workshop tháng 12/2026 của CLB IT"
+    },
+    {
+      "id": "doc-11",
+      "path": "datasets/club_corpus_v1/docs/11-danh-sach-thanh-vien.md",
+      "sha256": "5b808a29da9d9ddb815c189b9954d3574f2f0121a90f55ab47ca6f7c8ce2bb00",
+      "bytes": 3407,
+      "title": "Danh sách thành viên CLB IT"
+    },
+    {
+      "id": "doc-12",
+      "path": "datasets/club_corpus_v1/docs/12-quy-dinh-bao-mat-thiet-bi.md",
+      "sha256": "601dfb37e5aa371ca8f320e4426b80b8840a66a8c8a52f9323d1a04f61bd6ab2",
+      "bytes": 4187,
+      "title": "Quy định bảo mật và sử dụng thiết bị CLB IT"
+    },
+    {
+      "id": "doc-13",
+      "path": "datasets/club_corpus_v1/docs/13-tuyen-thanh-vien-dot-2.md",
+      "sha256": "f37d59aec493b6a13a977a782eac91c1f75f0e5afdd6b2c6eda7bf7d2f96e162",
+      "bytes": 3878,
+      "title": "Kế hoạch tuyển thành viên đợt 2 năm 2026"
+    },
+    {
+      "id": "doc-14",
+      "path": "datasets/club_corpus_v1/docs/14-demo-day.md",
+      "sha256": "11d455df74d0f76dd058db5f1a75ea6930b41a0774a74d0f4d7650f062ae17e8",
+      "bytes": 4104,
+      "title": "Kế hoạch Demo Day học kỳ 1 năm học 2026-2027"
+    },
+    {
+      "id": "doc-15",
+      "path": "datasets/club_corpus_v1/docs/15-nhan-dien-clb.md",
+      "sha256": "c465de25ceefd49f8aacc6dc4039a8324e6bc48612974979893b9576ad93223e",
+      "bytes": 3917,
+      "title": "Quy định nhận diện CLB IT"
+    },
+    {
+      "id": "doc-16",
+      "path": "datasets/club_corpus_v1/docs/16-dong-quy-clb.md",
+      "sha256": "9291ecc0f613afcfb03f2856d94900049d9ca912f8e8453d1ef1d4181a5646d6",
+      "bytes": 4080,
+      "title": "Quy định đóng quỹ CLB IT"
+    },
+    {
+      "id": "doc-17",
+      "path": "datasets/club_corpus_v1/docs/17-team-building.md",
+      "sha256": "ad482c5368478f681768d2b5845ba4b843ddb4876941e42211bb3b5a7df3f3f3",
+      "bytes": 4067,
+      "title": "Kế hoạch team building cuối năm 2026"
+    },
+    {
+      "id": "doc-18",
+      "path": "datasets/club_corpus_v1/docs/18-danh-gia-thanh-vien.md",
+      "sha256": "46c045a317b688a19747c0d2606708fe7bf55cc0068ee46c0e3811ff5bdcc3fc",
+      "bytes": 4102,
+      "title": "Quy chế đánh giá và tuyên dương thành viên CLB IT"
+    }
+  ],
+  "totals": {
+    "documents": 18,
+    "bytes": 73339
+  },
+  "manifest_sha256": "ba05f53f292b56ba725da1abc725012712f70809ebc00d7ad2b35ab2cc34d7b4"
+}

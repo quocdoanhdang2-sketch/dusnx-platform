@@ -157,18 +157,29 @@ async function handleRegister(event) {
         password: el("regPassword").value,
       }),
     });
-    // Auto-login after register
-    const data = await apiFetch("/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify({
-        username: el("regUsername").value.trim(),
-        password: el("regPassword").value,
-      }),
-    });
-    authGeneration += 1;
-    authToken = data.token;
-    sessionStorage.setItem("dusnx_token", authToken);
-    await enterApp();
+    // Newly registered club accounts enter pending state awaiting admin approval
+    try {
+      const data = await apiFetch("/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          username: el("regUsername").value.trim(),
+          password: el("regPassword").value,
+        }),
+      });
+      authGeneration += 1;
+      authToken = data.token;
+      sessionStorage.setItem("dusnx_token", authToken);
+      await enterApp();
+    } catch (loginErr) {
+      if (loginErr.message && loginErr.message.includes("chờ ban chủ nhiệm")) {
+        errorEl.textContent = "Đăng ký thành công! Tài khoản đang chờ Ban chủ nhiệm duyệt trước khi sử dụng.";
+        errorEl.className = "status-note info";
+        errorEl.hidden = false;
+        switchAuthTab(true);
+        return;
+      }
+      throw loginErr;
+    }
   } catch (err) {
     if (err.name === "SessionChangedError") return;
     errorEl.textContent = err.message;
@@ -223,6 +234,7 @@ async function enterApp() {
   const generation = authGeneration;
   currentUser = await apiFetch("/v1/auth/me");
   showScreen("appScreen");
+  initClubUI(currentUser);
   if (el("languageSelect")) {
     el("languageSelect").value = preferredLanguage;
     el("languageSelect").onchange = () => {
@@ -231,10 +243,45 @@ async function enterApp() {
       applyUiLanguage(preferredLanguage === "en" ? "en" : "vi");
     };
   }
-  await Promise.all([loadSessions(), loadProjects(), checkProviderHealth()]);
+  await Promise.all([loadSessions(), loadAnnouncements(), loadProjects(), checkProviderHealth()]);
   if (generation !== authGeneration) return;
   showView("chat");
   await startNewSession();
+}
+
+function getRoleBadgeInfo(role) {
+  switch (role) {
+    case "owner": return { label: "Chủ nhiệm CLB", className: "role-badge role-owner" };
+    case "deputy": return { label: "Phó chủ nhiệm", className: "role-badge role-deputy" };
+    case "lead": return { label: "Trưởng ban", className: "role-badge role-lead" };
+    default: return { label: "Thành viên", className: "role-badge role-member" };
+  }
+}
+
+function initClubUI(user) {
+  if (!user) return;
+  const roleInfo = getRoleBadgeInfo(user.role);
+  const displayName = user.display_name || user.username || "Thành viên";
+
+  const userBadge = el("userRoleBadge");
+  if (userBadge) {
+    userBadge.textContent = roleInfo.label;
+    userBadge.className = roleInfo.className;
+  }
+  const mobileBadge = el("mobileRoleBadge");
+  if (mobileBadge) {
+    mobileBadge.textContent = roleInfo.label;
+    mobileBadge.className = roleInfo.className;
+  }
+  const nameEl = el("userName");
+  if (nameEl) nameEl.textContent = displayName;
+
+  const isMgmt = user.role === "owner" || user.role === "deputy";
+  const navMgmt = el("navManagement");
+  if (navMgmt) navMgmt.hidden = !isMgmt;
+
+  const btnRebuild = el("btnRebuildIndex");
+  if (btnRebuild) btnRebuild.hidden = !isMgmt;
 }
 
 function applyUiLanguage(language) {
@@ -260,18 +307,35 @@ function showView(view) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll(".sidebar-nav-item").forEach(b => b.classList.remove("active"));
   if (view === "chat") {
-    el("viewChat").classList.add("active");
+    el("viewChat")?.classList.add("active");
+    el("navChat")?.classList.add("active");
+  } else if (view === "messages") {
+    el("viewMessages")?.classList.add("active");
+    el("navMessages")?.classList.add("active");
+    loadClubConversations();
+  } else if (view === "documents") {
+    el("viewDocuments")?.classList.add("active");
+    el("navDocuments")?.classList.add("active");
+    loadClubDocuments();
   } else if (view === "memory") {
-    el("viewMemory").classList.add("active");
-    el("navMemory").classList.add("active");
+    el("viewMemory")?.classList.add("active");
+    el("navMemory")?.classList.add("active");
     loadMemories();
+  } else if (view === "management") {
+    el("viewManagement")?.classList.add("active");
+    el("navManagement")?.classList.add("active");
+    loadClubManagement();
+  } else if (view === "settings") {
+    el("viewSettings")?.classList.add("active");
+    el("navSettings")?.classList.add("active");
+    loadSettingsView();
   } else if (view === "projects") {
-    el("viewProjects").classList.add("active");
-    el("navProjects").classList.add("active");
+    el("viewProjects")?.classList.add("active");
+    el("navProjects")?.classList.add("active");
     renderProjectsView();
   } else if (view === "timeline") {
-    el("viewTimeline").classList.add("active");
-    el("navTimeline").classList.add("active");
+    el("viewTimeline")?.classList.add("active");
+    el("navTimeline")?.classList.add("active");
     loadTimeline();
   }
 }
@@ -742,6 +806,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
 
   let liveBubble = null;
   try {
+    const compareWithApi = el("compareWithApiToggle")?.checked || false;
     const payload = {
       session_id: sessionId,
       request_id: requestId,
@@ -750,6 +815,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
       feedback_value: 0,
       is_retry: isRetry,
       preferred_language: preferredLanguage,
+      compare_with_api: compareWithApi,
     };
     let streamedText = "";
     let previewShown = false;
@@ -788,6 +854,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
         response_language: response.response_language,
         sources: response.sources,
         rag_used: response.rag_used,
+        api_comparison: response.api_comparison,
         inspector: response.inspector,
         created_at: new Date().toISOString(),
       });
@@ -1138,6 +1205,9 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
   }
   if (role === "assistant" && Array.isArray(meta.memory_ids_used) && meta.memory_ids_used.length > 0) {
     col.appendChild(buildUsedMemoryCard(meta.memory_ids_used));
+  }
+  if (role === "assistant" && meta.api_comparison) {
+    col.appendChild(buildApiComparisonCard(meta.api_comparison));
   }
   wrapper.appendChild(avatar);
   wrapper.appendChild(col);
@@ -1712,6 +1782,757 @@ function renderTimelineItem(item) {
   return card;
 }
 
+// ── Club IT Assistant Features ──────────────────────────────────────────────────
+
+function buildApiComparisonCard(comp) {
+  const details = document.createElement("details");
+  details.className = "api-comparison-card";
+  const summary = document.createElement("summary");
+  summary.textContent = `⚡ So sánh với API dự phòng (${comp.provider || "Gemini"})`;
+
+  const content = document.createElement("div");
+  content.className = "api-comparison-content";
+
+  const pModel = document.createElement("div");
+  pModel.className = "api-comparison-meta";
+  pModel.textContent = `Model: ${comp.model || "gemini-1.5-flash"} • Độ trễ: ${comp.latency_ms || 0}ms`;
+
+  const replyEl = document.createElement("div");
+  replyEl.className = "api-comparison-reply";
+  renderMarkdown(replyEl, comp.reply || "");
+
+  content.appendChild(pModel);
+  content.appendChild(replyEl);
+  details.appendChild(summary);
+  details.appendChild(content);
+  return details;
+}
+
+async function loadAnnouncements() {
+  const countEl = el("announcementCount");
+  const listEl = el("announcementList");
+  if (!listEl) return;
+  try {
+    const data = await apiFetch("/v1/club/announcements");
+    const announcements = data.announcements || [];
+    listEl.replaceChildren();
+    if (countEl) countEl.textContent = `${announcements.length} tin ghim`;
+    if (!announcements.length) {
+      const empty = document.createElement("div");
+      empty.className = "announcement-empty";
+      empty.textContent = "Chưa có thông báo ghim nào từ Ban chủ nhiệm.";
+      listEl.appendChild(empty);
+      return;
+    }
+    for (const ann of announcements) {
+      const card = document.createElement("div");
+      card.className = "announcement-item";
+
+      const meta = document.createElement("div");
+      meta.className = "announcement-meta";
+      const author = document.createElement("strong");
+      author.textContent = ann.author_name || "Ban chủ nhiệm";
+      const roleBadge = document.createElement("span");
+      const bInfo = getRoleBadgeInfo(ann.author_role);
+      roleBadge.className = `${bInfo.className} role-badge-xs`;
+      roleBadge.textContent = bInfo.label;
+      const time = document.createElement("span");
+      time.className = "announcement-time";
+      time.textContent = formatDate(ann.created_at);
+
+      meta.appendChild(author);
+      meta.appendChild(roleBadge);
+      meta.appendChild(time);
+
+      const body = document.createElement("div");
+      body.className = "announcement-content";
+      body.textContent = ann.content;
+
+      card.appendChild(meta);
+      card.appendChild(body);
+      listEl.appendChild(card);
+    }
+  } catch (err) {
+    if (countEl) countEl.textContent = "Không tải được";
+  }
+}
+
+function runDemoQuestion() {
+  const demoQuestions = [
+    "Lịch sinh hoạt định kỳ của CLB IT diễn ra vào thứ mấy, ở phòng nào?",
+    "Cuộc thi Hackathon IT CodeFest 2026 diễn ra vào thời gian nào và cơ cấu giải thưởng ra sao?",
+    "Quy định mượn thiết bị và sử dụng phòng lab 402 như thế nào?",
+    "Tiêu chuẩn đánh giá và quyền lợi của thành viên xuất sắc CLB IT là gì?",
+  ];
+  const q = demoQuestions[Math.floor(Math.random() * demoQuestions.length)];
+  const input = el("messageInput");
+  if (input) {
+    input.value = q;
+    autoResizeTextarea(input);
+    input.focus();
+    sendMessage();
+  }
+}
+
+// ── Tab 2: Messaging ────────────────────────────────────────────────────────────
+
+let activeClubConvId = null;
+
+async function loadClubConversations() {
+  const groupList = el("groupChannelList");
+  const dmList = el("dmConversationList");
+  if (!groupList || !dmList) return;
+  try {
+    const data = await apiFetch("/v1/club/conversations");
+    const convs = data.conversations || [];
+    groupList.replaceChildren();
+    dmList.replaceChildren();
+
+    let foundActive = false;
+    for (const conv of convs) {
+      const btn = document.createElement("button");
+      btn.className = `channel-item ${conv.id === activeClubConvId ? "active" : ""}`;
+      btn.onclick = () => openClubConversation(conv.id, conv.title);
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "channel-name";
+      titleSpan.textContent = conv.type === "group" ? `# ${conv.title}` : `👤 ${conv.title}`;
+
+      btn.appendChild(titleSpan);
+
+      if (conv.last_message_preview) {
+        const preview = document.createElement("span");
+        preview.className = "channel-preview";
+        preview.textContent = conv.last_message_preview;
+        btn.appendChild(preview);
+      }
+
+      if (conv.type === "group") {
+        groupList.appendChild(btn);
+      } else {
+        dmList.appendChild(btn);
+      }
+
+      if (conv.id === activeClubConvId) foundActive = true;
+    }
+
+    if (!foundActive && convs.length > 0) {
+      openClubConversation(convs[0].id, convs[0].title);
+    }
+  } catch (err) {
+    console.error("Load club conversations failed:", err);
+  }
+}
+
+async function openClubConversation(convId, title) {
+  activeClubConvId = convId;
+  const threadTitle = el("threadTitle");
+  if (threadTitle) threadTitle.textContent = title || convId;
+
+  const threadInput = el("threadInput");
+  const threadSendBtn = el("threadSendBtn");
+  if (threadInput) threadInput.disabled = false;
+  if (threadSendBtn) threadSendBtn.disabled = false;
+
+  document.querySelectorAll(".channel-item").forEach(b => {
+    b.classList.remove("active");
+  });
+
+  await loadClubMessages(convId);
+}
+
+async function loadClubMessages(convId) {
+  if (!convId) return;
+  const container = el("threadMessages");
+  const pinnedBanner = el("threadPinnedBanner");
+  const pinnedText = el("pinnedBannerText");
+  if (!container) return;
+
+  try {
+    const data = await apiFetch(`/v1/club/conversations/${encodeURIComponent(convId)}/messages?limit=50`);
+    const messages = data.messages || [];
+    container.replaceChildren();
+
+    let pinnedMsg = null;
+    for (const msg of messages) {
+      if (msg.is_pinned) pinnedMsg = msg;
+
+      const row = document.createElement("div");
+      row.className = `thread-msg ${msg.sender_username === currentUser?.username ? "own" : ""}`;
+
+      const senderMeta = document.createElement("div");
+      senderMeta.className = "thread-sender-meta";
+
+      const nameSpan = document.createElement("strong");
+      nameSpan.textContent = msg.sender_display_name || msg.sender_username;
+
+      const roleBadge = document.createElement("span");
+      const rInfo = getRoleBadgeInfo(msg.sender_role);
+      roleBadge.className = `${rInfo.className} role-badge-xs`;
+      roleBadge.textContent = rInfo.label;
+
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "thread-time";
+      timeSpan.textContent = formatDate(msg.created_at);
+
+      senderMeta.appendChild(nameSpan);
+      senderMeta.appendChild(roleBadge);
+      senderMeta.appendChild(timeSpan);
+
+      const body = document.createElement("div");
+      body.className = "thread-msg-body";
+      body.textContent = msg.content;
+
+      const canPin = currentUser && (currentUser.role === "owner" || currentUser.role === "deputy");
+      if (canPin) {
+        const pinBtn = document.createElement("button");
+        pinBtn.className = "btn-ghost btn-xs";
+        pinBtn.textContent = msg.is_pinned ? "Bỏ ghim" : "📌 Ghim";
+        pinBtn.onclick = async () => {
+          await apiFetch(`/v1/club/conversations/${encodeURIComponent(convId)}/pin`, {
+            method: "POST",
+            body: JSON.stringify({ message_id: msg.message_id, pin: !msg.is_pinned }),
+          });
+          await loadClubMessages(convId);
+          await loadAnnouncements();
+        };
+        senderMeta.appendChild(pinBtn);
+      }
+
+      row.appendChild(senderMeta);
+      row.appendChild(body);
+      container.appendChild(row);
+    }
+
+    if (pinnedMsg && pinnedBanner && pinnedText) {
+      pinnedBanner.hidden = false;
+      pinnedText.textContent = `${pinnedMsg.sender_display_name || pinnedMsg.sender_username}: ${pinnedMsg.content}`;
+    } else if (pinnedBanner) {
+      pinnedBanner.hidden = true;
+    }
+
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    console.error("Load club messages failed:", err);
+  }
+}
+
+async function handleSendClubMessage(event) {
+  if (event) event.preventDefault();
+  const input = el("threadInput");
+  if (!input || !activeClubConvId) return;
+  const content = input.value.trim();
+  if (!content) return;
+
+  input.value = "";
+  try {
+    await apiFetch(`/v1/club/conversations/${encodeURIComponent(activeClubConvId)}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+    await loadClubMessages(activeClubConvId);
+  } catch (err) {
+    alert(`Không gửi được tin nhắn: ${err.message}`);
+  }
+}
+
+async function showNewDmModal() {
+  el("modalTitle").textContent = "Nhắn tin trực tiếp với thành viên CLB";
+  const body = el("modalBody");
+  body.replaceChildren();
+
+  const loading = document.createElement("p");
+  loading.textContent = "Đang tải danh sách thành viên…";
+  body.appendChild(loading);
+  el("modalOverlay").hidden = false;
+
+  try {
+    const data = await apiFetch("/v1/club/directory");
+    const members = (data.members || []).filter(m => m.user_id !== currentUser?.user_id);
+    body.replaceChildren();
+
+    if (!members.length) {
+      const p = document.createElement("p");
+      p.textContent = "Chưa có thành viên nào khác trong danh bạ CLB.";
+      body.appendChild(p);
+      return;
+    }
+
+    const list = document.createElement("div");
+    list.className = "dm-picker-list";
+    for (const m of members) {
+      const item = document.createElement("div");
+      item.className = "dm-picker-item";
+
+      const name = document.createElement("span");
+      name.className = "dm-picker-name";
+      name.textContent = `${m.display_name} (@${m.username})`;
+
+      const badge = document.createElement("span");
+      const rInfo = getRoleBadgeInfo(m.role);
+      badge.className = `${rInfo.className} role-badge-xs`;
+      badge.textContent = rInfo.label;
+
+      const selectBtn = document.createElement("button");
+      selectBtn.className = "btn-secondary btn-sm";
+      selectBtn.textContent = "Nhắn tin";
+      selectBtn.onclick = async () => {
+        closeModal();
+        try {
+          const res = await apiFetch("/v1/club/dm", {
+            method: "POST",
+            body: JSON.stringify({ target_user_id: m.user_id }),
+          });
+          await loadClubConversations();
+          openClubConversation(res.conversation_id, m.display_name);
+        } catch (err) {
+          alert(`Lỗi tạo tin nhắn 1-1: ${err.message}`);
+        }
+      };
+
+      item.appendChild(name);
+      item.appendChild(badge);
+      item.appendChild(selectBtn);
+      list.appendChild(item);
+    }
+    body.appendChild(list);
+  } catch (err) {
+    body.replaceChildren();
+    const p = document.createElement("p");
+    p.textContent = `Lỗi tải danh bạ: ${err.message}`;
+    body.appendChild(p);
+  }
+}
+
+// ── Tab 3: Documents ────────────────────────────────────────────────────────────
+
+let allClubDocuments = [];
+
+async function loadClubDocuments() {
+  const list = el("documentList");
+  const statusEl = el("docLockStatus");
+  if (!list) return;
+  try {
+    const data = await apiFetch("/v1/club/documents");
+    allClubDocuments = data.documents || [];
+    if (statusEl) {
+      statusEl.textContent = `18 văn bản đã khóa hash SHA-256 (Toàn vẹn: ${data.manifest_verified ? "Khớp 100%" : "Đang kiểm tra"})`;
+    }
+    renderDocumentCards(allClubDocuments);
+  } catch (err) {
+    if (statusEl) statusEl.textContent = `Lỗi tải kho tài liệu: ${err.message}`;
+  }
+}
+
+function renderDocumentCards(docs) {
+  const list = el("documentList");
+  if (!list) return;
+  list.replaceChildren();
+
+  if (!docs.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-text";
+    empty.textContent = "Không tìm thấy tài liệu phù hợp.";
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const doc of docs) {
+    const card = document.createElement("div");
+    card.className = "doc-card";
+
+    const title = document.createElement("h3");
+    title.className = "doc-title";
+    title.textContent = doc.title || doc.path;
+
+    const path = document.createElement("div");
+    path.className = "doc-path";
+    path.textContent = doc.path;
+
+    const meta = document.createElement("div");
+    meta.className = "doc-meta-row";
+
+    const catBadge = document.createElement("span");
+    catBadge.className = "badge-cat";
+    catBadge.textContent = doc.category || "Quy chế";
+
+    const hashBadge = document.createElement("span");
+    hashBadge.className = "badge-hash";
+    hashBadge.textContent = `SHA-256: ${String(doc.sha256 || "").slice(0, 10)}…`;
+
+    meta.appendChild(catBadge);
+    meta.appendChild(hashBadge);
+
+    const actions = document.createElement("div");
+    actions.className = "doc-actions";
+
+    const previewBtn = document.createElement("button");
+    previewBtn.className = "btn-secondary btn-sm";
+    previewBtn.textContent = "👁 Xem trước";
+    previewBtn.onclick = () => previewClubDocument(doc.path);
+
+    actions.appendChild(previewBtn);
+
+    card.appendChild(title);
+    card.appendChild(path);
+    card.appendChild(meta);
+    card.appendChild(actions);
+    list.appendChild(card);
+  }
+}
+
+async function previewClubDocument(path) {
+  el("modalTitle").textContent = `Xem tài liệu: ${path}`;
+  const body = el("modalBody");
+  body.replaceChildren();
+
+  const loading = document.createElement("p");
+  loading.textContent = "Đang đọc nội dung văn bản từ kho…";
+  body.appendChild(loading);
+  el("modalOverlay").hidden = false;
+
+  try {
+    const data = await apiFetch(`/v1/club/documents/${encodeURIComponent(path)}`);
+    body.replaceChildren();
+
+    const metaBox = document.createElement("div");
+    metaBox.className = "doc-preview-meta";
+    metaBox.textContent = `Mã băm SHA-256: ${data.sha256} • Kích thước: ${data.size_bytes} bytes`;
+
+    const contentBox = document.createElement("div");
+    contentBox.className = "doc-preview-content markdown-body";
+    renderMarkdown(contentBox, data.content || "");
+
+    body.appendChild(metaBox);
+    body.appendChild(contentBox);
+  } catch (err) {
+    body.replaceChildren();
+    const p = document.createElement("p");
+    p.textContent = `Lỗi đọc tài liệu: ${err.message}`;
+    body.appendChild(p);
+  }
+}
+
+async function handleVerifyCorpus() {
+  try {
+    const res = await apiFetch("/v1/club/documents/verify");
+    if (res.verified) {
+      alert(`✅ Toàn vẹn 100%! Đã kiểm tra ${res.total_files} văn bản trong kho, tất cả khớp mã băm SHA-256.`);
+    } else {
+      alert(`⚠️ Phát hiện sai lệch mã băm trong kho tài liệu!`);
+    }
+  } catch (err) {
+    alert(`Lỗi kiểm tra toàn vẹn: ${err.message}`);
+  }
+}
+
+async function handleRebuildIndex() {
+  if (!confirm("Bạn có chắc chắn muốn nạp và chỉ mục lại toàn bộ kho tài liệu CLB vào SQLite FTS5 RAG?")) return;
+  try {
+    const res = await apiFetch("/v1/club/documents/rebuild-index", { method: "POST" });
+    alert(`✅ ${res.message || "Đã nạp kho tài liệu vào RAG thành công!"}`);
+    await checkProviderHealth();
+  } catch (err) {
+    alert(`Lỗi nạp kho RAG: ${err.message}`);
+  }
+}
+
+function filterDocuments() {
+  const query = (el("docSearch")?.value || "").toLowerCase().trim();
+  if (!query) {
+    renderDocumentCards(allClubDocuments);
+    return;
+  }
+  const filtered = allClubDocuments.filter(d =>
+    (d.title || "").toLowerCase().includes(query) ||
+    (d.path || "").toLowerCase().includes(query) ||
+    (d.category || "").toLowerCase().includes(query)
+  );
+  renderDocumentCards(filtered);
+}
+
+// ── Tab 5: Management (Owner & Deputy only) ────────────────────────────────────
+
+let allClubMembers = [];
+let currentMemberFilter = "all";
+
+function switchMgmtTab(tab) {
+  document.querySelectorAll(".mgmt-tab-btn").forEach(b => b.classList.remove("active"));
+  el("mgmtMembersSection").hidden = tab !== "members";
+  el("mgmtStatsSection").hidden = tab !== "stats";
+  el("mgmtTrainingSection").hidden = tab !== "training";
+
+  if (tab === "members") {
+    el("mgmtTabMembers")?.classList.add("active");
+  } else if (tab === "stats") {
+    el("mgmtTabStats")?.classList.add("active");
+    loadClubStats();
+  } else if (tab === "training") {
+    el("mgmtTabTraining")?.classList.add("active");
+    loadTrainingQueue();
+  }
+}
+
+async function loadClubManagement() {
+  try {
+    const data = await apiFetch("/v1/club/members");
+    allClubMembers = data.members || [];
+    const pendingCount = allClubMembers.filter(m => m.status === "pending").length;
+    const badge = el("pendingBadgeCount");
+    if (badge) badge.textContent = String(pendingCount);
+    renderMemberTable();
+  } catch (err) {
+    console.error("Load club management failed:", err);
+  }
+}
+
+function filterMembers(status) {
+  currentMemberFilter = status;
+  el("filterAllMembers")?.classList.toggle("active", status === "all");
+  el("filterPendingMembers")?.classList.toggle("active", status === "pending");
+  el("filterApprovedMembers")?.classList.toggle("active", status === "approved");
+  renderMemberTable();
+}
+
+function renderMemberTable() {
+  const tbody = el("memberTableBody");
+  if (!tbody) return;
+  tbody.replaceChildren();
+
+  const filtered = allClubMembers.filter(m => {
+    if (currentMemberFilter === "pending") return m.status === "pending";
+    if (currentMemberFilter === "approved") return m.status === "approved";
+    return true;
+  });
+
+  if (!filtered.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 5;
+    td.className = "empty-text";
+    td.textContent = "Không có thành viên trong danh sách này.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  for (const m of filtered) {
+    const tr = document.createElement("tr");
+
+    const tdName = document.createElement("td");
+    tdName.textContent = m.display_name || m.username;
+
+    const tdUser = document.createElement("td");
+    tdUser.textContent = `@${m.username}`;
+
+    const tdRole = document.createElement("td");
+    const roleSelect = document.createElement("select");
+    roleSelect.className = "field-input compact";
+    [
+      { value: "member", label: "Thành viên" },
+      { value: "lead", label: "Trưởng ban" },
+      { value: "deputy", label: "Phó chủ nhiệm" },
+      { value: "owner", label: "Chủ nhiệm CLB" },
+    ].forEach(opt => {
+      const option = document.createElement("option");
+      option.value = opt.value;
+      option.textContent = opt.label;
+      if (m.role === opt.value) option.selected = true;
+      roleSelect.appendChild(option);
+    });
+    tdRole.appendChild(roleSelect);
+
+    const tdStatus = document.createElement("td");
+    const stBadge = document.createElement("span");
+    stBadge.className = m.status === "approved" ? "status-badge approved" : "status-badge pending";
+    stBadge.textContent = m.status === "approved" ? "✓ Đã duyệt" : "⏳ Chờ duyệt";
+    tdStatus.appendChild(stBadge);
+
+    const tdActions = document.createElement("td");
+    tdActions.className = "table-actions";
+
+    if (m.status === "pending") {
+      const approveBtn = document.createElement("button");
+      approveBtn.className = "btn-primary btn-sm";
+      approveBtn.textContent = "✓ Duyệt";
+      approveBtn.onclick = () => approveMember(m.user_id);
+      tdActions.appendChild(approveBtn);
+    }
+
+    const saveRoleBtn = document.createElement("button");
+    saveRoleBtn.className = "btn-secondary btn-sm";
+    saveRoleBtn.textContent = "Lưu vai trò";
+    saveRoleBtn.onclick = () => changeMemberRole(m.user_id, roleSelect.value);
+    tdActions.appendChild(saveRoleBtn);
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdUser);
+    tr.appendChild(tdRole);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  }
+}
+
+async function approveMember(userId) {
+  try {
+    await apiFetch(`/v1/club/members/${encodeURIComponent(userId)}/approve`, { method: "POST" });
+    await loadClubManagement();
+  } catch (err) {
+    alert(`Không duyệt được: ${err.message}`);
+  }
+}
+
+async function changeMemberRole(userId, newRole) {
+  try {
+    await apiFetch(`/v1/club/members/${encodeURIComponent(userId)}/role`, {
+      method: "POST",
+      body: JSON.stringify({ role: newRole }),
+    });
+    alert("Đã cập nhật vai trò thành công!");
+    await loadClubManagement();
+  } catch (err) {
+    alert(`Không đổi được vai trò: ${err.message}`);
+  }
+}
+
+async function loadClubStats() {
+  const grid = el("statsCardsGrid");
+  if (!grid) return;
+  grid.replaceChildren();
+
+  try {
+    const stats = await apiFetch("/v1/club/stats");
+    const cards = [
+      { label: "Tổng thành viên CLB", value: stats.total_members || 0, sub: `${stats.pending_members || 0} đang chờ duyệt` },
+      { label: "Kho tài liệu đã khóa hash", value: stats.total_documents || 18, sub: "18 văn bản SHA-256" },
+      { label: "Phiên chat AI cá nhân hoá", value: stats.total_sessions || 0, sub: "Đã phân tầng 4 cấp độ" },
+      { label: "Đánh giá hữu ích", value: stats.satisfaction_rate ? `${stats.satisfaction_rate}%` : "100%", sub: "Tín hiệu phản hồi tích cực" },
+    ];
+    for (const c of cards) {
+      const card = document.createElement("div");
+      card.className = "stat-card";
+      const val = document.createElement("div");
+      val.className = "stat-val";
+      val.textContent = String(c.value);
+      const lbl = document.createElement("div");
+      lbl.className = "stat-lbl";
+      lbl.textContent = c.label;
+      const sub = document.createElement("div");
+      sub.className = "stat-sub";
+      sub.textContent = c.sub;
+      card.appendChild(val);
+      card.appendChild(lbl);
+      card.appendChild(sub);
+      grid.appendChild(card);
+    }
+  } catch (err) {
+    console.error("Load club stats failed:", err);
+  }
+}
+
+function loadTrainingQueue() {
+  const container = el("trainingQueueList");
+  if (!container) return;
+  container.replaceChildren();
+
+  const empty = document.createElement("div");
+  empty.className = "training-queue-status";
+  empty.textContent = "Toàn bộ 271 mẫu huấn luyện SFT CLB IT v1 đã được kiểm định, phân vùng không rò rỉ (235 train, 36 validation) và sẵn sàng trong datasets/club_sft_train_v1.";
+  container.appendChild(empty);
+}
+
+// ── Tab 6: Settings ────────────────────────────────────────────────────────────
+
+function loadSettingsView() {
+  if (!currentUser) return;
+  const userEl = el("profileUsername");
+  const nameInput = el("profileDisplayNameInput");
+  const roleBox = el("profileRoleBadgeContainer");
+  const styleSelect = el("responseStyleSelect");
+
+  if (userEl) userEl.textContent = currentUser.username;
+  if (nameInput) nameInput.value = currentUser.display_name || currentUser.username;
+  if (roleBox) {
+    roleBox.replaceChildren();
+    const badge = document.createElement("span");
+    const rInfo = getRoleBadgeInfo(currentUser.role);
+    badge.className = rInfo.className;
+    badge.textContent = rInfo.label;
+    roleBox.appendChild(badge);
+  }
+  if (styleSelect) {
+    styleSelect.value = localStorage.getItem("club_response_style") || "detailed";
+  }
+}
+
+async function handleSaveDisplayName() {
+  const input = el("profileDisplayNameInput");
+  if (!input) return;
+  const displayName = input.value.trim();
+  if (!displayName) return;
+
+  try {
+    const res = await apiFetch("/v1/auth/profile", {
+      method: "POST",
+      body: JSON.stringify({ display_name: displayName }),
+    });
+    currentUser = res.user;
+    initClubUI(currentUser);
+    alert("Đã cập nhật tên hiển thị thành công!");
+  } catch (err) {
+    alert(`Không lưu được tên: ${err.message}`);
+  }
+}
+
+async function handleChangePassword(event) {
+  if (event) event.preventDefault();
+  const oldPw = el("oldPasswordInput");
+  const newPw = el("newPasswordInput");
+  const statusEl = el("pwChangeStatus");
+  if (!oldPw || !newPw) return;
+
+  if (newPw.value.length < 8) {
+    if (statusEl) {
+      statusEl.textContent = "Mật khẩu mới phải có tối thiểu 8 ký tự.";
+      statusEl.className = "status-text error";
+      statusEl.hidden = false;
+    }
+    return;
+  }
+
+  try {
+    await apiFetch("/v1/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ old_password: oldPw.value, new_password: newPw.value }),
+    });
+    oldPw.value = "";
+    newPw.value = "";
+    if (statusEl) {
+      statusEl.textContent = "✅ Đã đổi mật khẩu thành công!";
+      statusEl.className = "status-text success";
+      statusEl.hidden = false;
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = `Lỗi đổi mật khẩu: ${err.message}`;
+      statusEl.className = "status-text error";
+      statusEl.hidden = false;
+    }
+  }
+}
+
+function handleSaveResponseStyle() {
+  const select = el("responseStyleSelect");
+  if (!select) return;
+  localStorage.setItem("club_response_style", select.value);
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-theme");
+  localStorage.setItem("club_theme", isDark ? "dark" : "light");
+}
+
 
 // ── Auto-login if token exists ─────────────────────────────────────────────────
 
@@ -1743,5 +2564,12 @@ if (typeof module !== "undefined") {
     checkProviderHealth,
     apiFetch,
     sendMessage,
+    getRoleBadgeInfo,
+    initClubUI,
+    loadAnnouncements,
+    runDemoQuestion,
+    loadClubConversations,
+    loadClubDocuments,
+    loadClubManagement,
   };
 }

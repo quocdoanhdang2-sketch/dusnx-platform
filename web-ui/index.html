@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DUSN-X — Trợ lý AI cá nhân hóa</title>
-  <meta name="description" content="DUSN-X: Nền tảng trí tuệ cá nhân hóa thích ứng và hệ sinh thái AI đa tác nhân, đa nền tảng" />
-  <link rel="stylesheet" href="styles.css?v=20261107h" />
+  <title>CLB IT — Trợ lý AI cá nhân hoá</title>
+  <meta name="description" content="Hệ thống chatbot cá nhân hoá cho câu lạc bộ IT: tra cứu quy chế, quản lý công việc và nhắn tin nội bộ" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="stylesheet" href="styles.css?v=20261116c" />
 </head>
 <body>
 
-<!-- ═══════════════════ AUTH SCREEN ═══════════════════ -->
+<!-- ══════════════════ AUTH SCREEN ══════════════════ -->
 <div id="authScreen" class="screen active">
   <div class="auth-bg">
     <div class="auth-glow g1"></div>
@@ -17,10 +19,10 @@
   </div>
   <div class="auth-card">
     <div class="auth-logo">
-      <span class="logo-icon">⬡</span>
-      <span class="logo-text">DUSN-X</span>
+      <span class="logo-icon">💻</span>
+      <span class="logo-text">CLB IT</span>
     </div>
-    <p class="auth-tagline">Trí tuệ cá nhân hóa thích ứng</p>
+    <p class="auth-tagline">Trợ lý AI cá nhân hoá cho câu lạc bộ</p>
 
     <div class="tab-row" role="tablist">
       <button id="tabLogin" class="tab active" role="tab" aria-selected="true" onclick="switchTab('login')">Đăng nhập</button>
@@ -29,7 +31,7 @@
 
     <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
       <label for="loginUsername" class="field-label">Tên đăng nhập</label>
-      <input id="loginUsername" class="field-input" type="text" autocomplete="username" placeholder="your_username" required />
+      <input id="loginUsername" class="field-input" type="text" autocomplete="username" placeholder="vd: minhanh_it" required />
       <label for="loginPassword" class="field-label">Mật khẩu</label>
       <input id="loginPassword" class="field-input" type="password" autocomplete="current-password" placeholder="••••••••" required />
       <div id="loginError" class="auth-error" role="alert" hidden></div>
@@ -37,45 +39,72 @@
     </form>
 
     <form id="registerForm" class="auth-form" hidden onsubmit="handleRegister(event)">
+      <label for="regDisplayName" class="field-label">Họ và tên hiển thị</label>
+      <input id="regDisplayName" class="field-input" type="text" placeholder="Nguyễn Văn A" required />
       <label for="regUsername" class="field-label">Tên đăng nhập</label>
       <input id="regUsername" class="field-input" type="text" autocomplete="username" placeholder="Tối thiểu 3 ký tự" required />
       <label for="regPassword" class="field-label">Mật khẩu</label>
       <input id="regPassword" class="field-input" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự" required />
+      <div class="auth-note">Tài khoản mới sẽ ở trạng thái chờ Ban chủ nhiệm CLB duyệt trước khi có thể đăng nhập.</div>
       <div id="registerError" class="auth-error" role="alert" hidden></div>
-      <button id="registerBtn" class="btn-primary" type="submit">Tạo tài khoản</button>
+      <button id="registerBtn" class="btn-primary" type="submit">Đăng ký thành viên</button>
     </form>
   </div>
 </div>
 
-<!-- ═══════════════════ MAIN APP ═══════════════════ -->
+<!-- ══════════════════ MAIN APP ══════════════════ -->
 <div id="appScreen" class="screen">
 
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar" aria-label="Điều hướng">
     <div class="sidebar-header">
-      <span class="logo-icon small">⬡</span>
-      <span class="sidebar-brand">DUSN-X</span>
+      <div class="sidebar-brand-group">
+        <span class="logo-icon small">💻</span>
+        <span class="sidebar-brand">CLB IT</span>
+      </div>
+      <span id="userRoleBadge" class="role-badge role-member">Thành viên</span>
       <button class="icon-btn sidebar-toggle-mobile" onclick="toggleSidebar()" aria-label="Đóng menu">✕</button>
     </div>
 
+    <div class="sidebar-user-info" id="sidebarUserInfo">
+      <span class="user-display-name" id="userDisplayName">Thành viên CLB</span>
+    </div>
+
     <button id="newChatBtn" class="btn-new-chat" onclick="startNewSession()">
-      <span>＋</span> Phiên chat mới
+      <span>＋</span> Phiên chat AI mới
     </button>
 
     <nav class="sidebar-nav">
-      <div class="nav-section-label">Phiên chat</div>
+      <div class="nav-section-label">Chức năng chính (6 Tab)</div>
+      <button class="sidebar-nav-item active" onclick="showView('chat')" id="navChat">
+        <span class="nav-icon" aria-hidden="true">🤖</span> Chat AI & Bảng tin
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('messages')" id="navMessages">
+        <span class="nav-icon" aria-hidden="true">💬</span> Tin nhắn nội bộ
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('documents')" id="navDocuments">
+        <span class="nav-icon" aria-hidden="true">📚</span> Kho tài liệu CLB
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('memory')" id="navMemory">
+        <span class="nav-icon" aria-hidden="true">📝</span> Sổ tay của tôi
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('management')" id="navManagement" hidden>
+        <span class="nav-icon" aria-hidden="true">⚙️</span> Quản lý CLB
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('settings')" id="navSettings">
+        <span class="nav-icon" aria-hidden="true">👤</span> Hồ sơ & Cài đặt
+      </button>
+
+      <div class="nav-section-label">Phiên trò chuyện AI</div>
       <ul id="sessionList" class="session-list" role="list"></ul>
     </nav>
 
     <div class="sidebar-footer">
-      <button class="sidebar-nav-item" onclick="showView('memory')" id="navMemory">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg></span> Trí nhớ của tôi
-      </button>
-      <button class="sidebar-nav-item" onclick="showView('projects')" id="navProjects">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> Dự án
-      </button>
       <button class="sidebar-nav-item" onclick="showView('timeline')" id="navTimeline">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span> Quan sát hệ thống
+      </button>
+      <button class="sidebar-nav-item" onclick="showView('projects')" id="navProjects" hidden>
+        <span class="nav-icon" aria-hidden="true">📁</span> Dự án
       </button>
       <button class="sidebar-nav-item logout-btn" onclick="handleLogout()">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span> Đăng xuất
@@ -89,59 +118,67 @@
     <!-- Mobile header -->
     <header class="mobile-header">
       <button class="icon-btn" onclick="toggleSidebar()" aria-label="Mở menu">☰</button>
-      <span class="mobile-title" id="mobileTitle">DUSN-X</span>
+      <span class="mobile-title" id="mobileTitle">CLB IT Assistant</span>
+      <span id="mobileRoleBadge" class="role-badge role-member">Thành viên</span>
     </header>
 
-    <!-- Chat View -->
+    <!-- Tab 1: Chat View -->
     <div id="viewChat" class="view active">
       <div class="chat-header">
-        <h1 class="chat-title" id="chatTitle">Phiên chat mới</h1>
-        <div class="chat-meta" id="chatMeta"></div>
+        <div>
+          <h1 class="chat-title" id="chatTitle">Trợ lý AI cá nhân hoá CLB IT</h1>
+          <div class="chat-meta" id="chatMeta"></div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="btn-demo" id="runDemoBtn" onclick="runDemoQuestion()" title="Chạy thử câu hỏi mẫu">▶ Chạy demo</button>
+          <label class="toggle-api-compare" title="So sánh câu trả lời của model tự train với API dự phòng">
+            <input type="checkbox" id="compareWithApiToggle" />
+            <span>⚡ So với API</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Top Pinned Announcements Bulletin Board -->
+      <div id="clubAnnouncementBanner" class="announcement-banner">
+        <div class="announcement-header">
+          <span class="announcement-title">📌 Bảng tin thông báo CLB</span>
+          <span class="announcement-count" id="announcementCount">Đang tải...</span>
+        </div>
+        <div class="announcement-list" id="announcementList"></div>
       </div>
 
       <!-- Welcome state (empty session) -->
       <div id="welcomeState" class="welcome-state">
-        <div class="welcome-icon">⬡</div>
-        <h2 class="welcome-title">Xin chào! Tôi là DUSN-X</h2>
-        <p class="welcome-sub">Trợ lý AI cá nhân hóa thích ứng của bạn. Tôi nhớ những gì bạn chia sẻ, tra cứu tài liệu dự án và trả lời bằng ngôn ngữ bạn chọn.</p>
-        <div class="welcome-hints">
-          <button class="hint-chip" onclick="useHint(this)">Dự án tôi đang làm là gì?</button>
-          <button class="hint-chip" onclick="useHint(this)">DUSN-X đang dùng model nào?</button>
-          <button class="hint-chip" onclick="useHint(this)">20/11 là ngày gì?</button>
+        <div class="welcome-icon">💻</div>
+        <h2 class="welcome-title">Xin chào! Mình là Trợ lý AI CLB IT</h2>
+        <p class="welcome-sub">Mọi thành viên dùng chung chatbot, nhưng mỗi người có một trợ lý riêng: nhớ vai trò, deadline, tra cứu kho quy chế 18 văn bản đã khóa hash và hỗ trợ bạn chu đáo.</p>
+        <div class="welcome-hints" id="welcomeHints">
+          <button class="hint-chip" onclick="useHint(this)">Lịch sinh hoạt CLB IT vào thứ mấy, ở đâu?</button>
+          <button class="hint-chip" onclick="useHint(this)">Hackathon IT CodeFest 2026 khi nào tổ chức?</button>
+          <button class="hint-chip" onclick="useHint(this)">Quy định mượn thiết bị và nội quy phòng lab 402?</button>
+          <button class="hint-chip" onclick="useHint(this)">Tiêu chí đánh giá thành viên xuất sắc của CLB?</button>
         </div>
       </div>
 
       <button id="olderMessagesBtn" class="btn-secondary btn-sm" type="button" hidden onclick="loadOlderMessages()">Xem tin nhắn cũ hơn</button>
+      
       <!-- Messages -->
       <div id="messageList" class="message-list" role="log" aria-live="polite" aria-label="Lịch sử chat"></div>
 
       <!-- Input area -->
       <div class="input-area">
         <div id="statusIndicator" class="status-indicator" hidden>
-          <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
-          <span id="statusText">Đang xử lý…</span>
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="statusText">Trợ lý CLB đang suy nghĩ…</span>
         </div>
-        <div id="errorBanner" class="error-banner" hidden role="alert"></div>
         <div class="input-row">
-          <label for="languageSelect" class="sr-only">Ngôn ngữ trả lời / Response language</label>
-          <select id="languageSelect" class="project-select" aria-label="Ngôn ngữ trả lời / Response language">
-            <option value="auto">Tự động</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="en">English</option>
-          </select>
-          <label for="projectSelect" class="sr-only">Chọn dự án</label>
-          <select id="projectSelect" class="project-select" title="Dự án hiện tại">
-            <option value="">Không có dự án</option>
-          </select>
-          <label for="messageInput" class="sr-only">Nhập tin nhắn</label>
           <textarea
             id="messageInput"
-            class="message-input"
-            placeholder="Nhập tin nhắn…"
+            class="chat-input"
             rows="1"
-            onkeydown="handleInputKeydown(event)"
-            oninput="autoResizeTextarea(this)"
+            placeholder="Hỏi về lịch họp, quy chế, CodeFest, hoặc nhờ bot ghi nhớ việc riêng…"
             aria-label="Tin nhắn"
+            onkeydown="handleKeyDown(event)"
           ></textarea>
           <button id="sendBtn" class="send-btn" onclick="sendMessage()" aria-label="Gửi">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -149,31 +186,189 @@
             </svg>
           </button>
         </div>
-        <div class="input-footer">
+        <div class="input-footer" hidden>
           <span id="modelStatus" class="model-status">DUSN-X Model</span>
           <span id="providerStatus" class="provider-status">Đang kiểm tra provider…</span>
         </div>
       </div>
     </div>
 
-    <!-- Memory View -->
+    <!-- Tab 2: Messaging View -->
+    <div id="viewMessages" class="view">
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">💬 Tin nhắn nội bộ CLB</h1>
+          <span class="badge-note">Kênh ban chuyên môn và nhắn tin 1-1 trực tiếp</span>
+        </div>
+        <button class="btn-primary btn-sm" onclick="showNewDmModal()">＋ Nhắn tin mới</button>
+      </div>
+      <div class="messaging-container">
+        <div class="messaging-sidebar">
+          <div class="channel-section-label">Nhóm chuyên môn</div>
+          <div class="channel-list" id="groupChannelList"></div>
+          <div class="channel-section-label">Tin nhắn 1-1</div>
+          <div class="dm-list" id="dmConversationList"></div>
+        </div>
+        <div class="messaging-main">
+          <div class="chat-thread-header" id="threadHeader">
+            <span class="thread-title" id="threadTitle">Chọn một cuộc trò chuyện</span>
+            <div id="threadPinnedBanner" class="pinned-banner" hidden>
+              <span class="pin-icon">📌</span>
+              <span class="pin-text" id="pinnedBannerText"></span>
+            </div>
+          </div>
+          <div class="chat-thread-messages" id="threadMessages">
+            <div class="thread-empty">Chọn một cuộc trò chuyện bên trái để xem tin nhắn.</div>
+          </div>
+          <form class="thread-input-form" id="threadInputForm" onsubmit="handleSendClubMessage(event)">
+            <input type="text" id="threadInput" class="field-input" placeholder="Nhập tin nhắn..." autocomplete="off" disabled />
+            <button type="submit" id="threadSendBtn" class="btn-primary btn-sm" disabled>Gửi</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Documents View -->
+    <div id="viewDocuments" class="view">
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">📚 Kho tài liệu CLB IT</h1>
+          <span class="badge-note" id="docLockStatus">Đang kiểm tra 18 văn bản đã khóa hash SHA-256…</span>
+        </div>
+        <div class="doc-header-actions" id="docAdminActions">
+          <button class="btn-secondary btn-sm" onclick="handleVerifyCorpus()">🔒 Kiểm tra toàn vẹn</button>
+          <button class="btn-primary btn-sm" onclick="handleRebuildIndex()" id="btnRebuildIndex" hidden>⚡ Nạp kho RAG</button>
+        </div>
+      </div>
+      <div class="doc-controls">
+        <input id="docSearch" class="field-input compact" type="search" placeholder="Tìm kiếm quy chế, hackathon, nội quy, lịch trình…" oninput="filterDocuments()" aria-label="Tìm tài liệu" />
+      </div>
+      <div id="documentList" class="doc-grid" role="list"></div>
+    </div>
+
+    <!-- Tab 4: Memory View (Sổ tay cá nhân) -->
     <div id="viewMemory" class="view">
       <div class="view-header">
-        <h1 class="view-title">🧠 Trí nhớ của tôi</h1>
-        <button class="btn-secondary" onclick="showAddMemoryModal()">＋ Thêm trí nhớ</button>
+        <div>
+          <h1 class="view-title">📝 Sổ tay cá nhân của tôi</h1>
+          <span class="badge-note">Những việc riêng, vai trò và mục tiêu bot nhớ về bạn</span>
+        </div>
+        <button class="btn-secondary" onclick="showAddMemoryModal()">＋ Thêm việc cần nhớ</button>
       </div>
       <div class="memory-controls">
-        <input id="memorySearch" class="field-input compact" type="search" placeholder="Tìm kiếm trí nhớ…" oninput="filterMemories()" aria-label="Tìm trí nhớ" />
+        <input id="memorySearch" class="field-input compact" type="search" placeholder="Tìm kiếm điều bot đã nhớ…" oninput="filterMemories()" aria-label="Tìm trí nhớ" />
         <label class="toggle-label">
           <input type="checkbox" id="showInactive" onchange="filterMemories()" />
-          Hiện cả bản cũ (không hiệu lực)
+          Hiện cả bản ghi đã thay thế
         </label>
       </div>
       <div id="memoryList" class="card-list" role="list"></div>
     </div>
 
-    <!-- Projects View -->
-    <div id="viewProjects" class="view">
+    <!-- Tab 5: Management View (Owner/Deputy only) -->
+    <div id="viewManagement" class="view">
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">⚙️ Quản trị & Điều hành CLB IT</h1>
+          <span class="badge-note">Dành riêng cho Ban chủ nhiệm (Chủ nhiệm / Phó chủ nhiệm)</span>
+        </div>
+      </div>
+      <div class="mgmt-tabs">
+        <button class="mgmt-tab-btn active" id="mgmtTabMembers" onclick="switchMgmtTab('members')">👥 Thành viên & Duyệt</button>
+        <button class="mgmt-tab-btn" id="mgmtTabStats" onclick="switchMgmtTab('stats')">📊 Thống kê vận hành</button>
+        <button class="mgmt-tab-btn" id="mgmtTabTraining" onclick="switchMgmtTab('training')">🧠 Duyệt dữ liệu huấn luyện</button>
+      </div>
+
+      <div id="mgmtMembersSection" class="mgmt-section active">
+        <div class="mgmt-filter-row">
+          <button class="pill-filter active" id="filterAllMembers" onclick="filterMembers('all')">Tất cả</button>
+          <button class="pill-filter" id="filterPendingMembers" onclick="filterMembers('pending')">Chờ duyệt <span id="pendingBadgeCount" class="badge-count">0</span></button>
+          <button class="pill-filter" id="filterApprovedMembers" onclick="filterMembers('approved')">Đã duyệt</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="memberTable">
+            <thead>
+              <tr>
+                <th>Họ và tên</th>
+                <th>Tên đăng nhập</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="memberTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="mgmtStatsSection" class="mgmt-section" hidden>
+        <div class="stats-cards-grid" id="statsCardsGrid"></div>
+      </div>
+
+      <div id="mgmtTrainingSection" class="mgmt-section" hidden>
+        <div class="training-queue-container">
+          <p class="section-desc">Hàng đợi các phiên tương tác, đánh giá 👍👎 và lượt sửa của người dùng để chuẩn bị cho đợt huấn luyện lại (Retrain) theo quy chế TRAINING_POLICY.</p>
+          <div id="trainingQueueList" class="training-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 6: Settings View -->
+    <div id="viewSettings" class="view">
+      <div class="view-header">
+        <h1 class="view-title">👤 Hồ sơ & Cài đặt cá nhân</h1>
+      </div>
+      <div class="settings-grid">
+        <div class="card settings-card">
+          <h2 class="card-title">Thông tin tài khoản</h2>
+          <div class="profile-field">
+            <span class="field-label">Tên đăng nhập:</span>
+            <span class="profile-val" id="profileUsername">--</span>
+          </div>
+          <div class="profile-field">
+            <label class="field-label" for="profileDisplayNameInput">Tên hiển thị:</label>
+            <div class="input-with-action">
+              <input type="text" id="profileDisplayNameInput" class="field-input compact" />
+              <button class="btn-secondary btn-sm" onclick="handleSaveDisplayName()">Lưu tên</button>
+            </div>
+          </div>
+          <div class="profile-field">
+            <span class="field-label">Vai trò hiện tại:</span>
+            <div id="profileRoleBadgeContainer"></div>
+          </div>
+        </div>
+
+        <div class="card settings-card">
+          <h2 class="card-title">Đổi mật khẩu</h2>
+          <form onsubmit="handleChangePassword(event)" class="settings-form">
+            <label class="field-label" for="oldPasswordInput">Mật khẩu hiện tại</label>
+            <input type="password" id="oldPasswordInput" class="field-input compact" placeholder="••••••••" required />
+            <label class="field-label" for="newPasswordInput">Mật khẩu mới (tối thiểu 8 ký tự)</label>
+            <input type="password" id="newPasswordInput" class="field-input compact" placeholder="••••••••" required />
+            <div id="pwChangeStatus" class="status-text" hidden></div>
+            <button type="submit" class="btn-primary btn-sm">Cập nhật mật khẩu</button>
+          </form>
+        </div>
+
+        <div class="card settings-card">
+          <h2 class="card-title">Tùy biến trợ lý AI</h2>
+          <div class="setting-item">
+            <label class="field-label" for="responseStyleSelect">Phong cách trả lời</label>
+            <select id="responseStyleSelect" class="field-input compact" onchange="handleSaveResponseStyle()">
+              <option value="detailed">Đầy đủ, có trích dẫn & giải thích (Mặc định)</option>
+              <option value="concise">Ngắn gọn, gạch đầu dòng súc tích</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <span class="field-label">Giao diện màu sắc</span>
+            <button class="btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()">Chuyển chế độ Sáng / Tối</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legacy Views kept for test and observation compatibility -->
+    <div id="viewProjects" class="view" hidden>
       <div class="view-header">
         <h1 class="view-title">📁 Dự án của tôi</h1>
         <button class="btn-secondary" onclick="showAddProjectModal()">＋ Tạo dự án</button>
@@ -187,40 +382,34 @@
         <p id="projectDetailDesc" class="project-desc"></p>
         <h3 class="section-label">Quyết định đang hiệu lực</h3>
         <div id="projectDecisions" class="card-list"></div>
-        <h3 class="section-label">Lịch sử quyết định (bao gồm đã thay thế)</h3>
+        <h3 class="section-label">Lịch sử quyết định</h3>
         <div id="projectHistory" class="card-list"></div>
       </div>
     </div>
 
-    <!-- Timeline View -->
     <div id="viewTimeline" class="view">
       <div class="view-header">
-        <h1 class="view-title">📡 Timeline Sự kiện Tài khoản</h1>
-        <span class="badge-note">Sự kiện đã xác thực qua Web và Client mô phỏng</span>
+        <h1 class="view-title">📡 Timeline Sự kiện & Giám sát hệ thống</h1>
+        <span class="badge-note">Sự kiện đã xác thực qua Web, Office và API</span>
       </div>
       <div class="timeline-controls">
         <select id="tlPlatformFilter" class="field-input compact" onchange="loadTimeline()" aria-label="Lọc theo nền tảng">
           <option value="">Tất cả nền tảng</option>
           <option value="web">Web</option>
-          <option value="word">Word (mô phỏng)</option>
-          <option value="powerpoint">PowerPoint (mô phỏng)</option>
-          <option value="zalo">Zalo (mô phỏng)</option>
+          <option value="word">Word</option>
+          <option value="powerpoint">PowerPoint</option>
+          <option value="zalo">Zalo</option>
         </select>
         <button class="btn-secondary" onclick="loadTimeline()">🔄 Làm mới Timeline</button>
       </div>
       <div id="timelineStatus" class="status-text" role="status"></div>
       <div id="timelineList" class="timeline-list"></div>
-      <div class="timeline-note">
-        <strong>Ghi chú Tuần 2:</strong> Timeline chỉ hiển thị sự kiện thuộc tài khoản hiện tại được xác thực bằng token.
-        Các sự kiện từ client thứ hai (ví dụ: HTTP client mô phỏng PowerPoint) gửi kèm Bearer token sẽ lập tức xuất hiện tại đây cùng chung state version.
-      </div>
     </div>
-
 
   </main>
 </div>
 
-<!-- ═══════════════════ MODALS ═══════════════════ -->
+<!-- ══════════════════ MODALS ══════════════════ -->
 <div id="modalOverlay" class="modal-overlay" hidden onclick="closeModal()">
   <div class="modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true">
     <div class="modal-header">
@@ -231,6 +420,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20261107h"></script>
+<script src="app.js?v=20261116c"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
 </body>
 </html>

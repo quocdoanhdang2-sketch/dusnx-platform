@@ -1,0 +1,93 @@
+# Hồ sơ CLB IT — dữ liệu GIẢ LẬP phục vụ đào tạo và demo.
+# Tất cả tên ngườii, sự kiện, địa điểm đều fictitious. Không PII thật.
+# Đổi loại CLB khác: sửa file này + sinh lại corpus.
+
+club_name: CLB IT
+club_full_name: Câu lạc bộ Tin học sinh viên CLB IT
+type: câu lạc bộ công nghệ thông tin
+language: vi
+
+units:
+  - id: ky-thuat
+    name: Ban kỹ thuật
+    lead: Đỗ Nam Khánh
+  - id: truyen-thong
+    name: Ban truyền thông
+    lead: Trần Hà Vy
+  - id: hau-can
+    name: Ban hậu cần
+    lead: Phạm Thuỳ Dương
+
+board:
+  - name: Nguyễn Minh Anh
+    role: Chủ nhiệm
+  - name: Lê Quốc Bảo
+    role: Phó chủ nhiệm
+  - name: Đỗ Nam Khánh
+    role: Trưởng ban kỹ thuật
+  - name: Trần Hà Vy
+    role: Trưởng ban truyền thông
+  - name: Phạm Thuỳ Dương
+    role: Trưởng ban hậu cần
+
+members:
+  - {code: IT-001, name: Vũ Hoàng Long, unit: Ban kỹ thuật}
+  - {code: IT-002, name: Ngô Gia Hân, unit: Ban truyền thông}
+  - {code: IT-003, name: Bùi Tiến Đạt, unit: Ban kỹ thuật}
+  - {code: IT-004, name: Lâm Nhã Uyên, unit: Ban hậu cần}
+  - {code: IT-005, name: Trịnh Minh Khoa, unit: Ban truyền thông}
+  - {code: IT-006, name: Hồ Ngọc Mai, unit: Ban kỹ thuật}
+  - {code: IT-007, name: Dương Quang Huy, unit: Ban hậu cần}
+  - {code: IT-008, name: Võ Anh Thư, unit: Ban truyền thông}
+
+schedule:
+  weekday: Thứ 5 hằng tuần
+  time: "18:30-21:00"
+  room: Phòng A2-304, tòa A
+  odd_weeks: Buổi đào tạo kỹ năng
+  even_weeks: Làm project nhóm
+  note: Nghỉ ngày 01/01/2027 (Tết dương lịch)
+
+rooms:
+  sinh_hoat: Phòng A2-304, tòa A
+  lab: Phòng A2-305, tòa A
+  lab_hours: "Thứ 2-Thứ 7, 08:00-21:00"
+  lab_rules:
+    - Cấm ăn uống trong phòng lab
+    - Đăng ký trước 1 ngày với Trưởng ban kỹ thuật
+    - Tối đa 3 tiếng mỗi lượt đăng ký
+    - Ra về tắt hết thiết bị
+
+events:
+  - {name: Workshop Git & GitHub từ con số 0, date: "27/11/2026", place: Phòng A2-304}
+  - {name: Workshop Python cơ bản cho ngườii mới, date: "04/12/2026", place: Phòng A2-304}
+  - {name: Workshop Figma cho developer, date: "11/12/2026", place: Phòng A2-304}
+  - {name: Tuyển thành viên đợt 2, date: "01-15/12/2026"}
+  - {name: Hackathon IT CodeFest 2026, date: "20-21/12/2026", place: Sảnh tòa B}
+  - {name: Team building, date: "27/12/2026", place: Khu sinh thái Thung Lũng Xanh}
+  - {name: Demo Day, date: "15/01/2027", place: Hội trường tòa C}
+
+finance:
+  fee: 50.000đ/tháng
+  fee_deadline: Trước ngày 10 hằng tháng
+  collector: Phạm Thuỳ Dương (Trưởng ban hậu cần)
+  big_expense_rule: Khoản chi trên 500.000đ phải có chữ ký Chủ nhiệm
+
+rules:
+  attendance: Điểm danh mỗi buổi sinh hoạt
+  min_attendance: 70%
+  absent_notice: Báo trước 24h với Trưởng ban hậu cần
+  discipline: Vi phạm 3 lần bị cảnh cáo, 5 lần buộc thôi CLB
+  excellent_member: Đánh giá theo chuyên cần 40% + đóng góp 40% + thái độ 20%
+  excellent_reward: Giấy khen và hoàn 1 tháng quỹ
+
+branding:
+  primary_color: "#1E40AF"
+  logo: Lục giác với chữ IT
+  shirt: Áo xanh dương viền trắng
+  logo_permission: Dùng logo ngoài CLB phải xin phép Trưởng ban truyền thông
+
+corpus:
+  dir: datasets/club_corpus_v1/docs
+  count: 18
+  note: Nội dung văn bản giàu chi tiết hỏi được — ngày, số tiền, phòng, tên, điều khoản.

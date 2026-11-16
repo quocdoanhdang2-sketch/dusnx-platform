@@ -402,7 +402,7 @@
             if (body) body.delete();
             const rows = plan[index].table;
             const shape = slide.shapes.addTable(rows.length, rows[0].length,
-              { left: 48, top: 120, width: 864, height: Math.min(340, Math.max(60, rows.length * 30)) });
+              { left: 48, top: 120, width: 864, height: Math.min(360, Math.max(140, rows.length * 60)) });
             const table = shape.getTable(); table.load(); await context.sync();
             const cells = rows.map((_, row) => rows[0].map((__, column) => table.getCellOrNullObject(row, column)));
             cells.forEach(row => row.forEach(cell => cell.load("isNullObject")));
