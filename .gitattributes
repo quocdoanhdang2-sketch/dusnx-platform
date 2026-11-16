@@ -11,3 +11,5 @@ docs/evidence/week4/*.json text eol=lf
 docs/evidence/post-week4/*.json text eol=lf
 docs/evidence/qwen3-invalid-schema-followup-20261104/*.json text eol=lf
 docs/evidence/qwen3-invalid-schema-followup-20261104/*.md text eol=lf
+datasets/club_corpus_v1/** text eol=lf
+datasets/domain_corpus_v1/** text eol=lf
