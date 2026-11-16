@@ -31,21 +31,54 @@
 
     <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
       <label for="loginUsername" class="field-label">Tên đăng nhập</label>
-      <input id="loginUsername" class="field-input" type="text" autocomplete="username" placeholder="vd: minhanh_it" required />
+      <input id="loginUsername" class="field-input" type="text" autocomplete="username" placeholder="vd: chunhiem, thanhvien..." required />
       <label for="loginPassword" class="field-label">Mật khẩu</label>
       <input id="loginPassword" class="field-input" type="password" autocomplete="current-password" placeholder="••••••••" required />
       <div id="loginError" class="auth-error" role="alert" hidden></div>
       <button id="loginBtn" class="btn-primary" type="submit">Đăng nhập</button>
+
+      <div class="demo-roles-container">
+        <div class="demo-roles-title">🎯 Đăng nhập nhanh theo phân cấp vai trò:</div>
+        <div class="demo-roles-grid">
+          <button type="button" class="btn-role-quick" onclick="quickFillRole('chunhiem', 'Admin@123456')">
+            <span class="role-badge role-owner">Chủ nhiệm CLB</span>
+            <span class="role-user-desc">Toàn quyền hệ thống</span>
+          </button>
+          <button type="button" class="btn-role-quick" onclick="quickFillRole('phochunhiem', 'Admin@123456')">
+            <span class="role-badge role-deputy">Phó chủ nhiệm</span>
+            <span class="role-user-desc">Quản lý kho & thành viên</span>
+          </button>
+          <button type="button" class="btn-role-quick" onclick="quickFillRole('truongban_tech', 'Admin@123456')">
+            <span class="role-badge role-lead">Trưởng ban</span>
+            <span class="role-user-desc">Ban Kỹ thuật</span>
+          </button>
+          <button type="button" class="btn-role-quick" onclick="quickFillRole('thanhvien', 'Admin@123456')">
+            <span class="role-badge role-member">Thành viên</span>
+            <span class="role-user-desc">Chat AI & Sổ tay cá nhân</span>
+          </button>
+        </div>
+      </div>
     </form>
 
     <form id="registerForm" class="auth-form" hidden onsubmit="handleRegister(event)">
       <label for="regDisplayName" class="field-label">Họ và tên hiển thị</label>
       <input id="regDisplayName" class="field-input" type="text" placeholder="Nguyễn Văn A" required />
+      <label for="regDepartment" class="field-label">Ban chuyên môn</label>
+      <select id="regDepartment" class="field-input">
+        <option value="Ban Kỹ thuật">Ban Kỹ thuật</option>
+        <option value="Ban Truyền thông">Ban Truyền thông</option>
+        <option value="Ban Sự kiện">Ban Sự kiện</option>
+        <option value="Ban Nội dung">Ban Nội dung</option>
+      </select>
+      <label for="regRole" class="field-label">Vai trò mong muốn</label>
+      <select id="regRole" class="field-input">
+        <option value="member" selected>Thành viên</option>
+        <option value="lead">Trưởng ban</option>
+      </select>
       <label for="regUsername" class="field-label">Tên đăng nhập</label>
       <input id="regUsername" class="field-input" type="text" autocomplete="username" placeholder="Tối thiểu 3 ký tự" required />
       <label for="regPassword" class="field-label">Mật khẩu</label>
       <input id="regPassword" class="field-input" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự" required />
-      <div class="auth-note">Tài khoản mới sẽ ở trạng thái chờ Ban chủ nhiệm CLB duyệt trước khi có thể đăng nhập.</div>
       <div id="registerError" class="auth-error" role="alert" hidden></div>
       <button id="registerBtn" class="btn-primary" type="submit">Đăng ký thành viên</button>
     </form>

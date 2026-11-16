@@ -142,6 +142,24 @@ async function handleLogin(event) {
   }
 }
 
+function quickFillRole(username, password) {
+  const uInput = el("loginUsername");
+  const pInput = el("loginPassword");
+  if (uInput && pInput) {
+    uInput.value = username;
+    pInput.value = password;
+    switchTab("login");
+    const form = el("loginForm");
+    if (form) {
+      if (typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+      } else {
+        handleLogin(new Event("submit"));
+      }
+    }
+  }
+}
+
 async function handleRegister(event) {
   event.preventDefault();
   const btn = el("registerBtn");
@@ -150,14 +168,22 @@ async function handleRegister(event) {
   btn.disabled = true;
   btn.textContent = "Đang tạo tài khoản…";
   try {
+    const rawName = el("regDisplayName")?.value?.trim() || "";
+    const dept = el("regDepartment")?.value || "";
+    const desiredRole = el("regRole")?.value || "member";
+    const displayName = rawName ? (dept ? `${rawName} (${dept})` : rawName) : "";
+
     await apiFetch("/v1/auth/register", {
       method: "POST",
       body: JSON.stringify({
         username: el("regUsername").value.trim(),
         password: el("regPassword").value,
+        display_name: displayName || null,
+        role: desiredRole,
+        department: dept || null,
       }),
     });
-    // Newly registered club accounts enter pending state awaiting admin approval
+    // Newly registered accounts can log in directly:
     try {
       const data = await apiFetch("/v1/auth/login", {
         method: "POST",
@@ -171,11 +197,11 @@ async function handleRegister(event) {
       sessionStorage.setItem("dusnx_token", authToken);
       await enterApp();
     } catch (loginErr) {
-      if (loginErr.message && loginErr.message.includes("chờ ban chủ nhiệm")) {
+      if (loginErr.message && (loginErr.message.includes("chờ") || loginErr.message.includes("pending"))) {
         errorEl.textContent = "Đăng ký thành công! Tài khoản đang chờ Ban chủ nhiệm duyệt trước khi sử dụng.";
         errorEl.className = "status-note info";
         errorEl.hidden = false;
-        switchAuthTab(true);
+        switchTab("login");
         return;
       }
       throw loginErr;
@@ -183,10 +209,11 @@ async function handleRegister(event) {
   } catch (err) {
     if (err.name === "SessionChangedError") return;
     errorEl.textContent = err.message;
+    errorEl.className = "auth-error";
     errorEl.hidden = false;
   } finally {
     btn.disabled = false;
-    btn.textContent = "Tạo tài khoản";
+    btn.textContent = "Đăng ký thành viên";
   }
 }
 
@@ -273,7 +300,7 @@ function initClubUI(user) {
     mobileBadge.textContent = roleInfo.label;
     mobileBadge.className = roleInfo.className;
   }
-  const nameEl = el("userName");
+  const nameEl = el("userDisplayName") || el("userName");
   if (nameEl) nameEl.textContent = displayName;
 
   const isMgmt = user.role === "owner" || user.role === "deputy";
@@ -547,12 +574,14 @@ async function loadOlderMessages() {
 
 // ── Chat ───────────────────────────────────────────────────────────────────────
 
-function handleInputKeydown(event) {
+function handleKeyDown(event) {
+  autoResizeTextarea(event.target);
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     sendMessage();
   }
 }
+const handleInputKeydown = handleKeyDown;
 
 function autoResizeTextarea(ta) {
   ta.style.height = "auto";
@@ -1530,6 +1559,7 @@ async function loadProjects() {
 
 function updateProjectSelect() {
   const select = el("projectSelect");
+  if (!select) return;
   const current = select.value;
   select.replaceChildren();
   const none = document.createElement("option");
@@ -2583,5 +2613,7 @@ if (typeof module !== "undefined") {
     loadClubConversations,
     loadClubDocuments,
     loadClubManagement,
+    quickFillRole,
+    handleKeyDown,
   };
 }

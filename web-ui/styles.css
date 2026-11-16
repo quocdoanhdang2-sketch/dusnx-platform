@@ -1667,3 +1667,46 @@ body.dark-theme .badge-tag {
 body.dark-theme .policy-item {
   background: rgba(255, 255, 255, 0.03);
 }
+
+.demo-roles-container {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-subtle);
+}
+.demo-roles-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.demo-roles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.btn-role-quick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+.btn-role-quick:hover {
+  border-color: var(--accent-bright);
+  background: rgba(37, 99, 235, 0.04);
+  transform: translateY(-1px);
+}
+.role-user-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}

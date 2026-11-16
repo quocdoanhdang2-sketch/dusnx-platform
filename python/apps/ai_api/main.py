@@ -239,6 +239,8 @@ class RegisterRequest(BaseModel):
     username: str
     password: str
     display_name: Optional[str] = None
+    role: Optional[str] = "member"
+    department: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -249,12 +251,19 @@ class LoginRequest(BaseModel):
 @app.post("/v1/auth/register", status_code=201)
 def register(req: RegisterRequest):
     try:
-        user = get_auth_db().register(req.username, req.password, display_name=req.display_name)
+        chosen_role = req.role if req.role in ("member", "lead") else "member"
+        disp = req.display_name or req.username
+        if req.department and f"({req.department})" not in disp:
+            disp = f"{disp} ({req.department})"
+        user = get_auth_db().register(
+            req.username, req.password, display_name=disp, role=chosen_role, status="pending"
+        )
         return {
             "user_id": user["user_id"],
             "username": user["username"],
             "display_name": user.get("display_name"),
             "status": user.get("status", "pending"),
+            "role": user.get("role", "member"),
             "created_at": user["created_at"],
             "note": "Tài khoản chờ quản lý CLB duyệt trước khi đăng nhập",
         }
@@ -474,24 +483,7 @@ def club_list_documents(user: CurrentUser):
     }
 
 
-@app.get("/v1/club/documents/{doc_path:path}")
-def club_get_document(user: CurrentUser, doc_path: str):
-    """Xem trước nội dung văn bản markdown."""
-    repo_root = Path(__file__).resolve().parents[3]
-    safe_root = (repo_root / "datasets" / "club_corpus_v1" / "docs").resolve()
-    target = (repo_root / doc_path).resolve()
-    if not str(target).startswith(str(safe_root)) and not str(target).startswith(str(repo_root / "datasets" / "club_corpus_v1")):
-        raise HTTPException(status_code=403, detail="Đường dẫn không hợp lệ")
-    if not target.is_file():
-        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
-    try:
-        content = target.read_text(encoding="utf-8")
-        return {"path": doc_path, "filename": target.name, "content": content}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/v1/club/documents/verify")
+@app.api_route("/v1/club/documents/verify", methods=["GET", "POST"])
 def club_verify_documents(user: CurrentUser):
     """Kiểm tra tính toàn vẹn của kho tài liệu (mã băm SHA-256)."""
     manifest_path = _get_club_manifest_path()
@@ -531,6 +523,23 @@ def club_rebuild_index(user: CurrentUser):
         return {"status": "ok", "report": report}
     finally:
         os.environ["DUSNX_RAG_DB"] = str(old_db)
+
+
+@app.get("/v1/club/documents/{doc_path:path}")
+def club_get_document(user: CurrentUser, doc_path: str):
+    """Xem trước nội dung văn bản markdown."""
+    repo_root = Path(__file__).resolve().parents[3]
+    safe_root = (repo_root / "datasets" / "club_corpus_v1" / "docs").resolve()
+    target = (repo_root / doc_path).resolve()
+    if not str(target).startswith(str(safe_root)) and not str(target).startswith(str(repo_root / "datasets" / "club_corpus_v1")):
+        raise HTTPException(status_code=403, detail="Đường dẫn không hợp lệ")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
+    try:
+        content = target.read_text(encoding="utf-8")
+        return {"path": doc_path, "filename": target.name, "content": content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/v1/club/announcements")
