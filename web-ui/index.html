@@ -175,13 +175,20 @@
         </div>
       </div>
 
-      <!-- Top Pinned Announcements Bulletin Board -->
-      <div id="clubAnnouncementBanner" class="announcement-banner">
-        <div class="announcement-header">
-          <span class="announcement-title">📌 Bảng tin thông báo CLB</span>
-          <span class="announcement-count" id="announcementCount">Đang tải...</span>
+      <!-- Top Pinned Announcements Bulletin Board (Compact & Collapsible) -->
+      <div id="clubAnnouncementBanner" class="announcement-banner is-collapsed">
+        <div class="announcement-header" onclick="toggleAnnouncements()" title="Nhấn để mở rộng hoặc thu gọn bảng tin">
+          <div class="announcement-header-left">
+            <span class="announcement-icon" aria-hidden="true">📌</span>
+            <span class="announcement-title">Bảng tin thông báo CLB</span>
+            <span class="announcement-count" id="announcementCount">Đang tải...</span>
+            <span class="announcement-preview-text" id="announcementPreviewText"></span>
+          </div>
+          <button type="button" class="announcement-toggle-btn" id="toggleAnnouncementsBtn" aria-label="Mở rộng / thu gọn bảng tin">
+            <span id="announcementToggleIcon">▼ Mở rộng</span>
+          </button>
         </div>
-        <div class="announcement-list" id="announcementList"></div>
+        <div class="announcement-list" id="announcementList" hidden></div>
       </div>
 
       <!-- Welcome state (empty session) -->
@@ -237,7 +244,7 @@
           <h1 class="view-title">💬 Tin nhắn nội bộ CLB</h1>
           <span class="badge-note">Kênh ban chuyên môn và nhắn tin 1-1 trực tiếp</span>
         </div>
-        <button class="btn-primary btn-sm" onclick="showNewDmModal()">＋ Nhắn tin mới</button>
+        <button class="btn-primary btn-sm" id="newDmBtn" onclick="showNewDmModal()">＋ Nhắn tin mới</button>
       </div>
       <div class="messaging-container">
         <div class="messaging-sidebar">

@@ -382,7 +382,12 @@ def club_set_role(user: CurrentUser, user_id: str, req: RoleUpdateRequest):
 # ── Club: internal messaging ───────────────────────────────────────────────────
 
 class DmCreateRequest(BaseModel):
-    user_id: str
+    user_id: Optional[str] = None
+    target_user_id: Optional[str] = None
+
+    @property
+    def resolved_user_id(self) -> str:
+        return self.user_id or self.target_user_id or ""
 
 
 class GroupCreateRequest(BaseModel):
@@ -402,14 +407,55 @@ class PinRequest(BaseModel):
 
 @app.get("/v1/club/conversations")
 def club_conversations(user: CurrentUser):
-    return {"conversations": get_club_chat_db().list_conversations(user["user_id"])}
+    chat_db = get_club_chat_db()
+    auth_db = get_auth_db()
+    chat_db.ensure_default_channels(user["user_id"])
+    raw_convs = chat_db.list_conversations(user["user_id"])
+    enriched = []
+    for c in raw_convs:
+        item = dict(c)
+        cid = c["conv_id"]
+        item["id"] = cid
+        item["type"] = c["kind"]
+        if c["kind"] == "dm":
+            other_id = chat_db.get_other_dm_member(cid, user["user_id"])
+            other_user = auth_db.get_user_by_id(other_id) if other_id else None
+            if other_user:
+                item["title"] = other_user.get("display_name") or other_user.get("username") or "Thành viên"
+                item["other_user"] = {
+                    "user_id": other_user.get("user_id"),
+                    "username": other_user.get("username"),
+                    "display_name": other_user.get("display_name"),
+                    "role": other_user.get("role"),
+                }
+            else:
+                item["title"] = "Tin nhắn riêng"
+        else:
+            item["title"] = c.get("name") or c.get("unit") or "Nhóm trao đổi"
+
+        last_msgs = chat_db.list_messages(cid, user["user_id"], limit=1)
+        if last_msgs:
+            item["last_message_preview"] = last_msgs[0].get("content", "")[:60]
+        else:
+            item["last_message_preview"] = ""
+        enriched.append(item)
+    return {"conversations": enriched}
 
 
 @app.post("/v1/club/dm", status_code=201)
 def club_create_dm(user: CurrentUser, req: DmCreateRequest):
+    target_uid = req.resolved_user_id
+    if not target_uid:
+        raise HTTPException(status_code=400, detail="Thiếu user_id người nhận")
     try:
-        conv_id = get_club_chat_db().create_dm(user["user_id"], req.user_id)
-        return {"conv_id": conv_id, "kind": "dm"}
+        conv_id = get_club_chat_db().create_dm(user["user_id"], target_uid)
+        return {
+            "conv_id": conv_id,
+            "conversation_id": conv_id,
+            "id": conv_id,
+            "kind": "dm",
+            "type": "dm",
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -421,7 +467,16 @@ def club_create_group(user: CurrentUser, req: GroupCreateRequest):
         conv_id = get_club_chat_db().create_group(
             creator=user["user_id"], name=req.name, unit=req.unit, members=members
         )
-        return {"conv_id": conv_id, "kind": "group", "name": req.name, "unit": req.unit}
+        return {
+            "conv_id": conv_id,
+            "conversation_id": conv_id,
+            "id": conv_id,
+            "kind": "group",
+            "type": "group",
+            "name": req.name,
+            "title": req.name,
+            "unit": req.unit,
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -429,7 +484,24 @@ def club_create_group(user: CurrentUser, req: GroupCreateRequest):
 @app.get("/v1/club/conversations/{conv_id}/messages")
 def club_list_messages(user: CurrentUser, conv_id: str, after_id: Optional[str] = None):
     try:
-        return {"messages": get_club_chat_db().list_messages(conv_id, user["user_id"], after_id=after_id or None)}
+        chat_db = get_club_chat_db()
+        auth_db = get_auth_db()
+        raw_msgs = chat_db.list_messages(conv_id, user["user_id"], after_id=after_id or None)
+        enriched = []
+        for m in raw_msgs:
+            item = dict(m)
+            sender = auth_db.get_user_by_id(m["sender_id"])
+            if sender:
+                item["sender_username"] = sender.get("username")
+                item["sender_display_name"] = sender.get("display_name")
+                item["sender_role"] = sender.get("role")
+            else:
+                item["sender_username"] = m["sender_id"]
+                item["sender_display_name"] = m["sender_id"]
+                item["sender_role"] = "member"
+            item["is_pinned"] = bool(m.get("pinned"))
+            enriched.append(item)
+        return {"messages": enriched}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
 

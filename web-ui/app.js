@@ -86,7 +86,15 @@ async function apiFetch(path, options = {}) {
       const ct = resp.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
         const body = await resp.json();
-        msg = body.detail || body.message || msg;
+        let detail = body.detail !== undefined ? body.detail : body.message;
+        if (detail && typeof detail === "object") {
+          if (Array.isArray(detail)) {
+            detail = detail.map(d => d.msg ? `${d.loc ? d.loc.slice(-1) + ': ' : ''}${d.msg}` : JSON.stringify(d)).join("; ");
+          } else {
+            detail = JSON.stringify(detail);
+          }
+        }
+        msg = detail || msg;
       } else if (resp.status === 404) {
         msg = `HTTP 404: Đường dẫn '${path}' không tồn tại trên máy chủ này. Nếu bạn đang chạy 'python -m http.server 3000' mà không có proxy, vui lòng mở Web qua Gateway: ${window.location?.origin || "http://localhost:8080"} (Native) hoặc http://localhost:3000 (Docker Compose).`;
       }
@@ -786,6 +794,7 @@ async function sendMessage(overrideText = null, { isRetry = false, retryRequest 
   const input = el("messageInput");
   const text = (overrideText !== null ? overrideText : input.value).trim();
   if (!text) return;
+  toggleAnnouncements(false);
   if (retryRequest && (retryRequest.sessionId !== currentSessionId || retryRequest.projectId !== (el("projectSelect")?.value || null))) {
     showError("Mở lại phiên của tin nhắn bị lỗi trước khi thử lại.");
     return;
@@ -1365,7 +1374,16 @@ function renderMemoryCard(mem) {
 
   const typeTag = document.createElement("span");
   typeTag.className = "card-type";
-  typeTag.textContent = mem.info_type;
+  const typeMap = {
+    "decision": "📌 Ghi chú cá nhân",
+    "preference": "💡 Phong cách / Sở thích",
+    "goal": "🎯 Mục tiêu cá nhân",
+    "role": "👤 Vai trò & Nhiệm vụ",
+    "project_fact": "ℹ️ Thông tin CLB",
+    "rule": "⚖️ Quy tắc riêng",
+  };
+  const key = String(mem.info_type || "").toLowerCase();
+  typeTag.textContent = typeMap[key] || `📝 ${mem.info_type || "Ghi chú"}`;
 
   header.appendChild(typeTag);
 
@@ -1849,9 +1867,29 @@ function buildApiComparisonCard(comp) {
   return details;
 }
 
+let announcementsCollapsed = true;
+
+function toggleAnnouncements(forceOpen) {
+  const banner = el("clubAnnouncementBanner");
+  const listEl = el("announcementList");
+  const toggleIcon = el("announcementToggleIcon");
+  if (!banner || !listEl) return;
+  if (typeof forceOpen === "boolean") {
+    announcementsCollapsed = !forceOpen;
+  } else {
+    announcementsCollapsed = !announcementsCollapsed;
+  }
+  banner.classList.toggle("is-collapsed", announcementsCollapsed);
+  listEl.hidden = announcementsCollapsed;
+  if (toggleIcon) {
+    toggleIcon.textContent = announcementsCollapsed ? "▼ Mở rộng" : "▲ Thu gọn";
+  }
+}
+
 async function loadAnnouncements() {
   const countEl = el("announcementCount");
   const listEl = el("announcementList");
+  const previewEl = el("announcementPreviewText");
   if (!listEl) return;
   try {
     const data = await apiFetch("/v1/club/announcements");
@@ -1859,11 +1897,17 @@ async function loadAnnouncements() {
     listEl.replaceChildren();
     if (countEl) countEl.textContent = `${announcements.length} tin ghim`;
     if (!announcements.length) {
+      if (previewEl) previewEl.textContent = "— Chưa có tin mới";
       const empty = document.createElement("div");
       empty.className = "announcement-empty";
       empty.textContent = "Chưa có thông báo ghim nào từ Ban chủ nhiệm.";
       listEl.appendChild(empty);
       return;
+    }
+    if (previewEl) {
+      const first = announcements[0];
+      const previewText = (first.content || "").replace(/\n/g, " ").trim();
+      previewEl.textContent = `— ${previewText.length > 70 ? previewText.slice(0, 70) + "…" : previewText}`;
     }
     for (const ann of announcements) {
       const card = document.createElement("div");
@@ -1893,6 +1937,8 @@ async function loadAnnouncements() {
       card.appendChild(body);
       listEl.appendChild(card);
     }
+    // Ensure default collapsed state
+    toggleAnnouncements(false);
   } catch (err) {
     if (countEl) countEl.textContent = "Không tải được";
   }
@@ -2099,15 +2145,23 @@ async function showNewDmModal() {
       return;
     }
 
+    const roleWeight = { "owner": 1, "deputy": 2, "lead": 3, "member": 4 };
+    const sortedMembers = [...members].sort((a, b) => {
+      const wa = roleWeight[a.role] || 9;
+      const wb = roleWeight[b.role] || 9;
+      if (wa !== wb) return wa - wb;
+      return (a.display_name || a.username).localeCompare(b.display_name || b.username);
+    });
+
     const list = document.createElement("div");
     list.className = "dm-picker-list";
-    for (const m of members) {
+    for (const m of sortedMembers) {
       const item = document.createElement("div");
       item.className = "dm-picker-item";
 
       const name = document.createElement("span");
       name.className = "dm-picker-name";
-      name.textContent = `${m.display_name} (@${m.username})`;
+      name.textContent = m.display_name ? `${m.display_name} (@${m.username})` : `@${m.username}`;
 
       const badge = document.createElement("span");
       const rInfo = getRoleBadgeInfo(m.role);
@@ -2122,10 +2176,13 @@ async function showNewDmModal() {
         try {
           const res = await apiFetch("/v1/club/dm", {
             method: "POST",
-            body: JSON.stringify({ target_user_id: m.user_id }),
+            body: JSON.stringify({ target_user_id: m.user_id, user_id: m.user_id }),
           });
           await loadClubConversations();
-          openClubConversation(res.conversation_id, m.display_name);
+          const targetConvId = res.conversation_id || res.conv_id || res.id;
+          if (targetConvId) {
+            openClubConversation(targetConvId, m.display_name || m.username);
+          }
         } catch (err) {
           alert(`Lỗi tạo tin nhắn 1-1: ${err.message}`);
         }
@@ -2182,24 +2239,39 @@ function renderDocumentCards(docs) {
     const card = document.createElement("div");
     card.className = "doc-card";
 
+    const rawPath = doc.path || "";
+    const fileName = rawPath.split(/[/\\]/).pop() || rawPath;
+    const docIdNum = fileName.match(/^(\d+)/)?.[1] || "";
+    const docCode = docIdNum ? `DOC-${docIdNum}` : "DOC";
+
+    const headerRow = document.createElement("div");
+    headerRow.className = "doc-header-row";
+
+    const codeBadge = document.createElement("span");
+    codeBadge.className = "doc-code-badge";
+    codeBadge.textContent = docCode;
+
     const title = document.createElement("h3");
     title.className = "doc-title";
-    title.textContent = doc.title || doc.path;
+    title.textContent = doc.title || fileName;
+
+    headerRow.appendChild(codeBadge);
+    headerRow.appendChild(title);
 
     const path = document.createElement("div");
     path.className = "doc-path";
-    path.textContent = doc.path;
+    path.textContent = `📄 ${fileName}`;
 
     const meta = document.createElement("div");
     meta.className = "doc-meta-row";
 
     const catBadge = document.createElement("span");
     catBadge.className = "badge-cat";
-    catBadge.textContent = doc.category || "Quy chế";
+    catBadge.textContent = doc.category || "Quy chế CLB";
 
     const hashBadge = document.createElement("span");
     hashBadge.className = "badge-hash";
-    hashBadge.textContent = `SHA-256: ${String(doc.sha256 || "").slice(0, 10)}…`;
+    hashBadge.textContent = `🟢 SHA-256: ${String(doc.sha256 || "").slice(0, 8)}… (Đã khóa)`;
 
     meta.appendChild(catBadge);
     meta.appendChild(hashBadge);
@@ -2214,7 +2286,7 @@ function renderDocumentCards(docs) {
 
     actions.appendChild(previewBtn);
 
-    card.appendChild(title);
+    card.appendChild(headerRow);
     card.appendChild(path);
     card.appendChild(meta);
     card.appendChild(actions);

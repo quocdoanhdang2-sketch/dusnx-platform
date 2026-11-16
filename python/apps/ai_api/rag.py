@@ -1188,8 +1188,8 @@ def _definition_answer(identifier: str, hits: list[Hit]) -> Optional[str]:
             text = comment.group(1)
         text = _truncate(text, 520)
         quote = f"{signature} {text}"
-        header = ("Theo tài liệu nội bộ của DUSN-X:" if _VI_CHARS.search(quote)
-                  else "From the DUSN-X internal documentation:")
+        header = ("Theo tài liệu nội bộ của CLB IT:" if _VI_CHARS.search(quote)
+                  else "From the IT Club internal documentation:")
         return f"{header}\n- {quote} [S{rank}]"
     return None
 
@@ -1449,8 +1449,8 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
     # lead-in instead of mixing languages.
     quote_text = " ".join(bullets)
     lead_vi = bool(_VI_CHARS.search(quote_text))
-    header = ("Theo tài liệu nội bộ của DUSN-X:" if lead_vi
-              else "From the DUSN-X internal documentation:")
+    header = ("Theo tài liệu nội bộ của CLB IT:" if lead_vi
+              else "From the IT Club internal documentation:")
     return header + "\n" + "\n".join(bullets)
 
 

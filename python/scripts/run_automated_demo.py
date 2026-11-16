@@ -92,14 +92,49 @@ def run_demo():
         page.screenshot(path=str(shot7), full_page=False)
         print(f"   Saved {shot7.name}")
 
-        # Step 8: Internal Messages View
+        # Step 8: Internal Messages View & 1-1 Messaging Test
         print("8. Navigating to Tin nhắn nội bộ...")
         page.locator("#navMessages").click()
         page.wait_for_selector("#viewMessages")
         time.sleep(1.5)
-        shot8 = OUT_DIR / "08_internal_messages.png"
-        page.screenshot(path=str(shot8), full_page=False)
-        print(f"   Saved {shot8.name}")
+
+        # Open 1-1 DM modal
+        print("   Clicking '+ Nhắn tin mới' button...")
+        page.locator("#newDmBtn").click()
+        page.wait_for_selector("#modalOverlay:not([hidden])")
+        time.sleep(1)
+        shot8_modal = OUT_DIR / "08_dm_picker_modal.png"
+        page.screenshot(path=str(shot8_modal), full_page=False)
+        print(f"   Saved {shot8_modal.name}")
+
+        # Click the first member's 'Nhắn tin' button
+        print("   Selecting first available member to create/open 1-1 chat...")
+        dm_btn = page.locator(".dm-picker-item button:has-text('Nhắn tin')").first
+        if dm_btn.count() > 0:
+            dm_btn.click()
+            time.sleep(1.5)
+            # Send a 1-1 message
+            thread_input = page.locator("#threadInput")
+            if thread_input.is_enabled():
+                print("   Sending test 1-1 message...")
+                thread_input.fill("Chào bạn, mình cần trao đổi kế hoạch tuần này nhé!")
+                page.locator("#threadSendBtn").click()
+                time.sleep(1.5)
+
+        shot9_dm = OUT_DIR / "09_internal_dm_active.png"
+        page.screenshot(path=str(shot9_dm), full_page=False)
+        print(f"   Saved {shot9_dm.name}")
+
+        # Switch to Group channel '# Toàn CLB'
+        print("   Switching to '# Toàn CLB' channel...")
+        group_item = page.locator("#groupChannelList button.channel-item").first
+        if group_item.count() > 0:
+            group_item.click()
+            time.sleep(1.5)
+
+        shot10_group = OUT_DIR / "10_internal_group_active.png"
+        page.screenshot(path=str(shot10_group), full_page=False)
+        print(f"   Saved {shot10_group.name}")
 
         browser.close()
         print("Demo completed successfully! All screenshots captured.")

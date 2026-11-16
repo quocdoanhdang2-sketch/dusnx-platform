@@ -119,6 +119,36 @@ class ClubChatDB:
             self._conn.commit()
             return conv_id
 
+    def get_other_dm_member(self, conv_id: str, user_id: str) -> Optional[str]:
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT user_id FROM conversation_members WHERE conv_id=? AND user_id!=?",
+                (conv_id, user_id)).fetchone()
+            return row["user_id"] if row else None
+
+    def ensure_default_channels(self, user_id: str) -> None:
+        """Ensure default group 'Toàn CLB' exists and user is a member."""
+        with self._lock, self._conn:
+            row = self._conn.execute(
+                "SELECT conv_id FROM conversations WHERE kind='group' AND unit='toan-clb'"
+            ).fetchone()
+            if not row:
+                conv_id = "conv_toan_clb"
+                self._conn.execute(
+                    "INSERT OR IGNORE INTO conversations VALUES(?,?,?,?,?,?)",
+                    (conv_id, "group", "Toàn CLB", "toan-clb", "system", _now()))
+                self._conn.execute(
+                    "INSERT OR IGNORE INTO messages VALUES(?,?,?,?,1,?)",
+                    ("msg_welcome_01", conv_id, "admin",
+                     "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Sáu tại Phòng Lab 402.",
+                     _now()))
+            else:
+                conv_id = row["conv_id"]
+            self._conn.execute(
+                "INSERT OR IGNORE INTO conversation_members(conv_id, user_id, can_pin) VALUES(?,?,0)",
+                (conv_id, user_id))
+            self._conn.commit()
+
     def list_conversations(self, user_id: str) -> list:
         with self._lock:
             rows = self._conn.execute(
