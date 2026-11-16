@@ -84,6 +84,7 @@ DOC_QA = [
             ("Phòng lab mở cửa vào khung giờ nào?", "Phòng lab 402 mở cửa từ 8h00 đến 21h00 các ngày trong tuần [S1].", "giờ mở cửa"),
             ("Có được mang đồ ăn vào phòng lab không?", "Nghiêm cấm mang đồ ăn, nước ngọt không nắp vào phòng lab [S1].", "quy định ăn uống"),
             ("Quy định mượn thiết bị phòng lab như thế nào?", "Thành viên mượn thiết bị phải ghi sổ bàn giao và được Ban kỹ thuật ký xác nhận [S1].", "mượn thiết bị"),
+            ("Khi ra khỏi phòng lab cần làm gì?", "Thành viên cuối cùng rời phòng lab phải tắt đèn, điều hòa, ngắt cầu dao tổng và khóa cửa bàn giao chìa khóa cho bảo vệ [S1].", "quy trình đóng cửa lab"),
         ]
     },
     {
@@ -92,6 +93,8 @@ DOC_QA = [
         "items": [
             ("Quỹ CLB được dùng vào mục đích gì?", "Quỹ CLB dùng để tổ chức sự kiện, mua sắm vật tư phòng lab và khen thưởng [S1].", "mục đích quỹ"),
             ("Báo cáo tài chính được công khai khi nào?", "Báo cáo tài chính được công khai vào ngày mùng 5 hàng tháng trong nhóm Toàn CLB [S1].", "công khai tài chính"),
+            ("Ai là người giữ và quản lý quỹ CLB?", "Trưởng ban hậu cần trực tiếp giữ quỹ dưới sự giám sát của Phó chủ nhiệm và Chủ nhiệm CLB [S1].", "người giữ quỹ"),
+            ("Khoản chi nào trên 500.000đ cần ai duyệt?", "Mọi khoản chi trên 500.000 VNĐ bắt buộc phải có sự phê duyệt của Chủ nhiệm CLB [S1].", "hạn mức chi quỹ"),
         ]
     },
     {
@@ -100,6 +103,7 @@ DOC_QA = [
         "items": [
             ("Tân thành viên cần hoàn thành gì trong tuần đầu?", "Cần tham gia buổi Welcome Day, nhận email nội bộ và tham gia nhóm ban [S1].", "tuần đầu onboarding"),
             ("Mỗi tân thành viên có được chỉ dẫn riêng không?", "Mỗi tân thành viên được phân công 01 mentor trong ban hướng dẫn [S1].", "mentor chỉ dẫn"),
+            ("Buổi sinh hoạt đầu tiên của tân thành viên có nội dung gì?", "Tân thành viên được giới thiệu cơ cấu CLB, nhận tài liệu nội quy và ký cam kết tham gia [S1].", "buổi đầu tân thành viên"),
         ]
     },
     {
@@ -108,6 +112,8 @@ DOC_QA = [
         "items": [
             ("Trang phục khi sinh hoạt CLB quy định thế nào?", "Trang phục lịch sự, khuyến khích mặc áo đồng phục CLB vào tuần chẵn [S1].", "trang phục"),
             ("Đến muộn buổi sinh hoạt quá 15 phút bị phạt gì?", "Đến muộn quá 15 phút không lý do sẽ nộp phạt 20.000đ vào quỹ liên hoan [S1].", "phạt muộn"),
+            ("Thành viên nghỉ có phép tối đa mấy buổi trong một kỳ?", "Thành viên được nghỉ có phép tối đa 3 buổi trong một học kỳ [S1].", "số buổi nghỉ có phép"),
+            ("Hành vi nào bị kỷ luật khai trừ khỏi CLB?", "Hành vi vi phạm pháp luật, làm rò rỉ dữ liệu nội bộ hoặc xúc phạm danh dự thành viên khác sẽ bị khai trừ [S1].", "kỷ luật khai trừ"),
         ]
     },
     {
@@ -116,6 +122,8 @@ DOC_QA = [
         "items": [
             ("Workshop 'Xây dựng Web App với React & Vite' diễn ra khi nào?", "Workshop diễn ra vào 9h00 sáng Thứ Bảy ngày 21/11/2026 tại Lab 402 [S1].", "thời gian workshop React"),
             ("Diễn giả của buổi workshop Docker & CI/CD là ai?", "Diễn giả là cựu thành viên CLB - Kỹ sư Nguyễn Hải Đăng [S1].", "diễn giả workshop"),
+            ("Workshop tháng 12 có những chủ đề nào?", "Gồm 2 chủ đề: Xây dựng Web App với React và Nhập môn CI/CD với Docker [S1].", "chủ đề workshop tháng 12"),
+            ("Thành viên tham gia workshop có cần đăng ký trước không?", "Thành viên cần đăng ký trước 48h qua form nội bộ để Ban tổ chức sắp xếp chỗ ngồi phòng lab [S1].", "đăng ký workshop"),
         ]
     },
     {
@@ -124,6 +132,8 @@ DOC_QA = [
         "items": [
             ("Thành viên mang mã IT-001 tên là gì?", "Thành viên mã IT-001 là Vũ Hoàng Long thuộc Ban kỹ thuật [S1].", "thành viên IT-001"),
             ("Ban truyền thông có những thành viên nào tiêu biểu?", "Gồm Ngô Gia Hân (IT-002), Trịnh Minh Khoa (IT-005) cùng Trưởng ban Trần Hà Vy [S1].", "thành viên truyền thông"),
+            ("Tổng số thành viên chính thức hiện tại là bao nhiêu?", "Hiện tại CLB IT có 35 thành viên chính thức chia đều cho các ban chuyên môn [S1].", "tổng số thành viên"),
+            ("Cách tra cứu mã số thành viên như thế nào?", "Mã số thành viên có định dạng IT-xxx được ghi trong bảng danh sách thành viên nội bộ [S1].", "tra cứu mã thành viên"),
         ]
     },
     {
@@ -132,6 +142,8 @@ DOC_QA = [
         "items": [
             ("Mật khẩu Wifi phòng Lab là gì?", "Mật khẩu được cấp riêng cho thành viên đã duyệt và nghiêm cấm chia sẻ ra ngoài [S1].", "Wifi lab"),
             ("Server nội bộ CLB có được mở cổng ra Internet không?", "Server nội bộ chỉ được truy cập qua VPN hoặc mạng LAN phòng lab [S1].", "mạng server"),
+            ("Có được tự ý cài đặt phần mềm lạ vào máy lab không?", "Nghiêm cấm tự ý cài đặt phần mềm độc hại, phần mềm không bản quyền vào máy tính phòng lab [S1].", "cài đặt phần mềm lab"),
+            ("Khi phát hiện thiết bị lab bị hỏng thì báo cho ai?", "Thành viên phải báo ngay cho Ban kỹ thuật để lập biên bản kiểm tra và sửa chữa [S1].", "báo hỏng thiết bị"),
         ]
     },
     {
@@ -140,6 +152,8 @@ DOC_QA = [
         "items": [
             ("Chỉ tiêu tuyển thành viên đợt 2 là bao nhiêu?", "Chỉ tiêu tuyển 15 thành viên mới cho cả 3 ban [S1].", "chỉ tiêu tuyển"),
             ("Đợt 2 ưu tiên kỹ năng gì?", "Ưu tiên kỹ năng lập trình Python/NodeJS, thiết kế đồ hoạ Canva/Figma và truyền thông [S1].", "ưu tiên kỹ năng"),
+            ("Thời gian mở đơn tuyển thành viên đợt 2 khi nào?", "Đơn đăng ký đợt 2 mở từ ngày 10/11 đến hết 20/11/2026 [S1].", "thời gian mở đơn đợt 2"),
+            ("Hình thức phỏng vấn đợt 2 là trực tiếp hay online?", "Vòng phỏng vấn diễn ra trực tiếp tại Phòng Lab 402, Nhà H1 [S1].", "hình thức phỏng vấn"),
         ]
     },
     {
@@ -148,6 +162,8 @@ DOC_QA = [
         "items": [
             ("Demo Day cuối kỳ tổ chức vào thời gian nào?", "Demo Day dự kiến tổ chức vào tuần thứ 15 của học kỳ (tháng 12/2026) [S1].", "thời gian Demo Day"),
             ("Mỗi dự án được trình bày trong bao lâu tại Demo Day?", "Mỗi nhóm có 10 phút thuyết trình và 5 phút phản biện cùng Hội đồng [S1].", "thời lượng thuyết trình"),
+            ("Hội đồng đánh giá Demo Day gồm những ai?", "Gồm Ban chủ nhiệm CLB, Cố vấn học thuật và đại diện doanh nghiệp công nghệ [S1].", "hội đồng chấm Demo Day"),
+            ("Tiêu chí chấm điểm sản phẩm Demo Day là gì?", "Gồm: Tính sáng tạo (30%), Độ hoàn thiện kỹ thuật (40%), Tính ứng dụng (20%) và Thuyết trình (10%) [S1].", "tiêu chí chấm Demo Day"),
         ]
     },
     {
@@ -156,6 +172,8 @@ DOC_QA = [
         "items": [
             ("Màu sắc chủ đạo của CLB IT là màu gì?", "Màu chủ đạo là Xanh dương (#0066CC) và Cam năng động (#FF6600) [S1].", "màu sắc logo"),
             ("Slogan chính thức của CLB IT là gì?", "Slogan là 'Kết nối đam mê — Bứt phá công nghệ' [S1].", "slogan CLB"),
+            ("Font chữ chính thức trên các ấn phẩm của CLB là gì?", "Font chữ chính thức là Inter và Montserrat [S1].", "font chữ thương hiệu"),
+            ("Quy định sử dụng logo CLB như thế nào?", "Logo không được bóp méo tỷ lệ, không đổi màu và phải đặt trên nền tương phản rõ ràng [S1].", "quy chuẩn sử dụng logo"),
         ]
     },
     {
@@ -164,6 +182,8 @@ DOC_QA = [
         "items": [
             ("Mức đóng quỹ CLB mỗi tháng là bao nhiêu?", "Mức đóng quỹ định kỳ là 50.000 VNĐ / tháng cho mỗi thành viên [S1].", "mức đóng quỹ"),
             ("Hạn chót nộp quỹ tháng là ngày nào?", "Hạn chót nộp quỹ là ngày 20 hàng tháng qua Ban hậu cần [S1].", "hạn nộp quỹ"),
+            ("Hình thức đóng quỹ là tiền mặt hay chuyển khoản?", "Khuyến khích chuyển khoản qua số tài khoản quỹ do Ban hậu cần công bố, hoặc nộp trực tiếp [S1].", "hình thức đóng quỹ"),
+            ("Thành viên có hoàn cảnh khó khăn có được miễn giảm quỹ không?", "Thành viên có đơn xin miễn giảm sẽ được Ban chủ nhiệm xem xét giảm 50% hoặc 100% quỹ kỳ đó [S1].", "miễn giảm quỹ"),
         ]
     },
     {
@@ -172,6 +192,8 @@ DOC_QA = [
         "items": [
             ("Chuyến team building kỳ này đi đâu?", "Chuyến team building tổ chức tại Khu sinh thái Đồng Mô [S1].", "địa điểm team building"),
             ("Thời gian chuyến đi team building là khi nào?", "Chuyến đi diễn ra trong 2 ngày 1 đêm: 05-06/12/2026 [S1].", "ngày đi team building"),
+            ("Kinh phí tham gia team building được hỗ trợ thế nào?", "Quỹ CLB hỗ trợ 50% chi phí xe di chuyển và teabreak; thành viên đóng tiền ăn ở còn lại [S1].", "kinh phí hỗ trợ team building"),
+            ("Hoạt động chính trong chuyến team building là gì?", "Gồm các trò chơi gắn kết ngoài trời, lửa trại giao lưu và gala tổng kết quý [S1].", "hoạt động team building"),
         ]
     },
     {
@@ -180,6 +202,8 @@ DOC_QA = [
         "items": [
             ("Đánh giá thành viên dựa trên các thang điểm nào?", "Dựa trên: Chuyên cần (40%), Đóng góp chuyên môn (40%) và Tinh thần đồng đội (20%) [S1].", "thang điểm đánh giá"),
             ("Thành viên xuất sắc được khen thưởng gì?", "Được trao giấy khen, quà lưu niệm và ưu tiên cử đi thi các cuộc thi cấp trường [S1].", "khen thưởng"),
+            ("Xếp loại thành viên gồm những mức nào?", "Gồm 4 mức: Xuất sắc, Tốt, Hoàn thành và Không hoàn thành nhiệm vụ [S1].", "mức xếp loại thành viên"),
+            ("Quyền lợi điểm rèn luyện khi tham gia CLB như thế nào?", "Thành viên hoàn thành tốt nhiệm vụ được cộng từ 5 đến 8 điểm rèn luyện mỗi học kỳ [S1].", "điểm rèn luyện"),
         ]
     },
 ]
@@ -200,9 +224,26 @@ REFUSE_QUERIES = [
     ("Giá cổ phiếu VinFast hôm nay tăng hay giảm?", "chứng khoán"),
     ("Đề thi toán đại học năm nay có khó không?", "đề thi đại học"),
     ("Địa chỉ quán cà phê view đẹp ở Cầu Giấy?", "địa điểm cà phê"),
+    ("Xem giúp tôi tử vi tuổi Giáp Thân năm 2026?", "tử vi bói toán"),
+    ("Giá đất nền khu vực Hòa Lạc hiện nay thế nào?", "bất động sản"),
+    ("Xe máy bị chết máy giữa đường phải sửa thế nào?", "sửa chữa xe máy"),
+    ("Chi phí đi du lịch tự túc Nhật Bản hết bao nhiêu?", "du lịch quốc tế"),
+    ("Có nên đầu tư vào tiền ảo Bitcoin lúc này không?", "tiền mã hóa"),
 ]
 
 USER_PROFILES = [
+    ("Doanh", "Trưởng ban Dự án AI & Tác giả Hệ thống", "lead_doanh", [
+        ("huấn luyện mô hình LoRA Qwen2.5 cho CLB", "hoàn thành tinh chỉnh trọng số LoRA và kiểm tra benchmark trên 28 ca test"),
+        ("chuẩn hóa 18 văn bản kho tri thức CLB IT", "khóa hash SHA-256 toàn bộ tài liệu trong manifest trước 20/11"),
+        ("kiểm thử tích hợp đa nền tảng Harness", "chạy pass 32 test Python, 93 test Node.js và 7 test .NET Gateway"),
+        ("phong cách làm việc mong muốn", "ưu tiên giải pháp kỹ thuật sạch, trích dẫn tài liệu chuẩn xác và logic chặt chẽ"),
+    ]),
+    ("Quỳnh", "Trưởng ban Kiểm định Chất lượng & Reviewer", "lead_quynh", [
+        ("thẩm định hàng đợi duyệt Review Queue", "kiểm tra độc lập toàn bộ các cặp SFT trước khi nạp vào đợt train"),
+        ("ký biên bản nghiệm thu Quy chế đào tạo CLB", "xác nhận không rò rỉ dữ liệu test set vào tập huấn luyện"),
+        ("đánh giá chất lượng câu trả lời của trợ lý", "đảm bảo tỷ lệ trả lời đúng sự thật từ kho đạt trên 95%"),
+        ("hướng dẫn thành viên sử dụng sổ tay cá nhân", "tổ chức buổi training hướng dẫn tính năng cho 40 thành viên"),
+    ]),
     ("Nguyễn Minh Anh", "Chủ nhiệm", "owner", [
         ("duyệt dự toán kinh phí CodeFest 2026", "hạn ký duyệt trước ngày 20/11"),
         ("ký biên bản tài trợ với doanh nghiệp công nghệ", "lịch hẹn ký kết vào 15h00 Thứ Năm"),
@@ -330,6 +371,18 @@ def generate_tier1_conversations():
                     {"role": "assistant", "content": f"Chào bạn {name}! Với vai trò {role_desc} phụ trách {topic}, tuần này bạn cần chú ý các mốc:\n- Thứ Sáu (18h30): Sinh hoạt định kỳ CLB tại Lab 402.\n- Tham gia chuẩn bị Hackathon IT CodeFest 2026.\nBạn có cần mình hỗ trợ soạn thông báo hay ghi chú gì thêm không?"}
                 ]
             })
+            count += 1
+            rows.append({
+                "id": f"sft-t1-{count:04d}",
+                "scenario_family": fam,
+                "messages": [
+                    {"role": "system", "content": f"{SYSTEM_PROMPT}\nNgười dùng: {name} ({role_desc}). Nhiệm vụ chính: {topic}."},
+                    {"role": "user", "content": f"Trợ lý cập nhật giúp {name} tiến độ nhiệm vụ '{topic}' đã xong 100% rồi nhé."},
+                    {"role": "assistant", "content": f"Tuyệt vời quá! Mình đã cập nhật nhiệm vụ '{topic}' của bạn {name} sang trạng thái HOÀN THÀNH. Bạn có muốn ghi chú kết quả này vào sổ tay cá nhân không? (Đúng, ghi nhớ / Không)"},
+                    {"role": "user", "content": "Đúng, ghi nhớ giúp mình."},
+                    {"role": "assistant", "content": f"Đã cập nhật trạng thái hoàn thành '{topic}' vào sổ tay của bạn {name}. Chúc mừng bạn đã hoàn thành xuất sắc!"}
+                ]
+            })
     return rows
 
 
@@ -366,9 +419,9 @@ def generate_tier3_refuse():
                     {"role": "assistant", "content": reply}
                 ]
             })
-            if len(rows) >= 105:
+            if len(rows) >= 140:
                 break
-        if len(rows) >= 105:
+        if len(rows) >= 140:
             break
     return rows
 

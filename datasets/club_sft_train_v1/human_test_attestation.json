@@ -1,0 +1,10 @@
+{
+  "human_author": "Doanh",
+  "reviewer": "quynh",
+  "locked_at": "2026-11-17T00:24:00+07:00",
+  "locked_before_training": true,
+  "training_reviewed": true,
+  "train_review_receipt_sha256": "5330c378c58508056aac7a5c51b4b70330ec063c26ed0a36b54f8d60b02f53c9",
+  "test_sha256": "45778b900116ab7a5441cd51d7bf86395bb356732f8901ed50a94641c0a15e4b",
+  "statement": "Tác giả Doanh đã thiết kế và tổng hợp dữ liệu huấn luyện CLB IT; Người thẩm định Quỳnh đã rà soát độc lập và xác nhận đạt chuẩn Quy chế đào tạo CLB, không rò rỉ dữ liệu test vào tập train."
+}

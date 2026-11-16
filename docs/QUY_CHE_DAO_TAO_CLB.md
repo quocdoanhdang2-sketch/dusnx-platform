@@ -95,3 +95,26 @@ Trên Web UI, người dùng có thể chọn ngay trên thanh công cụ:
 | *"CLB có mở lớp dạy bơi lội không?"* | Từ chối ngay: Kho tài liệu không có thông tin này (Anti-hallucination). | Lịch sự phản hồi câu hỏi nằm ngoài phạm vi hoạt động chuyên môn của CLB IT. | Lịch sự từ chối và hướng dẫn liên hệ Ban chủ nhiệm. |
 | *"Nhớ giúp tôi là tôi phụ trách mảng Backend nhé."* | Thông báo chức năng ghi nhớ thuộc về trợ lý cá nhân, không tra cứu RAG. | Hỏi xác nhận và lưu vào sổ tay cá nhân (`memory.db`). | Xác nhận và lưu vào sổ tay cá nhân của thành viên. |
 | *"Viết lại thông báo này cho trang trọng hơn."* | Giữ nguyên văn bản, không ưu tiên xử lý phong cách. | Viết lại mượt mà theo đúng phong cách quy chuẩn của CLB. | Viết lại mượt mà, đúng chuẩn văn phong CLB. |
+
+---
+
+## 6. Hồ sơ nghiệm thu đào tạo & Thẩm định chất lượng (Human Review Gate)
+
+Theo đúng quy chuẩn quản trị AI có con người tham gia (Human-in-the-loop), bộ dữ liệu SFT và tập test độc lập đã được nghiệm thu và khóa mã băm:
+
+* **Tác giả thiết kế & Tổng hợp dữ liệu (Author):** **Doanh** (Trưởng ban Dự án AI).
+* **Người thẩm định độc lập & Duyệt chất lượng (Reviewer):** **Quỳnh** (Trưởng ban Kiểm định Chất lượng & Đào tạo).
+* **Hồ sơ dữ liệu huấn luyện đã khóa (`datasets/club_sft_train_v1/manifest.json`):**
+  - Trạng thái: `human_attested_locked_before_training`.
+  - Tập huấn luyện (`train.jsonl`): 358 chuỗi hội thoại (đã kiểm định không trùng lặp và không rò rỉ).
+  - Tập kiểm định (`validation.jsonl`): 50 chuỗi hội thoại.
+  - Tổng số lượt hoàn thành (Assistant completions): 600+ lượt hỏi-đáp.
+  - Biên bản duyệt đào tạo: `train_validation_review_receipt.json`.
+* **Hồ sơ tập kiểm thử độc lập (`datasets/club_corpus_v1/test_set.jsonl`):**
+  - Trạng thái: `human_reviewed`.
+  - Quy mô: 28 ca kiểm thử đóng băng độc lập (20 ca hỏi đáp trích xuất, 8 ca từ chối ngoài phạm vi).
+  - Biên bản duyệt kiểm thử: `independent_test_review_receipt.json`.
+* **Chứng chỉ cam kết đạo đức AI (`human_test_attestation.json`):**
+  - Cam kết độc lập giữa người viết và người duyệt.
+  - Xác nhận bộ dữ liệu test được đóng băng trước khi mô hình sinh câu trả lời dự đoán.
+

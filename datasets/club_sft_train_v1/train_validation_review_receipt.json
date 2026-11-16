@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "review_type": "train_validation",
+  "test_only": false,
+  "human_author": "Doanh",
+  "human_authored_at": "2026-11-17T00:15:00+07:00",
+  "reviewers": [
+    "quynh"
+  ],
+  "reviewed_at": [
+    "2026-11-17T00:23:00+07:00"
+  ],
+  "row_count": 408,
+  "result_files": {
+    "train.jsonl": "ba135718ced4c3b8e576d3f90c351537e0b2f9c41530d7082b72be7609c8afde",
+    "validation.jsonl": "46e60c7ed299388f6ddefc5297e61f711656b31b3d6658132eec940002a3d49c"
+  }
+}

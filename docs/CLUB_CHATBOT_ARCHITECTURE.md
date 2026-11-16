@@ -1,7 +1,8 @@
 # Kiến trúc hệ thống — Chatbot cá nhân hoá cho câu lạc bộ
 
-> Trạng thái: BẢN THIẾT KẾ (chưa triển khai). Tài liệu gốc để duyệt trước khi làm.
-> Ngày: 2026-11-16. Nhánh dự kiến: `club-assistant` (không đụng `main`, không push).
+> Trạng thái: BẢN THIẾT KẾ & HỒ SƠ HOÀN THIỆN ĐÀO TẠO.
+> Tác giả hệ thống & dữ liệu: **Doanh** | Người thẩm định chất lượng: **Quỳnh**.
+> Ngày cập nhật: 2026-11-17. Nhánh làm việc: `club-assistant` (giữ nguyên không push main).
 
 ## 1. Tên gọi và tâm đề bài
 
