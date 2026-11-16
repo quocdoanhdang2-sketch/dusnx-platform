@@ -317,6 +317,9 @@ function initClubUI(user) {
 
   const btnRebuild = el("btnRebuildIndex");
   if (btnRebuild) btnRebuild.hidden = !isMgmt;
+
+  const btnNewAnn = el("btnNewAnnouncement");
+  if (btnNewAnn) btnNewAnn.hidden = !isMgmt;
 }
 
 function applyUiLanguage(language) {
@@ -1930,17 +1933,21 @@ async function loadAnnouncements() {
       const meta = document.createElement("div");
       meta.className = "announcement-meta";
       const author = document.createElement("strong");
-      author.textContent = ann.author_name || "Ban chủ nhiệm";
-      const roleBadge = document.createElement("span");
-      const bInfo = getRoleBadgeInfo(ann.author_role);
-      roleBadge.className = `${bInfo.className} role-badge-xs`;
-      roleBadge.textContent = bInfo.label;
+      author.textContent = ann.author_name || "Ban chủ nhiệm CLB";
+      meta.appendChild(author);
+
+      const authorRole = ann.author_role || "owner";
+      if (authorRole === "owner" || authorRole === "deputy" || authorRole === "lead") {
+        const roleBadge = document.createElement("span");
+        const bInfo = getRoleBadgeInfo(authorRole);
+        roleBadge.className = `${bInfo.className} role-badge-xs`;
+        roleBadge.textContent = bInfo.label;
+        meta.appendChild(roleBadge);
+      }
+
       const time = document.createElement("span");
       time.className = "announcement-time";
       time.textContent = formatDate(ann.created_at);
-
-      meta.appendChild(author);
-      meta.appendChild(roleBadge);
       meta.appendChild(time);
 
       const body = document.createElement("div");
@@ -1955,6 +1962,79 @@ async function loadAnnouncements() {
   } catch (err) {
     if (countEl) countEl.textContent = "Không tải được";
   }
+}
+
+function showNewAnnouncementModal() {
+  el("modalTitle").textContent = "Đăng thông báo mới lên Bảng tin CLB";
+  const body = el("modalBody");
+  body.replaceChildren();
+
+  const form = document.createElement("form");
+  form.className = "announcement-create-form";
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const content = txt.value.trim();
+    if (!content) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Đang đăng…";
+    try {
+      await apiFetch("/v1/club/announcements", {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      });
+      closeModal();
+      await loadAnnouncements();
+    } catch (err) {
+      alert(`Lỗi đăng thông báo: ${err.message}`);
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Đăng thông báo";
+    }
+  };
+
+  const lbl = document.createElement("label");
+  lbl.className = "field-label";
+  lbl.textContent = "Nội dung thông báo:";
+
+  const txt = document.createElement("textarea");
+  txt.className = "field-input";
+  txt.rows = 5;
+  txt.style.width = "100%";
+  txt.style.padding = "10px";
+  txt.style.borderRadius = "8px";
+  txt.style.border = "1px solid #cbd5e1";
+  txt.style.fontFamily = "inherit";
+  txt.style.fontSize = "14px";
+  txt.style.resize = "vertical";
+  txt.placeholder = "Nhập nội dung thông báo gửi tới toàn thể thành viên CLB…";
+  txt.required = true;
+
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.justifyContent = "flex-end";
+  actions.style.gap = "8px";
+  actions.style.marginTop = "14px";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "btn-secondary btn-sm";
+  cancelBtn.textContent = "Hủy";
+  cancelBtn.onclick = closeModal;
+
+  const submitBtn = document.createElement("button");
+  submitBtn.type = "submit";
+  submitBtn.className = "btn-primary btn-sm";
+  submitBtn.textContent = "Đăng thông báo";
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(submitBtn);
+
+  form.appendChild(lbl);
+  form.appendChild(txt);
+  form.appendChild(actions);
+  body.appendChild(form);
+
+  el("modalOverlay").hidden = false;
+  txt.focus();
 }
 
 function runDemoQuestion() {
@@ -2069,17 +2149,19 @@ async function loadClubMessages(convId) {
       const nameSpan = document.createElement("strong");
       nameSpan.textContent = msg.sender_display_name || msg.sender_username;
 
-      const roleBadge = document.createElement("span");
-      const rInfo = getRoleBadgeInfo(msg.sender_role);
-      roleBadge.className = `${rInfo.className} role-badge-xs`;
-      roleBadge.textContent = rInfo.label;
+      senderMeta.appendChild(nameSpan);
+
+      if (msg.sender_role === "owner" || msg.sender_role === "deputy" || msg.sender_role === "lead") {
+        const roleBadge = document.createElement("span");
+        const rInfo = getRoleBadgeInfo(msg.sender_role);
+        roleBadge.className = `${rInfo.className} role-badge-xs`;
+        roleBadge.textContent = rInfo.label;
+        senderMeta.appendChild(roleBadge);
+      }
 
       const timeSpan = document.createElement("span");
       timeSpan.className = "thread-time";
       timeSpan.textContent = formatDate(msg.created_at);
-
-      senderMeta.appendChild(nameSpan);
-      senderMeta.appendChild(roleBadge);
       senderMeta.appendChild(timeSpan);
 
       const body = document.createElement("div");
@@ -2151,7 +2233,9 @@ async function showNewDmModal() {
 
   try {
     const data = await apiFetch("/v1/club/directory");
-    const members = (data.members || []).filter(m => m.user_id !== currentUser?.user_id);
+    const myId = currentUser?.user_id;
+    const myName = currentUser?.username;
+    const members = (data.members || []).filter(m => m.user_id !== myId && m.username !== myName);
     body.replaceChildren();
 
     if (!members.length) {
@@ -2179,10 +2263,15 @@ async function showNewDmModal() {
       name.className = "dm-picker-name";
       name.textContent = m.display_name ? `${m.display_name} (@${m.username})` : `@${m.username}`;
 
-      const badge = document.createElement("span");
-      const rInfo = getRoleBadgeInfo(m.role);
-      badge.className = `${rInfo.className} role-badge-xs`;
-      badge.textContent = rInfo.label;
+      item.appendChild(name);
+
+      if (m.role === "owner" || m.role === "deputy" || m.role === "lead") {
+        const badge = document.createElement("span");
+        const rInfo = getRoleBadgeInfo(m.role);
+        badge.className = `${rInfo.className} role-badge-xs`;
+        badge.textContent = rInfo.label;
+        item.appendChild(badge);
+      }
 
       const selectBtn = document.createElement("button");
       selectBtn.className = "btn-secondary btn-sm";
@@ -2200,12 +2289,10 @@ async function showNewDmModal() {
             openClubConversation(targetConvId, m.display_name || m.username);
           }
         } catch (err) {
-          showError(`Không thể tạo tin nhắn với ${m.display_name || m.username}: ${err.message}`);
+          alert(`Không thể tạo tin nhắn: ${err.message}`);
         }
       };
 
-      item.appendChild(name);
-      item.appendChild(badge);
       item.appendChild(selectBtn);
       list.appendChild(item);
     }
@@ -2704,6 +2791,8 @@ if (typeof module !== "undefined") {
     loadClubConversations,
     loadClubDocuments,
     loadClubManagement,
+    showNewAnnouncementModal,
+    showNewDmModal,
     quickFillRole,
     handleKeyDown,
   };

@@ -7,7 +7,10 @@
   <meta name="description" content="Hệ thống chatbot cá nhân hoá cho câu lạc bộ IT: tra cứu quy chế, quản lý công việc và nhắn tin nội bộ" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#2563eb" />
-  <link rel="stylesheet" href="styles.css?v=20261116c" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="stylesheet" href="styles.css?v=20261117_fix02" />
 </head>
 <body>
 
@@ -238,7 +241,10 @@
           <h1 class="view-title">📢 Bảng tin CLB IT</h1>
           <p class="view-subtitle">Thông báo, lịch trình và sự kiện quan trọng gửi đến toàn thể thành viên</p>
         </div>
-        <button class="btn-secondary btn-sm" onclick="loadAnnouncements()">🔄 Làm mới</button>
+        <div class="view-header-actions" style="display: flex; gap: 8px;">
+          <button class="btn-primary btn-sm" id="btnNewAnnouncement" onclick="showNewAnnouncementModal()" hidden>＋ Đăng thông báo mới</button>
+          <button class="btn-secondary btn-sm" onclick="loadAnnouncements()">🔄 Làm mới</button>
+        </div>
       </div>
       <div id="clubAnnouncementBanner" class="announcement-board-wrap">
         <div class="announcement-header" style="display:none;">
@@ -474,10 +480,15 @@
   </div>
 </div>
 
-<script src="app.js?v=20261116c"></script>
+<script src="app.js?v=20261117_fix02"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      for (const reg of regs) reg.unregister();
+    });
+    if (window.caches) {
+      caches.keys().then(names => names.forEach(name => caches.delete(name)));
+    }
   }
 </script>
 </body>

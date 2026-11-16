@@ -412,7 +412,16 @@ def build_index(force: bool = False, verbose: bool = False,
     inserted_docs = inserted_chunks = skipped = removed = 0
     seen_paths: set[str] = set()
     if paths is None:
-        candidates = _iter_files(root)
+        manifest_p = root / "datasets" / "club_corpus_v1" / "manifest.json"
+        if manifest_p.is_file():
+            try:
+                with open(manifest_p, encoding="utf-8") as f:
+                    manifest_data = json.load(f)
+                candidates = {((root / d["path"]).resolve()) for d in manifest_data.get("documents", [])}
+            except Exception:
+                candidates = _iter_files(root)
+        else:
+            candidates = _iter_files(root)
     else:
         candidates = {((root / relative).resolve()) for relative in paths}
     with _connect() as conn:

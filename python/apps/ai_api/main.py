@@ -495,6 +495,10 @@ def club_list_messages(user: CurrentUser, conv_id: str, after_id: Optional[str] 
                 item["sender_username"] = sender.get("username")
                 item["sender_display_name"] = sender.get("display_name")
                 item["sender_role"] = sender.get("role")
+            elif m["sender_id"] in ("admin", "chunhiem"):
+                item["sender_username"] = "chunhiem"
+                item["sender_display_name"] = "Nguyễn Minh Anh (Chủ nhiệm CLB)"
+                item["sender_role"] = "owner"
             else:
                 item["sender_username"] = m["sender_id"]
                 item["sender_display_name"] = m["sender_id"]
@@ -620,19 +624,33 @@ def club_announcements(user: CurrentUser):
     pinned_msgs = []
     try:
         chat_db = get_club_chat_db()
+        auth_db = get_auth_db()
         convs = chat_db.list_conversations(user["user_id"])
         toan_clb = next((c for c in convs if c.get("unit") == "toan-clb"), None)
         if toan_clb:
             msgs = chat_db.list_messages(toan_clb["conv_id"], user["user_id"])
-            pinned_msgs = [m for m in msgs if m.get("pinned")]
+            for m in msgs:
+                if m.get("pinned"):
+                    item = dict(m)
+                    sender = auth_db.get_user_by_id(m["sender_id"])
+                    if sender:
+                        item["author_name"] = sender.get("display_name") or sender.get("username")
+                        item["author_role"] = sender.get("role")
+                    elif m["sender_id"] in ("admin", "chunhiem"):
+                        item["author_name"] = "Nguyễn Minh Anh (Chủ nhiệm CLB)"
+                        item["author_role"] = "owner"
+                    else:
+                        item["author_name"] = "Ban chủ nhiệm CLB IT"
+                        item["author_role"] = "owner"
+                    pinned_msgs.append(item)
     except Exception:
         pass
     if not pinned_msgs:
         pinned_msgs = [
             {
                 "message_id": "ann-01",
-                "sender_name": "Nguyễn Minh Anh (Chủ nhiệm)",
-                "sender_role": "owner",
+                "author_name": "Nguyễn Minh Anh (Chủ nhiệm CLB)",
+                "author_role": "owner",
                 "title": "Chào mừng tân thành viên đợt 2",
                 "content": "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Sáu tại Phòng Lab 402.",
                 "created_at": "2026-11-16T08:00:00Z",
@@ -640,17 +658,17 @@ def club_announcements(user: CurrentUser):
             },
             {
                 "message_id": "ann-02",
-                "sender_name": "Đỗ Nam Khánh (Trưởng ban kỹ thuật)",
-                "sender_role": "lead",
+                "author_name": "Đỗ Nam Khánh (Trưởng ban kỹ thuật)",
+                "author_role": "lead",
                 "title": "Đăng ký Hackathon IT CodeFest 2026",
-                "content": "IT CodeFest 2026 chính thức mở đơn đăng ký cho tất cả thành viên. Hạn chót nộp ý tưởng: 25/11. Giải nhất 5.000.000đ!",
+                "content": "IT CodeFest 2026 chính thức mở đơn đăng ký cho tất cả thành viên. Hạn chót nộp ý tưởng: 25/11. Giải nhất 3.000.000đ!",
                 "created_at": "2026-11-15T14:30:00Z",
                 "pinned": True,
             },
             {
                 "message_id": "ann-03",
-                "sender_name": "Lê Quốc Bảo (Phó chủ nhiệm)",
-                "sender_role": "deputy",
+                "author_name": "Lê Quốc Bảo (Phó chủ nhiệm)",
+                "author_role": "deputy",
                 "title": "Nộp quỹ CLB tháng 11/2026",
                 "content": "Các thành viên vui lòng đóng quỹ tháng 11 (50.000đ/tháng) qua Ban hậu cần trước ngày 20/11.",
                 "created_at": "2026-11-14T09:00:00Z",
@@ -658,6 +676,28 @@ def club_announcements(user: CurrentUser):
             },
         ]
     return {"announcements": pinned_msgs}
+
+
+class AnnouncementCreateRequest(BaseModel):
+    content: str
+    title: Optional[str] = None
+
+
+@app.post("/v1/club/announcements", status_code=201)
+def club_create_announcement(user: CurrentUser, req: AnnouncementCreateRequest):
+    """Chỉ Chủ nhiệm hoặc Phó chủ nhiệm mới được đăng thông báo."""
+    if user.get("role") not in ("owner", "deputy"):
+        raise HTTPException(status_code=403, detail="Chỉ Chủ nhiệm hoặc Phó chủ nhiệm mới có quyền đăng thông báo")
+    if not req.content or not req.content.strip():
+        raise HTTPException(status_code=400, detail="Nội dung thông báo không được để trống")
+    chat_db = get_club_chat_db()
+    convs = chat_db.list_conversations(user["user_id"])
+    toan_clb = next((c for c in convs if c.get("unit") == "toan-clb"), None)
+    if not toan_clb:
+        raise HTTPException(status_code=404, detail="Không tìm thấy kênh thông báo Toàn CLB")
+    msg = chat_db.send(toan_clb["conv_id"], user["user_id"], req.content.strip())
+    chat_db.pin_message(toan_clb["conv_id"], user["user_id"], msg["message_id"], pinned=True)
+    return {"message_id": msg["message_id"], "status": "ok"}
 
 
 @app.get("/v1/club/stats")

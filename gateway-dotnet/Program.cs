@@ -71,7 +71,16 @@ if (Directory.Exists(webUiPath))
 {
     var physicalProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Path.GetFullPath(webUiPath));
     app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = physicalProvider });
-    app.UseStaticFiles(new StaticFileOptions { FileProvider = physicalProvider });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = physicalProvider,
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            ctx.Context.Response.Headers["Pragma"] = "no-cache";
+            ctx.Context.Response.Headers["Expires"] = "0";
+        }
+    });
 }
 
 app.MapGet("/health", () => Results.Ok(new
