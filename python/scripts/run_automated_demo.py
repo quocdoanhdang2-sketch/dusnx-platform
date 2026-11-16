@@ -57,14 +57,22 @@ def run_demo():
         page.screenshot(path=str(shot3), full_page=False)
         print(f"   Saved {shot3.name}", flush=True)
 
-        # Step 4: Documents View
-        print("4. Navigating to Kho tài liệu (18 documents)...")
+        # Step 4: Documents View (26 Documents) & Scrolling Test
+        print("4. Navigating to Kho tài liệu (26 documents)...")
         page.locator("#navDocuments").click()
         page.wait_for_selector("#viewDocuments")
         time.sleep(2)
         shot4 = OUT_DIR / "04_documents_corpus.png"
         page.screenshot(path=str(shot4), full_page=False)
         print(f"   Saved {shot4.name}")
+
+        # Test smooth scrolling down to view later documents (DOC-13..DOC-26)
+        print("   Testing scrolling down to view DOC-13 through DOC-26...")
+        page.evaluate("() => document.querySelector('#viewDocuments').scrollTo(0, 750)")
+        time.sleep(1.5)
+        shot4b = OUT_DIR / "04b_documents_scrolled.png"
+        page.screenshot(path=str(shot4b), full_page=False)
+        print(f"   Saved {shot4b.name}")
 
         # Step 5: Personal Notebook View
         print("5. Navigating to Sổ tay cá nhân...")

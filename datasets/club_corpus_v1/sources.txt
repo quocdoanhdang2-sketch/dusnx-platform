@@ -19,3 +19,11 @@ datasets/club_corpus_v1/docs/15-nhan-dien-clb.md
 datasets/club_corpus_v1/docs/16-dong-quy-clb.md
 datasets/club_corpus_v1/docs/17-team-building.md
 datasets/club_corpus_v1/docs/18-danh-gia-thanh-vien.md
+datasets/club_corpus_v1/docs/19-quy-chuan-git-flow.md
+datasets/club_corpus_v1/docs/20-tieu-chi-cham-thi-codefest.md
+datasets/club_corpus_v1/docs/21-tai-lieu-onboarding-git-github.md
+datasets/club_corpus_v1/docs/22-quy-dinh-server-gpu.md
+datasets/club_corpus_v1/docs/23-chuong-trinh-mentorship.md
+datasets/club_corpus_v1/docs/24-quy-trinh-xin-kinh-phi-du-an.md
+datasets/club_corpus_v1/docs/25-quy-che-truyen-thong-thuong-hieu.md
+datasets/club_corpus_v1/docs/26-lo-trinh-dao-tao-ai-data-science.md

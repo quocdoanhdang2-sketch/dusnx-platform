@@ -155,18 +155,18 @@
     <!-- Tab 1: Chat View -->
     <div id="viewChat" class="view active">
       <div class="chat-header">
-        <div>
-          <h1 class="chat-title" id="chatTitle">Trợ lý AI cá nhân hoá CLB IT</h1>
-          <div class="chat-meta" id="chatMeta">
-            <span class="badge-tag">🧠 Qwen2.5-0.5B-CLB (Model tự huấn luyện)</span>
-            <span class="badge-tag">📚 RAG Kho quy chế CLB IT</span>
+        <div class="chat-header-info">
+          <div class="chat-title-row">
+            <span class="status-dot-pulse" title="Trực tuyến"></span>
+            <h1 class="chat-title" id="chatTitle">Trợ lý AI CLB IT</h1>
+            <span class="chat-model-badge">Qwen2.5-0.5B • LoRA + RAG 26 docs</span>
           </div>
         </div>
         <div class="chat-header-actions">
           <div class="mode-selector-container">
             <select id="assistantModeSelect" class="mode-selector" title="Chọn kiến trúc / chế độ kiểm chứng">
               <option value="hybrid" selected>⚡ RAG + LoRA (Kết hợp)</option>
-              <option value="rag">📚 App A: Thuần RAG (18 văn bản)</option>
+              <option value="rag">📚 App A: Thuần RAG (26 văn bản)</option>
               <option value="lora">🧠 App B: Thuần LoRA (Quy trình)</option>
             </select>
           </div>
@@ -180,7 +180,7 @@
         <div class="announcement-header" onclick="toggleAnnouncements()" title="Nhấn để mở rộng hoặc thu gọn bảng tin">
           <div class="announcement-header-left">
             <span class="announcement-icon" aria-hidden="true">📌</span>
-            <span class="announcement-title">Bảng tin thông báo CLB</span>
+            <span class="announcement-title">Bảng tin CLB</span>
             <span class="announcement-count" id="announcementCount">Đang tải...</span>
             <span class="announcement-preview-text" id="announcementPreviewText"></span>
           </div>
@@ -191,16 +191,18 @@
         <div class="announcement-list" id="announcementList" hidden></div>
       </div>
 
-      <!-- Welcome state (empty session) -->
+      <!-- Welcome state (Gemini inspired) -->
       <div id="welcomeState" class="welcome-state">
-        <div class="welcome-icon">💻</div>
-        <h2 class="welcome-title">Xin chào! Mình là Trợ lý AI CLB IT</h2>
-        <p class="welcome-sub">Mọi thành viên dùng chung chatbot, nhưng mỗi người có một trợ lý riêng: nhớ vai trò, deadline, tra cứu kho quy chế 18 văn bản đã khóa hash và hỗ trợ bạn chu đáo.</p>
+        <div class="welcome-gemini-sparkle">✦</div>
+        <h2 class="welcome-title">Hôm nay CLB IT có thể giúp gì cho bạn?</h2>
+        <p class="welcome-sub">Mọi thành viên dùng chung chatbot, nhưng mỗi người có một trợ lý riêng: nhớ việc riêng, tra cứu kho 26 văn bản đã khóa hash và hỗ trợ bạn chu đáo.</p>
         <div class="welcome-hints" id="welcomeHints">
-          <button class="hint-chip" onclick="useHint(this)">Lịch sinh hoạt CLB IT vào thứ mấy, ở đâu?</button>
-          <button class="hint-chip" onclick="useHint(this)">Hackathon IT CodeFest 2026 khi nào tổ chức?</button>
-          <button class="hint-chip" onclick="useHint(this)">Quy định mượn thiết bị và nội quy phòng lab 402?</button>
-          <button class="hint-chip" onclick="useHint(this)">Tiêu chí đánh giá thành viên xuất sắc của CLB?</button>
+          <button class="hint-chip" onclick="useHint(this)">📅 Lịch sinh hoạt định kỳ CLB IT ở đâu, khi nào?</button>
+          <button class="hint-chip" onclick="useHint(this)">🏆 Barem và tiêu chí chấm thi IT CodeFest 2026?</button>
+          <button class="hint-chip" onclick="useHint(this)">🖥️ Quy định mượn Server GPU và Lab A2-305?</button>
+          <button class="hint-chip" onclick="useHint(this)">🌿 Quy chuẩn Git Flow và Code Review Ban Kỹ thuật?</button>
+          <button class="hint-chip" onclick="useHint(this)">🚀 Lộ trình đào tạo AI & Data Science 2026?</button>
+          <button class="hint-chip" onclick="useHint(this)">💰 Hạn mức và quy trình xin kinh phí dự án?</button>
         </div>
       </div>
 
@@ -209,18 +211,19 @@
       <!-- Messages -->
       <div id="messageList" class="message-list" role="log" aria-live="polite" aria-label="Lịch sử chat"></div>
 
-      <!-- Input area -->
+      <!-- Input area (Gemini Capsule) -->
       <div class="input-area">
         <div id="statusIndicator" class="status-indicator" hidden>
           <span class="spinner" aria-hidden="true"></span>
           <span id="statusText">Trợ lý CLB đang suy nghĩ…</span>
         </div>
-        <div class="input-row">
+        <div class="input-row gemini-capsule">
+          <button type="button" class="input-action-btn" onclick="runDemoQuestion()" title="Gợi ý câu hỏi nhanh" aria-label="Gợi ý">✦</button>
           <textarea
             id="messageInput"
             class="chat-input"
             rows="1"
-            placeholder="Hỏi về lịch họp, quy chế, CodeFest, hoặc nhờ bot ghi nhớ việc riêng…"
+            placeholder="Hỏi về quy chế, CodeFest, Server GPU, hoặc nhờ bot ghi nhớ việc riêng…"
             aria-label="Tin nhắn"
             onkeydown="handleKeyDown(event)"
           ></textarea>
@@ -232,7 +235,7 @@
         </div>
         <div class="input-footer">
           <span id="modelStatus" class="model-status">🧠 Model: Qwen2.5-0.5B-CLB (LoRA)</span>
-          <span id="providerStatus" class="provider-status">✓ Sẵn sàng • Model tự train + RAG 18 văn bản</span>
+          <span id="providerStatus" class="provider-status">✓ Sẵn sàng • Model tự train + RAG 26 văn bản</span>
         </div>
       </div>
     </div>
@@ -277,7 +280,7 @@
       <div class="view-header">
         <div>
           <h1 class="view-title">📚 Kho tài liệu CLB IT</h1>
-          <span class="badge-note" id="docLockStatus">Đang kiểm tra 18 văn bản đã khóa hash SHA-256…</span>
+          <span class="badge-note" id="docLockStatus">Đang kiểm tra 26 văn bản đã khóa hash SHA-256…</span>
         </div>
         <div class="doc-header-actions" id="docAdminActions">
           <button class="btn-secondary btn-sm" onclick="handleVerifyCorpus()">🔒 Kiểm tra toàn vẹn</button>

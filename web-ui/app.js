@@ -404,7 +404,7 @@ async function checkProviderHealth() {
     }
 
     if (providerOk) {
-      statusEl.textContent = "✓ sẵn sàng • Model tự train (Qwen2.5-CLB) + Kho RAG 18 văn bản";
+      statusEl.textContent = "✓ sẵn sàng • Model tự train (Qwen2.5-CLB) + Kho RAG 26 văn bản";
       statusEl.className = "provider-status ok";
     } else {
       const pName = provider.provider || "none";
@@ -1948,7 +1948,10 @@ function runDemoQuestion() {
   const demoQuestions = [
     "Lịch sinh hoạt định kỳ của CLB IT diễn ra vào thứ mấy, ở phòng nào?",
     "Cuộc thi Hackathon IT CodeFest 2026 diễn ra vào thời gian nào và cơ cấu giải thưởng ra sao?",
-    "Quy định mượn thiết bị và sử dụng phòng lab 402 như thế nào?",
+    "Quy chuẩn Git Flow và quy tắc đặt tên nhánh Pull Request của Ban Kỹ thuật quy định thế nào?",
+    "Tiêu chí chấm điểm và barem đánh giá cuộc thi Hackathon IT CodeFest 2026 gồm những gì?",
+    "Quy định khai thác máy chủ Server AI và card GPU Lab A2-305 như thế nào?",
+    "Lộ trình đào tạo chuyên sâu AI & Data Science 2026 của CLB IT gồm những nội dung gì?",
     "Tiêu chuẩn đánh giá và quyền lợi của thành viên xuất sắc CLB IT là gì?",
   ];
   const q = demoQuestions[Math.floor(Math.random() * demoQuestions.length)];
@@ -2214,7 +2217,7 @@ async function loadClubDocuments() {
     const data = await apiFetch("/v1/club/documents");
     allClubDocuments = data.documents || [];
     if (statusEl) {
-      statusEl.textContent = `18 văn bản đã khóa hash SHA-256 (Toàn vẹn: ${data.manifest_verified ? "Khớp 100%" : "Đang kiểm tra"})`;
+      statusEl.textContent = `${allClubDocuments.length} văn bản đã khóa hash SHA-256 (Toàn vẹn: ${data.verified !== false ? "Khớp 100%" : "Đang kiểm tra"})`;
     }
     renderDocumentCards(allClubDocuments);
   } catch (err) {
@@ -2527,7 +2530,7 @@ async function loadClubStats() {
     const stats = await apiFetch("/v1/club/stats");
     const cards = [
       { label: "Tổng thành viên CLB", value: stats.total_members || 0, sub: `${stats.pending_members || 0} đang chờ duyệt` },
-      { label: "Kho tài liệu đã khóa hash", value: stats.total_documents || 18, sub: "18 văn bản SHA-256" },
+      { label: "Kho tài liệu đã khóa hash", value: stats.total_documents || 26, sub: "26 văn bản SHA-256" },
       { label: "Phiên chat AI cá nhân hoá", value: stats.total_sessions || 0, sub: "Đã phân tầng 4 cấp độ" },
       { label: "Đánh giá hữu ích", value: stats.satisfaction_rate ? `${stats.satisfaction_rate}%` : "100%", sub: "Tín hiệu phản hồi tích cực" },
     ];

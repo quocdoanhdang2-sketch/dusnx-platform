@@ -1,7 +1,7 @@
 {
   "manifest_version": "1",
   "corpus_id": "club-it-v1",
-  "domain": "CLB IT - Quy chế, vận hành, sự kiện và sinh hoạt",
+  "domain": "Hoạt động, quy chế, đào tạo và tài liệu nội bộ CLB IT",
   "created_at": "2026-11-16T06:05:27Z",
   "documents": [
     {
@@ -129,11 +129,67 @@
       "sha256": "d3c05e78ceddec1a88177f5e20bb2c7136a24f35dd62bfc265ae76de03ab8fcf",
       "bytes": 4150,
       "title": "Quy chế đánh giá và tuyên dương thành viên CLB IT"
+    },
+    {
+      "id": "doc-19",
+      "path": "datasets/club_corpus_v1/docs/19-quy-chuan-git-flow.md",
+      "sha256": "a873a903a957ce3d228583c793bfa7b0a3dd8aa17fb2e80b259f8f86d1c9e79c",
+      "bytes": 2987,
+      "title": "Quy chuẩn Git Flow và Code Review Ban Kỹ thuật CLB IT"
+    },
+    {
+      "id": "doc-20",
+      "path": "datasets/club_corpus_v1/docs/20-tieu-chi-cham-thi-codefest.md",
+      "sha256": "d07c2a0892fb1ef20fa7380575aa1c62d962db6659583d713e1001fe558cf183",
+      "bytes": 2722,
+      "title": "Tiêu chí chấm điểm và Barem đánh giá IT CodeFest 2026"
+    },
+    {
+      "id": "doc-21",
+      "path": "datasets/club_corpus_v1/docs/21-tai-lieu-onboarding-git-github.md",
+      "sha256": "e6957dba6125b33f341218a5794d0cad0b4fef885d5f0d1f0fb2839993011548",
+      "bytes": 2303,
+      "title": "Cẩm nang Hướng dẫn Git và GitHub căn bản cho Tân thành viên"
+    },
+    {
+      "id": "doc-22",
+      "path": "datasets/club_corpus_v1/docs/22-quy-dinh-server-gpu.md",
+      "sha256": "f455bf314b6b6cf33719efdf0c2e23e03a204328c5f2493eebb5b1d9d19261a1",
+      "bytes": 2696,
+      "title": "Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab A2-305"
+    },
+    {
+      "id": "doc-23",
+      "path": "datasets/club_corpus_v1/docs/23-chuong-trinh-mentorship.md",
+      "sha256": "f5ed9913c481c8cfaa40e07ef20baa0c1d88298e734ffb5eb94f1d64d78da772",
+      "bytes": 2447,
+      "title": "Chương trình Cố vấn Học tập và Phát triển Dự án (Mentorship Program)"
+    },
+    {
+      "id": "doc-24",
+      "path": "datasets/club_corpus_v1/docs/24-quy-trinh-xin-kinh-phi-du-an.md",
+      "sha256": "6872ee0b33355eccc8a62f7976b093611897ca9be7540fcd72df27b2a2167e7e",
+      "bytes": 2463,
+      "title": "Quy trình Đề xuất và Giải ngân Kinh phí Dự án Công nghệ CLB IT"
+    },
+    {
+      "id": "doc-25",
+      "path": "datasets/club_corpus_v1/docs/25-quy-che-truyen-thong-thuong-hieu.md",
+      "sha256": "137510f3e66a5def83b54bfbbd315ab1f290fc6e4e88d14789ddb740fe669bba",
+      "bytes": 2534,
+      "title": "Quy chế Truyền thông và Quản lý Nhận diện Thương hiệu CLB IT"
+    },
+    {
+      "id": "doc-26",
+      "path": "datasets/club_corpus_v1/docs/26-lo-trinh-dao-tao-ai-data-science.md",
+      "sha256": "604eb34756fc7ac7f0ab6ab764d956b1022ab5532cb36e281b21aa84d1759359",
+      "bytes": 3265,
+      "title": "Lộ trình Đào tạo Chuyên sâu Trí tuệ Nhân tạo và Khoa học Dữ liệu 2026"
     }
   ],
   "totals": {
-    "documents": 18,
-    "bytes": 74220
+    "documents": 26,
+    "bytes": 95637
   },
-  "manifest_sha256": "88909f60e0127d9379ecd60d790311d80fdd08e024836db79338a3a8506d030b"
+  "manifest_sha256": "4d7493dedbd7a32b113d47e367a03d4a915996ab3f5cc50b38c85fa1f1b87c42"
 }
