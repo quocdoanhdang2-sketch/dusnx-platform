@@ -61,8 +61,10 @@ def _run(args):
     if not args.smoke:
         verify_full_training_gate(data,lock)
     rows={s:read_sft(data/f'{s}.jsonl',s) for s in ('train','validation')}
-    report=audit(rows)
-    commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+    threshold=cfg.get('near_duplicate_threshold',0.82)
+    report=audit(rows,near_duplicate_threshold=threshold)
+    repo_root = Path(__file__).resolve().parents[2]
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True, cwd=str(repo_root)).strip()
     bf16=not args.smoke and torch.cuda.is_bf16_supported()
     device_index=torch.cuda.current_device() if not args.smoke else None
     runtime_contract=dict(device='cuda' if device_index is not None else 'cpu',mixed_precision='bf16' if bf16 else ('fp16' if not args.smoke else 'none'))
@@ -127,7 +129,7 @@ def _run(args):
             pack(out,out.parent/f'{out.name}-step-{state.global_step}.zip')
             if args_outer.stop_after_epoch and state.epoch>=args_outer.stop_after_epoch:control.should_training_stop=True
     args_outer=args
-    manifest=dict(contract=contract,code_commit=commit,code_dirty=bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),versions=versions,seed=cfg['seed'],status='running',kind='offline_random_tiny_smoke' if args.smoke else 'pretrained_instruct_lora_sft',device=f'cuda:{device_index}' if device_index is not None else 'cpu',gpu=torch.cuda.get_device_name(device_index) if device_index is not None else None,mixed_precision='bf16' if bf16 else ('fp16' if not args.smoke else 'none'),audit=report,started_unix=time.time(),test_used_for_selection=False)
+    manifest=dict(contract=contract,code_commit=commit,code_dirty=bool(subprocess.check_output(['git','status','--porcelain'],text=True,cwd=str(repo_root)).strip()),versions=versions,seed=cfg['seed'],status='running',kind='offline_random_tiny_smoke' if args.smoke else 'pretrained_instruct_lora_sft',device=f'cuda:{device_index}' if device_index is not None else 'cpu',gpu=torch.cuda.get_device_name(device_index) if device_index is not None else None,mixed_precision='bf16' if bf16 else ('fp16' if not args.smoke else 'none'),audit=report,started_unix=time.time(),test_used_for_selection=False)
     write_json(out/'training_manifest.json',manifest)
     early_stop=EarlyStoppingCallback(early_stopping_patience=cfg['early_stopping_patience'])
     callbacks=[StageBackup(),early_stop]

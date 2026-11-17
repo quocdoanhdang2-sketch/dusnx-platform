@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "review_type": "independent_test",
+  "test_only": false,
+  "human_author": "Doanh",
+  "human_authored_at": "2026-11-17T11:30:00+07:00",
+  "reviewers": [
+    "quynh"
+  ],
+  "reviewed_at": [
+    "2026-11-17T11:35:00+07:00"
+  ],
+  "row_count": 8,
+  "result_files": {
+    "test.jsonl": "b989b97640077469e8bb48459d991cefa2c09db807fd1f98abd9c4d56d6f5893"
+  }
+}

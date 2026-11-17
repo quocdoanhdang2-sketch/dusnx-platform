@@ -17,3 +17,4 @@ lora_dropout: 0.05
 target_modules: [q_proj, k_proj, v_proj, o_proj]
 early_stopping_patience: 2
 qlora: true
+near_duplicate_threshold: 0.88

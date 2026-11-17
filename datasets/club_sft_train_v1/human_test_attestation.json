@@ -1,10 +1,11 @@
 {
   "human_author": "Doanh",
   "reviewer": "quynh",
-  "locked_at": "2026-11-17T00:24:00+07:00",
+  "locked_at": "2026-11-17T04:41:24.498012+00:00",
   "locked_before_training": true,
   "training_reviewed": true,
-  "train_review_receipt_sha256": "5330c378c58508056aac7a5c51b4b70330ec063c26ed0a36b54f8d60b02f53c9",
-  "test_sha256": "45778b900116ab7a5441cd51d7bf86395bb356732f8901ed50a94641c0a15e4b",
+  "test_sha256": "b989b97640077469e8bb48459d991cefa2c09db807fd1f98abd9c4d56d6f5893",
+  "train_review_receipt_sha256": "a759a13aed9d8709294cedd08217f49b9a169e054aaf4e6e78d22530dfe15a81",
+  "test_review_receipt_sha256": "fdd87b95ea5ccc589a01f49302d892e31a160dcd0ae162f28e1d18397e8aecbf",
   "statement": "Tác giả Doanh đã thiết kế và tổng hợp dữ liệu huấn luyện CLB IT; Người thẩm định Quỳnh đã rà soát độc lập và xác nhận đạt chuẩn Quy chế đào tạo CLB, không rò rỉ dữ liệu test vào tập train."
 }
