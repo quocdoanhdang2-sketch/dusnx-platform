@@ -1178,41 +1178,10 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
   }
 
   if (role === "assistant") {
-    if (meta.runtime) {
+    if (meta.response_source === "grounded_template") {
       const tag = document.createElement("span");
       tag.className = "meta-tag";
-      tag.textContent = meta.runtime === "trained_dusnx" ? "Qwen2.5-CLB (Trained)" : "Qwen2.5-CLB-LoRA";
-      metaEl.appendChild(tag);
-    }
-    if (meta.provider) {
-      const tag = document.createElement("span");
-      tag.className = "meta-tag" + (meta.provider_ok ? "" : " warn");
-      tag.textContent = meta.provider_ok ? (meta.provider === "mock" ? "✓ Qwen2.5-0.5B-LoRA" : `✓ ${meta.provider}`) : `✕ ${meta.provider}`;
-      metaEl.appendChild(tag);
-    }
-    if (meta.response_source && meta.response_source !== "llm") {
-      const tag = document.createElement("span");
-      tag.className = "meta-tag";
-      tag.textContent = meta.response_source === "grounded_template" ? "Trích trí nhớ đã lưu" :
-        meta.response_source === "rag_extract" ? "Trích quy chế CLB IT" :
-        meta.response_source === "observance_calendar" ? "Lịch ngày lễ đã kiểm tra" :
-        meta.response_source === "runtime_identity" ? "Thông tin mô hình đã xác minh" :
-        meta.response_source === "calculator" ? "Kết quả tính đã kiểm tra" :
-        meta.response_source === "replay" ? "Phản hồi đã xác nhận trước đó" :
-        meta.response_source === "clarification" ? "Phạm vi CLB IT" :
-        meta.response_source === "mock" ? "Model tự train (Qwen2.5-CLB)" : "Thao tác ứng dụng";
-      metaEl.appendChild(tag);
-    }
-    if (meta.rag_used) {
-      const tag = document.createElement("span");
-      tag.className = "meta-tag";
-      tag.textContent = "📚 Kho quy chế CLB";
-      metaEl.appendChild(tag);
-    }
-    if (meta.assistant_mode && meta.assistant_mode !== "hybrid") {
-      const tag = document.createElement("span");
-      tag.className = "meta-tag";
-      tag.textContent = meta.assistant_mode === "rag" ? "📚 App A (Thuần RAG)" : "🧠 App B (Thuần LoRA)";
+      tag.textContent = "Trích trí nhớ đã lưu";
       metaEl.appendChild(tag);
     }
     if (meta.memory_ids_used && meta.memory_ids_used.length > 0) {
@@ -1220,21 +1189,6 @@ function appendMessageBubble(role, content, meta = {}, append = true) {
       tag.className = "meta-tag";
       tag.textContent = `🧠 ${meta.memory_ids_used.length} trí nhớ`;
       metaEl.appendChild(tag);
-    }
-    if (meta.inspector) {
-      const details = document.createElement("details");
-      details.className = "inspector-card";
-      const summary = document.createElement("summary");
-      summary.textContent = "Chi tiết trích xuất RAG & Model";
-      const pre = document.createElement("pre");
-      safeText(pre, meta.inspector);
-      const copy = document.createElement("button");
-      copy.type = "button";
-      copy.className = "action-btn";
-      copy.textContent = "Copy filtered JSON";
-      copy.onclick = () => navigator.clipboard?.writeText(JSON.stringify(meta.inspector, null, 2));
-      details.append(summary, pre, copy);
-      col.appendChild(details);
     }
     if (String(content ?? "").trim()) {
       const copyBtn = document.createElement("button");
@@ -2408,7 +2362,7 @@ async function previewClubDocument(path) {
 
     const metaBox = document.createElement("div");
     metaBox.className = "doc-preview-meta";
-    metaBox.textContent = `Mã băm SHA-256: ${data.sha256} • Kích thước: ${data.size_bytes} bytes`;
+    metaBox.textContent = `Tài liệu chính thức CLB IT • ${data.category || "Quy chế & Kỹ thuật"}`;
 
     const contentBox = document.createElement("div");
     contentBox.className = "doc-preview-content markdown-body";
