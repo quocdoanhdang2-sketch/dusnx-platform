@@ -1808,18 +1808,22 @@ function buildApiComparisonCard(comp) {
   const details = document.createElement("details");
   details.className = "api-comparison-card";
   const summary = document.createElement("summary");
-  summary.textContent = `⚡ So sánh với API dự phòng (${comp.provider || "Gemini"})`;
+  summary.textContent = `⚡ So sánh với API dự phòng (${comp.provider || comp.provider_used || "Gemini"})`;
 
   const content = document.createElement("div");
   content.className = "api-comparison-content";
 
   const pModel = document.createElement("div");
   pModel.className = "api-comparison-meta";
-  pModel.textContent = `Model: ${comp.model || "gemini-1.5-flash"} • Độ trễ: ${comp.latency_ms || 0}ms`;
+  pModel.textContent = `Model: ${comp.model || comp.model_used || "không xác định"} • Độ trễ: ${comp.latency_ms || 0}ms`;
 
   const replyEl = document.createElement("div");
   replyEl.className = "api-comparison-reply";
-  renderMarkdown(replyEl, comp.reply || "");
+  if (comp.ok) {
+    renderMarkdown(replyEl, comp.reply || "");
+  } else {
+    replyEl.textContent = comp.error || "API dự phòng không khả dụng.";
+  }
 
   content.appendChild(pModel);
   content.appendChild(replyEl);

@@ -794,15 +794,19 @@ def generate_response(
     conversation_summary: Optional[str] = None,
     force_provider: bool = False,
     on_token: Optional[Callable[[str], None]] = None,
+    provider_override: Optional[str] = None,
 ) -> tuple[str, bool, str, Optional[str], Optional[int]]:
     """
     Generate an AI response using the configured provider.
     Returns: (response_text, success, provider_used, model_used, tokens_generated)
 
+    provider_override forces one provider for this call only (e.g. the external
+    API in the "So với API" comparison) without changing the primary provider.
+
     Memories are included in context; only active memories are passed here.
     knowledge_context is pre-formatted retrieval evidence with [S1]... labels.
     """
-    p = get_current_provider()
+    p = provider_override or get_current_provider()
     # Build memory context using exactly the provided memories
     called = False
     memory_lines = []
@@ -1029,6 +1033,31 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                     sanitizer_changed = (raw_provider_reply
                                          != sanitize_generated_reply(raw_provider_reply))
                     text = sanitize_generated_reply(raw_provider_reply)
+        if (not ok and not stream_mode and p == "ollama" and get_fallback_provider() == "openai"
+                and bool(OPENAI_API_KEY)):
+            # The trained local model is the primary brain. If that call
+            # genuinely failed, keep the chat available on the configured
+            # external API and report which provider actually answered.
+            fallback_result, fallback_elapsed_ms, fallback_did_call = _provider_call_with_deadline(
+                _openai_generate, system_prompt, attempt_prompt, provider_deadline)
+            if fallback_did_call:
+                provider_attempts.append({
+                    "provider": "openai", "fallback_from": "ollama", "called": True,
+                    "elapsed_ms": round(fallback_elapsed_ms, 2),
+                    "primary_error": attempt_diagnostics.get("error_category"),
+                    "model_used": fallback_result[2], "tokens_generated": fallback_result[3],
+                })
+                call_count += 1
+                called = True
+                if fallback_result[1]:
+                    generate = _openai_generate
+                    provider_used = "openai"
+                    raw_provider_reply, ok, model_used, tokens_generated = fallback_result
+                    done_reason = getattr(fallback_result, "done_reason", None)
+                    attempt_diagnostics = getattr(fallback_result, "diagnostics", {})
+                    sanitizer_changed = (raw_provider_reply
+                                         != sanitize_generated_reply(raw_provider_reply))
+                    text = sanitize_generated_reply(raw_provider_reply)
         task_text_without_urls = re.sub(r"https?://\S+", " ", user_message)
         content_lookup = bool(re.search(
             r"(?:tóm tắt|đọc|nội dung|phân tích|summarize|read|content of)\b",
@@ -1187,13 +1216,15 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
         if knowledge_context and knowledge_context.strip():
             text = f"Theo quy chế và tài liệu CLB IT:\n{knowledge_context.strip()[:600]}"
         else:
-            text = f"Trợ lý CLB IT (Qwen2.5-CLB) đã ghi nhận: '{user_message}'{mem_summary}."
+            text = f"Trợ lý CLB IT đã ghi nhận: '{user_message}'{mem_summary}."
         if memories:
             text += f" Trí nhớ hiện tại: {memories[0]['content']}."
         ok = True
-        provider_used = "qwen2.5-clb-lora"
-        model_used = "Qwen2.5-0.5B-CLB"
-        tokens_generated = 35
+        # Mock never claims measured metadata: no model ran and no tokens were
+        # generated, so reporting a model/token count would be fabricated telemetry.
+        provider_used = "mock"
+        model_used = None
+        tokens_generated = None
     else:
         text = (
             f"[Provider '{p}' chưa được hỗ trợ. "

@@ -9,6 +9,7 @@ import queue
 import re
 import sqlite3
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Optional
@@ -255,8 +256,14 @@ def register(req: RegisterRequest):
         disp = req.display_name or req.username
         if req.department and f"({req.department})" not in disp:
             disp = f"{disp} ({req.department})"
+        # Club default: a manager must approve before the first login.
+        # DUSNX_DEFAULT_USER_STATUS lets legacy/offline runs opt into instant
+        # approval without changing the product default.
+        register_status = os.getenv("DUSNX_DEFAULT_USER_STATUS", "pending")
+        if register_status not in ("pending", "approved"):
+            register_status = "pending"
         user = get_auth_db().register(
-            req.username, req.password, display_name=disp, role=chosen_role, status="pending"
+            req.username, req.password, display_name=disp, role=chosen_role, status=register_status
         )
         return {
             "user_id": user["user_id"],
@@ -265,7 +272,8 @@ def register(req: RegisterRequest):
             "status": user.get("status", "pending"),
             "role": user.get("role", "member"),
             "created_at": user["created_at"],
-            "note": "Tài khoản chờ quản lý CLB duyệt trước khi đăng nhập",
+            "note": ("Tài khoản chờ quản lý CLB duyệt trước khi đăng nhập"
+                     if user.get("status") == "pending" else None),
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -1548,7 +1556,8 @@ def _api_comparison_reply(req: ChatRequest, user: dict, result: ChatResponse) ->
 
     Independent retrieval pass over the same locked corpus keeps the comparison
     faithful to what the primary model saw; force_provider bypasses the
-    application-rule shortcuts so the real API answers.
+    application-rule shortcuts and provider_override targets the external API
+    even when the trained local model is the primary brain.
     """
     try:
         db = get_memory_db()
@@ -1561,15 +1570,23 @@ def _api_comparison_reply(req: ChatRequest, user: dict, result: ChatResponse) ->
             hits = rag.retrieve(req.message, top_k=5)
             if rag.has_evidence(hits):
                 rag_context = rag.build_context(hits, result.response_language)
+        started = time.monotonic()
         text, ok, provider_used, model_used, tokens = generate_response(
             req.message, memories, intent="conversation", session_history=history,
             response_language=result.response_language,
-            knowledge_context=rag_context or None, force_provider=True)
-        return {"ok": ok, "reply": text if ok else None, "provider_used": provider_used,
-                "model_used": model_used, "tokens_generated": tokens,
-                "label": "Trả lời dự phòng (API)"}
+            knowledge_context=rag_context or None, force_provider=True,
+            provider_override="openai")
+        latency_ms = round((time.monotonic() - started) * 1000)
+        return {"ok": ok, "reply": text if ok else None,
+                "provider": provider_used or "openai", "model": model_used,
+                "latency_ms": latency_ms,
+                "provider_used": provider_used, "model_used": model_used,
+                "tokens_generated": tokens, "label": "Trả lời dự phòng (API)",
+                "error": None if ok else text}
     except Exception:
-        return {"ok": False, "reply": None, "label": "Trả lời dự phòng (API)"}
+        return {"ok": False, "reply": None, "provider": "openai",
+                "label": "Trả lời dự phòng (API)",
+                "error": "Không gọi được API dự phòng."}
 
 
 @app.post("/v1/chat", response_model=ChatResponse)

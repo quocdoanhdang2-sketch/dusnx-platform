@@ -38,8 +38,9 @@ def export(run,output,converter):
     if actual!=LLAMA_COMMIT:raise ValueError('Converter revision mismatch')
     # Separate converter venv: its dependencies must not modify the SFT environment.
     env=converter/'converter-venv'
-    subprocess.run([sys.executable,'-m','venv',str(env)],check=True)
     py=env/('Scripts/python.exe' if sys.platform=='win32' else 'bin/python')
+    if not py.exists():
+        subprocess.run([sys.executable,'-m','venv',str(env)],check=True)
     subprocess.run([str(py),'-m','pip','install','-r',str(converter/'requirements/requirements-convert_hf_to_gguf.txt')],check=True)
     gguf=out/'dusnx-vi-v1-f16.gguf'
     command=[str(py),str(converter/'convert_hf_to_gguf.py'),str(merged),'--outfile',str(gguf),'--outtype','f16']

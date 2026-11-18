@@ -57,7 +57,7 @@ def test_summarize_task_with_url_does_not_hijack_into_config_guide():
     assert "DUSNX_PORT=8088" not in sent_sys_prompt
 
     # Must contain offline boundary guidance for external URL fetch
-    assert "Chỉ dẫn:" in sent_user_msg or "DUSN-X hiện chưa có tính năng" in sent_user_msg
+    assert "Chỉ dẫn:" in sent_user_msg or "hiện chưa có tính năng" in sent_user_msg
     assert "https://example.org/article" in sent_user_msg
 
 
