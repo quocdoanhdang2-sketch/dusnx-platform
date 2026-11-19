@@ -43,7 +43,16 @@ _TECHNICAL_SUBJECT = re.compile(
     r"(?i)\b(?:dusn[-\s]?x|model|mô\s*hình|checkpoint|gateway|api|rag|ollama|qwen|"
     r"provider|phiên\s*bản|version|kiến\s*trúc|mã\s*nguồn|code)\b"
 )
-_PERSONAL_ANCHOR = re.compile(r"(?i)\b(?:của\s+tôi|chúng\s+tôi|tôi\s+đã|đã\s+chốt|quyết\s+định)\b")
+_CLUB_SUBJECT = re.compile(
+    r"(?i)\b(?:clb|câu\s*lạc\s*bộ|phòng\s*lab|lab\b|codefest|hackathon|ban\s*chủ\s*nhiệm|"
+    r"chủ\s*nhiệm|phó\s*chủ\s*nhiệm|thành\s*viên|sinh\s*hoạt|workshop|team\s*building|"
+    r"quy\s*chế|quy\s*định|nội\s*quy|quỹ|hội\s*phí|tài\s*chính|thu\s*chi|thủ\s*quỹ|"
+    r"ngoại\s*lệ|mượn\s*phòng|trực\s*lab)\b"
+)
+_PERSONAL_ANCHOR = re.compile(
+    r"(?i)\b(?:của\s+tôi|chúng\s+tôi|tôi\s+đã|đã\s+chốt|quyết\s+định(?:\s+của\s+tôi)?|"
+    r"sở\s+thích\s+của\s+tôi|tôi\s+chọn|tôi\s+thích|tôi\s+nghe|nhắc\s+lại\s+cho\s+tôi)\b"
+)
 
 
 def is_memory_question(message: str) -> bool:
@@ -52,18 +61,18 @@ def is_memory_question(message: str) -> bool:
     # and URL query markers. They are tasks over supplied text, not memory queries.
     if re.match(r"^(?:please\s+)?(?:translate|translation|dịch)\b", text):
         return False
-    # Product/system questions ("DUSN-X dùng model nào?") share the verbs used
-    # for personal decisions ("dùng", "nào") but must reach documentation
+    # Product/system questions ("DUSN-X dùng model nào?") and club questions share the verbs used
+    # for personal decisions ("dùng", "nào", "sử dụng") but must reach documentation
     # retrieval, not the memory clarification path.
-    if _TECHNICAL_SUBJECT.search(text) and not _PERSONAL_ANCHOR.search(text):
+    if (_TECHNICAL_SUBJECT.search(text) or _CLUB_SUBJECT.search(text)) and not _PERSONAL_ANCHOR.search(text):
         return False
     question_text = re.sub(r"https?://\S+", " ", text)
-    question = "?" in question_text or any(p in text for p in ("nhắc lại", "đã chọn gì", "đang dùng gì", "chọn gì", "dùng gì", "là gì", "nào"))
+    question = "?" in question_text or any(p in text for p in ("nhắc lại", "đã chọn gì", "đang dùng gì", "chọn gì", "dùng gì", "là gì", "nào", "được chọn"))
     personal = any(p in text for p in (
         "chọn", "quyết định", "lựa chọn", "dùng", "sử dụng",
         "hiện tại", "hiện nay", "dự án", "của tôi", "chúng tôi",
         "nhắc lại", "đã chốt", "thống nhất", "đã lưu", "ghi nhận",
-        "tôi thích", "mục tiêu", "kế hoạch",
+        "tôi thích", "mục tiêu", "kế hoạch", "công ty", "đồ uống", "công cụ",
     ))
     return question and personal
 

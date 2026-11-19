@@ -34,7 +34,13 @@ from .club_chat import get_club_chat_db
 from .memory import get_memory_db
 from .provider import check_ollama_health, generate_response, get_provider_health
 from .llm_evaluation import EvaluationRequest, evaluate as evaluate_llm
-from .grounding import memory_answer_with_selection, select_memories
+from .grounding import (
+    _CLUB_SUBJECT,
+    _PERSONAL_ANCHOR,
+    _TECHNICAL_SUBJECT,
+    memory_answer_with_selection,
+    select_memories,
+)
 from .decision_updater import (
     find_best_matching_decision,
     synthesize_full_decision,
@@ -1166,6 +1172,33 @@ def _detect_unverified_club_question(text: str) -> bool:
     return club_topic and not cites_source
 
 
+_OUT_OF_SCOPE_QUERY = re.compile(
+    r"(?i)\b("
+    r"thời+i*\s*tiết|nhiệt\s*độ|dự\s*báo\s*thời\s*tiết|"
+    r"giá\s*vàng|vàng\s*miếng|chỉ\s*vàng|tỷ\s*giá|chứng\s*khoán|bitcoin|crypto|tiền\s*ảo|"
+    r"nấu\s*phở|cách\s*nấu|món\s*ăn|công\s*thức\s*nấu|nấu\s*ăn|"
+    r"world\s*cup|vô\s*địch\s*(?:thế\s*giới|world\s*cup)|bóng\s*đá|ngoại\s*hạng\s*anh|"
+    r"cheat\s*game|code\s*cheat|mod\s*game|hack\s*game|"
+    r"hack\s*(?:tài\s*khoản|facebook|fb|mạng\s*xã\s*hội|zalo|pass|mật\s*khẩu)|"
+    r"xổ\s*số|kết\s*quả\s*xổ\s*số|lô\s*đề|vietlott|"
+    r"thầy\s*(?:giáo\s*)?dạy\s*(?:môn\s*)?toán|cô\s*(?:giáo\s*)?dạy|giáo\s*viên\s*dạy\s*môn"
+    r")\b"
+)
+
+
+def _detect_out_of_scope_query(text: str) -> bool:
+    return bool(_OUT_OF_SCOPE_QUERY.search(text or ""))
+
+
+def _is_greeting_or_social(text: str) -> bool:
+    t = (text or "").strip().lower()
+    return bool(re.match(
+        r"^(?:xin\s+chào|chào(?:\s+bạn|\s+ad|\s+bot|\s+em|\s+anh|\s+chị)?|hello|hi|hey|"
+        r"bạn\s+là\s+ai|bạn\s+tên\s+gì|giới\s+thiệu\s+(?:về\s+)?(?:bản\s+thân|mình)|"
+        r"cảm\s+ơn|thanks|thank\s+you|tạm\s+biệt|bye|goodbye)[!.,?]?$", t
+    ))
+
+
 def _is_transform_request(text: str) -> bool:
     """True for requests that rewrite or produce text rather than ask a fact.
 
@@ -1638,6 +1671,8 @@ def chat_stream(req: ChatRequest, user: CurrentUser):
             def emit(text: str) -> None:
                 events.put(("token", json.dumps({"text": text}, ensure_ascii=False)))
             result = _chat_impl(req, user, on_token=emit)
+            if req.compare_with_api:
+                result.api_comparison = _api_comparison_reply(req, user, result)
             with db._lock:
                 _store_chat_receipt(db, req, user, result)
             events.put(("done", result.model_dump_json()))
@@ -1905,7 +1940,7 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
                       if rag_hits and not transform_request
                       and rag.has_strong_evidence(rag_hits) else None)
 
-    # App A (Pure RAG): strictly grounded in the 18 documents. If not in corpus, refuse immediately.
+    # App A (Pure RAG): strictly grounded in the 26 documents. If not in corpus, refuse immediately.
     if current_mode == "rag" and not office_request and not transform_request and not rag_hits:
         reply_text = (
             "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
@@ -1926,8 +1961,8 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
             session_id=req.session_id, provider_called=False,
             response_source="rag_extract", assistant_mode="rag")
 
-    # ── Missing context guard ─────────────────────────────────────────────────
-    if not office_request and _detect_unverified_club_question(req.message) and rag_extractive is None and not rag_hits:
+    # ── Missing context & scope guard ─────────────────────────────────────────
+    if not office_request and (_detect_unverified_club_question(req.message) or _detect_out_of_scope_query(req.message)) and rag_extractive is None and not rag_hits:
         reply_text = (
             "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
             if reply_language == "en" else
@@ -1942,12 +1977,13 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
             message_id=msg["message_id"], reply=reply_text,
             intent="clarify_unverified_club_information", selected_agent="conversation",
             next_action="clarify", confidence=1.0, runtime_mode=RUNTIME_MODE,
-            routing_source="club_knowledge_guard", provider_used=None,
+            routing_source="scope_gate", provider_used=None,
             provider_ok=True, state_version=s_ver, memory_ids_used=[],
             session_id=req.session_id, provider_called=False,
             response_source="clarification")
 
-    if not office_request and _detect_unverified_dusnx_product_question(req.message) and rag_extractive is None:
+    has_dusnx_doc = bool(rag_hits and any(h.path in ("docs/ARCHITECTURE.md", "README.md") for h in rag_hits))
+    if not office_request and _detect_unverified_dusnx_product_question(req.message) and not has_dusnx_doc:
         reply_text = (
             "I don't have verified documentation about DUSN-X's product features. Please share the relevant spec or documentation, and I can summarize it."
             if reply_language == "en" else
@@ -2285,8 +2321,14 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
 
     # A template is selected before any provider call. Never discard generated
     # text while attributing a deterministic quotation to its model/provider.
-    grounded_answer, selected = ((None, []) if office_request else
+    has_rag_evidence = bool(rag_hits and (rag_extractive or rag.has_evidence(rag_hits)))
+    is_club_topic = bool(_CLUB_SUBJECT.search(req.message)) or _detect_unverified_club_question(req.message)
+    has_personal_anchor = bool(_PERSONAL_ANCHOR.search(req.message))
+    bypass_memory_for_rag = (has_rag_evidence and is_club_topic) or (has_rag_evidence and not has_personal_anchor and not memories)
+    grounded_answer, selected = ((None, []) if (office_request or bypass_memory_for_rag) else
                                  memory_answer_with_selection(req.message, memories, reply_language))
+    if grounded_answer is not None and not selected and has_rag_evidence and not has_personal_anchor:
+        grounded_answer = None
     prompt_ids = []
     provider_called = False
     provider_call_count = 0
