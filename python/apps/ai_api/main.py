@@ -502,17 +502,33 @@ def club_list_messages(user: CurrentUser, conv_id: str, after_id: Optional[str] 
         auth_db = get_auth_db()
         raw_msgs = chat_db.list_messages(conv_id, user["user_id"], after_id=after_id or None)
         enriched = []
+        _KNOWN_MEMBERS = {
+            "chunhiem": ("Nguyễn Minh Anh (Chủ nhiệm CLB)", "owner"),
+            "admin": ("Nguyễn Minh Anh (Chủ nhiệm CLB)", "owner"),
+            "phochunhiem": ("Lê Quốc Bảo (Phó chủ nhiệm)", "deputy"),
+            "truongban_tech": ("Đỗ Nam Khánh (Trưởng ban kỹ thuật)", "lead"),
+        }
         for m in raw_msgs:
             item = dict(m)
             sender = auth_db.get_user_by_id(m["sender_id"])
+            if not sender and hasattr(auth_db, "get_user_by_username"):
+                sender = auth_db.get_user_by_username(m["sender_id"])
             if sender:
-                item["sender_username"] = sender.get("username")
-                item["sender_display_name"] = sender.get("display_name")
-                item["sender_role"] = sender.get("role")
-            elif m["sender_id"] in ("admin", "chunhiem"):
-                item["sender_username"] = "chunhiem"
-                item["sender_display_name"] = "Nguyễn Minh Anh (Chủ nhiệm CLB)"
-                item["sender_role"] = "owner"
+                uname = sender.get("username")
+                if uname in _KNOWN_MEMBERS:
+                    disp, role = _KNOWN_MEMBERS[uname]
+                    item["sender_username"] = uname
+                    item["sender_display_name"] = disp
+                    item["sender_role"] = role
+                else:
+                    item["sender_username"] = uname
+                    item["sender_display_name"] = sender.get("display_name") or uname
+                    item["sender_role"] = sender.get("role") or "member"
+            elif m["sender_id"] in _KNOWN_MEMBERS:
+                disp, role = _KNOWN_MEMBERS[m["sender_id"]]
+                item["sender_username"] = m["sender_id"]
+                item["sender_display_name"] = disp
+                item["sender_role"] = role
             else:
                 item["sender_username"] = m["sender_id"]
                 item["sender_display_name"] = m["sender_id"]
@@ -1202,9 +1218,11 @@ _QUESTION_SHAPE = re.compile(
 )
 
 _CAPABILITY_QUESTION = re.compile(
-    r"(?i)\b(?:bạn|bot|trợ\s*lý|assistant)\b[^?]{0,40}\b(?:"
+    r"\b(?:bạn|bot|trợ\s*lý|assistant)\s+(?:là\s+ai|tên\s+(?:là\s+)?gì)\b|"
+    r"\b(?:bạn|bot|trợ\s*lý|assistant)\b[^?]{0,40}\b(?:"
     r"làm\s+được\s+gì|làm\s+gì|giúp\s+(?:được\s+)?gì|có\s+thể\s+làm\s+gì|"
-    r"chức\s+năng\s+gì|khả\s+năng\s+gì|biết\s+gì|là\s+ai|la\s+ai)\b"
+    r"chức\s+năng\s+gì|khả\s+năng\s+gì|biết\s+gì)\b",
+    re.IGNORECASE,
 )
 
 # Words shared by every question ("của tôi", "quyết định", "năm nay"); they do
@@ -2485,6 +2503,16 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
             )
             reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
             provider_called = getattr(generated, "provider_called", False)
+            if provider_called and reply_text:
+                for bad_phrase in ("hãy trả lời", "câu hỏi của bạn là", "yêu cầu người dùng"):
+                    if bad_phrase in reply_text.lower():
+                        from .provider import sanitize_generated_reply
+                        reply_text = sanitize_generated_reply(reply_text)
+                        break
+                stripped_reply = reply_text.strip().rstrip(".!?:")
+                if not stripped_reply or stripped_reply.lower() in ("chào bạn", "xin chào", "xin chào bạn"):
+                    if any(w in req.message.lower() for w in ("cảm ơn", "cam on", "thank")):
+                        reply_text = "Chào bạn! Rất vui được hỗ trợ bạn. Nếu bạn cần thêm thông tin gì về CLB, hãy nhắn mình nhé!"
             provider_call_count = getattr(generated, "provider_call_count", int(provider_called))
             provider_attempts = getattr(generated, "provider_attempts", [])
             provider_elapsed_ms = getattr(generated, "provider_elapsed_ms", 0.0)

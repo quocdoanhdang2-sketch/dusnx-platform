@@ -1,6 +1,6 @@
 {
   "run_idx": 2,
-  "timestamp": "2026-11-20T15:49:40Z",
+  "timestamp": "2026-11-20T16:54:14Z",
   "gateway": "http://127.0.0.1:8090",
   "all_passed": true,
   "total_cases": 13,
@@ -17,9 +17,10 @@
       "source_type": "rag_extract",
       "intent": "chat",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 94.0
+      "wall_ms": 32.0
     },
     {
       "id": "CASE-2",
@@ -32,9 +33,10 @@
       "source_type": "rag_extract",
       "intent": "chat",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 46.0
     },
     {
       "id": "CASE-3",
@@ -47,9 +49,10 @@
       "source_type": "rag_extract",
       "intent": "research",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 16.0
     },
     {
       "id": "CASE-4",
@@ -62,6 +65,7 @@
       "source_type": "rag_extract",
       "intent": "followup",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
       "wall_ms": 31.0
@@ -77,9 +81,10 @@
       "source_type": "rag_extract",
       "intent": "recommendation",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 32.0
     },
     {
       "id": "CASE-6",
@@ -92,6 +97,7 @@
       "source_type": "clarification",
       "intent": "clarify_unverified_club_information",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
       "wall_ms": 31.0
@@ -107,6 +113,7 @@
       "source_type": "rag_extract",
       "intent": "summarize",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
       "wall_ms": 47.0
@@ -122,9 +129,10 @@
       "source_type": "rag_extract",
       "intent": "recommendation",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-9",
@@ -137,9 +145,10 @@
       "source_type": "rag_extract",
       "intent": "recommendation",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-10",
@@ -152,9 +161,10 @@
       "source_type": "rag_extract",
       "intent": "recommendation",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 32.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-11",
@@ -167,9 +177,10 @@
       "source_type": "template",
       "intent": "capability",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 16.0
     },
     {
       "id": "CASE-12",
@@ -182,9 +193,10 @@
       "source_type": "clarification",
       "intent": "clarify_unverified_club_information",
       "provider_used": null,
+      "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 16.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-13",
@@ -192,14 +204,15 @@
       "query": "Cảm ơn bạn rất nhiều!",
       "passed": true,
       "errors": [],
-      "reply_preview": "Chào bạn! Câu hỏi của bạn là 'Hãy trả lời bằng tiếng Việt'.",
+      "reply_preview": "Chào bạn! Rất vui được hỗ trợ bạn. Nếu bạn cần thêm thông tin gì về CLB, hãy nhắn mình nhé!",
       "top_source": null,
       "source_type": "llm",
       "intent": "recommendation",
       "provider_used": "ollama",
+      "model_used": "dusnx-vi-club",
       "provider_called": true,
-      "provider_elapsed_ms": 405.99999999994907,
-      "wall_ms": 421.0
+      "provider_elapsed_ms": 703.0000000004293,
+      "wall_ms": 734.0
     }
   ],
   "api_comparison": {
@@ -209,7 +222,7 @@
     "provider_used": "openai",
     "model": "gemini-3.1-flash-lite",
     "tokens": 28,
-    "latency_ms": 953,
+    "latency_ms": 3562,
     "primary_provider": null
   }
 }

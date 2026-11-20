@@ -598,6 +598,12 @@ def sanitize_generated_reply(text: str) -> str:
         r"the (?:response|answer|reply))\b[^\n]*?"
         r"(?:bản nháp|sửa đổi|trộn ngôn ngữ|failed draft|correction|mixing languages|"
         r"language compliance|written in (?:english|vietnamese))\b[^\n]*\n?",
+        r"(?i)(?:câu\s+hỏi|yêu\s+cầu|chỉ\s+thị)\s+(?:của\s+bạn|người\s+dùng)\s+là\s+['\"“]?[^'\"”\n]*['\"”]?[.!?]*\s*",
+        r"(?i)\b(?:hãy\s+trả\s+lời\s+bằng\s+tiếng\s+việt|hoàn\s+thành\s+yêu\s+cầu\s+bên\s+dưới)\b[^\n.!?]*[.!?]*\s*",
+        r"(?i)\byêu\s+cầu\s+(?:của\s+)?người\s+dùng\s*:\s*",
+        r"(?i)\bcâu\s+hỏi\s+của\s+bạn\s+là\s*",
+        r"(?i)\buser\s+request\s*:\s*",
+        r"(?i)\brespond\s+in\s+english\b[^\n.!?]*[.!?]*\s*",
     ]
     for pat in patterns:
         cleaned = re.sub(pat, "", cleaned, flags=re.IGNORECASE).strip()

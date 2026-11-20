@@ -160,8 +160,15 @@ CASES = [
         "query": "Cảm ơn bạn rất nhiều!",
         "expected_top_doc": None,
         "expected_terms": [],
-        "forbidden_terms": [REFUSAL_MARKER, "Người dùng:"],
+        "forbidden_terms": [
+            REFUSAL_MARKER,
+            "Người dùng:",
+            "Hãy trả lời",
+            "Câu hỏi của bạn là",
+            "Yêu cầu người dùng",
+        ],
         "expect_provider_called": True,
+        "expect_source_type": "llm",
         "expect_provider": "ollama",
         "expect_model": "dusnx-vi-club",
         "expect_refusal": False,
@@ -223,6 +230,9 @@ def _check_case(case: dict, resp: dict) -> list[str]:
     if case.get("expect_model") and resp.get("model_used") != case["expect_model"]:
         errors.append(
             f"Expected model_used={case['expect_model']!r}, got {resp.get('model_used')!r}")
+    if case.get("expect_source_type") and resp.get("response_source") != case["expect_source_type"]:
+        errors.append(
+            f"Expected response_source={case['expect_source_type']!r}, got {resp.get('response_source')!r}")
     return errors
 
 
@@ -261,6 +271,7 @@ def run_verification(base_url: str, run_idx: int) -> dict:
             "source_type": resp.get("response_source"),
             "intent": resp.get("intent"),
             "provider_used": resp.get("provider_used"),
+            "model_used": resp.get("model_used"),
             "provider_called": resp.get("provider_called"),
             "provider_elapsed_ms": resp.get("provider_elapsed_ms"),
             "wall_ms": wall_ms,

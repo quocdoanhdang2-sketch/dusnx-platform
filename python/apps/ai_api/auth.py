@@ -230,6 +230,14 @@ class AuthDB:
             ).fetchone()
             return dict(row) if row else None
 
+    def get_user_by_username(self, username: str) -> Optional[dict]:
+        with self._lock:
+            row = self._conn.execute(
+                """SELECT user_id, username, created_at, role, status, display_name
+                   FROM users WHERE username=?""", (username,),
+            ).fetchone()
+            return dict(row) if row else None
+
     # --- CLB administration -------------------------------------------------
 
     def _require_role(self, token: str, allowed: tuple) -> dict:
