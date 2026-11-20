@@ -109,6 +109,22 @@ def verify(manifest: dict, root: Path | None = None) -> list[str]:
         if not path.is_file():
             problems.append(f"{doc['id']} {doc['path']}: missing")
             continue
+        if path.stat().st_size == doc["bytes"] and sha256_file(path) == doc["sha256"]:
+            continue
+        # Cross-platform line ending normalization (CRLF <-> LF) for git checkouts
+        try:
+            raw = path.read_bytes()
+        except OSError as exc:
+            problems.append(f"{doc['id']} {doc['path']}: read error ({exc})")
+            continue
+
+        crlf_variant = raw.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+        if len(crlf_variant) == doc["bytes"] and hashlib.sha256(crlf_variant).hexdigest() == doc["sha256"]:
+            continue
+        lf_variant = raw.replace(b"\r\n", b"\n")
+        if len(lf_variant) == doc["bytes"] and hashlib.sha256(lf_variant).hexdigest() == doc["sha256"]:
+            continue
+
         if path.stat().st_size != doc["bytes"]:
             problems.append(f"{doc['id']} {doc['path']}: size changed")
             continue
