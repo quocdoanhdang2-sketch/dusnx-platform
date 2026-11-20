@@ -75,3 +75,20 @@ def test_domain_classifier_accepts_club_questions_and_rejects_general():
         "Đội nào vô địch World Cup 2026?",
     ):
         assert not rag.is_domain_question(question), question
+
+
+def test_overview_question_uses_charter_purpose_and_structure():
+    """'CLB IT là gì?' must quote the charter, not a sign-up form."""
+    for question in ("CLB IT là gì?", "Giới thiệu về CLB IT.", "Bạn biết gì về CLB IT?"):
+        answer = _answer(question)
+        assert "tổ chức sinh viên tình nguyện" in answer, question
+        assert "Học hỏi - Chia sẻ - Sáng tạo" in answer, question
+        assert "3 ban chuyên môn" in answer, question
+        assert "mẫu đơn" not in answer.lower(), question
+        assert "[S1]" in answer, question
+
+
+def test_overview_route_does_not_hijack_document_questions():
+    answer = _answer("Quy định sử dụng phòng lab của CLB là gì?")
+    assert "A2-305" in answer
+    assert "tổ chức sinh viên tình nguyện" not in answer

@@ -930,6 +930,19 @@ def _path_weight(path: str) -> float:
 _DEFINITION_QUERY = re.compile(
     r"(?i)(?:\blà gì\b|\bwhat is\b|\bwhat's\b|\bgiới thiệu\b|\btổng quan\b|\boverview\b|\bdefine\b)")
 
+# "What is the club / introduce the club / tell me about the club" asks for the
+# charter overview. Generic retrieval ranks documents that merely repeat the
+# name ("Đơn đăng ký tham gia CLB IT") above the charter, so these questions are
+# answered from 01-quy-che-hoat-dong.md directly.
+_CLUB_OVERVIEW_QUERY = re.compile(
+    r"(?i)^\s*(?:(?:cho\s+(?:tôi|mình)\s+biết|hãy\s+(?:cho\s+(?:tôi|mình)\s+)?biết|vui\s+lòng)\s+)?"
+    r"(?:về\s+)?(?:câu\s+lạc\s+bộ(?:\s+it)?|clb(?:\s+it)?)\s+(?:là|la)\s+gì\b"
+    r"|^\s*(?:hãy\s+)?(?:giới\s+thiệu|tổng\s+quan)\s+(?:về\s+)?(?:clb|câu\s+lạc\s+bộ)\b"
+    r"|(?:\bcho\s+(?:tôi|mình)\s+biết|\bbiết)\s+(?:gì\s+)?về\s+(?:clb|câu\s+lạc\s+bộ)\b"
+)
+
+_CLUB_CHARTER = "01-quy-che-hoat-dong.md"
+
 
 def _query_identifier(query: str) -> Optional[str]:
     """The repository symbol a question names, if any ("answer_from_hits")."""
@@ -1466,6 +1479,56 @@ def _document_overview_answer(query: str, hits: list[Hit], terms: list[str],
     return "Theo tài liệu nội bộ của CLB IT:\n" + "\n".join(bullets[:3])
 
 
+def _club_overview_answer(query: str, hits: list[Hit], language: str = "vi") -> Optional[str]:
+    """"CLB IT là gì?" / "Giới thiệu về CLB" -> the charter's own summary.
+
+    The charter (01-quy-che-hoat-dong.md) states the purpose, motto and
+    committee structure. Generic FTS ranks "Đơn đăng ký tham gia CLB IT" and
+    uniform rules above it because they repeat the club name, so the overview
+    question is answered from the charter text instead of whichever document
+    happens to rank first. Every line still comes verbatim from the source.
+    """
+    if not _CLUB_OVERVIEW_QUERY.search(query or ""):
+        return None
+    charter: Optional[Hit] = next(
+        (hit for hit in hits if _CLUB_CHARTER in (hit.path or "")), None)
+    if charter is None:
+        try:
+            with _connect() as conn:
+                rows = conn.execute(
+                    """SELECT c.text, c.heading, c.start_line, c.end_line,
+                              d.path, d.title
+                       FROM rag_chunks c JOIN rag_documents d ON d.doc_id = c.doc_id
+                       WHERE d.path LIKE ? ORDER BY c.start_line LIMIT 8""",
+                    (f"%{_CLUB_CHARTER}",),
+                ).fetchall()
+        except sqlite3.Error:
+            rows = []
+        if not rows:
+            return None
+        charter = Hit(path=rows[0]["path"], title=rows[0]["title"],
+                      heading=rows[0]["heading"], start_line=rows[0]["start_line"],
+                      end_line=rows[-1]["end_line"],
+                      text="\n".join(row["text"] for row in rows), score=0.0)
+    text = charter.text or ""
+    purpose = re.search(r"Câu lạc bộ IT \(gọi tắt là CLB IT\) là [^.]{40,400}\.", text)
+    motto = re.search(r"Tôn chỉ:\s*[\"“]([^\"”]+)[\"”]", text)
+    committees = re.findall(r"-\s*(Ban (?:kỹ thuật|truyền thông|hậu cần))\s*:", text)
+    lines: list[str] = []
+    if purpose:
+        lines.append(f"- {purpose.group(0).strip()} [S1]")
+    if motto:
+        lines.append(f"- Tôn chỉ: \"{motto.group(1)}\". [S1]")
+    if len(set(committees)) >= 3:
+        lines.append("- CLB gồm Ban chủ nhiệm và 3 ban chuyên môn: "
+                     "Ban kỹ thuật, Ban truyền thông và Ban hậu cần. [S1]")
+    if len(lines) < 2:
+        return None
+    header = ("Theo tài liệu nội bộ của CLB IT:" if language != "en"
+              else "From the IT Club internal documentation:")
+    return header + "\n" + "\n".join(lines)
+
+
 _ROLE_NAMES = [
     "trưởng ban truyền thông", "trưởng ban kỹ thuật", "trưởng ban hậu cần",
     "phó chủ nhiệm", "chủ nhiệm", "trưởng ban",
@@ -1520,6 +1583,9 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
     """
     if not hits:
         return None
+    club_overview = _club_overview_answer(query, hits, language)
+    if club_overview:
+        return club_overview
     role_answer = _role_name_answer(query, hits, language)
     if role_answer:
         return role_answer

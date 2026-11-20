@@ -83,13 +83,34 @@ def test_generate_response_passes_tokens_and_skips_retry(fake_provider, monkeypa
     monkeypatch.setenv("DUSNX_PROVIDER", "ollama")
     tokens = []
     generated = provider.generate_response(
-        user_message="Chào bạn", memories=[], intent="chat", response_language="vi",
-        on_token=tokens.append)
+        user_message="Giải thích RAG là gì?", memories=[], intent="chat",
+        response_language="vi", on_token=tokens.append)
     assert tokens == ["Xin ", "chào"]
     assert generated[0] == "Xin chào" and generated[1] is True
     assert generated.provider_called is True
     attempts = generated.provider_attempts
     assert attempts and all(not attempt.get("attempt") == 2 for attempt in attempts)
+
+
+def test_small_talk_skips_streaming_so_final_text_is_authoritative(monkeypatch):
+    calls = []
+
+    def fake_generate(system_prompt, user_message):
+        calls.append(user_message)
+        return provider.ProviderCall("Rất vui được giúp bạn!", True, "dusnx-vi-club", 6)
+
+    monkeypatch.setenv("DUSNX_PROVIDER", "ollama")
+    monkeypatch.setattr(provider, "_ollama_generate", fake_generate)
+    tokens = []
+    generated = provider.generate_response(
+        user_message="Cảm ơn bạn rất nhiều!", memories=[], intent="chat",
+        response_language="vi", on_token=tokens.append)
+    # A one-line greeting is answered once, without pushing preview tokens that
+    # a post-hoc fallback could contradict.
+    assert tokens == []
+    assert generated[0] == "Rất vui được giúp bạn!"
+    assert generated.provider_called is True
+    assert generated.response_source == "llm"
 
 
 def _sse_frames(body: str):

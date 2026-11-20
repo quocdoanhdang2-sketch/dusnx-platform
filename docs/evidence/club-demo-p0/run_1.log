@@ -1,6 +1,6 @@
 {
   "run_idx": 1,
-  "timestamp": "2026-11-20T16:54:09Z",
+  "timestamp": "2026-11-20T17:58:46Z",
   "gateway": "http://127.0.0.1:8090",
   "all_passed": true,
   "total_cases": 13,
@@ -20,7 +20,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 104.8
     },
     {
       "id": "CASE-2",
@@ -36,7 +36,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 80.8
     },
     {
       "id": "CASE-3",
@@ -52,7 +52,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 38.4
     },
     {
       "id": "CASE-4",
@@ -68,7 +68,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 66.4
     },
     {
       "id": "CASE-5",
@@ -84,7 +84,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 75.4
     },
     {
       "id": "CASE-6",
@@ -100,7 +100,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 27.8
     },
     {
       "id": "CASE-7",
@@ -116,7 +116,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 55.5
     },
     {
       "id": "CASE-8",
@@ -132,7 +132,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 55.1
     },
     {
       "id": "CASE-9",
@@ -148,7 +148,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 66.5
     },
     {
       "id": "CASE-10",
@@ -164,7 +164,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 69.9
     },
     {
       "id": "CASE-11",
@@ -180,7 +180,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 35.9
     },
     {
       "id": "CASE-12",
@@ -196,7 +196,7 @@
       "model_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 0.0
+      "wall_ms": 30.5
     },
     {
       "id": "CASE-13",
@@ -204,15 +204,15 @@
       "query": "Cảm ơn bạn rất nhiều!",
       "passed": true,
       "errors": [],
-      "reply_preview": "Chào bạn! Rất vui được hỗ trợ bạn. Nếu bạn cần thêm thông tin gì về CLB, hãy nhắn mình nhé!",
+      "reply_preview": "Rất vui được giúp bạn! Chúc bạn có ngày tốt lành nhé!",
       "top_source": null,
       "source_type": "llm",
       "intent": "recommendation",
       "provider_used": "ollama",
       "model_used": "dusnx-vi-club",
       "provider_called": true,
-      "provider_elapsed_ms": 609.0000000003783,
-      "wall_ms": 656.0
+      "provider_elapsed_ms": 531.0000000008586,
+      "wall_ms": 553.2
     }
   ],
   "api_comparison": {
@@ -222,7 +222,7 @@
     "provider_used": "openai",
     "model": "gemini-3.1-flash-lite",
     "tokens": 28,
-    "latency_ms": 55297,
+    "latency_ms": 1063,
     "primary_provider": null
   }
 }

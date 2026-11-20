@@ -1221,7 +1221,11 @@ _CAPABILITY_QUESTION = re.compile(
     r"\b(?:bạn|bot|trợ\s*lý|assistant)\s+(?:là\s+ai|tên\s+(?:là\s+)?gì)\b|"
     r"\b(?:bạn|bot|trợ\s*lý|assistant)\b[^?]{0,40}\b(?:"
     r"làm\s+được\s+gì|làm\s+gì|giúp\s+(?:được\s+)?gì|có\s+thể\s+làm\s+gì|"
-    r"chức\s+năng\s+gì|khả\s+năng\s+gì|biết\s+gì)\b",
+    r"chức\s+năng\s+gì|khả\s+năng\s+gì)\b|"
+    # "Bạn biết gì?" asks about the assistant itself; "Bạn biết gì về CLB?"
+    # asks about the club and must keep going to RAG.
+    r"\b(?:bạn|bot|trợ\s*lý|assistant)\s+biết\s+(?:những\s+)?gì\s*(?:[?!.]|$)|"
+    r"\b(?:chức\s+năng|khả\s+năng)\s+của\s+(?:bạn|bot|trợ\s*lý|assistant)\b",
     re.IGNORECASE,
 )
 
@@ -2470,6 +2474,7 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     raw_provider_reply = None
     provider_sanitized_reply = None
     quality_status = None
+    substituted_small_talk = False
     if grounded_answer is not None:
         reply_text, provider_ok = grounded_answer, True
         provider_used = model_used = tokens_generated = None
@@ -2512,7 +2517,8 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
                 stripped_reply = reply_text.strip().rstrip(".!?:")
                 if not stripped_reply or stripped_reply.lower() in ("chào bạn", "xin chào", "xin chào bạn"):
                     if any(w in req.message.lower() for w in ("cảm ơn", "cam on", "thank")):
-                        reply_text = "Chào bạn! Rất vui được hỗ trợ bạn. Nếu bạn cần thêm thông tin gì về CLB, hãy nhắn mình nhé!"
+                        reply_text = "Không có gì, rất vui được giúp bạn!"
+                        substituted_small_talk = True
             provider_call_count = getattr(generated, "provider_call_count", int(provider_called))
             provider_attempts = getattr(generated, "provider_attempts", [])
             provider_elapsed_ms = getattr(generated, "provider_elapsed_ms", 0.0)
@@ -2526,6 +2532,11 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
                                or (("llm" if provider_called else "mock") if provider_ok else "provider_error"))
             if not provider_ok:
                 response_source = "provider_error"
+            if substituted_small_talk:
+                # A deterministic reply replaced unusable model text; never
+                # report it under the model's name.
+                response_source = "template"
+                model_used = tokens_generated = None
             if not provider_called:
                 provider_used = model_used = tokens_generated = None
             # LLM citations are not measured. Prompt inclusion is reported separately;
@@ -2573,7 +2584,7 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
         model_used=model_used if provider_ok else None,
         tokens_generated=tokens_generated if provider_ok else None,
         answer_source=("active_memory_extract" if grounded_answer is not None else
-                       ("application_rule" if response_source in {"application_formatter", "application_clarification", "rag_extract"}
+                       ("application_rule" if response_source in {"application_formatter", "application_clarification", "rag_extract", "template"}
                         else "provider")),
         prompt_memory_ids=prompt_ids,
         provider_called=provider_called,

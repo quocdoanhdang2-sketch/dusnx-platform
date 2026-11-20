@@ -24,6 +24,9 @@ from .runtime_clock import clock_context
 from . import model_profile
 
 _PROVIDER_CALL_TIMEOUT = ContextVar("provider_call_timeout", default=None)
+# Small-talk turns use greedy decoding; the 0.5B club model is unstable with
+# sampling on open-ended greetings and drifts into English/CJK fragments.
+_SMALL_TALK_CALL = ContextVar("small_talk_call", default=False)
 
 
 class ProviderResult(tuple):
@@ -208,6 +211,8 @@ def _ollama_generate(system_prompt: str, user_message: str) -> ProviderCall:
         "repeat_penalty": float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25")),
         "repeat_last_n": int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64")),
     }
+    if _SMALL_TALK_CALL.get():
+        options.update({"temperature": 0.0, "top_k": 1, "num_predict": 48})
     context_size = os.getenv("DUSNX_OLLAMA_NUM_CTX")
     if context_size:
         parsed_context_size = int(context_size)
@@ -361,6 +366,8 @@ def _stream_ollama(system_prompt: str, user_message: str,
         "repeat_penalty": float(os.getenv("DUSNX_OLLAMA_REPEAT_PENALTY", "1.25")),
         "repeat_last_n": int(os.getenv("DUSNX_OLLAMA_REPEAT_LAST_N", "64")),
     }
+    if _SMALL_TALK_CALL.get():
+        options.update({"temperature": 0.0, "top_k": 1, "num_predict": 48})
     context_size = os.getenv("DUSNX_OLLAMA_NUM_CTX")
     if context_size:
         parsed_context_size = int(context_size)
@@ -604,6 +611,11 @@ def sanitize_generated_reply(text: str) -> str:
         r"(?i)\bcâu\s+hỏi\s+của\s+bạn\s+là\s*",
         r"(?i)\buser\s+request\s*:\s*",
         r"(?i)\brespond\s+in\s+english\b[^\n.!?]*[.!?]*\s*",
+        # Training-loop narration: the 0.5B club model sometimes answers with its
+        # own retry bookkeeping ("Câu trả lời lần 1 đã không đạt kiểm tra...").
+        r"(?im)^[^\n]*(?:câu\s+trả\s+lời\s+lần\s*\d+|không\s+đạt\s+kiểm\s+tra|"
+        r"xin\s+hãy\s+viết\s+lại\s+từ\s+đầu|viết\s+lại\s+câu\s+trả\s+lời|"
+        r"answer\s+attempt\s*\d+|did\s+not\s+pass\s+the\s+check)[^\n]*\n?",
     ]
     for pat in patterns:
         cleaned = re.sub(pat, "", cleaned, flags=re.IGNORECASE).strip()
@@ -702,6 +714,61 @@ _DRAFTING_REQUEST = re.compile(
     r"(?:email|e-mail|thư|tin nhắn|message|letter|đơn)\b",
     re.IGNORECASE,
 )
+
+# A bare greeting or thanks carries no task. The instruction-heavy prompt made
+# the small trained model echo the instruction text back ("Chào bạn! Câu hỏi
+# của bạn là 'Hãy trả lời bằng tiếng Việt'."), so these turns get a minimal,
+# intent-specific prompt and the user message is passed through untouched. A
+# real question in the same sentence (e.g. "Chào bạn, lịch sinh hoạt thế nào?")
+# never matches. Sampling is pinned to greedy decoding for these turns because
+# the 0.5B model otherwise drifts into English or CJK fragments.
+_SMALL_TALK_GREETING = re.compile(
+    r"^\s*(?:xin\s+chào|chào|chao|hello|hi|hey)\b[^?!.\n]{0,40}[.!\s]*$",
+    re.IGNORECASE,
+)
+_SMALL_TALK_THANKS = re.compile(
+    r"^\s*(?:cảm\s+ơn|cam\s+on|thanks|thank\s+you)\b[^?!.\n]{0,40}[.!\s]*$",
+    re.IGNORECASE,
+)
+_SMALL_TALK = re.compile(
+    _SMALL_TALK_GREETING.pattern + "|" + _SMALL_TALK_THANKS.pattern,
+    re.IGNORECASE,
+)
+
+
+def _small_talk_kind(message: str) -> Optional[str]:
+    text = (message or "").strip()
+    if _SMALL_TALK_THANKS.match(text):
+        return "thanks"
+    if _SMALL_TALK_GREETING.match(text):
+        return "greeting"
+    return None
+
+
+# Characters from CJK/Hangul/Thai blocks: a Vietnamese reply must never contain
+# them, and the 0.5B model produced "…cho你" while sampling was enabled.
+_FOREIGN_SCRIPT = re.compile(r"[\u3000-\u9fff\uac00-\ud7af\u0e00-\u0e7f]")
+_VIETNAMESE_LETTER = re.compile(
+    r"[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]",
+    re.IGNORECASE,
+)
+
+SMALL_TALK_FALLBACKS = {
+    "greeting": "Chào bạn! Mình là trợ lý CLB IT, bạn cần mình giúp gì hôm nay?",
+    "thanks": "Không có gì, rất vui được giúp bạn!",
+}
+
+
+def small_talk_reply_is_usable(text: str) -> bool:
+    """Accept a small-talk reply only if it reads as one short Vietnamese sentence."""
+    stripped = (text or "").strip()
+    if len(stripped) < 2 or len(stripped) > 400:
+        return False
+    if _FOREIGN_SCRIPT.search(stripped):
+        return False
+    if not _VIETNAMESE_LETTER.search(stripped):
+        return False
+    return True
 
 # Strong draft structure: a salutation, subject line, or sign-off. A bare
 # "Chào bạn," opener is not enough because deferrals often start the same way.
@@ -871,6 +938,7 @@ def generate_response(
                           f"{excerpt}\n")
 
     project_line = f"Dự án đang hoạt động: {project_name}\n" if project_name else ""
+    small_talk: Optional[str] = None
 
     clock_line = clock_context(response_language)
 
@@ -976,6 +1044,16 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                 f"Yêu cầu người dùng:\n{user_message}"
             )
 
+        small_talk = None if knowledge_context else _small_talk_kind(user_message)
+        if small_talk:
+            # Let the trained model answer greetings/thanks itself. Dropping the
+            # instruction prefix removes the text it was copying verbatim.
+            system_prompt = (
+                "Bạn là trợ lý CLB IT thân thiện, xưng mình và gọi người dùng là bạn. "
+                "Trả lời đúng một câu ngắn bằng tiếng Việt."
+            )
+            llm_user_message = user_message
+
     formatted_config = None if force_provider else _application_env_format(user_message, response_language)
     if formatted_config is not None:
         formatted_text, formatted_source = formatted_config
@@ -993,6 +1071,7 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
     raw_provider_reply = None
     quality_status = None
     sanitized_provider_reply = None
+    small_talk_fallback = False
     provider_attempts = []
     provider_started = time.monotonic()
     provider_deadline = provider_started + get_generation_total_timeout()
@@ -1001,15 +1080,21 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
         called = p == "ollama" or bool(OPENAI_API_KEY)
         provider_used = p
         attempt_prompt = llm_user_message
-        stream_mode = on_token is not None
-        if stream_mode:
-            attempt_started = time.monotonic()
-            result = _stream_provider(p, system_prompt, attempt_prompt, on_token, provider_deadline)
-            attempt_elapsed_ms = (time.monotonic() - attempt_started) * 1000.0
-            did_call = True
-        else:
-            result, attempt_elapsed_ms, did_call = _provider_call_with_deadline(
-                generate, system_prompt, attempt_prompt, provider_deadline)
+        # A one-line reply is not worth streaming, and a post-hoc fallback
+        # substitution must not contradict tokens already pushed to the client.
+        stream_mode = on_token is not None and not small_talk
+        small_talk_token = _SMALL_TALK_CALL.set(bool(small_talk))
+        try:
+            if stream_mode:
+                attempt_started = time.monotonic()
+                result = _stream_provider(p, system_prompt, attempt_prompt, on_token, provider_deadline)
+                attempt_elapsed_ms = (time.monotonic() - attempt_started) * 1000.0
+                did_call = True
+            else:
+                result, attempt_elapsed_ms, did_call = _provider_call_with_deadline(
+                    generate, system_prompt, attempt_prompt, provider_deadline)
+        finally:
+            _SMALL_TALK_CALL.reset(small_talk_token)
         call_count = 1 if called and did_call else 0
         raw_provider_reply, ok, model_used, tokens_generated = result
         done_reason = getattr(result, "done_reason", None)
@@ -1096,7 +1181,7 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
             # One bounded corrective attempt for a clear language mix, a changed
             # literal, or a direct drafting request that was refused/deferred.
             if ((not assessment["passed"] or assessment["drafting"]["status"] == "deferred")
-                    and call_count and not stream_mode):
+                    and call_count and not stream_mode and not small_talk):
                 issue = assessment["entities"]["status"]
                 language_issue = assessment["language"]["status"]
                 if response_language == "vi":
@@ -1162,7 +1247,8 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
             # Small local models often keep the language of the question even
             # when an explicit response language is selected. A translation
             # pass is more reliable than asking again for a fresh answer.
-            if (ok and not stream_mode and assessment["language"]["status"] in {"divergent", "mixed"}
+            if (ok and not stream_mode and not small_talk
+                    and assessment["language"]["status"] in {"divergent", "mixed"}
                     and response_language in {"vi", "en"}):
                 target = "tiếng Việt" if response_language == "vi" else "English"
                 translation_system = (
@@ -1197,7 +1283,22 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                             sanitizer_changed = tr_raw != tr_text
             sanitized_provider_reply = text
             quality_status = assessment["language"]["status"] if assessment["passed"] else "failed"
-            if ok and not assessment["passed"]:
+            if small_talk and ok and small_talk_reply_is_usable(text):
+                # A greeting is intentionally short; the language heuristic and
+                # the corrective retry misfire on one-liners, so usability was
+                # judged directly above.
+                quality_status = "small_talk_ok"
+            elif small_talk and ok:
+                # The provider was called but its reply is unusable (CJK drift,
+                # retry narration, or blank). Serve a deterministic reply and
+                # stop attributing it to the model.
+                provider_attempts.append({"attempt": "small_talk_fallback",
+                    "reason": "unusable_small_talk_reply", "rejected_text": text[:200]})
+                text = SMALL_TALK_FALLBACKS[small_talk]
+                small_talk_fallback = True
+                quality_status = "small_talk_fallback"
+                model_used = tokens_generated = None
+            elif ok and not assessment["passed"]:
                 reasons = []
                 if assessment["language"]["status"] not in ("matched", "uncertain"):
                     reasons.append("language_" + assessment["language"]["status"])
@@ -1256,6 +1357,9 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                             sanitizer_changed=sanitizer_changed, raw_output_sha256=raw_output_sha256,
                             quality_status=quality_status, attempts=provider_attempts,
                             elapsed_ms=(time.monotonic() - provider_started) * 1000.0 if call_count else 0.0)
+    if small_talk_fallback:
+        # Do not attribute a deterministic fallback to the model that was tried.
+        result.response_source = "template"
     if os.getenv("DUSNX_CAPTURE_RAW_GENERATION") == "1" and called:
         result.raw_provider_reply = raw_provider_reply
         result.sanitized_provider_reply = sanitized_provider_reply if sanitized_provider_reply is not None else text
