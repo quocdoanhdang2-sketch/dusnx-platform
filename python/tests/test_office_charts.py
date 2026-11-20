@@ -4,6 +4,8 @@ import base64
 from io import BytesIO
 
 import pytest
+
+pytest.importorskip("pptx")
 from fastapi.testclient import TestClient
 from pptx import Presentation
 from pptx.enum.chart import XL_CHART_TYPE

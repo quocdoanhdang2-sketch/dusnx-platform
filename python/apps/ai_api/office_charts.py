@@ -9,12 +9,17 @@ from __future__ import annotations
 import math
 from io import BytesIO
 
-from pptx import Presentation
-from pptx.chart.data import CategoryChartData
-from pptx.dml.color import RGBColor
-from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION
-from pptx.enum.shapes import MSO_SHAPE
-from pptx.util import Emu, Inches, Pt
+try:
+    from pptx import Presentation
+    from pptx.chart.data import CategoryChartData
+    from pptx.dml.color import RGBColor
+    from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.util import Emu, Inches, Pt
+    HAS_PPTX = True
+except ImportError:
+    Presentation = None
+    HAS_PPTX = False
 
 MAX_TITLE = 120
 MIN_POINTS = 2
@@ -22,20 +27,31 @@ MAX_POINTS = 12
 MAX_LABEL = 60
 MAX_ABS_VALUE = 1e12
 
-CHART_TYPES = {
-    "bar": XL_CHART_TYPE.COLUMN_CLUSTERED,
-    "line": XL_CHART_TYPE.LINE_MARKERS,
-    "pie": XL_CHART_TYPE.PIE,
-}
-ACCENT = RGBColor(0x25, 0x63, 0xEB)
-INK = RGBColor(0x17, 0x20, 0x33)
-MUTED = RGBColor(0x5B, 0x66, 0x7A)
-PIE_COLORS = [RGBColor(*rgb) for rgb in (
-    (0x25, 0x63, 0xEB), (0x0F, 0x76, 0x6E), (0xD9, 0x77, 0x06),
-    (0x7C, 0x3A, 0xED), (0xDC, 0x26, 0x26), (0x08, 0x91, 0xB2),
-    (0xCA, 0x8A, 0x04), (0x4F, 0x46, 0xE5), (0x15, 0x80, 0x3D),
-    (0xBE, 0x18, 0x5D), (0x47, 0x55, 0x69), (0x0E, 0x74, 0x90),
-)]
+if HAS_PPTX:
+    CHART_TYPES = {
+        "bar": XL_CHART_TYPE.COLUMN_CLUSTERED,
+        "line": XL_CHART_TYPE.LINE_MARKERS,
+        "pie": XL_CHART_TYPE.PIE,
+    }
+    ACCENT = RGBColor(0x25, 0x63, 0xEB)
+    INK = RGBColor(0x17, 0x20, 0x33)
+    MUTED = RGBColor(0x5B, 0x66, 0x7A)
+    PIE_COLORS = [RGBColor(*rgb) for rgb in (
+        (0x25, 0x63, 0xEB), (0x0F, 0x76, 0x6E), (0xD9, 0x77, 0x06),
+        (0x7C, 0x3A, 0xED), (0xDC, 0x26, 0x26), (0x08, 0x91, 0xB2),
+        (0xCA, 0x8A, 0x04), (0x4F, 0x46, 0xE5), (0x15, 0x80, 0x3D),
+        (0xBE, 0x18, 0x5D), (0x47, 0x55, 0x69), (0x0E, 0x74, 0x90),
+    )]
+else:
+    CHART_TYPES = {
+        "bar": "bar",
+        "line": "line",
+        "pie": "pie",
+    }
+    ACCENT = None
+    INK = None
+    MUTED = None
+    PIE_COLORS = []
 
 
 def _text(value, label, limit):
@@ -73,6 +89,8 @@ def validate_chart_request(title, chart_type, labels, values):
 
 def build_chart_slide(title, chart_type, labels, values) -> bytes:
     """Render one 16:9 slide with a native, editable chart and return PPTX bytes."""
+    if not HAS_PPTX or Presentation is None:
+        raise RuntimeError("python-pptx is required to generate chart slides")
     title, chart_type, labels, values = validate_chart_request(title, chart_type, labels, values)
     presentation = Presentation()
     presentation.slide_width = Emu(12192000)
