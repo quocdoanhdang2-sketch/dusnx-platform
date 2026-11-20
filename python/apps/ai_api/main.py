@@ -1190,6 +1190,59 @@ def _detect_out_of_scope_query(text: str) -> bool:
     return bool(_OUT_OF_SCOPE_QUERY.search(text or ""))
 
 
+_QUESTION_SHAPE = re.compile(
+    r"\?|(?i:\b(?:gì|nào|ai|đâu|sao|thế\s*nào|bao\s*nhiêu|khi\s*nào|mấy(?:\s*giờ)?|"
+    r"tại\s*sao|vì\s*sao|làm\s*sao|ra\s*sao|như\s*nào|how|what|who|where|when|why|which)\b)"
+)
+
+_CAPABILITY_QUESTION = re.compile(
+    r"(?i)\b(?:bạn|bot|trợ\s*lý|assistant)\b[^?]{0,40}\b(?:"
+    r"làm\s+được\s+gì|làm\s+gì|giúp\s+(?:được\s+)?gì|có\s+thể\s+làm\s+gì|"
+    r"chức\s+năng\s+gì|khả\s+năng\s+gì|biết\s+gì)\b"
+)
+
+# Words shared by every question ("của tôi", "quyết định", "năm nay"); they do
+# not prove that an active memory is what the user is asking about.
+_MEMORY_OVERLAP_STOP = {
+    "cua", "toi", "chung", "minh", "ban", "nay", "do", "gi", "nao", "quyet",
+    "dinh", "nam", "thang", "ngay", "hien", "hanh", "cai", "duoc", "khong",
+    "phai", "hien", "tai", "moi", "nhat", "truoc", "sau",
+}
+
+
+def _looks_like_question(text: str) -> bool:
+    """Interrogative shape: a question mark or a Vietnamese/English wh-word.
+
+    Scope refusal applies to questions; instructions and statements keep
+    flowing to the model so a command never receives an "I don't know" reply.
+    """
+    return bool(_QUESTION_SHAPE.search(text or ""))
+
+
+def _is_capability_question(text: str) -> bool:
+    return bool(_CAPABILITY_QUESTION.search(text or ""))
+
+
+def _mentions_saved_memory(text: str, memories: list[dict]) -> bool:
+    """True when the question's distinctive words appear in an active memory.
+
+    Personal follow-ups ("quyết định hạ tầng của tôi là gì?") are answered from
+    memory, so the document scope gate must not intercept them.
+    """
+    query_tokens = {
+        token for token in re.findall(r"[a-z0-9]+", rag._strip_diacritics((text or "").lower()))
+        if len(token) >= 4 and token not in _MEMORY_OVERLAP_STOP
+    }
+    if not query_tokens:
+        return False
+    for memory in memories or []:
+        content_tokens = set(re.findall(
+            r"[a-z0-9]+", rag._strip_diacritics(str(memory.get("content", "")).lower())))
+        if query_tokens & content_tokens:
+            return True
+    return False
+
+
 def _is_greeting_or_social(text: str) -> bool:
     t = (text or "").strip().lower()
     return bool(re.match(
@@ -1590,7 +1643,9 @@ def _api_comparison_reply(req: ChatRequest, user: dict, result: ChatResponse) ->
     Independent retrieval pass over the same locked corpus keeps the comparison
     faithful to what the primary model saw; force_provider bypasses the
     application-rule shortcuts and provider_override targets the external API
-    even when the trained local model is the primary brain.
+    even when the trained local model is the primary brain. Fallback is disabled
+    for this call: reporting a local-model reply as the external API's answer
+    would misrepresent the comparison.
     """
     try:
         db = get_memory_db()
@@ -1599,7 +1654,7 @@ def _api_comparison_reply(req: ChatRequest, user: dict, result: ChatResponse) ->
         history = db.get_recent_messages(user["user_id"], req.session_id, limit=12)
         history = history[:-1] if history else []
         rag_context = ""
-        if rag.should_retrieve(req.message):
+        if rag.should_retrieve(req.message) or rag.is_domain_question(req.message):
             hits = rag.retrieve(req.message, top_k=5)
             if rag.has_evidence(hits):
                 rag_context = rag.build_context(hits, result.response_language)
@@ -1608,14 +1663,17 @@ def _api_comparison_reply(req: ChatRequest, user: dict, result: ChatResponse) ->
             req.message, memories, intent="conversation", session_history=history,
             response_language=result.response_language,
             knowledge_context=rag_context or None, force_provider=True,
-            provider_override="openai")
+            provider_override="openai", allow_fallback=False)
         latency_ms = round((time.monotonic() - started) * 1000)
-        return {"ok": ok, "reply": text if ok else None,
+        answered_by_api = ok and provider_used == "openai"
+        return {"ok": answered_by_api, "reply": text if answered_by_api else None,
                 "provider": provider_used or "openai", "model": model_used,
                 "latency_ms": latency_ms,
                 "provider_used": provider_used, "model_used": model_used,
                 "tokens_generated": tokens, "label": "Trả lời dự phòng (API)",
-                "error": None if ok else text}
+                "error": None if answered_by_api else (
+                    text if not ok else
+                    "API dự phòng không phản hồi; kết quả này không phải từ API bên ngoài.")}
     except Exception:
         return {"ok": False, "reply": None, "provider": "openai",
                 "label": "Trả lời dự phòng (API)",
@@ -1925,7 +1983,9 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     # retrieved passages would become the text being translated.
     transform_request = _is_transform_request(req.message) or office_request
     # When current_mode == "lora": App B skips RAG retrieval to showcase pure LoRA persona & behavior
-    if current_mode != "lora" and not office_request and not _is_translation_request(req.message) and rag.should_retrieve(req.message):
+    if (current_mode != "lora" and not office_request
+            and not _is_translation_request(req.message)
+            and (rag.should_retrieve(req.message) or rag.is_domain_question(req.message))):
         candidate_hits = rag.retrieve(req.message, top_k=5)
         if rag.has_evidence(candidate_hits):
             rag_hits = candidate_hits
@@ -1961,8 +2021,54 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
             session_id=req.session_id, provider_called=False,
             response_source="rag_extract", assistant_mode="rag")
 
-    # ── Missing context & scope guard ─────────────────────────────────────────
-    if not office_request and (_detect_unverified_club_question(req.message) or _detect_out_of_scope_query(req.message)) and rag_extractive is None and not rag_hits:
+    # ── Scope guard ───────────────────────────────────────────────────────────
+    if not office_request and _is_capability_question(req.message):
+        reply_text = (
+            "I am the CLB IT Assistant. Here is what I can help you with:\n"
+            "- Look up internal club information across 26 documents (regulations, schedules, funds, events) with exact [S#] citations.\n"
+            "- Refuse and guide inquiries when information is outside verified club documentation.\n"
+            "- Remember your personal notes and decisions in your private notebook.\n"
+            "- Compare answers side-by-side with an external fallback model (Gemini API)."
+            if reply_language == "en" else
+            "Tôi là Trợ lý ảo CLB IT. Tôi có thể hỗ trợ bạn các công việc sau:\n"
+            "- Tra cứu thông tin từ 26 tài liệu nội bộ (quy chế, lịch sinh hoạt, quỹ, sự kiện) kèm nguồn trích dẫn [S#] chính xác.\n"
+            "- Từ chối và hướng dẫn liên hệ Ban chủ nhiệm khi câu hỏi nằm ngoài phạm vi tài liệu CLB.\n"
+            "- Ghi nhớ và quản lý các quyết định, ghi chú trong sổ tay cá nhân của bạn.\n"
+            "- So sánh câu trả lời song song với mô hình API dự phòng (Google Gemini)."
+        )
+        if on_token is not None:
+            on_token(reply_text)
+        s_ver, _, _, _, _, _, _ = advance(
+            db, user_id, req.message, req.feedback_value, platform="web",
+            event_type="chat_message", project_id=req.project_id)
+        msg = db.append_message(req.session_id, user_id, "assistant", reply_text,
+                                memory_ids_used=[], state_version=s_ver)
+        return chat_response(
+            message_id=msg["message_id"], reply=reply_text,
+            intent="capability", selected_agent="conversation",
+            next_action="reply", confidence=1.0, runtime_mode=RUNTIME_MODE,
+            routing_source="capability_template", provider_used=None,
+            provider_ok=True, state_version=s_ver, memory_ids_used=[],
+            session_id=req.session_id, provider_called=False,
+            response_source="template")
+
+    # The corpus, not a blacklist, defines the domain: a question whose wording
+    # matches the club/repository documentation is refused when retrieval found
+    # nothing, because answering it from the model's general knowledge would be
+    # presented as club fact. Conversation, personal memory, drafting and
+    # transformation requests stay with the model.
+    scope_question = False
+    if (not office_request and not transform_request and current_mode != "lora"
+            and not _is_greeting_or_social(req.message)
+            and not _is_capability_question(req.message)
+            and not _PERSONAL_ANCHOR.search(req.message)
+            and not _mentions_saved_memory(req.message, memories)
+            and not _detect_unverified_dusnx_product_question(req.message)):
+        scope_question = (_detect_out_of_scope_query(req.message)
+                          or _detect_unverified_club_question(req.message)
+                          or (_looks_like_question(req.message)
+                              and rag.is_domain_question(req.message)))
+    if scope_question and rag_extractive is None and not rag_hits:
         reply_text = (
             "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
             if reply_language == "en" else

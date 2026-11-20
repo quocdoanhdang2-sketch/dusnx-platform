@@ -795,6 +795,7 @@ def generate_response(
     force_provider: bool = False,
     on_token: Optional[Callable[[str], None]] = None,
     provider_override: Optional[str] = None,
+    allow_fallback: bool = True,
 ) -> tuple[str, bool, str, Optional[str], Optional[int]]:
     """
     Generate an AI response using the configured provider.
@@ -802,6 +803,8 @@ def generate_response(
 
     provider_override forces one provider for this call only (e.g. the external
     API in the "So với API" comparison) without changing the primary provider.
+    allow_fallback=False keeps that call on the requested provider: a silent
+    switch to the other model would make the comparison report the wrong brain.
 
     Memories are included in context; only active memories are passed here.
     knowledge_context is pre-formatted retrieval evidence with [S1]... labels.
@@ -1007,8 +1010,8 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
         attempt_diagnostics = getattr(result, "diagnostics", {})
         sanitizer_changed = raw_provider_reply != sanitize_generated_reply(raw_provider_reply) if ok else False
         text = sanitize_generated_reply(raw_provider_reply) if ok else raw_provider_reply
-        if (not ok and not stream_mode and p == "openai" and get_fallback_provider() == "ollama"
-                and bool(OPENAI_API_KEY)):
+        if (allow_fallback and not ok and not stream_mode and p == "openai"
+                and get_fallback_provider() == "ollama" and bool(OPENAI_API_KEY)):
             # The operator asked for a stronger hosted model. If it is configured
             # but not reachable, keep the chat working on the local model and
             # report the provider that actually answered. A missing key is a
@@ -1033,8 +1036,8 @@ Khi được yêu cầu viết email, tin nhắn hoặc bản nháp, hãy viết
                     sanitizer_changed = (raw_provider_reply
                                          != sanitize_generated_reply(raw_provider_reply))
                     text = sanitize_generated_reply(raw_provider_reply)
-        if (not ok and not stream_mode and p == "ollama" and get_fallback_provider() == "openai"
-                and bool(OPENAI_API_KEY)):
+        if (allow_fallback and not ok and not stream_mode and p == "ollama"
+                and get_fallback_provider() == "openai" and bool(OPENAI_API_KEY)):
             # The trained local model is the primary brain. If that call
             # genuinely failed, keep the chat available on the configured
             # external API and report which provider actually answered.

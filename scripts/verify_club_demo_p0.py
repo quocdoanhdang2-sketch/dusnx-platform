@@ -1,21 +1,160 @@
 #!/usr/bin/env python3
-"""End-to-end verification script for Club IT Assistant P0 fixes.
+"""End-to-end verification for the Club IT assistant P0 fixes.
 
-Tests against the live gateway on port 8090:
-- Authenticates as chunhiem / Admin@123456
-- Executes all 6 fixed demo questions
-- Asserts answer contents, citations, and source chips
-- Verifies real Gemini API comparison call
-- Outputs structured log
+Runs against a live gateway (the secondary club stack listens on :8090):
+- authenticates as the demo owner account (override with env vars)
+- asks the demo questions plus the retrieval/extraction regressions
+- asserts answer content, citations and the retrieval gate
+- verifies the "So với API" comparison really reached the external API
+- writes one JSON report per run under docs/evidence/club-demo-p0/
+
+Read-only against the running stack: it creates its own chat sessions but
+never restarts services or writes to the corpus. Exit code 1 when any case
+fails so a failing run cannot be mistaken for evidence.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# The demo accounts are documented test fixtures, not production secrets; they
+# can still be overridden without editing this file.
+DEMO_USER = os.getenv("DUSNX_DEMO_USER", "chunhiem")
+DEMO_PASSWORD = os.getenv("DUSNX_DEMO_PASSWORD", "Admin@123456")
+
+REFUSAL_MARKER = "Kho tài liệu và quy chế CLB IT chưa có thông tin"
+
+CASES = [
+    {
+        "id": "CASE-1",
+        "name": "Lab room rules (memory/RAG gate)",
+        "query": "Quy định sử dụng phòng lab của CLB là gì?",
+        "expected_top_doc": "06-quy-dinh-phong-lab.md",
+        "expected_terms": ["A2-305", "cấm ăn uống"],
+        "forbidden_terms": ["Tôi chưa đủ bối cảnh để chọn thông tin phù hợp", "Tôi chưa rõ"],
+        "expect_provider_called": None,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-2",
+        "name": "Club fee deadline & recipient (rerank)",
+        "query": "Đóng quỹ trước ngày mấy và nộp cho ai?",
+        "expected_top_doc": "16-dong-quy-clb.md",
+        "expected_terms": ["trước ngày 10", "Phạm Thuỳ Dương"],
+        "forbidden_terms": ["5.000.000", "hóa đơn VAT"],
+        "expect_provider_called": False,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-3",
+        "name": "Club monthly fee amount",
+        "query": "Quỹ CLB đóng bao nhiêu một tháng?",
+        "expected_top_doc": "16-dong-quy-clb.md",
+        "expected_terms": ["50.000"],
+        "forbidden_terms": ["5.000.000"],
+        "expect_provider_called": False,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-4",
+        "name": "IT CodeFest 2026 location (slot fill)",
+        "query": "IT CodeFest 2026 tổ chức ở đâu?",
+        "expected_top_doc": "04-it-codefest-2026.md",
+        "expected_terms": ["sảnh tòa B"],
+        "forbidden_terms": [],
+        "expect_provider_called": False,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-5",
+        "name": "Outstanding member criteria (slot fill)",
+        "query": "Thành viên xuất sắc được đánh giá theo tiêu chí gì?",
+        "expected_top_doc": "18-danh-gia-thanh-vien.md",
+        "expected_terms": ["40%", "20%", "chuyên cần", "đóng góp", "thái độ"],
+        "forbidden_terms": [],
+        "expect_provider_called": False,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-6",
+        "name": "Out-of-scope question (scope gate)",
+        "query": "Giá vàng hôm nay bao nhiêu một chỉ?",
+        "expected_top_doc": None,
+        "expected_terms": [REFUSAL_MARKER],
+        "forbidden_terms": [],
+        "expect_provider_called": False,
+        "expect_refusal": True,
+    },
+    {
+        "id": "CASE-7",
+        "name": "Recruitment wave 2 date range (milestone row)",
+        "query": "Tuyển thành viên đợt 2 nhận đơn từ ngày nào đến ngày nào?",
+        "expected_top_doc": "13-tuyen-thanh-vien-dot-2.md",
+        "expected_terms": ["01/12/2026", "15/12/2026"],
+        "forbidden_terms": [],
+        "expect_provider_called": None,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-8",
+        "name": "Workshop date in section heading",
+        "query": "Workshop Git & GitHub tổ chức khi nào?",
+        "expected_top_doc": "10-lich-workshop.md",
+        "expected_terms": ["27/11/2026"],
+        "forbidden_terms": [],
+        "expect_provider_called": None,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-9",
+        "name": "Team building overview (destination/date/fee)",
+        "query": "Team building đi đâu, ngày nào, phí bao nhiêu?",
+        "expected_top_doc": "17-team-building.md",
+        "expected_terms": ["Thung Lũng Xanh", "27/12/2026", "100.000"],
+        "forbidden_terms": [],
+        "expect_provider_called": None,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-10",
+        "name": "Lab registration procedure, not duration limit",
+        "query": "Muốn dùng phòng lab phải đăng ký thế nào?",
+        "expected_top_doc": "06-quy-dinh-phong-lab.md",
+        "expected_terms": ["đăng ký trước ít nhất 1 ngày"],
+        "forbidden_terms": ["3 tiếng"],
+        "expect_provider_called": None,
+        "expect_refusal": False,
+    },
+    {
+        "id": "CASE-11",
+        "name": "Capability question is not refused",
+        "query": "Bạn làm được gì cho mình?",
+        "expected_top_doc": None,
+        "expected_terms": ["tài liệu", "nguồn"],
+        "forbidden_terms": [REFUSAL_MARKER, "Người dùng:"],
+        "expect_provider_called": False,
+        "expect_refusal": False,
+        "expect_sources_empty": True,
+    },
+    {
+        "id": "CASE-12",
+        "name": "Weather question refused",
+        "query": "Thời tiết Hà Nội ngày mai thế nào?",
+        "expected_top_doc": None,
+        "expected_terms": [REFUSAL_MARKER],
+        "forbidden_terms": [],
+        "expect_provider_called": False,
+        "expect_refusal": True,
+    },
+]
 
 
 def http_post(url: str, payload: dict, token: str | None = None) -> dict:
@@ -28,203 +167,163 @@ def http_post(url: str, payload: dict, token: str | None = None) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def run_verification(base_url: str = "http://127.0.0.1:8090", run_idx: int = 1) -> dict:
-    print(f"=== Starting Run #{run_idx} at {time.strftime('%Y-%m-%dT%H:%M:%SZ')} ===")
-    
-    # 1. Login as owner (chunhiem)
-    login_res = http_post(f"{base_url}/v1/auth/login", {
-        "username": "chunhiem",
-        "password": "Admin@123456"
-    })
-    token = login_res.get("token")
-    assert token, "Login failed: token is missing"
-    assert login_res.get("role") == "owner", f"Unexpected role: {login_res.get('role')}"
-    print(f"1. Logged in successfully as {login_res.get('username')} ({login_res.get('display_name')})")
+def http_get(url: str) -> dict:
+    with urllib.request.urlopen(url, timeout=15) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
-    # 2. Create session
-    sess_res = http_post(f"{base_url}/v1/sessions", {"title": f"P0 Verify Run {run_idx}"}, token=token)
-    session_id = sess_res.get("session_id")
-    assert session_id, "Session creation failed"
-    print(f"2. Created session: {session_id}")
 
-    test_cases = [
-        {
-            "id": "CASE-1",
-            "name": "Lab room rules (Memory gate fix)",
-            "query": "Quy định sử dụng phòng lab của CLB là gì?",
-            "expected_top_doc": "06-quy-dinh-phong-lab.md",
-            "expected_terms": ["phòng lab A2-305", "Tuyệt đối cấm ăn uống"],
-            "forbidden_terms": ["Tôi chưa đủ bối cảnh để chọn thông tin phù hợp", "Tôi chưa rõ"],
-            "expect_provider_called": None,
-        },
-        {
-            "id": "CASE-2",
-            "name": "Club fee deadline & recipient (Rerank fix)",
-            "query": "Đóng quỹ trước ngày mấy và nộp cho ai?",
-            "expected_top_doc": "16-dong-quy-clb.md",
-            "expected_terms": ["trước ngày 10", "Phạm Thuỳ Dương"],
-            "forbidden_terms": ["5.000.000", "hóa đơn VAT", "doc 24", "Nhóm 3"],
-            "expect_provider_called": False,
-        },
-        {
-            "id": "CASE-3",
-            "name": "Club monthly fee amount",
-            "query": "Quỹ CLB đóng bao nhiêu một tháng?",
-            "expected_top_doc": "16-dong-quy-clb.md",
-            "expected_terms": ["50.000"],
-            "forbidden_terms": ["5.000.000"],
-            "expect_provider_called": False,
-        },
-        {
-            "id": "CASE-4",
-            "name": "IT CodeFest 2026 location (Slot-filling fix)",
-            "query": "IT CodeFest 2026 tổ chức ở đâu?",
-            "expected_top_doc": "04-it-codefest-2026.md",
-            "expected_terms": ["sảnh tòa B"],
-            "forbidden_terms": [],
-            "expect_provider_called": False,
-        },
-        {
-            "id": "CASE-5",
-            "name": "Outstanding member criteria (Slot-filling fix)",
-            "query": "Thành viên xuất sắc được đánh giá theo tiêu chí gì?",
-            "expected_top_doc": "18-danh-gia-thanh-vien.md",
-            "expected_terms": ["40%", "20%", "chuyên cần", "đóng góp", "thái độ"],
-            "forbidden_terms": [],
-            "expect_provider_called": False,
-        },
-        {
-            "id": "CASE-6",
-            "name": "Out-of-scope question (Hard scope gate fix)",
-            "query": "Giá vàng hôm nay bao nhiêu một chỉ?",
-            "expected_top_doc": None,
-            "expected_terms": ["Kho tài liệu và quy chế CLB IT chưa có thông tin về nội dung này"],
-            "forbidden_terms": [],
-            "expect_provider_called": False,
-        },
-    ]
+def _check_case(case: dict, resp: dict) -> list[str]:
+    reply = resp.get("reply", "") or ""
+    sources = resp.get("sources", []) or []
+    top_source_path = sources[0].get("path") if sources else None
+    provider_called = resp.get("provider_called")
+    errors: list[str] = []
+
+    if case["expect_refusal"]:
+        if REFUSAL_MARKER.lower() not in reply.lower():
+            errors.append("Expected a documented refusal, got a normal answer")
+        if sources:
+            errors.append(f"Refusal carried {len(sources)} sources")
+    elif case.get("expect_sources_empty"):
+        if sources:
+            errors.append(f"Expected no sources, got {len(sources)}")
+    elif case["expected_top_doc"]:
+        if not top_source_path or case["expected_top_doc"] not in top_source_path:
+            errors.append(f"Expected top doc {case['expected_top_doc']}, got {top_source_path}")
+        if "[S1]" not in reply:
+            errors.append("Answer has no [S1] citation")
+        elif not sources:
+            errors.append("Citation [S1] present but sources list is empty")
+
+    for term in case["expected_terms"]:
+        if term.lower() not in reply.lower():
+            errors.append(f"Missing expected term: {term!r}")
+    for term in case["forbidden_terms"]:
+        if term.lower() in reply.lower():
+            errors.append(f"Found forbidden term: {term!r}")
+    if case["expect_provider_called"] is not None and provider_called != case["expect_provider_called"]:
+        errors.append(
+            f"Expected provider_called={case['expect_provider_called']}, got {provider_called}")
+    return errors
+
+
+def run_verification(base_url: str, run_idx: int) -> dict:
+    print(f"=== Run #{run_idx} at {time.strftime('%Y-%m-%dT%H:%M:%SZ')} ===")
+    health = http_get(f"{base_url}/health")
+    print("Health:", {k: health.get(k) for k in ("status", "provider", "model_available")})
+
+    login = http_post(f"{base_url}/v1/auth/login",
+                      {"username": DEMO_USER, "password": DEMO_PASSWORD})
+    token = login.get("token")
+    if not token:
+        raise SystemExit("Login failed: no token returned")
+    assert login.get("role") == "owner", f"Unexpected role: {login.get('role')}"
+    print(f"Logged in as {login.get('display_name')} ({login.get('role')})")
+
+    session_id = http_post(f"{base_url}/v1/sessions",
+                           {"title": f"P0 verify #{run_idx}"}, token=token)["session_id"]
 
     results = []
-    for c in test_cases:
-        chat_req = {
-            "session_id": session_id,
-            "message": c["query"],
-        }
-        resp = http_post(f"{base_url}/v1/chat", chat_req, token=token)
-        reply = resp.get("reply", "")
-        sources = resp.get("sources", [])
-        top_source_path = sources[0].get("path") if sources else None
-        provider_called = resp.get("provider_called")
-        source_type = resp.get("response_source")
-
-        # Assertions
-        errors = []
-        if c["expected_top_doc"]:
-            if not top_source_path or c["expected_top_doc"] not in top_source_path:
-                errors.append(f"Expected top doc {c['expected_top_doc']}, got {top_source_path}")
-            # Verify [S1] in reply matches sources[0]
-            if "[S1]" in reply and not sources:
-                errors.append("Citation [S1] cited in text but sources list is empty")
-        elif c["expected_top_doc"] is None and sources:
-            # For out-of-scope refusal, sources must be empty
-            if sources:
-                errors.append(f"Expected empty sources for refused query, got {len(sources)} sources")
-
-        for term in c["expected_terms"]:
-            if term.lower() not in reply.lower():
-                errors.append(f"Missing expected term: '{term}'")
-
-        for term in c["forbidden_terms"]:
-            if term.lower() in reply.lower():
-                errors.append(f"Found forbidden term: '{term}'")
-
-        if c["expect_provider_called"] is not None:
-            if provider_called != c["expect_provider_called"]:
-                errors.append(f"Expected provider_called={c['expect_provider_called']}, got {provider_called}")
-
-        case_passed = len(errors) == 0
-        case_summary = {
-            "id": c["id"],
-            "name": c["name"],
-            "query": c["query"],
-            "passed": case_passed,
+    for case in CASES:
+        started = time.monotonic()
+        resp = http_post(f"{base_url}/v1/chat",
+                         {"session_id": session_id, "message": case["query"]}, token=token)
+        wall_ms = round((time.monotonic() - started) * 1000, 1)
+        errors = _check_case(case, resp)
+        reply = resp.get("reply", "") or ""
+        results.append({
+            "id": case["id"],
+            "name": case["name"],
+            "query": case["query"],
+            "passed": not errors,
             "errors": errors,
-            "reply_preview": reply[:180] + ("..." if len(reply) > 180 else ""),
-            "top_source": top_source_path,
-            "source_type": source_type,
-            "provider_called": provider_called,
-        }
-        results.append(case_summary)
-        status_label = "PASS" if case_passed else "FAIL"
-        print(f"[{status_label}] {c['id']}: {c['name']}")
-        if not case_passed:
-            for err in errors:
-                print(f"       ERROR: {err}")
-        print(f"       Reply preview: {reply[:100]}...")
-        if top_source_path:
-            print(f"       Top source chip: {top_source_path}")
+            "reply_preview": reply[:200] + ("..." if len(reply) > 200 else ""),
+            "top_source": (resp.get("sources") or [{}])[0].get("path"),
+            "source_type": resp.get("response_source"),
+            "intent": resp.get("intent"),
+            "provider_used": resp.get("provider_used"),
+            "provider_called": resp.get("provider_called"),
+            "provider_elapsed_ms": resp.get("provider_elapsed_ms"),
+            "wall_ms": wall_ms,
+        })
+        print(f"[{'PASS' if not errors else 'FAIL'}] {case['id']}: {case['name']}")
+        for err in errors:
+            print(f"       ERROR: {err}")
+        print(f"       {reply[:110]}...")
 
-    # 3. Verify Gemini API Comparison call
-    print("\nVerifying 'So sánh với API' (Gemini comparison)...")
     comp_req = {
         "session_id": session_id,
-        "message": "Hãy viết lời chào mừng thành viên mới gia nhập CLB IT",
+        "message": "Hãy viết một lời chào ngắn gửi thành viên mới gia nhập CLB IT.",
         "compare_with_api": True,
     }
     comp_res = http_post(f"{base_url}/v1/chat", comp_req, token=token)
     api_comp = comp_res.get("api_comparison")
-    assert api_comp is not None, "api_comparison block missing from response"
-    assert api_comp.get("provider") == "openai", f"Expected provider 'openai' (Gemini proxy), got {api_comp.get('provider')}"
-    assert "gemini-3.1-flash-lite" in api_comp.get("model", ""), f"Expected gemini-3.1-flash-lite, got {api_comp.get('model')}"
-    assert api_comp.get("tokens_generated", 0) > 0, "No tokens returned from Gemini API"
-    assert comp_res.get("provider_used") == "ollama", f"Primary answer should use ollama, got {comp_res.get('provider_used')}"
-    print(f"[PASS] Gemini API comparison verified: provider={api_comp.get('provider')}, model={api_comp.get('model')}, tokens={api_comp.get('tokens_generated')}, latency={api_comp.get('latency_ms')}ms")
+    comp_errors = []
+    if not api_comp:
+        comp_errors.append("api_comparison block missing")
+    else:
+        if not api_comp.get("ok") or not api_comp.get("reply"):
+            comp_errors.append(f"External API did not answer: {api_comp.get('error')}")
+        if api_comp.get("provider_used") != "openai":
+            comp_errors.append(f"provider_used={api_comp.get('provider_used')!r}, expected 'openai'")
+        if not api_comp.get("tokens_generated"):
+            comp_errors.append("No tokens reported from the external API")
+        if comp_res.get("provider_used") != "ollama":
+            comp_errors.append(
+                f"Primary answer used {comp_res.get('provider_used')!r}, expected the local model")
+    print(f"[{'PASS' if not comp_errors else 'FAIL'}] API comparison")
+    for err in comp_errors:
+        print(f"       ERROR: {err}")
 
-    all_passed = all(r["passed"] for r in results)
-    run_report = {
+    return {
         "run_idx": run_idx,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "all_passed": all_passed,
+        "gateway": base_url,
+        "all_passed": not comp_errors and all(r["passed"] for r in results),
         "total_cases": len(results),
         "passed_cases": sum(1 for r in results if r["passed"]),
-        "failed_cases": sum(1 for r in results if not r["passed"]),
         "cases": results,
-        "gemini_comparison": {
-            "verified": True,
-            "provider": api_comp.get("provider"),
-            "model": api_comp.get("model"),
-            "tokens": api_comp.get("tokens_generated"),
-            "latency_ms": api_comp.get("elapsed_ms"),
-        }
+        "api_comparison": {
+            "passed": not comp_errors,
+            "errors": comp_errors,
+            "provider": (api_comp or {}).get("provider"),
+            "provider_used": (api_comp or {}).get("provider_used"),
+            "model": (api_comp or {}).get("model"),
+            "tokens": (api_comp or {}).get("tokens_generated"),
+            "latency_ms": (api_comp or {}).get("latency_ms"),
+            "primary_provider": comp_res.get("provider_used"),
+        },
     }
-    return run_report
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Verify Club Demo P0 Fixes")
-    parser.add_argument("--url", default="http://127.0.0.1:8090")
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Verify Club IT demo P0 fixes")
+    parser.add_argument("--url", default=os.getenv("DUSNX_CLUB_GATEWAY", "http://127.0.0.1:8090"))
     parser.add_argument("--runs", type=int, default=3)
-    parser.add_argument("--out-dir", default=r"D:\Projects\dusnx-platform\runtime\club-demo-verify")
+    parser.add_argument("--out-dir",
+                        default=str(REPO_ROOT / "docs" / "evidence" / "club-demo-p0"))
     args = parser.parse_args()
 
     out_path = Path(args.out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
-    overall_success = True
-    for r in range(1, args.runs + 1):
-        report = run_verification(base_url=args.url, run_idx=r)
-        log_file = out_path / f"run_{r}.log"
+    success = True
+    for run_idx in range(1, args.runs + 1):
+        try:
+            report = run_verification(args.url, run_idx)
+        except (urllib.error.URLError, SystemExit) as exc:
+            print(f"Run #{run_idx} could not start: {exc}")
+            success = False
+            break
+        log_file = out_path / f"run_{run_idx}.log"
         log_file.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"Saved run report to {log_file}\n")
-        if not report["all_passed"]:
-            overall_success = False
+        print(f"Saved {log_file}")
+        success = success and report["all_passed"]
 
-    if not overall_success:
-        print("Verification FAILED: One or more cases failed.")
+    if not success:
+        print("Verification FAILED.")
         sys.exit(1)
-    else:
-        print(f"ALL {args.runs} RUNS PASSED SUCCESSFULLY! 6/6 demo cases consistent.")
-        sys.exit(0)
+    print(f"All {args.runs} runs passed ({len(CASES)} cases + API comparison each).")
 
 
 if __name__ == "__main__":

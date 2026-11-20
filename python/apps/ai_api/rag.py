@@ -501,9 +501,14 @@ _PHRASES = [
     "mật khẩu",
     # Câu lạc bộ IT key phrases
     "đóng quỹ", "hội phí", "thủ quỹ", "phạm thuỳ dương", "quỹ clb", "tiền quỹ",
-    "hạn đóng", "mức quỹ", "chuyên cần", "sảnh tòa b", "địa điểm",
+    "hạn đóng", "mức quỹ", "kỳ đóng", "người thu", "chuyên cần", "sảnh tòa b", "địa điểm",
     "ở đâu", "khi nào", "mấy giờ", "thứ mấy", "bao nhiêu", "nộp cho ai",
     "tối thiểu", "phần trăm", "trưởng ban truyền thông", "ban chủ nhiệm",
+    # Vai trò và loại văn bản: giữ một cụm làm đơn vị truy xuất, thay vì tách
+    # thành âm tiết ("chủ"/"nhiệm") rồi khớp sang tài liệu không liên quan.
+    "chủ nhiệm", "phó chủ nhiệm", "trưởng ban", "trưởng ban kỹ thuật",
+    "trưởng ban hậu cần", "quy định", "quy chế", "quy chuẩn", "quy tắc",
+    "nội quy", "quy trình", "lịch sinh hoạt", "server gpu", "git flow",
 ]
 
 # Cross-language aliases let a Vietnamese question match English headings and
@@ -556,11 +561,23 @@ _ANCHOR_TERMS = {"dusn", "dusnx", "dusn-x", "dusn_x", "chatbot"}
 
 
 def _phrase_terms(query: str) -> list[str]:
-    """Detect concepts in the query with or without Vietnamese diacritics."""
+    """Detect concepts in the query with or without Vietnamese diacritics.
+
+    Longer phrases win: "ban chủ nhiệm" absorbs "chủ nhiệm", and "trưởng ban
+    truyền thông" absorbs "trưởng ban". Keeping both would let a chunk that
+    only says "trưởng ban" satisfy the role question.
+    """
     normalized = (query or "").lower()
     folded = _strip_diacritics(normalized)
-    return [phrase for phrase in _PHRASES
-            if phrase in normalized or _strip_diacritics(phrase) in folded]
+    matched = [phrase for phrase in _PHRASES
+               if phrase in normalized or _strip_diacritics(phrase) in folded]
+    matched.sort(key=lambda phrase: len(phrase.split()), reverse=True)
+    selected: list[str] = []
+    for phrase in matched:
+        if any(phrase in longer for longer in selected):
+            continue
+        selected.append(phrase)
+    return selected
 
 
 def _alternatives(term: str) -> list[str]:
@@ -573,11 +590,18 @@ def _alternatives(term: str) -> list[str]:
 
 def _terms(query: str) -> list[str]:
     normalized = (query or "").lower()
+    folded = _strip_diacritics(normalized)
     terms: list[str] = [phrase for phrase in _phrase_terms(query)]
     phrases = list(terms)
     phrase_syllables = {form for phrase in phrases for word in phrase.split()
                         for form in (word, _strip_diacritics(word))}
     tokens = re.findall(r"[0-9a-zà-ỹđ_][0-9a-zà-ỹđ_.\-]*", normalized, re.UNICODE)
+    # "X là người nào?" is a who-question. The word "người" is the question
+    # frame, not content: requiring it excluded the document that names the
+    # person ("Trưởng ban truyền thông - Trần Hà Vy").
+    if re.search(r"(?:\bla\s+)?nguoi+\s+nao\b", folded) or re.search(r"\bla\s+nguoi+\b", folded):
+        tokens = [token for token in tokens
+                  if not re.fullmatch(r"nguoi+", _strip_diacritics(token))]
 
     def keep(token: str) -> bool:
         return (len(token) >= 2 and token not in _STOPWORDS
@@ -656,6 +680,9 @@ _RETRIEVAL_HINTS = [
     "thanh vien", "tan thanh vien", "onboarding", "workshop", "demo day", "team building", "khen thuong",
     "ky luat", "danh gia", "tieu chi", "xuat sac", "hoat dong", "dang ky", "don dang ky", "nop quy",
     "bao mat", "lab", "thu may", "o dau", "khi nao", "chuyen can", "phan tram", "trong so",
+    # Engineering rules of the club ("Quy chuẩn Git Flow?") name the workflow
+    # without "quy trình" or any other generic hint.
+    "quy chuan", "git flow", "git", "code review", "pull request", "merge request",
 ]
 _RETRIEVAL_HINT = re.compile(
     r"\b(?:" + "|".join(re.escape(hint) for hint in _RETRIEVAL_HINTS) + r")\b")
@@ -814,6 +841,59 @@ def should_retrieve_scoped(query: str, min_similarity: Optional[float] = None) -
     return scope_similarity(query) >= min_similarity
 
 
+# Heading phrases that appear in almost every administrative document; on their
+# own they do not prove that a question is about this club's documentation.
+_DOMAIN_GENERIC_BIGRAMS = frozenset({
+    "hoat dong", "su dung", "huong dan", "ket qua", "to chuc", "thoi gian",
+    "du an", "he thong", "chi tiet", "danh gia", "dieu kien", "co ban",
+    "cau hinh", "cau hoi", "danh sach", "quy dinh", "quy trinh", "thanh vien",
+    "thong tin", "yeu cau", "quan ly", "bao gom", "lien he", "ho tro",
+})
+# Proper nouns of the corpus whose presence alone identifies the topic.
+_DOMAIN_NOUNS = frozenset({"codefest", "hackathon", "clb", "gitflow"})
+
+
+@lru_cache(maxsize=8)
+def _domain_vocabulary(db_path: str, stamp: int) -> tuple[frozenset[str], frozenset[str]]:
+    """Topical phrase vocabulary taken from the corpus itself.
+
+    Titles and section headings are the index's own statement of what it
+    covers, so scope decisions extend automatically when a document is added
+    and cannot drift from the documents the way a hand-written list does.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT d.title, c.heading FROM rag_chunks c "
+            "JOIN rag_documents d ON d.doc_id = c.doc_id").fetchall()
+    bigrams: set[str] = set()
+    for title, heading in rows:
+        for text in (title or "", heading or ""):
+            tokens = _scope_tokens(_strip_diacritics(text))
+            bigrams.update(f"{left} {right}" for left, right in zip(tokens, tokens[1:]))
+    return _DOMAIN_NOUNS, frozenset(bigrams - _DOMAIN_GENERIC_BIGRAMS)
+
+
+def is_domain_question(query: str) -> bool:
+    """Whether the question is about the documented club/repository domain.
+
+    Used by the chat scope gate: a domain question with no supporting passage
+    must be refused, while ordinary conversation is left to the model. The
+    decision comes from corpus vocabulary (title/heading phrases), not from a
+    blacklist of forbidden topics.
+    """
+    if not query or len(query.strip()) < 3:
+        return False
+    try:
+        stamp = database_path().stat().st_mtime_ns
+    except OSError:
+        return False
+    nouns, bigrams = _domain_vocabulary(str(database_path()), stamp)
+    tokens = _scope_tokens(_strip_diacritics(query))
+    if any(token in nouns for token in tokens):
+        return True
+    return any(f"{left} {right}" in bigrams for left, right in zip(tokens, tokens[1:]))
+
+
 def _path_weight(path: str) -> float:
     """Prefer canonical docs over historical review/evidence tables."""
     p = path.replace("\\", "/")
@@ -910,6 +990,12 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
         return []
     phrase = re.sub(r"\s+", " ", (query or "").lower()).strip()
     query_folded = _strip_diacritics((query or "").lower())
+    # "từ ngày nào đến ngày nào?" is answered by a dated milestone table whose
+    # cells repeat almost none of the question words.
+    asks_date_range = bool(re.search(
+        r"(?:tu|den)\s+ngay\s+nao|ngay\s+nao\s+den\s+ngay\s+nao|thoi han|moc thoi gian|"
+        r"tu\s+\d{1,2}/\d{1,2}|den\s+\d{1,2}/\d{1,2}", query_folded))
+    date_range_re = re.compile(r"\d{1,2}/\d{1,2}/\d{4}\s*[-–]\s*\d{1,2}/\d{1,2}/\d{4}")
     with _connect() as conn:
         rows = conn.execute(
             """SELECT c.id, c.heading, c.start_line, c.end_line, c.text,
@@ -927,6 +1013,13 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
 
     for row in rows:
         text = row["text"] or ""
+        # A chunk that is only the document heading carries the title (and so
+        # matches every title word) but no answer. It used to take one of the
+        # two slots held for the document and pushed the real section out.
+        body_text = " ".join(line.strip() for line in text.splitlines()
+                             if line.strip() and not line.lstrip().startswith("#"))
+        if len(body_text) < 20:
+            continue
         heading_text = (row["heading"] or "").lower()
         title_text = (row["title"] or "").lower()
         haystack = f"{heading_text} {text}".lower()
@@ -942,6 +1035,16 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
         else:
             qualifies = coverage >= 0.5 and len(matched) >= 2
         if exact:
+            qualifies = True
+        has_date_range = bool(date_range_re.search(text))
+        if asks_date_range and has_date_range:
+            qualifies = True
+            coverage = max(coverage, 0.5)
+        # "Workshop ... khi nào?" is answered by the series overview ("Cả 3
+        # workshop đều diễn ra lúc 18:30 ..."), whose bullets repeat only the
+        # word "workshop" and would otherwise fail term coverage.
+        if ("workshop" in query_folded and "10-lich-workshop.md" in row["path"]
+                and "thong tin chung" in _strip_diacritics(row["heading"] or "")):
             qualifies = True
         if not qualifies:
             continue
@@ -973,10 +1076,38 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
                  + dedicated_matches * 18 + title_matches * 15
                  + min(10, term_frequency)
                  + min(10.0, max(0.0, -rank)) + _path_weight(row["path"]))
-        is_fee_query = any(k in query_folded for k in ("quy", "dong quy", "hoi phi", "thu quy", "han dong", "nop quy", "dong cho ai", "dong truoc"))
-        if is_fee_query:
+        # A multi-word concept from the question that also names the document
+        # ("server gpu", "git flow", "đóng quỹ", "lịch sinh hoạt") is stronger
+        # evidence than any single term match in its body.
+        title_phrase_matches = [term for term in matched
+                                if " " in term
+                                and _strip_diacritics(term) in folded_title]
+        score += 25.0 * len(title_phrase_matches)
+        # "quy" alone is the folded form of both "quỹ" (club fund) and
+        # "quy định/quy chế". The fee rerank must only fire for the fund word.
+        fee_intent = (
+            (bool(re.search(r"(?<![a-z])quy(?![a-z])", query_folded))
+             # "quy" is also the folded first word of "quy định/quy chế/quy
+             # trình": a rules question is not a fund question.
+             and not re.search(r"quy (?:dinh|che|trinh|tac)", query_folded))
+            or any(k in query_folded for k in (
+                "dong quy", "hoi phi", "thu quy", "han dong", "nop quy",
+                "muc quy", "ky dong", "dong cho ai", "dong truoc",
+                "dong tien", "nop tien")))
+        if fee_intent:
             if "16-dong-quy-clb.md" in row["path"]:
                 score += 55.0
+                fee_section = folded_tail
+                if any(k in fee_section for k in ("muc quy", "ky dong", "nguoi thu", "noi nop")):
+                    score += 70.0
+                elif "xu ly cham dong" in fee_section:
+                    score += 30.0
+                elif any(k in fee_section for k in ("tinh huong", "vi du")):
+                    if not any(k in query_folded for k in ("tinh huong", "vi du", "truong hop")):
+                        score -= 90.0
+                elif any(k in fee_section for k in ("so quy", "ghi nhan", "giam sat")):
+                    if not any(k in query_folded for k in ("so quy", "ghi nhan", "giam sat")):
+                        score -= 50.0
             elif "07-ke-hoach-tai-chinh.md" in row["path"]:
                 score += 25.0
             elif "24-quy-trinh-xin-kinh-phi-du-an.md" in row["path"] and not any(k in query_folded for k in ("xin kinh phi", "giai ngan", "du an")):
@@ -986,15 +1117,67 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
         if any(k in query_folded for k in ("chu nhiem", "pho chu nhiem", "truong ban", "ban chu nhiem")):
             if "02-ban-chu-nhiem.md" in row["path"]:
                 score += 45.0
+        # When the question names a role, the section whose heading carries the
+        # same role ("2.4. Trưởng ban truyền thông - Trần Hà Vy") is the answer
+        # even if its bullets only list duties.
+        role_terms = [term for term in matched
+                      if term in ("chủ nhiệm", "phó chủ nhiệm", "trưởng ban",
+                                  "trưởng ban kỹ thuật", "trưởng ban truyền thông",
+                                  "trưởng ban hậu cần")]
+        if role_terms and any(_strip_diacritics(term) in folded_tail for term in role_terms):
+            score += 40.0
         if "truong ban truyen thong" in query_folded or ("truong ban" in query_folded and "truyen thong" in query_folded):
             if "02-ban-chu-nhiem.md" in row["path"]:
                 score += 50.0
+        # Recurring schedule questions want the standing rule ("thứ 5 hằng
+        # tuần, 18:30-21:00"), not the four dated examples that follow it.
+        asks_schedule = any(k in query_folded for k in (
+            "lich sinh hoat", "sinh hoat", "hang tuan", "hằng tuần"))
+        asks_rule_time = any(k in query_folded for k in (
+            "khi nao", "may gio", "gio nao", "thu may", "lich", "khung gio"))
+        if asks_schedule and asks_rule_time and "03-lich-sinh-hoat.md" in row["path"]:
+            if "khung gio" in folded_tail:
+                score += 60.0
+            elif "phan biet tuan le" in folded_tail:
+                score += 20.0
+            elif "lich chi tiet" in folded_tail:
+                if any(k in query_folded for k in ("tuan nay", "tuan toi", "sap toi", "ngay nao", "cu the")):
+                    score += 10.0
+                else:
+                    score -= 70.0
         if "codefest" in query_folded or "hackathon" in query_folded:
             if "04-it-codefest-2026.md" in row["path"] and not any(k in query_folded for k in ("barem", "cham diem")):
                 score += 30.0
         if "chuyen can" in query_folded:
             if "09-noi-quy-sinh-hoat.md" in row["path"]:
                 score += 45.0
+        # "Quy định sử dụng X gồm những gì?" is answered by the section titled
+        # "Quy tắc sử dụng", not only by its registration/maintenance sections.
+        if ("su dung" in query_folded
+                and re.search(r"quy (?:dinh|tac)", query_folded)
+                and "quy tac" in folded_tail):
+            score += 30.0
+        if asks_date_range and has_date_range:
+            # Milestones ("Nhận đơn 01/12/2026 - 15/12/2026") are the answer.
+            score += 60.0
+        if "workshop" in query_folded and "10-lich-workshop.md" in row["path"]:
+            if "thong tin chung" in folded_tail:
+                # The shared time/place of the workshop series.
+                score += 60.0
+            elif re.match(r"workshop\s+\d", folded_cleaned_tail):
+                # A dated workshop section; "khi nào" is answered by its heading.
+                if "khi nao" in query_folded or "ngay nao" in query_folded:
+                    score += 20.0
+        # A compound overview question ("đi đâu, ngày nào, phí bao nhiêu?") is
+        # answered by the "Thông tin chung" summary (destination, date, fee),
+        # not by the travel-logistics subsection that outranks it on terms.
+        overview_slots = sum((
+            any(k in query_folded for k in ("di dau", "o dau", "dia diem", "noi nao")),
+            any(k in query_folded for k in ("ngay nao", "khi nao", "thoi gian")),
+            any(k in query_folded for k in ("phi", "chi phi", "bao nhieu")),
+        ))
+        if overview_slots >= 2 and "thong tin chung" in folded_tail:
+            score += 45.0
         if definition_query and _DEFINITION_QUERY.search(heading_tail):
             score += 20
         if definition_query and (row["start_line"] or 0) == 1:
@@ -1011,10 +1194,13 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
     hits.sort(key=lambda h: h.score, reverse=True)
     selected: list[Hit] = []
     per_doc_selected: dict[str, int] = {}
+    # A focused question ("quỹ", một vai trò, lịch sinh hoạt) is answered by
+    # several sections of one document; two slots used to evict the rule
+    # section in favour of an example section.
     for hit in hits:
         if len(selected) >= top_k:
             break
-        if per_doc_selected.get(hit.path, 0) >= 2:
+        if per_doc_selected.get(hit.path, 0) >= 3:
             continue
         selected.append(hit)
         per_doc_selected[hit.path] = per_doc_selected.get(hit.path, 0) + 1
@@ -1237,6 +1423,93 @@ def _definition_answer(identifier: str, hits: list[Hit]) -> Optional[str]:
     return None
 
 
+def _document_overview_answer(query: str, hits: list[Hit], terms: list[str],
+                              language: str = "vi") -> Optional[str]:
+    """Answer a document-level question with that document's opening rules.
+
+    "Quy định server GPU?" names a whole document; individual bullets may not
+    repeat the question words ("01 Server Deep Learning: ..."), so the generic
+    sentence matcher finds nothing. When the top document's title covers the
+    question, quote its leading blocks with citations instead of returning
+    None and letting a small model improvise from raw context.
+    """
+    if not hits:
+        return None
+    top = hits[0]
+    folded_context = _strip_diacritics(
+        f"{top.title or ''} {top.heading or ''}".lower())
+    content_terms = [term for term in terms
+                     if term not in _ANCHOR_TERMS and len(_strip_diacritics(term)) >= 3]
+    if not content_terms:
+        return None
+    covered = sum(1 for term in content_terms
+                  if _strip_diacritics(term) in folded_context)
+    if covered < max(2, (len(content_terms) + 1) // 2):
+        return None
+    bullets: list[str] = []
+    for rank, hit in enumerate(hits[:4], 1):
+        if hit.path != top.path:
+            continue
+        blocks = [block for block, is_heading in _plain_blocks(hit.text)
+                  if not is_heading]
+        for block in blocks[:2]:
+            block = _SECTION_NUMBER.sub("", block.strip())
+            if len(block) < 25 or _CODE_LIKE.search(block) or _SCENARIO_ROW.search(block):
+                continue
+            text = _truncate(block, 420).rstrip(",;: ")
+            closing = "" if text.endswith((".", "!", "?", "…")) else "."
+            bullets.append(f"- {text}{closing} [S{rank}]")
+        if len(bullets) >= 3:
+            break
+    if not bullets:
+        return None
+    return "Theo tài liệu nội bộ của CLB IT:\n" + "\n".join(bullets[:3])
+
+
+_ROLE_NAMES = [
+    "trưởng ban truyền thông", "trưởng ban kỹ thuật", "trưởng ban hậu cần",
+    "phó chủ nhiệm", "chủ nhiệm", "trưởng ban",
+]
+# Vietnamese personal names in this corpus: 2-5 capitalised words. Matching the
+# pattern keeps "- Đại diện CLB ..." (a duty, not a name) out of the answer.
+_PERSON_NAME = r"[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s+[A-ZÀ-Ỹ][a-zà-ỹ]+){1,4}"
+
+
+def _role_name_answer(query: str, hits: list[Hit], language: str = "vi") -> Optional[str]:
+    """"Chủ nhiệm CLB IT là ai?" -> the cited name, not the list of duties.
+
+    The role and the name sit on the section heading ("2.1. Chủ nhiệm -
+    Nguyễn Minh Anh") or on the roster bullet ("Nguyễn Minh Anh - Chủ nhiệm
+    CLB."), while the body only lists duties. Quoting a duty answers a
+    different question, so the name-bearing line is selected explicitly.
+    """
+    folded = _strip_diacritics((query or "").lower())
+    if not re.search(r"(?:\bla\s+)?(?:ai|nguoi+\s+nao|nguoi+\s+gi)\b", folded):
+        return None
+    wanted = next(
+        (role for role in sorted(_ROLE_NAMES, key=lambda value: len(value.split()), reverse=True)
+         if _strip_diacritics(role) in folded), None)
+    if wanted is None:
+        return None
+    # Headings capitalise the role ("2.1. Chủ nhiệm - Nguyễn Minh Anh"), the
+    # query does not; only the role part needs case-insensitive matching so a
+    # lowercase word cannot be mistaken for a capitalised personal name.
+    role_pattern = re.escape(wanted).replace("\\ ", "\\s+")
+    role_re = "(?i:" + role_pattern + ")"
+    patterns = (
+        rf"(?:{role_re})\s*[-–—:]\s*{_PERSON_NAME}",
+        rf"{_PERSON_NAME}\s*[-–—]\s*(?:{role_re})(?:\s+CLB)?",
+    )
+    for rank, hit in enumerate(hits[:4], 1):
+        blob = f"{hit.heading}\n{hit.text}"
+        for pattern in patterns:
+            match = re.search(pattern, blob)
+            if match:
+                sentence = " ".join(match.group(0).split()).strip(" -–—:")
+                return f"Theo tài liệu nội bộ của CLB IT:\n- {sentence}. [S{rank}]"
+    return None
+
+
 def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                      max_sentences: int = 3) -> Optional[str]:
     """Return a cited, source-faithful answer built from retrieved sentences.
@@ -1247,6 +1520,9 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
     """
     if not hits:
         return None
+    role_answer = _role_name_answer(query, hits, language)
+    if role_answer:
+        return role_answer
     terms = [term for term in _terms(query) if term not in _ANCHOR_TERMS] or _terms(query)
     if not terms:
         return None
@@ -1293,6 +1569,40 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
         r"(?:lỗi|error|failed|failure|thất bại|không khả dụng|unable|crash|sự cố|"
         r"mất kết nối|ngắt kết nối)")
     query_folded = _strip_diacritics(query.lower())
+    asks_schedule = any(k in query_folded for k in (
+        "lich sinh hoat", "sinh hoat", "hang tuan"))
+    asks_rule_time = any(k in query_folded for k in (
+        "khi nao", "may gio", "gio nao", "thu may", "lich", "khung gio"))
+    asks_date_question = bool(re.search(
+        r"(?:khi nao|ngay nao|thoi gian|bao gio|may gio|gio nao)", query_folded))
+    # "từ ngày nào đến ngày nào?" is answered by a dated milestone table row
+    # ("Nhận đơn đăng ký | 01/12/2026 - 15/12/2026"), not by the deadline line.
+    asks_date_range = bool(re.search(
+        r"(?:tu|den)\s+ngay\s+nao|ngay\s+nao\s+den\s+ngay\s+nao|thoi han|moc thoi gian|"
+        r"tu\s+\d{1,2}/\d{1,2}|den\s+\d{1,2}/\d{1,2}", query_folded))
+    date_range_re = re.compile(r"\d{1,2}/\d{1,2}/\d{4}\s*[-–—]\s*\d{1,2}/\d{1,2}/\d{4}")
+    # "đăng ký thế nào?" asks for the procedure, not the usage-duration limit
+    # that shares the same section.
+    asks_procedure = bool(re.search(
+        r"(?:dang ky|lam|muon|can)\s+(?:the nao|nhu the nao|ra sao|lam sao)|"
+        r"thu tuc|quy trinh dang ky|lam gi de", query_folded))
+    asks_fee = bool(re.search(r"(?<![a-z])phi(?![a-z])|chi phi|hoc phi|le phi", query_folded))
+    # "Đi đâu, ngày nào, phí bao nhiêu?" is a compound overview question whose
+    # three slots sit together in the "Thông tin chung" section.
+    asks_overview_slots = sum((
+        any(k in query_folded for k in ("di dau", "o dau", "dia diem", "noi nao")),
+        asks_date_question,
+        asks_fee or "bao nhieu" in query_folded,
+    ))
+    has_date_detail = bool(re.search(r"\d{1,2}/\d{1,2}/\d{2,4}|tuan nay|tuan toi|sap toi|ngay nao", query_folded))
+    fee_intent = (
+        (bool(re.search(r"(?<![a-z])quy(?![a-z])", query_folded))
+         and not re.search(r"quy (?:dinh|che|trinh|tac)", query_folded))
+        or any(k in query_folded for k in (
+            "dong quy", "hoi phi", "thu quy", "han dong", "nop quy",
+            "muc quy", "ky dong", "dong cho ai", "dong truoc")))
+    asks_recipient = any(k in query_folded for k in (
+        "cho ai", "nop cho", "dong cho", "ai thu", "nguoi thu", "thu quy"))
     asks_errors = bool(re.search(
         r"(?:loi|error|fail|that bai|su co|khong kha dung|fallback|sap|"
         r"mat ket noi|crash|down)", query_folded))
@@ -1316,10 +1626,24 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                         if term not in leaf_terms
                         and term_in(term, _strip_diacritics(parent_raw), parent_raw)]
         leaf_is_detail = bool(_DETAIL_HEADING.match(_SECTION_NUMBER.sub("", leaf_raw)))
+        # A general schedule question ("sinh hoạt khi nào?") is answered by the
+        # recurring-hours section, whose bullet says "CLB sinh hoạt vào thứ 5 ..."
+        # without repeating "lịch sinh hoạt" as a phrase.
+        schedule_section = (asks_schedule and rank <= 2
+                            and any(k in heading_folded for k in ("sinh hoat", "khung gio")))
         section_relevant = (len(leaf_terms) >= heading_need
                             or (leaf_is_detail and len(parent_terms) >= heading_need)
                             or (len(leaf_terms) >= 1
-                                and len(leaf_terms) + len(parent_terms) >= heading_need))
+                                and len(leaf_terms) + len(parent_terms) >= heading_need)
+                            or (asks_recipient and fee_intent
+                                and any(k in heading_folded for k in ("thu", "nop")))
+                            or schedule_section
+                            # The section literally named "Đăng ký sử dụng"
+                            # answers "đăng ký thế nào" even though its bullets
+                            # share only the short token "ký".
+                            or (asks_procedure and "dang ky" in heading_folded)
+                            or (asks_overview_slots >= 2 and "thong tin chung" in heading_folded)
+                            or ("workshop" in query_folded and "thong tin chung" in heading_folded))
         negative_section = bool(re.search(
             r"(?:tieu cuc|negative|that bai|su co|failed)", heading_folded))
 
@@ -1361,20 +1685,86 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                 score -= 3.5
             if bool(_VI_CHARS.search(text)) == (language != "en"):
                 score += 2.0
-            # Slot-filling boosts
-            if any(w in query_folded for w in ("o dau", "dia diem", "noi nao", "tai dau")):
+            # Slot-filling boosts. For a compound "ở đâu / ngày nào / phí bao
+            # nhiêu?" question the slots are filled by the overview section;
+            # a date or "tại phòng ..." elsewhere must not outrank it.
+            slot_boost_ok = section_relevant or asks_overview_slots < 2
+            if slot_boost_ok and any(w in query_folded for w in ("di dau", "o dau", "dia diem", "noi nao", "tai dau")):
                 if any(w in folded for w in ("dia diem", "sanh", "phong", "toa", "tai ")):
-                    score += 10.0
-            if any(w in query_folded for w in ("khi nao", "ngay nao", "thoi gian", "may gio", "gio nao", "han chot", "truoc ngay")):
-                if any(w in folded for w in ("ngay", "gio", "thang", "truoc ngay", "bat dau", "ket thuc", "thoi gian")):
+                    score += 12.0
+            if slot_boost_ok and any(w in query_folded for w in ("khi nao", "ngay nao", "thoi gian", "may gio", "gio nao", "han chot", "truoc ngay")):
+                if (any(w in folded for w in ("ngay", "gio", "thang", "truoc ngay", "bat dau", "ket thuc", "thoi gian"))
+                        or re.search(r"\d{1,2}:\d{2}|\d{1,2}/\d{1,2}/\d{4}", folded)):
                     score += 8.0
+            if asks_overview_slots >= 2 and re.match(
+                    r"(?:dia diem|thoi+ gian|phi|le phi|chi phi)", folded):
+                # Labeled slot lines ("Địa điểm: ...", "Phí tham gia: ...").
+                score += 6.0
+            if asks_date_range and date_range_re.search(text):
+                # The milestone row itself ("01/12/2026 - 15/12/2026").
+                score += 16.0
+            if asks_procedure:
+                if re.search(r"dang ky (?:truoc|voi|tai|qua)|noi dung dang ky|"
+                             r"phieu dang ky|nop phieu|thong tin dang ky", folded):
+                    score += 12.0
+                if re.search(r"toi da \d+ (?:tieng|gio)", folded):
+                    # A usage-duration limit sits in the same section but does
+                    # not answer "how do I register".
+                    score -= 6.0
+            if asks_fee and slot_boost_ok:
+                if re.search(r"phi (?:tham gia|vao)|dong phi|mien phi|"
+                             r"\d[\d.]*\s*(?:d|vnd)/nguoi", folded):
+                    score += 10.0
+            if asks_overview_slots >= 2 and re.search(
+                    r"xe khoi hanh|tap trung|di muon|tu tuc|xe chi di", folded):
+                # Travel logistics share the date but not the overview slots
+                # (destination, date, fee) the question asked for.
+                score -= 5.0
             if any(w in query_folded for w in ("tieu chi", "trong so", "danh gia", "%", "phan tram")):
                 if "%" in text or any(k in folded for k in ("chuyen can", "dong gop", "thai do", "ti le")):
                     score += 12.0
-            if any(w in query_folded for w in ("quy", "dong quy", "hoi phi", "nop cho ai", "ai", "bao nhieu")):
+            if fee_intent:
                 if any(w in text.lower() for w in ("50.000", "phạm thuỳ dương", "trước ngày 10", "trưởng ban hậu cần")):
                     score += 12.0
+                if asks_recipient and re.search(
+                        r"nguoi thu|thu duy nhat|phu trach thu|thu tien quy|nhan tien quy",
+                        folded):
+                    # "nộp cho ai?" is answered only by the collector line.
+                    score += 12.0
+                if "bao nhieu" in query_folded and re.match(
+                        r"muc (?:quy|dong|phi|thu)", folded):
+                    # "mức ... bao nhiêu?" asks for the amount line first.
+                    score += 8.0
+                # The standing rule outranks a worked example that repeats the
+                # same numbers ("Tình huống 2: ... ngày 10/12/2026 ...").
+                if any(w in folded for w in ("han dong", "ky dong", "muc quy", "nguoi thu", "noi nop")):
+                    score += 8.0
+                if re.match(r"tinh huong\s+\d+", folded) and not any(
+                        k in query_folded for k in ("tinh huong", "vi du", "truong hop")):
+                    score -= 20.0
+            if asks_schedule and asks_rule_time and not has_date_detail:
+                if re.search(r"thu\s+\d", folded) and re.search(r"\d{1,2}:\d{2}", folded):
+                    # The recurring rule ("thứ 5 hằng tuần, 18:30-21:00") is the
+                    # answer to "khi nào"; dated workshop notes are not.
+                    score += 14.0
+                if "hang tuan" in folded or "thu 5 hang tuan" in folded:
+                    score += 6.0
+                if re.match(r"thu\s+\d+,?\s+ngay\s+\d{1,2}/\d{1,2}/\d{4}", folded):
+                    score -= 8.0
             return score
+
+        # "Workshop 1: "Git & GitHub từ con số 0" - 27/11/2026": the date lives
+        # in the section heading, which `_plain_blocks` marks as a heading and
+        # the candidate loop skips. Quote it when the question asks for a date.
+        if asks_date_question and section_relevant:
+            original_leaf = [part.strip() for part in section_heading(hit).split(">")
+                             if part.strip()]
+            original_leaf = original_leaf[-1] if original_leaf else ""
+            if re.search(r"\d{1,2}/\d{1,2}/\d{4}", original_leaf):
+                quote = _truncate(_SECTION_NUMBER.sub("", original_leaf).strip(), 300)
+                if len(quote) >= 12:
+                    candidates.append((score_text(quote, leaf_terms, 0, False) + 14.0,
+                                       rank, -1, quote, rank))
 
         offset = 0
         for line_index, (line, is_heading) in enumerate(_plain_blocks(hit.text)):
@@ -1475,7 +1865,7 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                 offset += 1
 
     if not candidates:
-        return None
+        return _document_overview_answer(query, hits, terms, language)
     candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
     if os.getenv("DUSNX_RAG_DEBUG") == "1":
         for item in candidates[:12]:

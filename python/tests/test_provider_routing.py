@@ -48,6 +48,29 @@ def test_ollama_failure_falls_back_to_external_api(monkeypatch):
     assert text == "Trả lời dự phòng."
 
 
+def test_allow_fallback_false_keeps_compare_call_on_external_api(monkeypatch):
+    """The "So với API" comparison must never silently answer from the LoRA."""
+    monkeypatch.setattr(provider, "get_current_provider", lambda: "ollama")
+    ollama_calls = []
+
+    def fake_openai(system_prompt, user_message):
+        return _result("[OpenAI service error (unreachable)]", False, "openai", None, None)
+
+    def fake_ollama(system_prompt, user_message):
+        ollama_calls.append(user_message)
+        return _result("Trả lời từ LoRA.", True, "ollama", None, None)
+
+    monkeypatch.setattr(provider, "_openai_generate", fake_openai)
+    monkeypatch.setattr(provider, "_ollama_generate", fake_ollama)
+    text, ok, used, model, tokens = provider.generate_response(
+        "Quỹ CLB đóng bao nhiêu?", [], "chat", response_language="vi",
+        provider_override="openai", allow_fallback=False)
+    assert not ok and used == "openai"
+    assert model is None and tokens is None
+    assert ollama_calls == []
+    assert "error" in text.lower()
+
+
 def test_mock_reports_no_fabricated_model_or_tokens(monkeypatch):
     monkeypatch.setenv("DUSNX_PROVIDER", "mock")
     text, ok, used, model, tokens = provider.generate_response(
