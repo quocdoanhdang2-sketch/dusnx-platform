@@ -653,6 +653,12 @@ def club_announcements(user: CurrentUser):
                     elif m["sender_id"] in ("admin", "chunhiem"):
                         item["author_name"] = "Nguyễn Minh Anh (Chủ nhiệm CLB)"
                         item["author_role"] = "owner"
+                    elif m["sender_id"] == "truongban_tech":
+                        item["author_name"] = "Đỗ Nam Khánh (Trưởng ban kỹ thuật)"
+                        item["author_role"] = "lead"
+                    elif m["sender_id"] == "phochunhiem":
+                        item["author_name"] = "Lê Quốc Bảo (Phó chủ nhiệm)"
+                        item["author_role"] = "deputy"
                     else:
                         item["author_name"] = "Ban chủ nhiệm CLB IT"
                         item["author_role"] = "owner"
@@ -1198,7 +1204,7 @@ _QUESTION_SHAPE = re.compile(
 _CAPABILITY_QUESTION = re.compile(
     r"(?i)\b(?:bạn|bot|trợ\s*lý|assistant)\b[^?]{0,40}\b(?:"
     r"làm\s+được\s+gì|làm\s+gì|giúp\s+(?:được\s+)?gì|có\s+thể\s+làm\s+gì|"
-    r"chức\s+năng\s+gì|khả\s+năng\s+gì|biết\s+gì)\b"
+    r"chức\s+năng\s+gì|khả\s+năng\s+gì|biết\s+gì|là\s+ai|la\s+ai)\b"
 )
 
 # Words shared by every question ("của tôi", "quyết định", "năm nay"); they do

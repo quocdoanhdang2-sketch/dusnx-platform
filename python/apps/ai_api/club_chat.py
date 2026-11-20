@@ -137,13 +137,23 @@ class ClubChatDB:
                 self._conn.execute(
                     "INSERT OR IGNORE INTO conversations VALUES(?,?,?,?,?,?)",
                     (conv_id, "group", "Toàn CLB", "toan-clb", "system", _now()))
-                self._conn.execute(
-                    "INSERT OR IGNORE INTO messages VALUES(?,?,?,?,1,?)",
-                    ("msg_welcome_01", conv_id, "admin",
-                     "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Năm hằng tuần tại Phòng A2-304.",
-                     _now()))
             else:
                 conv_id = row["conv_id"]
+            default_pinned = [
+                ("msg_welcome_01", "chunhiem",
+                 "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Năm hằng tuần tại Phòng A2-304.",
+                 "2026-11-16T08:00:00Z"),
+                ("msg_codefest_02", "truongban_tech",
+                 "IT CodeFest 2026 chính thức mở đơn đăng ký. Hạn chót đăng ký trước ngày 10/12/2026 tại phòng A2-304. Chung kết tại sảnh tòa B!",
+                 "2026-11-15T14:30:00Z"),
+                ("msg_fund_03", "phochunhiem",
+                 "Các thành viên vui lòng hoàn thành đóng quỹ CLB (50.000đ/tháng) cho Trưởng ban hậu cần Phạm Thuỳ Dương trước ngày 10 hằng tháng.",
+                 "2026-11-14T09:00:00Z"),
+            ]
+            for mid, sender, content, ts in default_pinned:
+                self._conn.execute(
+                    "INSERT OR IGNORE INTO messages VALUES(?,?,?,?,1,?)",
+                    (mid, conv_id, sender, content, ts))
             self._conn.execute(
                 "INSERT OR IGNORE INTO conversation_members(conv_id, user_id, can_pin) VALUES(?,?,0)",
                 (conv_id, user_id))

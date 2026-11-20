@@ -1,10 +1,10 @@
 {
   "run_idx": 1,
-  "timestamp": "2026-11-20T15:03:36Z",
+  "timestamp": "2026-11-20T15:49:38Z",
   "gateway": "http://127.0.0.1:8090",
   "all_passed": true,
-  "total_cases": 12,
-  "passed_cases": 12,
+  "total_cases": 13,
+  "passed_cases": 13,
   "cases": [
     {
       "id": "CASE-1",
@@ -19,7 +19,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 94.0
+      "wall_ms": 188.0
     },
     {
       "id": "CASE-2",
@@ -34,7 +34,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 78.0
     },
     {
       "id": "CASE-3",
@@ -49,7 +49,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 32.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-4",
@@ -64,7 +64,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-5",
@@ -79,7 +79,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 62.0
     },
     {
       "id": "CASE-6",
@@ -94,7 +94,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-7",
@@ -109,7 +109,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 32.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-8",
@@ -124,7 +124,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 62.0
     },
     {
       "id": "CASE-9",
@@ -139,7 +139,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 32.0
     },
     {
       "id": "CASE-10",
@@ -154,7 +154,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 62.0
     },
     {
       "id": "CASE-11",
@@ -169,7 +169,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 16.0
     },
     {
       "id": "CASE-12",
@@ -184,7 +184,22 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 16.0
+      "wall_ms": 15.0
+    },
+    {
+      "id": "CASE-13",
+      "name": "Self-trained model generation (LoRA / dusnx-vi-club)",
+      "query": "Cảm ơn bạn rất nhiều!",
+      "passed": true,
+      "errors": [],
+      "reply_preview": "Chào bạn! Câu hỏi của bạn là 'Hãy trả lời bằng tiếng Việt'.",
+      "top_source": null,
+      "source_type": "llm",
+      "intent": "recommendation",
+      "provider_used": "ollama",
+      "provider_called": true,
+      "provider_elapsed_ms": 766.0000000000764,
+      "wall_ms": 797.0
     }
   ],
   "api_comparison": {
@@ -194,7 +209,7 @@
     "provider_used": "openai",
     "model": "gemini-3.1-flash-lite",
     "tokens": 28,
-    "latency_ms": 1485,
+    "latency_ms": 1016,
     "primary_provider": null
   }
 }

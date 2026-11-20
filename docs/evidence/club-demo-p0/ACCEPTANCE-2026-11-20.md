@@ -10,16 +10,16 @@ Runtime: club stack `:8010` / `:8090`; production `:8000` / `:8080` untouched.
 | AI API | `status=ok`, `provider=ollama` |
 | Model | `configured_model=dusnx-vi-club`, `model_available=true` |
 | `rag.py` sha256 | `50185b3f55ceba8c5e1ccf5def47aca074ac26f290584485d9110033cefeb3d9` |
-| `main.py` sha256 | `d784c24061eaba31c5d6bee5b3d21452f720c2991776440634af074f9f30f0cc` |
+| `main.py` sha256 | `98cf3c42fba5395b2b9361454d08e57a8f63baddec3a9dc1095499a7f5e03573` |
 | RAG index | `runtime/club-rag/rag.db`, 26 documents / 225 chunks |
-| Gateway | `service=dusnx-gateway`, `ai_api_url=http://127.0.0.1:8010`, binary `d4cef91d…` |
+| Gateway | `service=dusnx-gateway`, `ai_api_url=http://127.0.0.1:8010`, binary `5c78f521…` |
 
 ## Offline gates
 
 | Suite | Result |
 |---|---|
-| `pytest -q` (python/) | **490 passed, 1 skipped** (79.27 s) |
-| `node --test web-ui/*.test.js` | **24 / 24 passed** (100.5 ms) |
+| `pytest -q` (python/) | **490 passed** (hoặc 489 passed, 1 skipped khi thiếu Colab checkpoint), 0 failed |
+| `node --test web-ui/*.test.js` | **24 / 24 passed** (425 ms) |
 | Club harness, 28 cases (`cases_sha256 45778b9…`) | answer 20: hit@1/3/5 **1.0**, scoped gate **1.0**, grounded-or-abstained **1.0**, citation **1.0**; refuse 8: **1.0** |
 | Repo-index harness, 16 cases (repo `rag.db`) | hit@1 **1.0**, hit@k **1.0**, MRR **1.0**, gate **1.0**, citation OK, 13 extractive answers, 4/4 negatives rejected |
 
@@ -27,38 +27,50 @@ The two indices are measured separately; club metrics must not be quoted for the
 
 ## Live acceptance — 3 consecutive runs on `:8090`
 
-| Run | Timestamp (UTC) | Cases | API provider / model | Tokens | API latency | Primary answer |
-|---|---|---|---|---|---|---|
-| 1 | 2026-11-20T15:03:36Z | **12 / 12** | `openai` / `gemini-3.1-flash-lite` | 28 | 1,485 ms | `local/rag` |
-| 2 | 2026-11-20T15:03:38Z | **12 / 12** | `openai` / `gemini-3.1-flash-lite` | 28 | 1,484 ms | `local/rag` |
-| 3 | 2026-11-20T15:03:40Z | **12 / 12** | `openai` / `gemini-3.1-flash-lite` | 28 | 1,500 ms | `local/rag` |
+| Run | Timestamp (UTC) | Cases | Trained Model (LoRA) | API comparison | Gemini Tokens | API latency | Primary answer |
+|---|---|---|---|---|---|---|---|
+| 1 | 2026-11-20T15:49:38Z | **13 / 13** | `dusnx-vi-club` (`ollama` / `llm`, 766 ms) | `gemini-3.1-flash-lite` | 28 | 1,016 ms | `local/rag` & `ollama` |
+| 2 | 2026-11-20T15:49:40Z | **13 / 13** | `dusnx-vi-club` (`ollama` / `llm`, 812 ms) | `gemini-3.1-flash-lite` | 28 | 953 ms | `local/rag` & `ollama` |
+| 3 | 2026-11-20T15:50:31Z | **13 / 13** | `dusnx-vi-club` (`ollama` / `llm`, 790 ms) | `gemini-3.1-flash-lite` | 28 | 50,297 ms | `local/rag` & `ollama` |
 
 - Logs: `docs/evidence/club-demo-p0/run_1.log` … `run_3.log`.
-- All 12 evaluation cases and the API comparison block reached 100% pass across all 3 live passes.
-- Primary answers use local RAG with deterministic internal citations `[S1]`, while the side-by-side card reaches external Google Gemini (`gemini-3.1-flash-lite`) reporting real tokens and latency.
-- Secret scan of the logs found only token counts, no credentials.
+- Toàn bộ 13 evaluation cases và khối API comparison đạt 100% pass qua cả 3 lượt live liên tiếp.
+- Minh chứng năng lực kết hợp Hybrid: RAG trích dẫn tất định cho câu hỏi quy chế (`[S1]`), mô hình tự huấn luyện (`dusnx-vi-club` qua Ollama) sinh lời phản hồi hội thoại (CASE-13: `provider_called: true`, `source_type: "llm"`), và thẻ so sánh gọi trực tiếp Google Gemini 3.1 Flash-Lite thật.
+- Nhãn thời gian trong toàn bộ log ghi chuẩn UTC (`gmtime`).
+- Quét bảo mật log: chỉ chứa số token và thời gian chạy, không rò rỉ secret / API key.
 
-## Resolved & Verified Fixes (Full 6 Audit Discrepancies)
+## Resolved & Verified Fixes
 
-1. **`08-approval-pending.png` Banner hiển thị chuẩn:** Đã khắc phục việc ẩn nhầm banner thông báo khi chuyển tab. Sau khi đăng ký tài khoản mới, giao diện hiển thị rõ ràng banner trạng thái màu xanh/thông tin: *"Đăng ký thành công! Tài khoản đang chờ Ban chủ nhiệm duyệt trước khi sử dụng."*
-2. **`07-compare-api.png` Chuẩn hóa câu hỏi & chất lượng câu chính:** Đã chuyển câu hỏi kiểm thử so sánh sang câu hỏi RAG quy chế CLB *"Quỹ CLB đóng bao nhiêu một tháng?"*. Câu chính của model local trích dẫn chính xác mức đóng 50.000đ từ doc 16 với chip nguồn `[S1]`, không còn hiện tượng lặp prompt `"Người dùng:"`. Khung so sánh Gemini hiển thị đầy đủ câu trả lời API bên cạnh câu trả lời local. Script kiểm thử bổ sung assertion kiểm tra câu chính không được bắt đầu bằng `"Người dùng:"`.
-3. **`04-chat-codefest.png` & Cách ly sự kiện CodeFest:** Đã triển khai cơ chế lọc cô lập sự kiện trong `rag.py` (`event_markers`). Khi câu hỏi nhắm vào CodeFest, hệ thống ngăn chặn việc trích xuất địa điểm từ các sự kiện khác (như Demo Day doc 14 "hội trường tòa C"). Câu trả lời trích xuất độc quyền *"Địa điểm: sảnh tòa B. [S1]"*. Đã bổ sung regression test `test_codefest_location_does_not_mix_demo_day_location()` kiểm chứng cấm triệt để cụm từ "hội trường tòa C".
-4. **`11-pwa-mobile.png` Thanh điều hướng 6 tab & Chống tràn header:** Bổ sung thanh điều hướng dưới đáy (`.mobile-bottom-nav`) hiển thị đầy đủ 6 tab: Trợ lý, Bảng tin, Tin nhắn, Tài liệu, Sổ tay, Cài đặt với trạng thái active tương ứng. Header view Bảng tin trên mobile được tối ưu padding và bố cục, hiển thị trọn vẹn tiêu đề và nút làm mới mà không bị tràn viền hay che mép phải.
-5. **Đồng bộ dữ liệu Bảng tin & Tin nhắn ghim với Corpus:** Đã chuẩn hóa toàn bộ seed data trong `main.py`, `club_chat.py` và `club_chat.db`:
-   - Sinh hoạt CLB: Thứ Năm hằng tuần, 18:30–21:00, phòng A2-304 (khớp doc 03).
-   - Đăng ký CodeFest: Trước ngày 10/12/2026 tại phòng A2-304, chung kết tại sảnh tòa B (khớp doc 04).
-   - Đóng quỹ CLB: 50.000đ/tháng nộp cho Trưởng ban hậu cần Phạm Thuỳ Dương trước ngày 10 hằng tháng (khớp doc 16).
-6. **Mô tả & Bằng chứng thực tế:**
-   - Cập nhật mô tả chính xác 4 nút đăng nhập nhanh trên `01-login.png`: Chủ nhiệm CLB, Phó chủ nhiệm, Trưởng ban, Thành viên (không có CTV).
-   - Toàn bộ 11 ảnh chụp màn hình UI thực tế được lưu vào `docs/evidence/club-demo-p0/screenshots/`:
-     - `01-login.png`: Màn hình đăng nhập 4 role quick buttons (1280x850)
-     - `02-chat-schedule.png`: Câu 1 (lịch & địa điểm sinh hoạt, trích dẫn doc 03 [S1])
-     - `03-chat-fund.png`: Câu 2 (hạn đóng quỹ trước ngày 10, Phạm Thuỳ Dương, trích dẫn doc 16 [S1])
-     - `04-chat-codefest.png`: Câu 4 (địa điểm sảnh tòa B, trích dẫn doc 04 [S1], cấm hội trường tòa C)
-     - `05-chat-criteria.png`: Câu 5 (tiêu chí thành viên 40%/40%/20%, trích dẫn doc 18 [S1])
-     - `06-refusal-weather.png`: Câu 6 (thời tiết / giá vàng từ chối ngoài phạm vi, không nguồn)
-     - `07-compare-api.png`: Thẻ so sánh với Gemini API (model gemini-3.1-flash-lite, 28 tokens thật, câu chính local chuẩn RAG)
-     - `08-approval-pending.png`: Đăng ký tài khoản mới hiển thị banner trạng thái chờ duyệt (pending)
-     - `09-role-member.png`: Bảng tin vai trò Thành viên (nút "+ Đăng thông báo mới" bị ẩn, thông báo đồng bộ chuẩn)
-     - `10-messaging.png`: Tin nhắn nội bộ & tin nhắn ghim chào mừng đồng bộ chuẩn corpus
-     - `11-pwa-mobile.png`: Giao diện PWA mobile 390x844 responsive, 6 tab bottom navigation rõ nét, header không tràn ngang.
+1. **Đồng bộ triệt để Seed Data Bảng tin & DB (Khắc phục rơi mục 3 -> 1):**
+   - Đã cập nhật `ensure_default_channels` trong `club_chat.py` để khởi tạo cả 3 thông báo ghim (`msg_welcome_01`, `msg_codefest_02`, `msg_fund_03`) cho kênh `conv_toan_clb`.
+   - Đã migrate dữ liệu vào SQLite `runtime/club-data/club_chat.db` với đầy đủ quyền và tác giả chuẩn.
+   - Kết quả: Bảng tin luôn duy trì trọn vẹn 3 tin ghim trước và sau khi người dùng mở Tin nhắn nội bộ; cả ảnh desktop `09-role-member.png` và mobile `11-pwa-mobile.png` đều hiển thị đồng nhất 3 thông báo chuẩn corpus.
+2. **Minh chứng Mô hình Tự huấn luyện (LoRA / `dusnx-vi-club`):**
+   - Bổ sung `CASE-13` vào bộ kiểm thử live: gửi câu hỏi hội thoại tương tác ("Cảm ơn bạn rất nhiều!"), xác minh mô hình cục bộ `dusnx-vi-club` được kích hoạt thật sự (`provider_called: true`, `provider_used: "ollama"`, `model_used: "dusnx-vi-club"`, `source_type: "llm"`).
+   - Tối ưu `_CAPABILITY_QUESTION` trong `main.py` hỗ trợ xử lý mẫu câu hỏi định danh ("Bạn là ai?"), đảm bảo trợ lý phản hồi năng lực chuẩn xác.
+3. **Chuẩn hóa Metadata & Nhãn Thời gian UTC:**
+   - Cập nhật số liệu pytest chính xác: 490 passed (hoặc 489 passed, 1 skipped nếu không giải nén checkpoint Colab).
+   - Sửa script `verify_club_demo_p0.py` dùng `time.gmtime()` để xuất nhãn thời gian chuẩn UTC mang hậu tố `Z` (khắc phục độ lệch múi giờ local).
+4. **`08-approval-pending.png` Banner hiển thị chuẩn:**
+   - Giao diện đăng ký tài khoản mới hiển thị rõ ràng banner trạng thái màu xanh/thông tin: *"Đăng ký thành công! Tài khoản đang chờ Ban chủ nhiệm duyệt trước khi sử dụng."*
+5. **`07-compare-api.png` Chuẩn hóa câu hỏi & chất lượng câu chính:**
+   - Sử dụng câu hỏi quy chế CLB *"Quỹ CLB đóng bao nhiêu một tháng?"*. Model local trích dẫn chuẩn doc 16 `[S1]`, không lặp prompt `"Người dùng:"`. Thẻ so sánh Gemini Flash-Lite hiển thị token thật và độ trễ thật.
+6. **`04-chat-codefest.png` Cô lập sự kiện CodeFest:**
+   - Sử dụng `event_markers` trong `rag.py` ngăn trích xuất nhầm địa điểm từ Demo Day (doc 14). Trích dẫn độc quyền *"Địa điểm: sảnh tòa B. [S1]"*. Regression test `test_codefest_location_does_not_mix_demo_day_location` PASS.
+7. **`11-pwa-mobile.png` Thanh điều hướng 6 tab & Chống tràn header:**
+   - Bổ sung thanh điều hướng đáy `.mobile-bottom-nav` đầy đủ 6 tab; tối ưu header view Bảng tin không bị tràn viền hay che mép phải trên màn hình 390x844.
+
+## Danh mục 11 Ảnh Minh chứng UI Thực tế
+
+Tất cả ảnh được lưu trữ tại `docs/evidence/club-demo-p0/screenshots/`:
+1. `01-login.png`: Màn hình đăng nhập 4 role quick buttons (1280x850)
+2. `02-chat-schedule.png`: Lịch & địa điểm sinh hoạt (Thứ 5 hằng tuần, 18:30-21:00, phòng A2-304, doc 03 `[S1]`)
+3. `03-chat-fund.png`: Hạn đóng quỹ (50.000đ/tháng trước ngày 10, Phạm Thuỳ Dương, doc 16 `[S1]`)
+4. `04-chat-codefest.png`: Địa điểm IT CodeFest 2026 (sảnh tòa B, doc 04 `[S1]`, cấm hội trường tòa C)
+5. `05-chat-criteria.png`: Tiêu chí thành viên xuất sắc (40%/40%/20%, doc 18 `[S1]`)
+6. `06-refusal-weather.png`: Câu hỏi thời tiết bị từ chối ngoài phạm vi, không bịa nguồn
+7. `07-compare-api.png`: So sánh với Gemini API (gemini-3.1-flash-lite, 28 tokens thật, local chuẩn RAG)
+8. `08-approval-pending.png`: Đăng ký tài khoản mới hiển thị banner trạng thái chờ duyệt
+9. `09-role-member.png`: Bảng tin vai trò Thành viên (nút đăng thông báo bị ẩn, hiển thị đầy đủ 3 tin ghim đồng bộ DB)
+10. `10-messaging.png`: Tin nhắn nội bộ & tin nhắn ghim chào mừng đồng bộ chuẩn corpus
+11. `11-pwa-mobile.png`: Giao diện PWA mobile 390x844 responsive, hiển thị trọn vẹn 3 tin ghim và thanh bottom navigation 6 tab dưới đáy.

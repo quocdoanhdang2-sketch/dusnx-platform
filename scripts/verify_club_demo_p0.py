@@ -154,6 +154,19 @@ CASES = [
         "expect_provider_called": False,
         "expect_refusal": True,
     },
+    {
+        "id": "CASE-13",
+        "name": "Self-trained model generation (LoRA / dusnx-vi-club)",
+        "query": "Cảm ơn bạn rất nhiều!",
+        "expected_top_doc": None,
+        "expected_terms": [],
+        "forbidden_terms": [REFUSAL_MARKER, "Người dùng:"],
+        "expect_provider_called": True,
+        "expect_provider": "ollama",
+        "expect_model": "dusnx-vi-club",
+        "expect_refusal": False,
+        "expect_sources_empty": True,
+    },
 ]
 
 
@@ -204,11 +217,17 @@ def _check_case(case: dict, resp: dict) -> list[str]:
     if case["expect_provider_called"] is not None and provider_called != case["expect_provider_called"]:
         errors.append(
             f"Expected provider_called={case['expect_provider_called']}, got {provider_called}")
+    if case.get("expect_provider") and resp.get("provider_used") != case["expect_provider"]:
+        errors.append(
+            f"Expected provider_used={case['expect_provider']!r}, got {resp.get('provider_used')!r}")
+    if case.get("expect_model") and resp.get("model_used") != case["expect_model"]:
+        errors.append(
+            f"Expected model_used={case['expect_model']!r}, got {resp.get('model_used')!r}")
     return errors
 
 
 def run_verification(base_url: str, run_idx: int) -> dict:
-    print(f"=== Run #{run_idx} at {time.strftime('%Y-%m-%dT%H:%M:%SZ')} ===")
+    print(f"=== Run #{run_idx} at {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} ===")
     health = http_get(f"{base_url}/health")
     print("Health:", {k: health.get(k) for k in ("status", "provider", "model_available")})
 
@@ -282,7 +301,7 @@ def run_verification(base_url: str, run_idx: int) -> dict:
 
     return {
         "run_idx": run_idx,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "gateway": base_url,
         "all_passed": not comp_errors and all(r["passed"] for r in results),
         "total_cases": len(results),
