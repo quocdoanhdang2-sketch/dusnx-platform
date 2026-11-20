@@ -242,6 +242,18 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.status-note.info, .auth-note-info {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #065f46;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  display: block;
+}
+
 .btn-primary {
   padding: 12px 24px;
   background: var(--accent-gradient);
@@ -1219,6 +1231,10 @@ button:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible
 
 /* ── Responsive ──────────────────────────────────── */
 
+.mobile-bottom-nav {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .sidebar {
     position: fixed;
@@ -1229,6 +1245,65 @@ button:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible
   .sidebar.open { transform: translateX(0); }
   .sidebar-toggle-mobile { display: flex; }
   .mobile-header { display: flex; }
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    z-index: 150;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 4px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  }
+  .mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-secondary, #64748b);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+    flex: 1;
+    max-width: 60px;
+    transition: all 0.15s ease;
+  }
+  .mobile-bottom-nav-item.active {
+    color: var(--primary, #10b981);
+    font-weight: 600;
+  }
+  .mobile-bottom-nav-item .m-nav-icon {
+    font-size: 18px;
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+  .main-content {
+    padding-bottom: 64px !important;
+  }
+  .view-header {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .view-title {
+    font-size: 17px;
+  }
+  .view-subtitle {
+    font-size: 12px;
+  }
+  .view-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
   .message { max-width: 95%; }
   .bubble { max-width: 95%; }
   .welcome-hints { flex-direction: column; align-items: stretch; }

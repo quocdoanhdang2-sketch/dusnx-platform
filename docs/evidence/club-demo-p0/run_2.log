@@ -1,6 +1,6 @@
 {
   "run_idx": 2,
-  "timestamp": "2026-11-20T13:31:46Z",
+  "timestamp": "2026-11-20T15:03:38Z",
   "gateway": "http://127.0.0.1:8090",
   "all_passed": true,
   "total_cases": 12,
@@ -19,7 +19,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 62.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-2",
@@ -49,7 +49,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 94.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-4",
@@ -79,7 +79,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 62.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-6",
@@ -94,7 +94,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 47.0
+      "wall_ms": 16.0
     },
     {
       "id": "CASE-7",
@@ -109,7 +109,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-8",
@@ -124,7 +124,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 204.0
+      "wall_ms": 31.0
     },
     {
       "id": "CASE-9",
@@ -139,7 +139,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 109.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-10",
@@ -154,7 +154,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 125.0
+      "wall_ms": 47.0
     },
     {
       "id": "CASE-11",
@@ -169,7 +169,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 31.0
+      "wall_ms": 15.0
     },
     {
       "id": "CASE-12",
@@ -184,7 +184,7 @@
       "provider_used": null,
       "provider_called": false,
       "provider_elapsed_ms": 0.0,
-      "wall_ms": 16.0
+      "wall_ms": 32.0
     }
   ],
   "api_comparison": {
@@ -193,8 +193,8 @@
     "provider": "openai",
     "provider_used": "openai",
     "model": "gemini-3.1-flash-lite",
-    "tokens": 94,
-    "latency_ms": 1688,
-    "primary_provider": "ollama"
+    "tokens": 28,
+    "latency_ms": 1484,
+    "primary_provider": null
   }
 }

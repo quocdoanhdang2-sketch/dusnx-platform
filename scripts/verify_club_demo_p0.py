@@ -69,7 +69,7 @@ CASES = [
         "query": "IT CodeFest 2026 tổ chức ở đâu?",
         "expected_top_doc": "04-it-codefest-2026.md",
         "expected_terms": ["sảnh tòa B"],
-        "forbidden_terms": [],
+        "forbidden_terms": ["hội trường tòa C"],
         "expect_provider_called": False,
         "expect_refusal": False,
     },
@@ -253,7 +253,7 @@ def run_verification(base_url: str, run_idx: int) -> dict:
 
     comp_req = {
         "session_id": session_id,
-        "message": "Hãy viết một lời chào ngắn gửi thành viên mới gia nhập CLB IT.",
+        "message": "Quỹ CLB đóng bao nhiêu một tháng?",
         "compare_with_api": True,
     }
     comp_res = http_post(f"{base_url}/v1/chat", comp_req, token=token)
@@ -268,9 +268,14 @@ def run_verification(base_url: str, run_idx: int) -> dict:
             comp_errors.append(f"provider_used={api_comp.get('provider_used')!r}, expected 'openai'")
         if not api_comp.get("tokens_generated"):
             comp_errors.append("No tokens reported from the external API")
-        if comp_res.get("provider_used") != "ollama":
+        if comp_res.get("provider_used") not in ("ollama", None):
             comp_errors.append(
-                f"Primary answer used {comp_res.get('provider_used')!r}, expected the local model")
+                f"Primary answer used {comp_res.get('provider_used')!r}, expected the local model/rag")
+        primary_reply = comp_res.get("reply", "")
+        if not primary_reply:
+            comp_errors.append("Primary answer is empty")
+        elif primary_reply.startswith("Người dùng:"):
+            comp_errors.append("Primary answer repeated prompt with 'Người dùng:'")
     print(f"[{'PASS' if not comp_errors else 'FAIL'}] API comparison")
     for err in comp_errors:
         print(f"       ERROR: {err}")

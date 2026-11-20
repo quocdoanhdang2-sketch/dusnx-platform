@@ -140,7 +140,7 @@ class ClubChatDB:
                 self._conn.execute(
                     "INSERT OR IGNORE INTO messages VALUES(?,?,?,?,1,?)",
                     ("msg_welcome_01", conv_id, "admin",
-                     "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Sáu tại Phòng Lab 402.",
+                     "Chào mừng các bạn gia nhập CLB IT! Buổi sinh hoạt toàn CLB diễn ra vào 18h30 Thứ Năm hằng tuần tại Phòng A2-304.",
                      _now()))
             else:
                 conv_id = row["conv_id"]

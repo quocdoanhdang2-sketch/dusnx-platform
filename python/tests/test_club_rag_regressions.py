@@ -53,6 +53,13 @@ def test_lab_registration_quotes_procedure_not_duration_limit():
     assert "3 tiếng" not in answer
 
 
+def test_codefest_location_does_not_mix_demo_day_location():
+    answer = _answer("IT CodeFest 2026 tổ chức ở đâu, đăng ký khi nào?")
+    assert "sảnh tòa B" in answer
+    assert "hội trường tòa C" not in answer
+    assert "demo day" not in answer.lower()
+
+
 def test_domain_classifier_accepts_club_questions_and_rejects_general():
     for question in (
         "CLB IT sinh hoạt vào thứ mấy, mấy giờ?",

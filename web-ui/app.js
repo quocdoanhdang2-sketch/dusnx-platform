@@ -206,6 +206,12 @@ async function handleRegister(event) {
       await enterApp();
     } catch (loginErr) {
       if (loginErr.message && (loginErr.message.includes("chờ") || loginErr.message.includes("pending"))) {
+        const loginErrEl = el("loginError");
+        if (loginErrEl) {
+          loginErrEl.textContent = "Đăng ký thành công! Tài khoản đang chờ Ban chủ nhiệm duyệt trước khi sử dụng.";
+          loginErrEl.className = "status-note info";
+          loginErrEl.hidden = false;
+        }
         errorEl.textContent = "Đăng ký thành công! Tài khoản đang chờ Ban chủ nhiệm duyệt trước khi sử dụng.";
         errorEl.className = "status-note info";
         errorEl.hidden = false;
@@ -344,6 +350,9 @@ function showScreen(id) {
 function showView(view) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll(".sidebar-nav-item").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".mobile-bottom-nav-item").forEach(b => b.classList.remove("active"));
+  const mNavId = "mobileNav" + view.charAt(0).toUpperCase() + view.slice(1);
+  el(mNavId)?.classList.add("active");
   if (view === "chat") {
     el("viewChat")?.classList.add("active");
     el("navChat")?.classList.add("active");

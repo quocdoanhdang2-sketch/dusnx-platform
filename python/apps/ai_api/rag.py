@@ -1608,7 +1608,19 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
         r"mat ket noi|crash|down)", query_folded))
 
     candidates: list[tuple[float, int, int, str, int]] = []
+    event_markers = (
+        ("codefest", ("04-it-codefest-2026.md", "20-tieu-chi-cham-thi-codefest.md")),
+        ("demo day", ("14-demo-day.md",)),
+        ("team building", ("17-team-building.md",)),
+    )
+    target_markers = next(
+        (markers for event_name, markers in event_markers
+         if event_name in query_folded and any(m in hits[0].path for m in markers)),
+        None,
+    )
     for rank, hit in enumerate(hits[:3], 1):
+        if target_markers and not any(m in hit.path for m in target_markers):
+            continue
         heading_raw = section_heading(hit).lower()
         heading_folded = _strip_diacritics(heading_raw)
         title_folded = _strip_diacritics((hit.title or "").lower()).rstrip(".")
