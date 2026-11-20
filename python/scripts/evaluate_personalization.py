@@ -356,6 +356,7 @@ def main():
     scratch = REPO_ROOT / "runtime/week3-scratch" / secrets.token_hex(8)
     scratch.mkdir(parents=True)
     os.environ["DUSNX_DATA_DIR"] = str(scratch)
+    os.environ["DUSNX_DEFAULT_USER_STATUS"] = "approved"
     from fastapi.testclient import TestClient
     import apps.ai_api.main as main_mod
     from apps.ai_api.provider import generate_response

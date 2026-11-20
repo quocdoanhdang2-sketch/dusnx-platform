@@ -54,6 +54,7 @@ jobs:
       - name: Validate and replay personalization pilot (mock, pipeline only)
         env:
           PYTHONPATH: "python/src:python:."
+          DUSNX_DEFAULT_USER_STATUS: "approved"
         run: |
           python python/scripts/evaluate_personalization.py --validate-only
           python python/scripts/evaluate_personalization.py --provider mock --device cpu --output-dir runtime/ci-pilot
