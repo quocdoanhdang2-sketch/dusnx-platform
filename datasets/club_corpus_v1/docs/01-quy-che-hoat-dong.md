@@ -1,7 +1,7 @@
 # Quy chế hoạt động CLB IT
 
-## 1. Mục đích và Đơn vị trực thuộc
-Câu lạc bộ IT (gọi tắt là CLB IT) là tổ chức sinh viên học thuật và công nghệ trực thuộc Trường Đại học Công nghệ Thông tin và Truyền thông - Đại học Thái Nguyên (ICTU). CLB hoạt động phi lợi nhuận nhằm tạo môi trường học tập, nghiên cứu và rèn luyện kỹ năng công nghệ thông tin cho sinh viên ICTU. Quy chế này là văn bản gốc điều chỉnh mọi hoạt động của CLB, áp dụng cho toàn bộ thành viên từ ngày ban hành.
+## 1. Mục đích
+Câu lạc bộ IT (gọi tắt là CLB IT) là tổ chức sinh viên tình nguyện trực thuộc Trường Đại học Công nghệ Thông tin và Truyền thông - Đại học Thái Nguyên (ICTU), hoạt động phi lợi nhuận nhằm tạo môi trường học tập và rèn luyện kỹ năng tin học cho sinh viên yêu thích công nghệ. Quy chế này là văn bản gốc điều chỉnh mọi hoạt động của CLB, áp dụng cho toàn bộ thành viên từ ngày ban hành.
 
 ## 2. Tôn chỉ và nguyên tắc
 - Tôn chỉ: "Học hỏi - Chia sẻ - Sáng tạo".

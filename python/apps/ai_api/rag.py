@@ -1190,6 +1190,14 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
                 score += 150.0
             if "truong hop" in folded_tail and not "truong hop" in query_folded:
                 score -= 80.0
+        asks_club_overview = bool(re.search(
+            r"(?:clb\s+it\s+la\s+gi|gioi\s+thieu\s+ve\s+clb|biet\s+gi\s+ve\s+clb|ve\s+clb\s+it)",
+            query_folded))
+        if asks_club_overview:
+            if "01-quy-che-hoat-dong.md" in row["path"]:
+                score += 85.0
+            elif "15-nhan-dien-clb.md" in row["path"]:
+                score -= 40.0
         if "workshop" in query_folded and "10-lich-workshop.md" in row["path"]:
             if "thong tin chung" in folded_tail:
                 # The shared time/place of the workshop series.
@@ -1527,7 +1535,15 @@ def _club_overview_answer(query: str, hits: list[Hit], language: str = "vi") -> 
                       heading=rows[0]["heading"], start_line=rows[0]["start_line"],
                       end_line=rows[-1]["end_line"],
                       text="\n".join(row["text"] for row in rows), score=0.0)
-    text = charter.text or ""
+    try:
+        root = _repo_root()
+        charter_p = root / "datasets" / "club_corpus_v1" / "docs" / "01-quy-che-hoat-dong.md"
+        if charter_p.is_file():
+            text = charter_p.read_text(encoding="utf-8", errors="replace")
+        else:
+            text = charter.text or ""
+    except Exception:
+        text = charter.text or ""
     purpose = re.search(r"Câu lạc bộ IT \(gọi tắt là CLB IT\) là [^.]{40,400}\.", text)
     motto = re.search(r"Tôn chỉ:\s*[\"“]([^\"”]+)[\"”]", text)
     committees = re.findall(r"-\s*(Ban (?:kỹ thuật|truyền thông|hậu cần))\s*:", text)
