@@ -351,17 +351,33 @@ body {
   gap: 2px;
 }
 
-.session-item {
+.session-row {
   display: flex;
   align-items: center;
-  padding: 9px 12px;
+  position: relative;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+  width: 100%;
+}
+.session-row:hover .session-item-delete {
+  opacity: 0.7;
+}
+
+.session-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 9px 8px 9px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  background: transparent;
   transition: all var(--transition);
   font-size: 13px;
   color: var(--text-secondary);
   border: 1px solid transparent;
   user-select: none;
+  text-align: left;
 }
 .session-item:hover { background: var(--bg-hover); color: var(--text-primary); }
 .session-item.active {
@@ -375,6 +391,50 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.session-item-delete {
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.session-item-delete:hover {
+  opacity: 1 !important;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.clear-sessions-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+.clear-sessions-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .session-item-delete {
+    opacity: 0.6;
+  }
 }
 
 .session-empty {

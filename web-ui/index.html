@@ -136,7 +136,10 @@
         <span class="nav-icon" aria-hidden="true">👤</span> Hồ sơ & Cài đặt
       </button>
 
-      <div class="nav-section-label">Phiên trò chuyện AI</div>
+      <div class="nav-section-label" style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px;">
+        <span>Phiên trò chuyện AI</span>
+        <button id="clearAllSessionsBtn" class="clear-sessions-btn" title="Dọn dẹp tất cả phiên chat" onclick="clearAllSessions()">Dọn dẹp</button>
+      </div>
       <ul id="sessionList" class="session-list" role="list"></ul>
     </nav>
 

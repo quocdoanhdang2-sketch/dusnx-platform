@@ -469,6 +469,8 @@ function renderSessionList(sessions) {
   for (const sess of visible) {
     const li = document.createElement("li");
     li.role = "listitem";
+    li.className = "session-row";
+
     const btn = document.createElement("button");
     btn.className = "session-item" + (sess.session_id === currentSessionId ? " active" : "");
     btn.setAttribute("data-session-id", sess.session_id);
@@ -478,7 +480,46 @@ function renderSessionList(sessions) {
     btn.appendChild(textEl);
     btn.onclick = () => openSession(sess.session_id, sess.title);
     li.appendChild(btn);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "session-item-delete";
+    delBtn.setAttribute("title", "Xóa phiên chat này");
+    delBtn.setAttribute("aria-label", "Xóa phiên");
+    delBtn.innerHTML = "&times;";
+    delBtn.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm("Bạn có chắc muốn xóa phiên trò chuyện này?")) return;
+      try {
+        await apiFetch(`/v1/sessions/${sess.session_id}`, { method: "DELETE" });
+        if (currentSessionId === sess.session_id) {
+          startNewSession();
+        }
+        await loadSessions();
+      } catch (err) {
+        showError(`Không thể xóa phiên: ${err.message}`);
+      }
+    };
+    li.appendChild(delBtn);
+
     list.appendChild(li);
+  }
+}
+
+async function clearAllSessions() {
+  if (!confirm("Bạn có chắc muốn xóa toàn bộ lịch sử các phiên trò chuyện?")) return;
+  try {
+    const sessions = await apiFetch("/v1/sessions");
+    for (const sess of sessions) {
+      try {
+        await apiFetch(`/v1/sessions/${sess.session_id}`, { method: "DELETE" });
+      } catch (e) {
+        console.warn(`Failed to delete session ${sess.session_id}:`, e);
+      }
+    }
+    startNewSession();
+    await loadSessions();
+  } catch (err) {
+    showError(`Lỗi dọn dẹp phiên chat: ${err.message}`);
   }
 }
 
