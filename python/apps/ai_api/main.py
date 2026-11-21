@@ -2023,10 +2023,17 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     # retrieved passages would become the text being translated.
     transform_request = _is_transform_request(req.message) or office_request
     # When current_mode == "lora": App B skips RAG retrieval to showcase pure LoRA persona & behavior
+    retrieval_query = req.message
+    if history and len(req.message.split()) <= 15:
+        prev_user_msgs = [h.get("content", "") for h in history if h.get("role") == "user"]
+        if prev_user_msgs:
+            last_msg = prev_user_msgs[-1].strip()
+            retrieval_query = f"{last_msg} {req.message}"
+
     if (current_mode != "lora" and not office_request
             and not _is_translation_request(req.message)
-            and (rag.should_retrieve(req.message) or rag.is_domain_question(req.message))):
-        candidate_hits = rag.retrieve(req.message, top_k=5)
+            and (rag.should_retrieve(retrieval_query) or rag.is_domain_question(retrieval_query))):
+        candidate_hits = rag.retrieve(retrieval_query, top_k=5)
         if rag.has_evidence(candidate_hits):
             rag_hits = candidate_hits
             rag_context = rag.build_context(rag_hits, reply_language)
@@ -2036,7 +2043,7 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     # extractive answer is the real test of coverage, so it is computed once and
     # reused by the grounded-answer branch below. Transform requests are never
     # answered by quotation, even when the corpus is relevant.
-    rag_extractive = (rag.answer_from_hits(req.message, rag_hits, reply_language)
+    rag_extractive = (rag.answer_from_hits(retrieval_query, rag_hits, reply_language)
                       if rag_hits and not transform_request
                       and rag.has_strong_evidence(rag_hits) else None)
 

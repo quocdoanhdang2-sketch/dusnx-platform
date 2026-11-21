@@ -1647,6 +1647,7 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
         r"(?:tu|den)\s+ngay\s+nao|ngay\s+nao\s+den\s+ngay\s+nao|thoi han|moc thoi gian|"
         r"tu\s+\d{1,2}/\d{1,2}|den\s+\d{1,2}/\d{1,2}", query_folded))
     date_range_re = re.compile(r"\d{1,2}/\d{1,2}/\d{4}\s*[-–—]\s*\d{1,2}/\d{1,2}/\d{4}")
+    asks_duration = bool(re.search(r"(?:bao\s+lau|may\s+tuan|thoi\s+luong|may\s+thang|thoi\s+gian\s+hoc)", query_folded))
     # "đăng ký thế nào?" asks for the procedure, not the usage-duration limit
     # that shares the same section.
     asks_procedure = bool(re.search(
@@ -1820,6 +1821,9 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                 if re.match(r"tinh huong\s+\d+", folded) and not any(
                         k in query_folded for k in ("tinh huong", "vi du", "truong hop")):
                     score -= 20.0
+            if asks_duration:
+                if re.search(r"\b(?:\d+\s+tuan|\d+\s+thang|giai doan|thoi luong)\b", folded):
+                    score += 18.0
             if asks_schedule and asks_rule_time and not has_date_detail:
                 if re.search(r"thu\s+\d", folded) and re.search(r"\d{1,2}:\d{2}", folded):
                     # The recurring rule ("thứ 5 hằng tuần, 18:30-21:00") is the
