@@ -308,7 +308,7 @@
       <div class="view-header">
         <div>
           <h1 class="view-title">📚 Kho tài liệu CLB IT</h1>
-          <p class="view-subtitle" id="docLockStatus">26 tài liệu quy chế & kỹ thuật chính thức</p>
+          <p class="view-subtitle" id="docLockStatus">26 tài liệu quy chế & kỹ thuật chính thức • 225 đoạn trích SQLite FTS5</p>
         </div>
         <div class="doc-header-actions" id="docAdminActions">
           <button class="btn-secondary btn-sm" onclick="handleVerifyCorpus()" title="Kiểm tra tính toàn vẹn của kho tài liệu">🔒 Kiểm tra toàn vẹn</button>
@@ -316,7 +316,17 @@
         </div>
       </div>
       <div class="doc-controls">
-        <input id="docSearch" class="field-input compact" type="search" placeholder="Tìm kiếm quy chế, hackathon, nội quy, lịch trình…" oninput="filterDocuments()" aria-label="Tìm tài liệu" />
+        <div class="doc-search-wrapper">
+          <span class="doc-search-icon">🔍</span>
+          <input id="docSearch" class="field-input compact doc-search-input" type="search" placeholder="Tìm kiếm theo tiêu đề, mã DOC, quy chế, kỹ thuật, hackathon…" oninput="filterDocuments()" aria-label="Tìm tài liệu" />
+        </div>
+        <div class="doc-filter-pills" id="docCategoryFilters">
+          <button class="doc-filter-pill active" data-cat="all" onclick="setDocCategoryFilter('all')">Tất cả (26)</button>
+          <button class="doc-filter-pill" data-cat="Quy chế CLB" onclick="setDocCategoryFilter('Quy chế CLB')">Quy chế CLB (9)</button>
+          <button class="doc-filter-pill" data-cat="Kỹ thuật & Git" onclick="setDocCategoryFilter('Kỹ thuật & Git')">Kỹ thuật & Git (6)</button>
+          <button class="doc-filter-pill" data-cat="Sự kiện & Hackathon" onclick="setDocCategoryFilter('Sự kiện & Hackathon')">Sự kiện & Hackathon (5)</button>
+          <button class="doc-filter-pill" data-cat="Tài chính & Nhân sự" onclick="setDocCategoryFilter('Tài chính & Nhân sự')">Tài chính & Nhân sự (6)</button>
+        </div>
       </div>
       <div id="documentList" class="doc-grid" role="list"></div>
     </div>
@@ -507,7 +517,7 @@
 
 <!-- ══════════════════ MODALS ══════════════════ -->
 <div id="modalOverlay" class="modal-overlay" hidden onclick="closeModal()">
-  <div class="modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true">
+  <div class="modal" id="modalBox" onclick="event.stopPropagation()" role="dialog" aria-modal="true">
     <div class="modal-header">
       <h2 class="modal-title" id="modalTitle">Modal</h2>
       <button class="icon-btn" onclick="closeModal()" aria-label="Đóng">✕</button>

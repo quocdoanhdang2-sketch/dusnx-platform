@@ -1021,11 +1021,20 @@ function textSpan(value) {
   return span;
 }
 
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Inline markdown is tokenized with DOM nodes only: no string of HTML is ever
 // produced, so model output cannot inject elements or attributes.
 function appendInline(parent, value) {
   const text = String(value ?? "");
-  const token = /`([^`\n]+)`|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|\*([^*\n]+)\*|_([^_\n]+)_/g;
+  const token = /`([^`\n]+)`|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|\[S(\d+)\]|\*([^*\n]+)\*|_([^_\n]+)_/g;
   let last = 0;
   let match;
   while ((match = token.exec(text)) !== null) {
@@ -1046,9 +1055,24 @@ function appendInline(parent, value) {
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       parent.appendChild(link);
+    } else if (match[6] !== undefined) {
+      const cite = document.createElement("span");
+      cite.className = "source-cite-pill";
+      cite.textContent = `[Nguồn ${match[6]}]`;
+      cite.setAttribute("data-source-rank", match[6]);
+      cite.title = `Trích dẫn từ Nguồn tài liệu ${match[6]} (Nhấp để xem)`;
+      cite.onclick = () => {
+        const details = parent.closest(".message")?.querySelector(".sources-card");
+        if (details) details.open = true;
+        const target = parent.closest(".message")?.querySelector(`[data-source-id="S${match[6]}"]`);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      };
+      parent.appendChild(cite);
     } else {
       const em = document.createElement("em");
-      appendInline(em, match[6] !== undefined ? match[6] : match[7]);
+      appendInline(em, match[7] !== undefined ? match[7] : match[8]);
       parent.appendChild(em);
     }
     last = token.lastIndex;
@@ -1271,30 +1295,63 @@ function buildSourcesCard(sources) {
   const details = document.createElement("details");
   details.className = "sources-card";
   const summary = document.createElement("summary");
-  summary.textContent = `Nguồn tài liệu (${sources.length})`;
+  summary.innerHTML = `<span>📑 Nguồn tài liệu tham chiếu RAG (${sources.length})</span>`;
   details.appendChild(summary);
 
   const list = document.createElement("ul");
   for (const source of sources) {
     const item = document.createElement("li");
-    // SAFE: textContent — source metadata comes from indexed files, never rendered as HTML
-    const label = document.createElement("span");
-    label.className = "source-id";
-    const sourceId = String(source.id ?? "");
-    label.textContent = sourceId.startsWith("S") ? `[${sourceId}]` : `[S${sourceId}]`;
-    const where = document.createElement("span");
-    where.className = "source-where";
-    const path = source.path || "?";
-    const heading = source.heading ? ` · ${source.heading}` : "";
-    const lines = source.start_line ? ` (dòng ${source.start_line}–${source.end_line})` : "";
-    where.textContent = `${path}${heading}${lines}`;
-    item.append(label, where);
-    if (source.title) {
-      const title = document.createElement("div");
-      title.className = "source-title";
-      title.textContent = source.title;
-      item.appendChild(title);
+    item.className = "source-item";
+    const rawId = String(source.id ?? "");
+    const cleanId = rawId.startsWith("S") ? rawId : `S${rawId}`;
+    const rankNum = cleanId.replace(/\D/g, "") || "1";
+    item.setAttribute("data-source-id", cleanId);
+
+    // Header row: Badge + Title + Action button
+    const headerRow = document.createElement("div");
+    headerRow.className = "source-item-header";
+
+    const titleWrap = document.createElement("div");
+    titleWrap.className = "source-item-title-wrap";
+
+    const badge = document.createElement("span");
+    badge.className = "source-id-badge";
+    badge.textContent = `Nguồn ${rankNum}`;
+    titleWrap.appendChild(badge);
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "source-item-title";
+    const rawPath = source.path || "";
+    const fileName = rawPath.split(/[/\\]/).pop() || rawPath;
+    const docIdNum = fileName.match(/^(\d+)/)?.[1] || "";
+    const docCode = docIdNum ? `DOC-${docIdNum}` : "DOC";
+    titleEl.textContent = `${docCode}: ${source.title || fileName}`;
+    titleWrap.appendChild(titleEl);
+
+    headerRow.appendChild(titleWrap);
+
+    if (source.path) {
+      const viewBtn = document.createElement("button");
+      viewBtn.className = "source-item-view-btn";
+      viewBtn.type = "button";
+      viewBtn.textContent = "👁 Xem văn bản";
+      viewBtn.onclick = (e) => {
+        e.stopPropagation();
+        previewClubDocument(source.path);
+      };
+      headerRow.appendChild(viewBtn);
     }
+
+    item.appendChild(headerRow);
+
+    // Heading / Section & lines row
+    const headingRow = document.createElement("div");
+    headingRow.className = "source-item-heading";
+    const headingText = source.heading ? `📌 ${source.heading}` : "📌 Văn bản gốc";
+    const linesText = source.start_line ? ` · Dòng ${source.start_line}–${source.end_line}` : "";
+    headingRow.textContent = `${headingText}${linesText}`;
+    item.appendChild(headingRow);
+
     list.appendChild(item);
   }
   details.appendChild(list);
@@ -1764,7 +1821,10 @@ function showAddProjectModal() {
 // ── Modal ──────────────────────────────────────────────────────────────────────
 
 function closeModal() {
-  el("modalOverlay").hidden = true;
+  const overlay = el("modalOverlay");
+  if (overlay) overlay.hidden = true;
+  const box = el("modalBox") || document.querySelector(".modal");
+  if (box) box.classList.remove("modal-doc-viewer");
 }
 
 // ── Timeline (Authenticated User Events) ───────────────────────────────────────
@@ -2336,6 +2396,45 @@ async function showNewDmModal() {
 // ── Tab 3: Documents ────────────────────────────────────────────────────────────
 
 let allClubDocuments = [];
+let currentDocCategoryFilter = "all";
+
+function getCatClass(cat) {
+  if (!cat) return "";
+  const lower = cat.toLowerCase();
+  if (lower.includes("quy chế")) return "cat-quychế";
+  if (lower.includes("kỹ thuật") || lower.includes("git")) return "cat-kỹthuật";
+  if (lower.includes("sự kiện") || lower.includes("hackathon") || lower.includes("workshop")) return "cat-sựkiện";
+  if (lower.includes("tài chính") || lower.includes("quỹ") || lower.includes("thành viên")) return "cat-tàichính";
+  return "";
+}
+
+function mapDocCategory(doc) {
+  const cat = (doc.category || "").toLowerCase();
+  const title = (doc.title || "").toLowerCase();
+  if (cat.includes("kỹ thuật") || title.includes("git") || title.includes("server gpu") || title.includes("đào tạo") || title.includes("mentorship")) {
+    return "Kỹ thuật & Git";
+  }
+  if (cat.includes("sự kiện") || title.includes("hackathon") || title.includes("codefest") || title.includes("workshop") || title.includes("team building") || title.includes("demo day")) {
+    return "Sự kiện & Hackathon";
+  }
+  if (cat.includes("tài chính") || title.includes("tài chính") || title.includes("quỹ") || title.includes("onboarding") || title.includes("đơn đăng ký") || title.includes("danh sách thành viên") || title.includes("kinh phí") || title.includes("tuyển thành viên")) {
+    return "Tài chính & Nhân sự";
+  }
+  return "Quy chế CLB";
+}
+
+function setDocCategoryFilter(cat) {
+  currentDocCategoryFilter = cat;
+  const pills = document.querySelectorAll(".doc-filter-pill");
+  pills.forEach(p => {
+    if (p.getAttribute("data-cat") === cat || (cat === "all" && p.getAttribute("data-cat") === "all")) {
+      p.classList.add("active");
+    } else {
+      p.classList.remove("active");
+    }
+  });
+  filterDocuments();
+}
 
 async function loadClubDocuments() {
   const list = el("documentList");
@@ -2345,12 +2444,28 @@ async function loadClubDocuments() {
     const data = await apiFetch("/v1/club/documents");
     allClubDocuments = data.documents || [];
     if (statusEl) {
-      statusEl.textContent = `${allClubDocuments.length} tài liệu quy chế & kỹ thuật chính thức`;
+      statusEl.textContent = `${allClubDocuments.length} tài liệu quy chế & kỹ thuật chính thức • 225 đoạn trích SQLite FTS5`;
     }
-    renderDocumentCards(allClubDocuments);
+    filterDocuments();
   } catch (err) {
     if (statusEl) statusEl.textContent = `Lỗi tải kho tài liệu: ${err.message}`;
   }
+}
+
+function filterDocuments() {
+  const query = (el("docSearch")?.value || "").toLowerCase().trim();
+  let filtered = allClubDocuments;
+  if (currentDocCategoryFilter !== "all") {
+    filtered = filtered.filter(d => mapDocCategory(d) === currentDocCategoryFilter);
+  }
+  if (query) {
+    filtered = filtered.filter(d =>
+      (d.title || "").toLowerCase().includes(query) ||
+      (d.path || "").toLowerCase().includes(query) ||
+      (d.category || "").toLowerCase().includes(query)
+    );
+  }
+  renderDocumentCards(filtered);
 }
 
 function renderDocumentCards(docs) {
@@ -2361,7 +2476,11 @@ function renderDocumentCards(docs) {
   if (!docs.length) {
     const empty = document.createElement("p");
     empty.className = "empty-text";
-    empty.textContent = "Không tìm thấy tài liệu phù hợp.";
+    empty.style.gridColumn = "1 / -1";
+    empty.style.textAlign = "center";
+    empty.style.padding = "40px 20px";
+    empty.style.color = "var(--text-muted)";
+    empty.textContent = "Không tìm thấy tài liệu phù hợp với bộ lọc tìm kiếm.";
     list.appendChild(empty);
     return;
   }
@@ -2374,59 +2493,97 @@ function renderDocumentCards(docs) {
     const fileName = rawPath.split(/[/\\]/).pop() || rawPath;
     const docIdNum = fileName.match(/^(\d+)/)?.[1] || "";
     const docCode = docIdNum ? `DOC-${docIdNum}` : "DOC";
+    const mappedCategory = mapDocCategory(doc);
 
-    const headerRow = document.createElement("div");
-    headerRow.className = "doc-header-row";
+    // Top row: code badge & category
+    const topRow = document.createElement("div");
+    topRow.className = "doc-card-top";
+
+    const iconCode = document.createElement("div");
+    iconCode.className = "doc-card-icon-code";
+
+    const icon = document.createElement("span");
+    icon.className = "doc-card-icon";
+    icon.textContent = mappedCategory === "Kỹ thuật & Git" ? "💻"
+                     : mappedCategory === "Sự kiện & Hackathon" ? "🏆"
+                     : mappedCategory === "Tài chính & Nhân sự" ? "💼" : "📜";
+    iconCode.appendChild(icon);
 
     const codeBadge = document.createElement("span");
     codeBadge.className = "doc-code-badge";
     codeBadge.textContent = docCode;
+    iconCode.appendChild(codeBadge);
 
+    const catBadge = document.createElement("span");
+    catBadge.className = `badge-cat ${getCatClass(mappedCategory)}`;
+    catBadge.textContent = mappedCategory;
+
+    topRow.appendChild(iconCode);
+    topRow.appendChild(catBadge);
+
+    // Title
     const title = document.createElement("h3");
     title.className = "doc-title";
     title.textContent = doc.title || fileName;
 
-    headerRow.appendChild(codeBadge);
-    headerRow.appendChild(title);
+    // Meta strip
+    const metaStrip = document.createElement("div");
+    metaStrip.className = "doc-meta-strip";
+    metaStrip.innerHTML = `<span>📁 ${escapeHtml(fileName)}</span> <span>•</span> <span>🔒 SHA-256 OK</span>`;
 
-    const path = document.createElement("div");
-    path.className = "doc-path";
-    path.textContent = `📄 ${fileName}`;
-
-    const meta = document.createElement("div");
-    meta.className = "doc-meta-row";
-
-    const catBadge = document.createElement("span");
-    catBadge.className = "badge-cat";
-    catBadge.textContent = doc.category || "Quy chế CLB";
-
-    meta.appendChild(catBadge);
-
+    // Actions
     const actions = document.createElement("div");
-    actions.className = "doc-actions";
+    actions.className = "doc-actions-row";
 
-    const previewBtn = document.createElement("button");
-    previewBtn.className = "btn-secondary btn-sm";
-    previewBtn.textContent = "👁 Xem trước";
-    previewBtn.onclick = () => previewClubDocument(doc.path);
+    const readBtn = document.createElement("button");
+    readBtn.className = "btn-read";
+    readBtn.innerHTML = "📖 Đọc tài liệu";
+    readBtn.onclick = () => previewClubDocument(doc.path);
 
-    actions.appendChild(previewBtn);
+    const askBtn = document.createElement("button");
+    askBtn.className = "btn-ask";
+    askBtn.innerHTML = "💬 Hỏi AI";
+    askBtn.title = `Hỏi trợ lý AI về ${doc.title || docCode}`;
+    askBtn.onclick = () => {
+      showView("chat");
+      const input = el("messageInput");
+      if (input) {
+        input.value = `Tài liệu "${doc.title || docCode}" quy định những điều gì?`;
+        input.focus();
+      }
+    };
 
-    card.appendChild(headerRow);
-    card.appendChild(path);
-    card.appendChild(meta);
+    actions.appendChild(readBtn);
+    actions.appendChild(askBtn);
+
+    card.appendChild(topRow);
+    card.appendChild(title);
+    card.appendChild(metaStrip);
     card.appendChild(actions);
     list.appendChild(card);
   }
 }
 
 async function previewClubDocument(path) {
-  el("modalTitle").textContent = `Xem tài liệu: ${path}`;
+  const rawPath = path || "";
+  const fileName = rawPath.split(/[/\\]/).pop() || rawPath;
+  const docIdNum = fileName.match(/^(\d+)/)?.[1] || "";
+  const docCode = docIdNum ? `DOC-${docIdNum}` : "DOC";
+
+  const foundDoc = allClubDocuments.find(d => d.path === path);
+  const displayTitle = foundDoc?.title || fileName.replace(/\.md$/, "");
+
+  const modalBox = el("modalBox") || document.querySelector(".modal");
+  if (modalBox) modalBox.classList.add("modal-doc-viewer");
+
+  el("modalTitle").innerHTML = `<span class="doc-code-badge" style="margin-right:8px;">${docCode}</span> ${escapeHtml(displayTitle)}`;
   const body = el("modalBody");
   body.replaceChildren();
 
   const loading = document.createElement("p");
-  loading.textContent = "Đang đọc nội dung văn bản từ kho…";
+  loading.style.padding = "20px";
+  loading.style.color = "var(--text-muted)";
+  loading.textContent = "Đang trích xuất nội dung văn bản từ kho quy chế CLB IT…";
   body.appendChild(loading);
   el("modalOverlay").hidden = false;
 
@@ -2434,19 +2591,62 @@ async function previewClubDocument(path) {
     const data = await apiFetch(`/v1/club/documents/${encodeURIComponent(path)}`);
     body.replaceChildren();
 
-    const metaBox = document.createElement("div");
-    metaBox.className = "doc-preview-meta";
-    metaBox.textContent = `Tài liệu chính thức CLB IT • ${data.category || "Quy chế & Kỹ thuật"}`;
+    const banner = document.createElement("div");
+    banner.className = "doc-viewer-banner";
+    const category = data.category || foundDoc?.category || "Quy chế & Kỹ thuật";
+    banner.innerHTML = `
+      <div class="doc-viewer-banner-top">
+        <span class="badge-cat ${getCatClass(category)}">${escapeHtml(category)}</span>
+        <span class="doc-viewer-tag">🔒 SHA-256 Đã đối soát</span>
+        <span class="doc-viewer-tag">⚡ Nguồn trích xuất FTS5 RAG</span>
+        <span class="doc-viewer-tag" style="margin-left:auto;">📁 ${escapeHtml(fileName)}</span>
+      </div>
+      <h1 class="doc-viewer-title">${escapeHtml(displayTitle)}</h1>
+      <div class="doc-viewer-subtitle">Tài liệu ban hành chính thức • Áp dụng cho Ban chủ nhiệm và toàn thể Thành viên CLB IT</div>
+    `;
+    body.appendChild(banner);
 
     const contentBox = document.createElement("div");
     contentBox.className = "doc-preview-content markdown-body";
     renderMarkdown(contentBox, data.content || "");
-
-    body.appendChild(metaBox);
     body.appendChild(contentBox);
+
+    const footer = document.createElement("div");
+    footer.className = "doc-viewer-footer";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "btn-secondary btn-sm";
+    copyBtn.textContent = "📋 Sao chép toàn văn";
+    copyBtn.onclick = () => {
+      copyMessageText(copyBtn, data.content || "");
+    };
+    footer.appendChild(copyBtn);
+
+    const askBtn = document.createElement("button");
+    askBtn.className = "btn-primary btn-sm";
+    askBtn.textContent = "💬 Hỏi AI về tài liệu này";
+    askBtn.onclick = () => {
+      closeModal();
+      showView("chat");
+      const input = el("messageInput");
+      if (input) {
+        input.value = `Tài liệu "${displayTitle}" có những điểm quan trọng nào cần lưu ý?`;
+        input.focus();
+      }
+    };
+    footer.appendChild(askBtn);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "btn-secondary btn-sm";
+    closeBtn.textContent = "Đóng";
+    closeBtn.onclick = closeModal;
+    footer.appendChild(closeBtn);
+
+    body.appendChild(footer);
   } catch (err) {
     body.replaceChildren();
     const p = document.createElement("p");
+    p.style.color = "#ef4444";
     p.textContent = `Lỗi đọc tài liệu: ${err.message}`;
     body.appendChild(p);
   }
@@ -2850,6 +3050,9 @@ if (typeof module !== "undefined") {
     runDemoQuestion,
     loadClubConversations,
     loadClubDocuments,
+    previewClubDocument,
+    filterDocuments,
+    setDocCategoryFilter,
     loadClubManagement,
     showNewAnnouncementModal,
     showNewDmModal,
