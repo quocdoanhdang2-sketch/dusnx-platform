@@ -1,0 +1,21 @@
+﻿STT,id,question,expected_paths,expect,authoring,review_status
+1,q01,Gateway mặc định chạy ở cổng nào?,"[""docs/GUIDE_TUNG_BUOC.md"", ""docs/WINDOWS_NATIVE_RUNBOOK.md""]",answer,assistant-drafted,pending_human_review
+2,q02,Task pane của Word được nạp từ địa chỉ nào?,"[""docs/WORD_ADDIN_RUNBOOK.md""]",answer,assistant-drafted,pending_human_review
+3,q03,Làm sao đổi cổng của Word task pane?,"[""docs/WORD_ADDIN_RUNBOOK.md""]",answer,assistant-drafted,pending_human_review
+4,q04,Gateway giới hạn bao nhiêu request mỗi phút cho mỗi IP?,"[""docs/PERFORMANCE_AND_SECURITY_REPORT.md""]",answer,assistant-drafted,pending_human_review
+5,q05,Gateway nhận body tối đa bao nhiêu?,"[""docs/PERFORMANCE_AND_SECURITY_REPORT.md""]",answer,assistant-drafted,pending_human_review
+6,q06,Máy cấu hình thấp dùng model Qwen nào?,"[""docs/PROJECT_STATUS_20261107.md"", ""docs/PLATFORM_INTEGRATION_STATUS.md""]",answer,assistant-drafted,pending_human_review
+7,q07,SFT v3 có được promote không?,"[""docs/PROJECT_STATUS_20261107.md""]",answer,assistant-drafted,pending_human_review
+8,q08,RAG đang index bao nhiêu tài liệu và bao nhiêu chunk?,"[""docs/PROJECT_STATUS_20261107.md""]",answer,assistant-drafted,pending_human_review
+9,q09,Khi bật Track Changes thì add-in Word xử lý thế nào?,"[""docs/WORD_ADDIN_RUNBOOK.md""]",answer,assistant-drafted,pending_human_review
+10,q10,PowerPoint add-in tạo chart native bằng cách nào?,"[""docs/POWERPOINT_ADDIN_RUNBOOK.md""]",answer,assistant-drafted,pending_human_review
+11,q11,Lỗi reply rỗng sau sanitizer được sửa ra sao?,"[""docs/FIX_SCOPE_EMPTY_REPLY_20261103.md""]",answer,assistant-drafted,pending_human_review
+12,q12,Tích hợp Office còn hạng mục nào chưa xong?,"[""docs/PLATFORM_INTEGRATION_STATUS.md""]",answer,assistant-drafted,pending_human_review
+13,q13,Chạy gateway trên Windows bằng lệnh gì?,"[""docs/WINDOWS_NATIVE_RUNBOOK.md"", ""docs/GUIDE_TUNG_BUOC.md""]",answer,assistant-drafted,pending_human_review
+14,q14,Mục tiêu của roadmap bàn giao là gì?,"[""docs/ROADMAP_20261031_HANDOFF.md""]",answer,assistant-drafted,pending_human_review
+15,q15,Báo cáo tuần 4 demo những gì?,"[""docs/WEEK4_DEMO_AND_ML_REPORT.md""]",answer,assistant-drafted,pending_human_review
+16,q16,Release verification kết luận sản phẩm ở mức nào?,"[""docs/RELEASE_VERIFICATION_20261103.md""]",answer,assistant-drafted,pending_human_review
+17,q17,Giá vàng hôm nay bao nhiêu?,,refuse,assistant-drafted,pending_human_review
+18,q18,Thời tiết Hà Nội ngày mai thế nào?,,refuse,assistant-drafted,pending_human_review
+19,q19,Cách nấu phở bò ngon tại nhà?,,refuse,assistant-drafted,pending_human_review
+20,q20,Đội nào vô địch World Cup 2026?,,refuse,assistant-drafted,pending_human_review

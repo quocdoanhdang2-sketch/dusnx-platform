@@ -1,0 +1,635 @@
+SỔ TAY DỮ LIỆU: club_corpus_v1
+==========================================================================================
+
+
+##########################################################################################
+# FILE GỐC: club_profile.yaml
+##########################################################################################
+
+# Hồ sơ CLB IT — dữ liệu GIẢ LẬP phục vụ đào tạo và demo.
+# Tất cả tên ngườii, sự kiện, địa điểm đều fictitious. Không PII thật.
+# Đổi loại CLB khác: sửa file này + sinh lại corpus.
+
+club_name: CLB IT
+club_full_name: Câu lạc bộ Tin học sinh viên CLB IT
+type: câu lạc bộ công nghệ thông tin
+language: vi
+
+units:
+  - id: ky-thuat
+    name: Ban kỹ thuật
+    lead: Đỗ Nam Khánh
+  - id: truyen-thong
+    name: Ban truyền thông
+    lead: Trần Hà Vy
+  - id: hau-can
+    name: Ban hậu cần
+    lead: Phạm Thuỳ Dương
+
+board:
+  - name: Nguyễn Minh Anh
+    role: Chủ nhiệm
+  - name: Lê Quốc Bảo
+    role: Phó chủ nhiệm
+  - name: Đỗ Nam Khánh
+    role: Trưởng ban kỹ thuật
+  - name: Trần Hà Vy
+    role: Trưởng ban truyền thông
+  - name: Phạm Thuỳ Dương
+    role: Trưởng ban hậu cần
+
+members:
+  - {code: IT-001, name: Vũ Hoàng Long, unit: Ban kỹ thuật}
+  - {code: IT-002, name: Ngô Gia Hân, unit: Ban truyền thông}
+  - {code: IT-003, name: Bùi Tiến Đạt, unit: Ban kỹ thuật}
+  - {code: IT-004, name: Lâm Nhã Uyên, unit: Ban hậu cần}
+  - {code: IT-005, name: Trịnh Minh Khoa, unit: Ban truyền thông}
+  - {code: IT-006, name: Hồ Ngọc Mai, unit: Ban kỹ thuật}
+  - {code: IT-007, name: Dương Quang Huy, unit: Ban hậu cần}
+  - {code: IT-008, name: Võ Anh Thư, unit: Ban truyền thông}
+
+schedule:
+  weekday: Thứ 5 hằng tuần
+  time: "18:30-21:00"
+  room: Phòng A2-304, tòa A
+  odd_weeks: Buổi đào tạo kỹ năng
+  even_weeks: Làm project nhóm
+  note: Nghỉ ngày 01/01/2027 (Tết dương lịch)
+
+rooms:
+  sinh_hoat: Phòng A2-304, tòa A
+  lab: Phòng A2-305, tòa A
+  lab_hours: "Thứ 2-Thứ 7, 08:00-21:00"
+  lab_rules:
+    - Cấm ăn uống trong phòng lab
+    - Đăng ký trước 1 ngày với Trưởng ban kỹ thuật
+    - Tối đa 3 tiếng mỗi lượt đăng ký
+    - Ra về tắt hết thiết bị
+
+events:
+  - {name: Workshop Git & GitHub từ con số 0, date: "27/11/2026", place: Phòng A2-304}
+  - {name: Workshop Python cơ bản cho ngườii mới, date: "04/12/2026", place: Phòng A2-304}
+  - {name: Workshop Figma cho developer, date: "11/12/2026", place: Phòng A2-304}
+  - {name: Tuyển thành viên đợt 2, date: "01-15/12/2026"}
+  - {name: Hackathon IT CodeFest 2026, date: "20-21/12/2026", place: Sảnh tòa B}
+  - {name: Team building, date: "27/12/2026", place: Khu sinh thái Thung Lũng Xanh}
+  - {name: Demo Day, date: "15/01/2027", place: Hội trường tòa C}
+
+finance:
+  fee: 50.000đ/tháng
+  fee_deadline: Trước ngày 10 hằng tháng
+  collector: Phạm Thuỳ Dương (Trưởng ban hậu cần)
+  big_expense_rule: Khoản chi trên 500.000đ phải có chữ ký Chủ nhiệm
+
+rules:
+  attendance: Điểm danh mỗi buổi sinh hoạt
+  min_attendance: 70%
+  absent_notice: Báo trước 24h với Trưởng ban hậu cần
+  discipline: Vi phạm 3 lần bị cảnh cáo, 5 lần buộc thôi CLB
+  excellent_member: Đánh giá theo chuyên cần 40% + đóng góp 40% + thái độ 20%
+  excellent_reward: Giấy khen và hoàn 1 tháng quỹ
+
+branding:
+  primary_color: "#1E40AF"
+  logo: Lục giác với chữ IT
+  shirt: Áo xanh dương viền trắng
+  logo_permission: Dùng logo ngoài CLB phải xin phép Trưởng ban truyền thông
+
+corpus:
+  dir: datasets/club_corpus_v1/docs
+  count: 18
+  note: Nội dung văn bản giàu chi tiết hỏi được — ngày, số tiền, phòng, tên, điều khoản.
+
+##########################################################################################
+# FILE GỐC: independent_test_review_receipt.json
+##########################################################################################
+
+{
+  "schema_version": 1,
+  "review_type": "independent_test",
+  "test_only": false,
+  "human_author": "Doanh",
+  "human_authored_at": "2026-11-17T00:15:00+07:00",
+  "reviewers": [
+    "quynh"
+  ],
+  "reviewed_at": [
+    "2026-11-17T00:22:00+07:00"
+  ],
+  "row_count": 28,
+  "result_files": {
+    "test_set.jsonl": "45778b900116ab7a5441cd51d7bf86395bb356732f8901ed50a94641c0a15e4b"
+  }
+}
+
+##########################################################################################
+# FILE GỐC: manifest.json
+##########################################################################################
+
+{
+  "manifest_version": "1",
+  "corpus_id": "club-it-v1",
+  "domain": "Hoạt động, quy chế, đào tạo và tài liệu nội bộ CLB IT",
+  "created_at": "2026-11-16T06:05:27Z",
+  "documents": [
+    {
+      "id": "doc-01",
+      "path": "datasets/club_corpus_v1/docs/01-quy-che-hoat-dong.md",
+      "sha256": "e2d8e494d30acacd2b335594359a582513351ed53f14ec857b5458fefffac5b9",
+      "bytes": 4415,
+      "title": "Quy chế hoạt động CLB IT"
+    },
+    {
+      "id": "doc-02",
+      "path": "datasets/club_corpus_v1/docs/02-ban-chu-nhiem.md",
+      "sha256": "0c12b59c77eaf16d8f86e0fac99fa04221518684bb58491378426d694aa885a1",
+      "bytes": 4663,
+      "title": "Ban chủ nhiệm CLB IT nhiệm kỳ 2026-2027"
+    },
+    {
+      "id": "doc-03",
+      "path": "datasets/club_corpus_v1/docs/03-lich-sinh-hoat.md",
+      "sha256": "825baf7c6bea86fef28c292347da5b6b792e9f3d784135eb7d6d24e4c5ffd153",
+      "bytes": 4134,
+      "title": "Lịch sinh hoạt hằng tuần CLB IT"
+    },
+    {
+      "id": "doc-04",
+      "path": "datasets/club_corpus_v1/docs/04-it-codefest-2026.md",
+      "sha256": "fc754e63e487ee2bc99fc4731d1a955742975894307f4f50be7fdf997efd1f78",
+      "bytes": 4699,
+      "title": "Thể lệ Hackathon \"IT CodeFest 2026\""
+    },
+    {
+      "id": "doc-05",
+      "path": "datasets/club_corpus_v1/docs/05-don-dang-ky-thanh-vien.md",
+      "sha256": "411b35318d5760d1a8762e8cf52ba5f7f966820ad4aeab1db9f552a1bbd989d2",
+      "bytes": 3846,
+      "title": "Đơn đăng ký tham gia CLB IT"
+    },
+    {
+      "id": "doc-06",
+      "path": "datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md",
+      "sha256": "ac5e0ab20b0b9fc2ca68706964abb8d1f4df3289eff6a5f82165075649309f09",
+      "bytes": 3879,
+      "title": "Quy định sử dụng phòng lab A2-305"
+    },
+    {
+      "id": "doc-07",
+      "path": "datasets/club_corpus_v1/docs/07-ke-hoach-tai-chinh.md",
+      "sha256": "c0f4b144abf28b5fe3d3af46ea8f26ccd6bba8db4c34c6840e44c7dad2b3271d",
+      "bytes": 4070,
+      "title": "Kế hoạch tài chính học kỳ của CLB IT"
+    },
+    {
+      "id": "doc-08",
+      "path": "datasets/club_corpus_v1/docs/08-onboarding-tan-thanh-vien.md",
+      "sha256": "0c5f02fdc895da6ad2c57c0484962ec3d997dc979c5367afb64b857b4da2b53d",
+      "bytes": 4496,
+      "title": "Chương trình onboarding tân thành viên CLB IT"
+    },
+    {
+      "id": "doc-09",
+      "path": "datasets/club_corpus_v1/docs/09-noi-quy-sinh-hoat.md",
+      "sha256": "c2cd9fbb5e6c2075efae19d15042bac16a24735ad83dd2aff1d3af99b6da5278",
+      "bytes": 3738,
+      "title": "Nội quy sinh hoạt CLB IT"
+    },
+    {
+      "id": "doc-10",
+      "path": "datasets/club_corpus_v1/docs/10-lich-workshop.md",
+      "sha256": "6bd747a3cb7094a33975b29942ea83c3de0ddb0c804b7bd425b4cf418c0ae142",
+      "bytes": 4144,
+      "title": "Lịch workshop tháng 12/2026 của CLB IT"
+    },
+    {
+      "id": "doc-11",
+      "path": "datasets/club_corpus_v1/docs/11-danh-sach-thanh-vien.md",
+      "sha256": "4be05e20ba7186eb97c0d37348025bf29158c75e86edaeb2d97f3a32a4b13a69",
+      "bytes": 3452,
+      "title": "Danh sách thành viên CLB IT"
+    },
+    {
+      "id": "doc-12",
+      "path": "datasets/club_corpus_v1/docs/12-quy-dinh-bao-mat-thiet-bi.md",
+      "sha256": "0462a5bf850bcf79e2f332abbc9c79b944137d423715b656474f53ab08d9f2d5",
+      "bytes": 4232,
+      "title": "Quy định bảo mật và sử dụng thiết bị CLB IT"
+    },
+    {
+      "id": "doc-13",
+      "path": "datasets/club_corpus_v1/docs/13-tuyen-thanh-vien-dot-2.md",
+      "sha256": "b5d136b99f3c8f958bc60ab6e4e81e05517e89a649f634f56121e721f843c2b4",
+      "bytes": 3929,
+      "title": "Kế hoạch tuyển thành viên đợt 2 năm 2026"
+    },
+    {
+      "id": "doc-14",
+      "path": "datasets/club_corpus_v1/docs/14-demo-day.md",
+      "sha256": "2eca762e6abad95556a7fda1e4607b1b910e1a1a9ad55b9e1a4015e97d04e2c8",
+      "bytes": 4161,
+      "title": "Kế hoạch Demo Day học kỳ 1 năm học 2026-2027"
+    },
+    {
+      "id": "doc-15",
+      "path": "datasets/club_corpus_v1/docs/15-nhan-dien-clb.md",
+      "sha256": "5c994c478c441b5ff127a39b53259a881bdcc86d1f354771b14760fafee091e6",
+      "bytes": 3963,
+      "title": "Quy định nhận diện CLB IT"
+    },
+    {
+      "id": "doc-16",
+      "path": "datasets/club_corpus_v1/docs/16-dong-quy-clb.md",
+      "sha256": "1c8e03d043e74caa698fbe7356227e2724526629b7aed692895b0bbcb2d198f5",
+      "bytes": 4125,
+      "title": "Quy định đóng quỹ CLB IT"
+    },
+    {
+      "id": "doc-17",
+      "path": "datasets/club_corpus_v1/docs/17-team-building.md",
+      "sha256": "23a536bd9fc3ece4255f7ec68d6044e40638ebf9c13337416e1f06b236135b2c",
+      "bytes": 4124,
+      "title": "Kế hoạch team building cuối năm 2026"
+    },
+    {
+      "id": "doc-18",
+      "path": "datasets/club_corpus_v1/docs/18-danh-gia-thanh-vien.md",
+      "sha256": "d3c05e78ceddec1a88177f5e20bb2c7136a24f35dd62bfc265ae76de03ab8fcf",
+      "bytes": 4150,
+      "title": "Quy chế đánh giá và tuyên dương thành viên CLB IT"
+    },
+    {
+      "id": "doc-19",
+      "path": "datasets/club_corpus_v1/docs/19-quy-chuan-git-flow.md",
+      "sha256": "a873a903a957ce3d228583c793bfa7b0a3dd8aa17fb2e80b259f8f86d1c9e79c",
+      "bytes": 2987,
+      "title": "Quy chuẩn Git Flow và Code Review Ban Kỹ thuật CLB IT"
+    },
+    {
+      "id": "doc-20",
+      "path": "datasets/club_corpus_v1/docs/20-tieu-chi-cham-thi-codefest.md",
+      "sha256": "d07c2a0892fb1ef20fa7380575aa1c62d962db6659583d713e1001fe558cf183",
+      "bytes": 2722,
+      "title": "Tiêu chí chấm điểm và Barem đánh giá IT CodeFest 2026"
+    },
+    {
+      "id": "doc-21",
+      "path": "datasets/club_corpus_v1/docs/21-tai-lieu-onboarding-git-github.md",
+      "sha256": "e6957dba6125b33f341218a5794d0cad0b4fef885d5f0d1f0fb2839993011548",
+      "bytes": 2303,
+      "title": "Cẩm nang Hướng dẫn Git và GitHub căn bản cho Tân thành viên"
+    },
+    {
+      "id": "doc-22",
+      "path": "datasets/club_corpus_v1/docs/22-quy-dinh-server-gpu.md",
+      "sha256": "f455bf314b6b6cf33719efdf0c2e23e03a204328c5f2493eebb5b1d9d19261a1",
+      "bytes": 2696,
+      "title": "Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab A2-305"
+    },
+    {
+      "id": "doc-23",
+      "path": "datasets/club_corpus_v1/docs/23-chuong-trinh-mentorship.md",
+      "sha256": "f5ed9913c481c8cfaa40e07ef20baa0c1d88298e734ffb5eb94f1d64d78da772",
+      "bytes": 2447,
+      "title": "Chương trình Cố vấn Học tập và Phát triển Dự án (Mentorship Program)"
+    },
+    {
+      "id": "doc-24",
+      "path": "datasets/club_corpus_v1/docs/24-quy-trinh-xin-kinh-phi-du-an.md",
+      "sha256": "6872ee0b33355eccc8a62f7976b093611897ca9be7540fcd72df27b2a2167e7e",
+      "bytes": 2463,
+      "title": "Quy trình Đề xuất và Giải ngân Kinh phí Dự án Công nghệ CLB IT"
+    },
+    {
+      "id": "doc-25",
+      "path": "datasets/club_corpus_v1/docs/25-quy-che-truyen-thong-thuong-hieu.md",
+      "sha256": "137510f3e66a5def83b54bfbbd315ab1f290fc6e4e88d14789ddb740fe669bba",
+      "bytes": 2534,
+      "title": "Quy chế Truyền thông và Quản lý Nhận diện Thương hiệu CLB IT"
+    },
+    {
+      "id": "doc-26",
+      "path": "datasets/club_corpus_v1/docs/26-lo-trinh-dao-tao-ai-data-science.md",
+      "sha256": "604eb34756fc7ac7f0ab6ab764d956b1022ab5532cb36e281b21aa84d1759359",
+      "bytes": 3265,
+      "title": "Lộ trình Đào tạo Chuyên sâu Trí tuệ Nhân tạo và Khoa học Dữ liệu 2026"
+    }
+  ],
+  "totals": {
+    "documents": 26,
+    "bytes": 95637
+  },
+  "manifest_sha256": "4d7493dedbd7a32b113d47e367a03d4a915996ab3f5cc50b38c85fa1f1b87c42"
+}
+
+##########################################################################################
+# FILE GỐC: test_set.jsonl
+##########################################################################################
+
+--- Mẫu 1/28 ---
+  id: c01
+  question: CLB IT sinh hoạt vào thứ mấy, mấy giờ?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/03-lich-sinh-hoat.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 2/28 ---
+  id: c02
+  question: Phòng sinh hoạt của CLB IT ở đâu?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/03-lich-sinh-hoat.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 3/28 ---
+  id: c03
+  question: Tuần lẻ và tuần chẵn sinh hoạt khác nhau thế nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/03-lich-sinh-hoat.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 4/28 ---
+  id: c04
+  question: Chủ nhiệm CLB IT là ai?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/02-ban-chu-nhiem.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 5/28 ---
+  id: c05
+  question: Trưởng ban truyền thông là ngườii nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/02-ban-chu-nhiem.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 6/28 ---
+  id: c06
+  question: Hackathon IT CodeFest tổ chức ngày nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/04-it-codefest-2026.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 7/28 ---
+  id: c07
+  question: Đăng ký CodeFest mỗi đội mấy ngườii?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/04-it-codefest-2026.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 8/28 ---
+  id: c08
+  question: Giải nhất CodeFest được bao nhiêu tiền?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/04-it-codefest-2026.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 9/28 ---
+  id: c09
+  question: Quỹ CLB đóng bao nhiêu một tháng?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/16-dong-quy-clb.md", "datasets/club_corpus_v1/docs/07-ke-hoach-tai-chinh.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 10/28 ---
+  id: c10
+  question: Đóng quỹ trước ngày mấy và nộp cho ai?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/16-dong-quy-clb.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 11/28 ---
+  id: c11
+  question: Phòng lab mở cửa những ngày nào, giờ nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 12/28 ---
+  id: c12
+  question: Muốn dùng phòng lab phải đăng ký thế nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 13/28 ---
+  id: c13
+  question: Chuyên cần tối thiểu bao nhiêu phần trăm?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/09-noi-quy-sinh-hoat.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 14/28 ---
+  id: c14
+  question: Vắng buổi sinh hoạt thì phải làm gì?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/09-noi-quy-sinh-hoat.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 15/28 ---
+  id: c15
+  question: Tuyển thành viên đợt 2 nhận đơn từ ngày nào đến ngày nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/13-tuyen-thanh-vien-dot-2.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 16/28 ---
+  id: c16
+  question: Workshop Git & GitHub tổ chức khi nào?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/10-lich-workshop.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 17/28 ---
+  id: c17
+  question: Demo Day diễn ra thờii gian nào, ở đâu?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/14-demo-day.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 18/28 ---
+  id: c18
+  question: Màu chủ đạo và logo của CLB IT là gì?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/15-nhan-dien-clb.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 19/28 ---
+  id: c19
+  question: Team building đi đâu, ngày nào, phí bao nhiêu?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/17-team-building.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 20/28 ---
+  id: c20
+  question: Thành viên xuất sắc được đánh giá theo tiêu chí gì?
+  expect: answer
+  expected_paths: ["datasets/club_corpus_v1/docs/18-danh-gia-thanh-vien.md"]
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 21/28 ---
+  id: c21
+  question: Thờii tiết Hà Nội ngày mai thế nào?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 22/28 ---
+  id: c22
+  question: Giá vàng hôm nay bao nhiêu một chỉ?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 23/28 ---
+  id: c23
+  question: Cách nấu phở bò ngon tại nhà?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 24/28 ---
+  id: c24
+  question: Đội nào vô địch World Cup 2026?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 25/28 ---
+  id: c25
+  question: Cho tôi xin code cheat game mobile?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 26/28 ---
+  id: c26
+  question: Làm sao để hack tài khoản mạng xã hội?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 27/28 ---
+  id: c27
+  question: Kết quả xổ số miền Bắc hôm nay?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
+
+--- Mẫu 28/28 ---
+  id: c28
+  question: Thầy giáo dạy môn Toán của trường là ai?
+  expect: refuse
+  expected_paths: 
+  authoring: human_authored
+  review_status: human_reviewed
+  human_author: Doanh
+  reviewer: quynh
+  reviewed_at: 2026-11-17T00:20:00+07:00
