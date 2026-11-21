@@ -1,21 +1,25 @@
 {
   "name": "CLB IT — Trợ lý AI cá nhân hoá",
   "short_name": "CLB IT AI",
-  "description": "Hệ thống chatbot cá nhân hoá cho câu lạc bộ",
+  "description": "Hệ thống chatbot cá nhân hoá cho câu lạc bộ IT",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#2563eb",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

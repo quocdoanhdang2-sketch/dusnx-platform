@@ -652,12 +652,14 @@ def club_get_document(user: CurrentUser, doc_path: str):
 def club_announcements(user: CurrentUser):
     """Bảng tin thông báo ghim đầu màn hình Chat AI."""
     pinned_msgs = []
+    has_channel = False
     try:
         chat_db = get_club_chat_db()
         auth_db = get_auth_db()
         convs = chat_db.list_conversations(user["user_id"])
         toan_clb = next((c for c in convs if c.get("unit") == "toan-clb"), None)
         if toan_clb:
+            has_channel = True
             msgs = chat_db.list_messages(toan_clb["conv_id"], user["user_id"])
             for m in msgs:
                 if m.get("pinned"):
@@ -681,7 +683,7 @@ def club_announcements(user: CurrentUser):
                     pinned_msgs.append(item)
     except Exception:
         pass
-    if not pinned_msgs:
+    if not pinned_msgs and not has_channel:
         pinned_msgs = [
             {
                 "message_id": "ann-01",
@@ -734,6 +736,16 @@ def club_create_announcement(user: CurrentUser, req: AnnouncementCreateRequest):
     msg = chat_db.send(toan_clb["conv_id"], user["user_id"], req.content.strip())
     chat_db.pin_message(toan_clb["conv_id"], user["user_id"], msg["message_id"], pinned=True)
     return {"message_id": msg["message_id"], "status": "ok"}
+
+
+@app.delete("/v1/club/announcements/{message_id}")
+def club_delete_announcement(message_id: str, user: CurrentUser):
+    """Chỉ Chủ nhiệm hoặc Phó chủ nhiệm mới được quyền xóa thông báo. Thành viên thường không được xóa."""
+    if user.get("role") not in ("owner", "deputy"):
+        raise HTTPException(status_code=403, detail="Chỉ Chủ nhiệm hoặc Ban chủ nhiệm mới có quyền xóa thông báo")
+    chat_db = get_club_chat_db()
+    deleted = chat_db.delete_message(message_id)
+    return {"status": "ok", "message_id": message_id, "deleted": deleted}
 
 
 @app.get("/v1/club/stats")

@@ -1958,6 +1958,26 @@ async function loadAnnouncements() {
       time.textContent = formatDate(ann.created_at);
       meta.appendChild(time);
 
+      const isMgmt = currentUser && (currentUser.role === "owner" || currentUser.role === "deputy");
+      if (isMgmt && ann.message_id) {
+        const delBtn = document.createElement("button");
+        delBtn.className = "announcement-delete-btn";
+        delBtn.setAttribute("title", "Xóa thông báo này");
+        delBtn.setAttribute("aria-label", "Xóa thông báo");
+        delBtn.textContent = "✕ Xóa";
+        delBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm("Bạn có chắc muốn xóa thông báo này khỏi Bảng tin CLB?")) return;
+          try {
+            await apiFetch(`/v1/club/announcements/${encodeURIComponent(ann.message_id)}`, { method: "DELETE" });
+            await loadAnnouncements();
+          } catch (err) {
+            alert(`Lỗi khi xóa thông báo: ${err.message}`);
+          }
+        };
+        meta.appendChild(delBtn);
+      }
+
       const body = document.createElement("div");
       body.className = "announcement-content";
       body.textContent = ann.content;
@@ -2778,6 +2798,38 @@ function toggleTheme() {
     showScreen("authScreen");
   }
 })();
+
+// ── PWA Installation Support ──────────────────────────────────────────────────
+let deferredInstallPrompt = null;
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = el("pwaInstallBtn");
+    if (btn) btn.hidden = false;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    const btn = el("pwaInstallBtn");
+    if (btn) btn.hidden = true;
+  });
+}
+
+async function installPWA() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    if (choice && choice.outcome === "accepted") {
+      deferredInstallPrompt = null;
+      const btn = el("pwaInstallBtn");
+      if (btn) btn.hidden = true;
+    }
+  } else {
+    alert("Để cài đặt ứng dụng CLB IT AI:\n\n• Trên máy tính (Chrome/Edge): Nhấp vào biểu tượng Cài đặt 🖥️ ở thanh địa chỉ phía trên.\n• Trên điện thoại (Android/iOS): Nhấp nút Chia sẻ hoặc Menu (⋮) -> Chọn 'Thêm vào Màn hình chính' (Add to Home Screen).");
+  }
+}
+
 
 // ── Exports for testing ────────────────────────────────────────────────────────
 if (typeof module !== "undefined") {

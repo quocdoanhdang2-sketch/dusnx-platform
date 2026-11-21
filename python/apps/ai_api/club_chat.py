@@ -223,6 +223,12 @@ class ClubChatDB:
                 raise ValueError("message not found")
             self._conn.commit()
 
+    def delete_message(self, message_id: str) -> bool:
+        with self._lock, self._conn:
+            cur = self._conn.execute("DELETE FROM messages WHERE message_id=?", (message_id,))
+            self._conn.commit()
+            return cur.rowcount > 0
+
 
 _chat_db: Optional[ClubChatDB] = None
 

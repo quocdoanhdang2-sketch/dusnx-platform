@@ -147,6 +147,9 @@
       <button class="sidebar-nav-item" onclick="showView('timeline')" id="navTimeline">
         <span class="nav-icon" aria-hidden="true">📊</span> Lịch sử hoạt động
       </button>
+      <button class="sidebar-nav-item" id="pwaInstallBtn" onclick="installPWA()">
+        <span class="nav-icon" aria-hidden="true">📲</span> Cài đặt App (PWA)
+      </button>
       <button class="sidebar-nav-item logout-btn" onclick="handleLogout()">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span> Đăng xuất
       </button>
@@ -513,15 +516,14 @@
   </div>
 </div>
 
-<script src="app.js?v=20261118_clean01"></script>
+<script src="app.js?v=20261121_app02"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      for (const reg of regs) reg.unregister();
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.warn('SW registration skipped:', err);
+      });
     });
-    if (window.caches) {
-      caches.keys().then(names => names.forEach(name => caches.delete(name)));
-    }
   }
 </script>
 </body>
