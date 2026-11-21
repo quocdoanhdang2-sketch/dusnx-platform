@@ -1156,6 +1156,72 @@ def _detect_remember_intent(text: str) -> Optional[tuple[str, str]]:
     return None
 
 
+def _extract_conversational_facts(text: str) -> list[tuple[str, str]]:
+    """
+    Continuous implicit memory extraction: automatically extracts facts, identity,
+    department, project, preferences, or goals from conversational messages without
+    requiring explicit 'nhớ rằng' prefix commands.
+    """
+    import re as _re
+    t = text.strip()
+    if "?" in t or any(q in t.lower() for q in ("là ai", "là gì", "nào", "sao", "thế nào", "phải không", "đúng không")):
+        return []
+    if _re.match(r"^(?:hãy\s+)?(?:nhớ|ghi nhớ|lưu|lưu lại)\b", t, _re.IGNORECASE):
+        return []
+
+    facts = []
+
+    # 1. Name: "tên tôi là X", "tôi tên là X", "mình tên là X"
+    m_name = _re.search(r"\b(?:tên\s+(?:tôi|mình)\s+là|(?:tôi|mình)\s+tên\s+là)\s+([\w\s]{2,40})", t, _re.IGNORECASE)
+    if m_name:
+        name = m_name.group(1).strip().strip(".,!?")
+        if name and len(name.split()) <= 5 and not _re.search(r"\b(?:gì|sao)\b", name.lower()):
+            facts.append(("personal_fact", f"Tên người dùng là {name.strip()}"))
+
+    # 2. Ban / Department: "tôi thuộc ban X", "tôi ở ban X", "mình ở ban X", "tôi là thành viên ban X"
+    m_ban = _re.search(r"\b(?:tôi|mình)\s+(?:thuộc|ở|tham gia|vào|là\s+thành\s+viên)\s+(ban\s+[\w\s]{2,40})(?=[,.;!?]|$)", t, _re.IGNORECASE)
+    if m_ban:
+        ban = m_ban.group(1).strip().strip(".,!?")
+        if ban and not _re.search(r"\b(?:nào|gì|sao)\b", ban.lower()):
+            facts.append(("personal_fact", f"Người dùng thuộc {ban}"))
+
+    # 3. Role / Student: "tôi là sinh viên...", "mình là sinh viên..."
+    m_role = _re.search(r"\b(?:tôi|mình)\s+là\s+([\w\s]{3,60})(?=[,.;!?]|$)", t, _re.IGNORECASE)
+    if m_role and not m_name and not m_ban:
+        role = m_role.group(1).strip().strip(".,!?")
+        role_lower = role.lower()
+        if any(k in role_lower for k in ("sinh viên", "sinh vien", "thành viên", "thanh vien", "lập trình viên", "coder", "trưởng ban", "phó ban", "học viên", "nghiên cứu sinh")):
+            if not _re.search(r"\b(?:gì|nào|sao)\b", role_lower):
+                facts.append(("personal_fact", f"Người dùng là {role}"))
+
+    # 4. Project: "dự án của tôi là X", "đề tài của tôi là X", "tôi đang làm dự án X"
+    m_proj = _re.search(r"\b(?:dự\s+án|đề\s+tài|đồ\s+án)\s+(?:của\s+(?:tôi|mình)|đang\s+làm)\s+(?:là\s+)?([-\w\s]{3,80})(?=[,.;!?]|$)", t, _re.IGNORECASE)
+    if not m_proj:
+        m_proj = _re.search(r"\b(?:tôi|mình)\s+đang\s+làm\s+(?:dự\s+án|đề\s+tài|đồ\s+án)\s+([-\w\s]{3,80})(?=[,.;!?]|$)", t, _re.IGNORECASE)
+    if m_proj:
+        proj = m_proj.group(1).strip().strip(".,!?")
+        if proj and not _re.search(r"\b(?:gì|nào|sao)\b", proj.lower()):
+            facts.append(("personal_fact", f"Dự án của người dùng: {proj}"))
+
+    # 5. Preference: "tôi thích X", "sở thích của tôi là X", "tôi hay dùng X"
+    m_pref = _re.search(r"\b(?:tôi|mình)\s+(?:thích|ưu tiên|thường dùng|hay dùng)\s+([-\w\s+,]{3,60})(?=[.;!?]|$)", t, _re.IGNORECASE)
+    if not m_pref:
+        m_pref = _re.search(r"\bsở\s+thích\s+của\s+(?:tôi|mình)\s+là\s+([-\w\s+,]{3,60})(?=[.;!?]|$)", t, _re.IGNORECASE)
+    if m_pref:
+        pref = m_pref.group(1).strip().strip(".,!?")
+        if pref and not _re.search(r"\b(?:gì|nào|sao|không)\b", pref.lower()):
+            facts.append(("preference", f"Sở thích/thói quen của người dùng: {pref}"))
+
+    # 6. Goal: "mục tiêu của tôi là X", "kế hoạch của tôi là X"
+    m_goal = _re.search(r"\b(?:mục\s+tiêu|kế\s+hoạch)\s+(?:của\s+(?:tôi|mình))\s+là\s+([-\w\s+,]{3,80})(?=[.;!?]|$)", t, _re.IGNORECASE)
+    if m_goal:
+        goal = m_goal.group(1).strip().strip(".,!?")
+        if goal and not _re.search(r"\b(?:gì|nào|sao)\b", goal.lower()):
+            facts.append(("goal", f"Mục tiêu của người dùng: {goal}"))
+
+    return facts
+
+
 def _detect_missing_context_query(text: str) -> bool:
     """Check if user asks for previous context/choice that requires context."""
     import re as _re
@@ -1813,6 +1879,26 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     else:
         db.append_message(req.session_id, user_id, "user", req.message)
 
+    # ── Continuous Implicit Memory Extraction ─────────────────────────────────
+    # Automatically extract personal facts, role, project, preferences from regular chat.
+    office_request = _is_office_request(req.message)
+    if not office_request and not req.is_retry:
+        extracted_facts = _extract_conversational_facts(req.message)
+        if extracted_facts:
+            existing_mems = db.list_memories(user_id, project_id=req.project_id, limit=50)
+            existing_contents = {" ".join(str(m.get("content", "")).split()).casefold() for m in existing_mems}
+            for itype, fact_content in extracted_facts:
+                norm_fact = " ".join(fact_content.split()).casefold()
+                if norm_fact not in existing_contents:
+                    db.create_memory(
+                        user_id=user_id,
+                        info_type=itype,
+                        content=fact_content,
+                        source_session=req.session_id,
+                        project_id=req.project_id,
+                    )
+                    existing_contents.add(norm_fact)
+
     # Get active memories for context (filtered and scored by query/project)
     memories = db.get_active_memories_for_context(user_id, project_id=req.project_id, query=req.message, limit=15)
     candidate_ids = [m["memory_id"] for m in memories]
@@ -2024,11 +2110,15 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     transform_request = _is_transform_request(req.message) or office_request
     # When current_mode == "lora": App B skips RAG retrieval to showcase pure LoRA persona & behavior
     retrieval_query = req.message
-    if history and len(req.message.split()) <= 15:
-        prev_user_msgs = [h.get("content", "") for h in history if h.get("role") == "user"]
-        if prev_user_msgs:
-            last_msg = prev_user_msgs[-1].strip()
-            retrieval_query = f"{last_msg} {req.message}"
+    if history:
+        has_followup_marker = bool(re.search(
+            r"\b(?:nó|đó|kia|này|khóa này|chương trình này|lộ trình này|sau đó|xong|tiếp theo|thế nào|ra sao|được không)\b",
+            req.message.lower()))
+        if len(req.message.split()) <= 15 or has_followup_marker:
+            prev_user_msgs = [h.get("content", "") for h in history if h.get("role") == "user"]
+            if prev_user_msgs:
+                last_msg = prev_user_msgs[-1].strip()
+                retrieval_query = f"{last_msg} {req.message}"
 
     if (current_mode != "lora" and not office_request
             and not _is_translation_request(req.message)

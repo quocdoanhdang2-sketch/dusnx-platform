@@ -1008,6 +1008,9 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
     asks_date_range = bool(re.search(
         r"(?:tu|den)\s+ngay\s+nao|ngay\s+nao\s+den\s+ngay\s+nao|thoi han|moc thoi gian|"
         r"tu\s+\d{1,2}/\d{1,2}|den\s+\d{1,2}/\d{1,2}", query_folded))
+    asks_duration = bool(re.search(
+        r"(?:bao\s+lau|may\s+tuan|thoi\s+luong|may\s+thang|thoi\s+gian\s+hoc|giai\s+doan)",
+        query_folded))
     date_range_re = re.compile(r"\d{1,2}/\d{1,2}/\d{4}\s*[-–]\s*\d{1,2}/\d{1,2}/\d{4}")
     with _connect() as conn:
         rows = conn.execute(
@@ -1173,6 +1176,11 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
         if asks_date_range and has_date_range:
             # Milestones ("Nhận đơn 01/12/2026 - 15/12/2026") are the answer.
             score += 60.0
+        if asks_duration:
+            if re.search(r"\b(?:\d+\s+tuan|\d+\s+thang|giai\s+doan|thoi\s+luong|12\s+tuan|3\s+giai\s+doan)\b", folded_haystack):
+                score += 95.0
+            if "muc tieu" in folded_tail:
+                score -= 60.0
         if "workshop" in query_folded and "10-lich-workshop.md" in row["path"]:
             if "thong tin chung" in folded_tail:
                 # The shared time/place of the workshop series.
@@ -1823,7 +1831,10 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                     score -= 20.0
             if asks_duration:
                 if re.search(r"\b(?:\d+\s+tuan|\d+\s+thang|giai doan|thoi luong)\b", folded):
-                    score += 18.0
+                    score += 24.0
+            asks_completion = bool(re.search(r"(?:hoan\s+thien|hoan\s+thanh|danh\s+gia|chung\s+chi|tot\s+nghiep)", query_folded))
+            if asks_completion and any(k in folded for k in ("chung chi", "danh gia", "chuyen can", "capstone", "diem")):
+                score += 20.0
             if asks_schedule and asks_rule_time and not has_date_detail:
                 if re.search(r"thu\s+\d", folded) and re.search(r"\d{1,2}:\d{2}", folded):
                     # The recurring rule ("thứ 5 hằng tuần, 18:30-21:00") is the
@@ -1847,6 +1858,17 @@ def answer_from_hits(query: str, hits: list[Hit], language: str = "vi",
                 if len(quote) >= 12:
                     candidates.append((score_text(quote, leaf_terms, 0, False) + 14.0,
                                        rank, -1, quote, rank))
+
+        if asks_duration:
+            all_parts = [part.strip() for part in (hit.heading or "").split(">") if part.strip()]
+            for part in all_parts:
+                part_clean = _SECTION_NUMBER.sub("", part).strip()
+                part_folded = _strip_diacritics(part_clean.lower())
+                if re.search(r"\b(?:\d+\s+tuan|\d+\s+thang|giai\s+doan|thoi\s+luong)\b", part_folded):
+                    quote = _truncate(part_clean, 300)
+                    if len(quote) >= 10:
+                        candidates.append((score_text(quote, terms, 0, False) + 26.0,
+                                           rank, -2, quote, rank))
 
         offset = 0
         for line_index, (line, is_heading) in enumerate(_plain_blocks(hit.text)):
