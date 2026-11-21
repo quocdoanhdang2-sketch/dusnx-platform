@@ -42,4 +42,4 @@
 
 ## 9. Chế độ bảo trì
 - Ban kỹ thuật bảo trì máy vào tối thứ 7 hằng tuần; thờii điểm này phòng A2-305 không nhận đăng ký.
-- Các công cụ mới được duyệt sẽ được cài đợt bảo trì tuần đầu của tháng tiếp theo; danh sách niêm yết tại phòng A2-304.
+- Các công cụ mới được duyệt sẽ được cài đợt bảo trì tuần đầu của tháng tiếp theo; danh sách niêm yết tại phòng 203 tòa C2.

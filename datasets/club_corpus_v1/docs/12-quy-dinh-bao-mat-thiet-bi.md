@@ -18,7 +18,7 @@
 ## 4. An toàn mạng
 - Cấm truy cập trang web độc hại, cờ bạc, nội dung vi phạm pháp luật từ mạng của CLB và máy lab.
 - Cấm cài và chạy công cụ tấn công mạng, quét lỗ hổng trái phép từ mạng CLB.
-- Nghi ngờ máy nhiễm mã độc: ngắt mạng ngay và báo Trưởng ban kỹ thuật Đỗ Nam Khánh trong giờ hành chính thứ 2, 4, 6 tại phòng A2-304.
+- Nghi ngờ máy nhiễm mã độc: ngắt mạng ngay và báo Trưởng ban kỹ thuật Đỗ Nam Khánh trong giờ hành chính thứ 2, 4, 6 tại phòng 203 tòa C2.
 
 ## 5. Báo cáo hỏng hóc và sự cố
 - Hỏng hóc thiết bị (màn hình, bàn phím, chuột, máy không khởi động) báo ngay cho Trưởng ban kỹ thuật Đỗ Nam Khánh, không tự sửa.

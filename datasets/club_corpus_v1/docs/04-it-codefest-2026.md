@@ -8,7 +8,7 @@
 
 ## 2. Đội hình và đăng ký
 - Mỗi đội gồm đúng 3 thành viên; thành viên có thể ghép đội tại bàn đăng ký nếu chưa đủ ngườii.
-- Đăng ký trước ngày 10/12/2026 tại phòng A2-304; đội nộp tên đội, tên 3 thành viên kèm mã TV (IT-xxx) và mô tả ngắn ý tưởng dự kiến (tối đa 200 chữ).
+- Đăng ký trước ngày 10/12/2026 tại phòng 203 tòa C2; đội nộp tên đội, tên 3 thành viên kèm mã TV (IT-xxx) và mô tả ngắn ý tưởng dự kiến (tối đa 200 chữ).
 - Ban tổ chức xác nhận danh sách đội dự thi chậm nhất 15/12/2026; đội không đủ 3 mặt trong 60 phút đầu ngày thi bị loại.
 
 ## 3. Chủ đề và yêu cầu sản phẩm
@@ -38,7 +38,7 @@
 - Không mang sản phẩm hoàn chỉnh từ trước vào thi; ban giám khảo có quyền hỏi về quá trình làm để kiểm tra tính mới.
 - Mọi thắc mắc trong giờ thi liên hệ trưởng ban kỹ thuật Đỗ Nam Khánh hoặc trưởng ban hậu cần Phạm Thuỳ Dương.
 
-## 8. Đăng ký cụ thể tại phòng A2-304
+## 8. Đăng ký cụ thể tại phòng 203 tòa C2
 - Thờii hạn đăng ký: trước ngày 10/12/2026, trong giờ hành chính các ngày thứ 2, thứ 4, thứ 6.
 - Hồ sơ đăng ký: phiếu đăng ký ghi tên đội, tên và mã TV (IT-xxx) của 3 thành viên, ý tưởng dự kiến tối đa 200 chữ.
 - Ban tổ chức xác nhận bằng phiếu hồi đáp trước 15/12/2026; đội chưa nhận xác nhận coi như chưa hoàn tất đăng ký.
@@ -50,4 +50,4 @@
 
 ## 10. Tổng kết sau sự kiện
 - Ban tổ chức công bố bảng điểm chi tiết và ảnh sự kiện trong vòng 7 ngày sau 21/12/2026.
-- Mã nguồn các đội đoạt giải được lưu trữ làm tài liệu tham khảo nội bộ tại phòng A2-304; việc chia sẻ ra ngoài do Chủ nhiệm Nguyễn Minh Anh quyết định.
+- Mã nguồn các đội đoạt giải được lưu trữ làm tài liệu tham khảo nội bộ tại phòng 203 tòa C2; việc chia sẻ ra ngoài do Chủ nhiệm Nguyễn Minh Anh quyết định.

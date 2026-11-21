@@ -17,15 +17,15 @@
 
 ## 3. Tiêu chí xét tuyển
 - Yêu thích lập trình và công nghệ, có động lực học hỏi rõ ràng.
-- Cam kết tham gia tối thiểu 70% số buổi sinh hoạt trong học kỳ (sinh hoạt thứ 5 hằng tuần, 18:30-21:00, phòng A2-304).
+- Cam kết tham gia tối thiểu 70% số buổi sinh hoạt trong học kỳ (sinh hoạt thứ 5 hằng tuần, 18:30-21:00, phòng 203 tòa C2).
 - Không yêu cầu kinh nghiệm lập trình; ứng viên chưa biết gì vẫn được xét nếu thể hiện thái độ tích cực.
 - Ưu tiên: ứng viên có tham gia hoạt động ngoại khoá công nghệ hoặc sản phẩm tự học cá nhân (không bắt buộc).
 
 ## 4. Quy trình tuyển chọn
-- Bước 1 - Nhận đơn: ứng viên điền đơn theo mẫu chính thức và nộp tại phòng A2-304 trong giờ hành chính thứ 2, 4, 6.
+- Bước 1 - Nhận đơn: ứng viên điền đơn theo mẫu chính thức và nộp tại phòng 203 tòa C2 trong giờ hành chính thứ 2, 4, 6.
 - Bước 2 - Sơ tuyển hồ sơ: Ban chủ nhiệm rà soát độ hoàn chỉnh và mức độ phù hợp; kết quả sơ tuyển thông báo trước ngày 17/12/2026.
 - Bước 3 - Phỏng vấn: vòng phỏng vấn 15 phút với Ban chủ nhiệm (Nguyễn Minh Anh, Lê Quốc Bảo và trưởng các ban) trong các ngày 18-20/12/2026; nội dung hỏi về động lực, khả năng cam kết sinh hoạt và hướng phát triển cá nhân.
-- Bước 4 - Công bố: danh sách trúng tuyển công bố ngày 22/12/2026 tại phòng A2-304 và trên fanpage CLB.
+- Bước 4 - Công bố: danh sách trúng tuyển công bố ngày 22/12/2026 tại phòng 203 tòa C2 và trên fanpage CLB.
 
 ## 5. Quyền lợi ứng viên trúng tuyển
 - Nhận mã thành viên (tiếp nối sau IT-008) và thẻ thành viên.
@@ -34,10 +34,10 @@
 
 ## 6. Lưu ý
 - Ứng viên không trúng tuyển đợt 2 vẫn có thể ứng tuyển lại đợt sau; Ban chủ nhiệm không giải thích lý do chi tiết từng trường hợp.
-- Mọi thắc mắc về tuyển thành viên liên hệ phòng A2-304 vào giờ hành chính thứ 2, 4, 6.
+- Mọi thắc mắc về tuyển thành viên liên hệ phòng 203 tòa C2 vào giờ hành chính thứ 2, 4, 6.
 
 ## 7. Chuẩn bị cho vòng phỏng vấn
-- Ứng viên đến trước giờ hẹn 15 phút tại phòng A2-304; mang theo thẻ sinh viên để đối chiếu danh tính.
+- Ứng viên đến trước giờ hẹn 15 phút tại phòng 203 tòa C2; mang theo thẻ sinh viên để đối chiếu danh tính.
 - Nội dung 15 phút gồm: 2 phút giới thiệu bản thân, 8 phút hỏi đáp với Ban chủ nhiệm, 5 phút tình huống cam kết thờii gian.
 - Kết quả phỏng vấn được chấm riêng từng tiêu chí; ứng viên không được xem phiếu điểm của ngườii khác.
 
@@ -47,5 +47,5 @@
 - Nếu số đăng ký vượt chỉ tiêu, ưu tiên cân bằng số lượng giữa các khóa nhập học.
 
 ## 9. Kênh thông báo
-- Thông báo tuyển thành viên niêm yết tại phòng A2-304 và trên fanpage CLB.
+- Thông báo tuyển thành viên niêm yết tại phòng 203 tòa C2 và trên fanpage CLB.
 - Lịch phỏng vấn riêng từng ứng viên do ban hậu cần thông báo trước 17/12/2026.

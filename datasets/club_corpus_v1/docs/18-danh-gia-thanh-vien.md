@@ -21,7 +21,7 @@
 - Bước 1 - Tổng hợp số liệu: ban hậu cần tổng hợp bảng điểm danh, ban kỹ thuật tổng hợp đóng góp project/workshop, trưởng các ban nhận xét thái độ; hoàn thành trước 08/01/2027.
 - Bước 2 - Đề cử: mỗi trưởng ban đề cử tối đa 2 ứng viên của ban mình kèm bảng điểm; nộp cho Chủ nhiệm Nguyễn Minh Anh trước 10/01/2027.
 - Bước 3 - Chấm điểm: Ban chủ nhiệm chấm theo trọng số 40-40-20; trường hợp đồng điểm, ưu tiên ngườii có điểm đóng góp cao hơn.
-- Bước 4 - Phê duyệt và công bố: Chủ nhiệm phê duyệt danh sách, công bố tại Demo Day 15/01/2027; kết quả niêm yết tại phòng A2-304 trong 7 ngày để tiếp nhận phản hồi.
+- Bước 4 - Phê duyệt và công bố: Chủ nhiệm phê duyệt danh sách, công bố tại Demo Day 15/01/2027; kết quả niêm yết tại phòng 203 tòa C2 trong 7 ngày để tiếp nhận phản hồi.
 
 ## 5. Danh hiệu "Cộng tác viên tích cực"
 - Danh hiệu phụ trao cho 2-3 ngườii tiếp theo có tổng điểm cao sau nhóm "Thành viên xuất sắc".

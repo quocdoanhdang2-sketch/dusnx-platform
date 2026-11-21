@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+import json
 import math
 import os
 import re
@@ -1181,6 +1182,14 @@ def retrieve(query: str, top_k: int = 5, max_chars: int = 4200) -> list[Hit]:
                 score += 95.0
             if "muc tieu" in folded_tail:
                 score -= 60.0
+        asks_university = bool(re.search(
+            r"(?:truong\s+nao|o\s+truong|thuoc\s+truong|dai\s+hoc|ictu|thai\s+nguyen|don\s+vi\s+truc\s+thuoc)",
+            query_folded))
+        if asks_university:
+            if "01-quy-che-hoat-dong.md" in row["path"]:
+                score += 150.0
+            if "truong hop" in folded_tail and not "truong hop" in query_folded:
+                score -= 80.0
         if "workshop" in query_folded and "10-lich-workshop.md" in row["path"]:
             if "thong tin chung" in folded_tail:
                 # The shared time/place of the workshop series.

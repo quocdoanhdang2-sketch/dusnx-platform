@@ -3,7 +3,8 @@
 # Đổi loại CLB khác: sửa file này + sinh lại corpus.
 
 club_name: CLB IT
-club_full_name: Câu lạc bộ Tin học sinh viên CLB IT
+club_full_name: Câu lạc bộ Tin học sinh viên CLB IT - Trường Đại học Công nghệ Thông tin và Truyền thông - Đại học Thái Nguyên (ICTU)
+university: Trường Đại học Công nghệ Thông tin và Truyền thông - Đại học Thái Nguyên (ICTU)
 type: câu lạc bộ công nghệ thông tin
 language: vi
 
@@ -43,13 +44,13 @@ members:
 schedule:
   weekday: Thứ 5 hằng tuần
   time: "18:30-21:00"
-  room: Phòng A2-304, tòa A
+  room: Phòng 203, tòa C2
   odd_weeks: Buổi đào tạo kỹ năng
   even_weeks: Làm project nhóm
   note: Nghỉ ngày 01/01/2027 (Tết dương lịch)
 
 rooms:
-  sinh_hoat: Phòng A2-304, tòa A
+  sinh_hoat: Phòng 203, tòa C2
   lab: Phòng A2-305, tòa A
   lab_hours: "Thứ 2-Thứ 7, 08:00-21:00"
   lab_rules:
@@ -59,9 +60,9 @@ rooms:
     - Ra về tắt hết thiết bị
 
 events:
-  - {name: Workshop Git & GitHub từ con số 0, date: "27/11/2026", place: Phòng A2-304}
-  - {name: Workshop Python cơ bản cho ngườii mới, date: "04/12/2026", place: Phòng A2-304}
-  - {name: Workshop Figma cho developer, date: "11/12/2026", place: Phòng A2-304}
+  - {name: Workshop Git & GitHub từ con số 0, date: "27/11/2026", place: Phòng 203 tòa C2}
+  - {name: Workshop Python cơ bản cho ngườii mới, date: "04/12/2026", place: Phòng 203 tòa C2}
+  - {name: Workshop Figma cho developer, date: "11/12/2026", place: Phòng 203 tòa C2}
   - {name: Tuyển thành viên đợt 2, date: "01-15/12/2026"}
   - {name: Hackathon IT CodeFest 2026, date: "20-21/12/2026", place: Sảnh tòa B}
   - {name: Team building, date: "27/12/2026", place: Khu sinh thái Thung Lũng Xanh}

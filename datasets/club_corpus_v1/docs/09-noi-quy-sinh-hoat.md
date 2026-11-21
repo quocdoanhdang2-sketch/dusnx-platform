@@ -1,7 +1,7 @@
 # Nội quy sinh hoạt CLB IT
 
 ## 1. Điểm danh
-- Điểm danh bắt buộc mỗi buổi sinh hoạt thứ 5, 18:30-18:45, tại phòng A2-304 bằng mã thành viên (IT-xxx).
+- Điểm danh bắt buộc mỗi buổi sinh hoạt thứ 5, 18:30-18:45, tại phòng 203 tòa C2 bằng mã thành viên (IT-xxx).
 - Ban hậu cần lập bảng điểm danh cuối buổi và lưu trữ; bảng điểm danh là căn cứ tính chuyên cần và đánh giá cuối học kỳ.
 - Đi muộn sau 18:45 ghi "đi muộn"; 3 lần đi muộn tính bằng 1 buổi vắng.
 
@@ -23,10 +23,10 @@
 ## 5. Quy tắc ứng xử trong sinh hoạt
 - Tôn trọng ngườii phát biểu, không ngắt lờii; thảo luận tập trung vào vấn đề, không công kích cá nhân.
 - Không sử dụng điện thoại cho việc riêng trong phần nội dung chính 18:45-20:30.
-- Giữ gìn phòng A2-304: không ăn uống, không dán giấy lên tường, sắp xếp ghế lại sau buổi sinh hoạt.
+- Giữ gìn phòng 203 tòa C2: không ăn uống, không dán giấy lên tường, sắp xếp ghế lại sau buổi sinh hoạt.
 
 ## 6. Quy định bổ sung
-- Mọi thắc mắc về điểm danh, chuyên cần liên hệ Trưởng ban hậu cần Phạm Thuỳ Dương tại phòng A2-304 (giờ hành chính thứ 2, 4, 6).
+- Mọi thắc mắc về điểm danh, chuyên cần liên hệ Trưởng ban hậu cần Phạm Thuỳ Dương tại phòng 203 tòa C2 (giờ hành chính thứ 2, 4, 6).
 - Nội quy áp dụng cho mọi thành viên; sửa đổi nội quy do đại hội CLB quyết định theo quy chế hoạt động.
 
 ## 7. Ví dụ tính chuyên cần và quy đổi
@@ -36,10 +36,10 @@
 
 ## 8. Trình tự xử lý kỷ luật
 - Bước 1: ghi nhận vi phạm vào sổ theo dõi của ban hậu cần kèm ngày, nội dung, ngườii xác nhận.
-- Bước 2: đạt 3 lần vi phạm - Chủ nhiệm Nguyễn Minh Anh ký quyết định cảnh cáo, niêm yết tại phòng A2-304.
+- Bước 2: đạt 3 lần vi phạm - Chủ nhiệm Nguyễn Minh Anh ký quyết định cảnh cáo, niêm yết tại phòng 203 tòa C2.
 - Bước 3: đạt 5 lần vi phạm - BCN họp và quyết định buộc thôi CLB, thông báo trực tiếp và niêm yết trong 7 ngày.
 - Thành viên bị kỷ luật có quyền gửi đơn giải trình cho Phó chủ nhiệm Lê Quốc Bảo trong 5 ngày làm việc.
 
 ## 9. Cam kết
-- Khi nhận thẻ thành viên, mỗi thành viên ký cam kết tuân thủ nội quy này tại phòng A2-304.
+- Khi nhận thẻ thành viên, mỗi thành viên ký cam kết tuân thủ nội quy này tại phòng 203 tòa C2.
 - Bản cam kết do ban hậu cần lưu cùng hồ sơ thành viên suốt thờii gian tham gia CLB.

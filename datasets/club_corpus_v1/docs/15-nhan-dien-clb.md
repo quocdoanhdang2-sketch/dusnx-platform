@@ -23,11 +23,11 @@
 ## 5. Mẫu slide thống nhất
 - Mọi bài thuyết trình mang tên CLB (workshop, Demo Day, IT CodeFest) phải dùng mẫu slide chuẩn của CLB.
 - Mẫu slide: tiêu đề slide chính màu #1E40AF, font chữ thống nhất do ban truyền thông phát hành, trang cuối có logo lục giác "IT" và dòng "CLB IT - Học hỏi - Chia sẻ - Sáng tạo".
-- Tải mẫu slide tại phòng A2-304 hoặc qua kênh nội bộ; phiên bản mẫu do Trưởng ban truyền thông Trần Hà Vy cập nhật mỗi đầu học kỳ.
+- Tải mẫu slide tại phòng 203 tòa C2 hoặc qua kênh nội bộ; phiên bản mẫu do Trưởng ban truyền thông Trần Hà Vy cập nhật mỗi đầu học kỳ.
 
 ## 6. Trách nhiệm quản lý
 - Trưởng ban truyền thông Trần Hà Vy là ngườii chịu trách nhiệm cuối cùng về nhận diện CLB.
-- File gốc logo và mẫu slide lưu tại phòng A2-304; thành viên không tự tạo biến thể mới.
+- File gốc logo và mẫu slide lưu tại phòng 203 tòa C2; thành viên không tự tạo biến thể mới.
 
 ## 7. Áp dụng trên các kênh truyền thông
 - Ảnh đại diện và ảnh bìa fanpage dùng bản logo phụ, cập nhật mỗi đầu nhiệm kỳ Ban chủ nhiệm.
@@ -42,5 +42,5 @@
 ## 9. Xử lý vi phạm nhận diện
 - Sản phẩm vi phạm (sai màu, méo logo, dùng logo chưa xin phép) bị yêu cầu gỡ trong vòng 48 giờ.
 - Tái phạm tính 1 lần vi phạm nội quy CLB theo quy trình kỷ luật.
-- Bộ nhận diện niêm yết bản mẫu tại phòng A2-304 để thành viên đối chiếu khi thiết kế.
+- Bộ nhận diện niêm yết bản mẫu tại phòng 203 tòa C2 để thành viên đối chiếu khi thiết kế.
 - Mọi đề xuất thay đổi nhận diện gửi Trưởng ban truyền thông Trần Hà Vy trước khi trình Ban chủ nhiệm.

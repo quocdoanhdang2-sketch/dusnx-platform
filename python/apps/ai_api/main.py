@@ -2167,7 +2167,7 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
             "- Remember your personal notes and decisions in your private notebook.\n"
             "- Compare answers side-by-side with an external fallback model (Gemini API)."
             if reply_language == "en" else
-            "Tôi là Trợ lý ảo CLB IT. Tôi có thể hỗ trợ bạn các công việc sau:\n"
+            "Tôi là Trợ lý ảo CLB IT - Trường Đại học Công nghệ Thông tin & Truyền thông (ICTU) - Đại học Thái Nguyên. Tôi có thể hỗ trợ bạn các công việc sau:\n"
             "- Tra cứu thông tin từ 26 tài liệu nội bộ (quy chế, lịch sinh hoạt, quỹ, sự kiện) kèm nguồn trích dẫn [S#] chính xác.\n"
             "- Từ chối và hướng dẫn liên hệ Ban chủ nhiệm khi câu hỏi nằm ngoài phạm vi tài liệu CLB.\n"
             "- Ghi nhớ và quản lý các quyết định, ghi chú trong sổ tay cá nhân của bạn.\n"

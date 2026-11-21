@@ -1,12 +1,12 @@
 # Quy chế hoạt động CLB IT
 
-## 1. Mục đích
-Câu lạc bộ IT (gọi tắt là CLB IT) là tổ chức sinh viên tình nguyện hoạt động phi lợi nhuận, nhằm tạo môi trường học tập và rèn luyện kỹ năng tin học cho sinh viên yêu thích công nghệ. Quy chế này là văn bản gốc điều chỉnh mọi hoạt động của CLB, áp dụng cho toàn bộ thành viên từ ngày ban hành.
+## 1. Mục đích và Đơn vị trực thuộc
+Câu lạc bộ IT (gọi tắt là CLB IT) là tổ chức sinh viên học thuật và công nghệ trực thuộc Trường Đại học Công nghệ Thông tin và Truyền thông - Đại học Thái Nguyên (ICTU). CLB hoạt động phi lợi nhuận nhằm tạo môi trường học tập, nghiên cứu và rèn luyện kỹ năng công nghệ thông tin cho sinh viên ICTU. Quy chế này là văn bản gốc điều chỉnh mọi hoạt động của CLB, áp dụng cho toàn bộ thành viên từ ngày ban hành.
 
 ## 2. Tôn chỉ và nguyên tắc
 - Tôn chỉ: "Học hỏi - Chia sẻ - Sáng tạo".
 - CLB hoạt động dựa trên nguyên tắc tự nguyện, dân chủ và minh bạch.
-- Mọi quyết định quan trọng phải được Ban chủ nhiệm (BCN) biểu quyết, thông báo công khai tại phòng A2-304 trước khi thực hiện ít nhất 3 ngày.
+- Mọi quyết định quan trọng phải được Ban chủ nhiệm (BCN) biểu quyết, thông báo công khai tại phòng 203 tòa C2 trước khi thực hiện ít nhất 3 ngày.
 - CLB không tham gia các hoạt động vi phạm pháp luật, vi phạm quy định nhà trường hoặc ảnh hưởng danh tiếng tập thể.
 
 ## 3. Cơ cấu tổ chức
@@ -17,7 +17,7 @@ CLB gồm Ban chủ nhiệm và 3 ban chuyên môn:
 
 ## 4. Nhiệm kỳ và cơ chế họp
 - Nhiệm kỳ Ban chủ nhiệm là 1 năm, bắt đầu từ đầu học kỳ 1 và kết thúc trước khi bầu BCN nhiệm kỳ tiếp theo.
-- BCN họp định kỳ 2 tuần/lần vào tối thứ 5 sau giờ sinh hoạt (từ 21:00) tại phòng A2-304; họp bất thường khi Chủ nhiệm triệu tập.
+- BCN họp định kỳ 2 tuần/lần vào tối thứ 5 sau giờ sinh hoạt (từ 21:00) tại phòng 203 tòa C2; họp bất thường khi Chủ nhiệm triệu tập.
 - Biên bản họp do Phó chủ nhiệm Lê Quốc Bảo tổng hợp, đăng công khai trong vòng 48 giờ.
 
 ## 5. Điều kiện thành lập nhóm project
@@ -31,7 +31,7 @@ CLB gồm Ban chủ nhiệm và 3 ban chuyên môn:
 - Quy chế sửa đổi phải được ít nhất 2/3 số thành viên hiện diện tại đại hội CLB tán thành.
 
 ## 7. Tài sản và bảo mật thông tin nội bộ
-- Tài sản CLB (máy tính lab, thiết bị trình chiếu tại phòng A2-304, áo đồng phục, banner) do ban hậu cần quản lý, kiểm kê đầu mỗi học kỳ.
+- Tài sản CLB (máy tính lab, thiết bị trình chiếu tại phòng 203 tòa C2, áo đồng phục, banner) do ban hậu cần quản lý, kiểm kê đầu mỗi học kỳ.
 - Tài liệu nội bộ (sổ quỹ, biên bản họp BCN, danh sách thành viên kèm mã TV) chỉ lưu hành trong nội bộ; cấm đăng tải công khai khi chưa có chữ ký Chủ nhiệm Nguyễn Minh Anh.
 - Thành viên thôi CLB phải trả lại áo đồng phục và tài sản mượn trong vòng 7 ngày.
 
@@ -42,5 +42,5 @@ Quy chế này có hiệu lực cùng các văn bản sau và được đọc k�
 - Kế hoạch tài chính học kỳ và quy định đóng quỹ.
 - Thể lệ IT CodeFest 2026, kế hoạch Demo Day 15/01/2027 và kế hoạch tuyển thành viên đợt 2.
 - Văn bản giải thích thuộc quyền của Ban chủ nhiệm; trường hợp mâu thuẫn giữa các văn bản, quy chế hoạt động được ưu tiên áp dụng.
-- Quy chế có hiệu lực từ ngày ban hành và được niêm yết tại phòng A2-304, tòa A.
+- Quy chế có hiệu lực từ ngày ban hành và được niêm yết tại phòng 203, tòa C2.
 - Mọi thắc mắc về quy chế gửi Phó chủ nhiệm Lê Quốc Bảo trong giờ hành chính thứ 2, 4, 6.

@@ -8,7 +8,7 @@
 - Đơn vị phụ trách: ban hậu cần; đầu mối đăng ký là Trưởng ban hậu cần Phạm Thuỳ Dương.
 
 ## 2. Đăng ký tham gia
-- Đăng ký với Trưởng ban hậu cần Phạm Thuỳ Dương tại phòng A2-304 trước ngày 20/12/2026.
+- Đăng ký với Trưởng ban hậu cần Phạm Thuỳ Dương tại phòng 203 tòa C2 trước ngày 20/12/2026.
 - Khi đăng ký ghi rõ: họ tên, mã TV (IT-xxx) và đóng luôn phí 100.000đ/ngườii.
 - Sau 20/12/2026 ban tổ chức chốt số lượng để đặt vé, xe và suất ăn; đăng ký sau mốc này chỉ được xếp chỗ nếu còn.
 
@@ -43,7 +43,7 @@
 ## 7. Phân công ban tổ chức
 - Tổng phụ trách: Trưởng ban hậu cần Phạm Thuỳ Dương (đăng ký, thu phí, xe, suất ăn).
 - Hỗ trợ hậu cần: Dương Quang Huy (IT-007) và Lâm Nhã Uyên (IT-004) - kiểm đếm ngườii, phát nước, hỗ trợ di chuyển.
-- Trò chơi team: ban kỹ thuật thiết kế 4 trò chơi tập thể, chạy thử ngày 24/12/2026 tại phòng A2-304.
+- Trò chơi team: ban kỹ thuật thiết kế 4 trò chơi tập thể, chạy thử ngày 24/12/2026 tại phòng 203 tòa C2.
 - Hình ảnh: ban truyền thông phụ trách chụp ảnh, quay gala, đăng bài trong 3 ngày sau chuyến đi.
 
 ## 8. Chuẩn bị cá nhân

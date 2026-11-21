@@ -28,13 +28,13 @@ Ban chủ nhiệm (BCN) nhiệm kỳ 2026-2027 gồm 5 thành viên:
 ### 2.5. Trưởng ban hậu cần - Phạm Thuỳ Dương
 - Thu quỹ 50.000đ/tháng, ghi sổ quỹ, công khai bảng thu chi hằng tháng.
 - Tiếp nhận đăng ký team building và báo vắng của thành viên.
-- Phụ trách cơ sở vật chất, phòng A2-304 và hậu cần sự kiện.
+- Phụ trách cơ sở vật chất, phòng 203 tòa C2 và hậu cần sự kiện.
 
 ## 3. Cách liên hệ
-- Gặp trực tiếp tại phòng A2-304 vào giờ hành chính các ngày thứ 2, thứ 4, thứ 6.
+- Gặp trực tiếp tại phòng 203 tòa C2 vào giờ hành chính các ngày thứ 2, thứ 4, thứ 6.
 - Các vấn đề tài chính, báo vắng, đăng ký sự kiện liên hệ Trưởng ban hậu cần Phạm Thuỳ Dương.
 - Các vấn đề workshop, lab, project liên hệ Trưởng ban kỹ thuật Đỗ Nam Khánh.
-- CLB không công bố số điện thoại hay email cá nhân; mọi liên hệ qua phòng A2-304 hoặc fanpage chính thức của CLB.
+- CLB không công bố số điện thoại hay email cá nhân; mọi liên hệ qua phòng 203 tòa C2 hoặc fanpage chính thức của CLB.
 
 ## 4. Quy trình bầu Ban chủ nhiệm
 - Bước 1 - Đề cử: bất kỳ thành viên nào cũng có thể đề cử ứng viên; ứng viên tự ứng cử cần có giới thiệu của ít nhất 3 thành viên. Hạn đề cử trước ngày bầu cử 7 ngày.
@@ -49,7 +49,7 @@ Ban chủ nhiệm (BCN) nhiệm kỳ 2026-2027 gồm 5 thành viên:
 
 ## 6. Quyền hạn và trách nhiệm chung của BCN
 - BCN chịu trách nhiệm trước toàn thể thành viên về kết quả hoạt động học kỳ, bao gồm chuỗi workshop tháng 12/2026, IT CodeFest 2026 và Demo Day 15/01/2027.
-- BCN phải công khai quyết định tại phòng A2-304 chậm nhất 3 ngày sau khi họp; biên bản họp 2 tuần/lần do Phó chủ nhiệm Lê Quốc Bảo lưu trữ.
+- BCN phải công khai quyết định tại phòng 203 tòa C2 chậm nhất 3 ngày sau khi họp; biên bản họp 2 tuần/lần do Phó chủ nhiệm Lê Quốc Bảo lưu trữ.
 - Thành viên BCN vi phạm nội quy bị xử lý như thành viên thường; thành viên BCN vắng 3 cuộc họp BCN liên tiếp bị xem xét miễn nhiệm.
 
 ## 7. Chế độ tự vệt và báo cáo

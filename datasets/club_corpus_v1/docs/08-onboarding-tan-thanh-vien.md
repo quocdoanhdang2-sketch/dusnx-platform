@@ -4,7 +4,7 @@
 Tân thành viên sau khi trúng tuyển (công bố danh sách ngày 22/12/2026 cho đợt 2) sẽ trải qua chương trình làm quen 1 tháng đầu tiên do ban kỹ thuật và ban hậu cần phối hợp tổ chức.
 
 ## 2. Hai buổi sinh hoạt đầu tiên
-- Tân thành viên phải dự đủ 2 buổi sinh hoạt đầu tiên vào các ngày thứ 5, 18:30-21:00, phòng A2-304.
+- Tân thành viên phải dự đủ 2 buổi sinh hoạt đầu tiên vào các ngày thứ 5, 18:30-21:00, phòng 203 tòa C2.
 - Buổi 1: giới thiệu CLB, gặp Ban chủ nhiệm, phát thẻ thành viên mã IT-xxx và hướng dẫn quy định cơ bản.
 - Buổi 2: chia ban tạm, tham gia hoạt động nhóm và ký cam kết tham gia sinh hoạt tối thiểu 70%.
 
@@ -16,7 +16,7 @@ Tân thành viên sau khi trúng tuyển (công bố danh sách ngày 22/12/2026
 ## 4. Khoá học nội bộ
 - Tân thành viên phải hoàn thành khoá nội bộ "Nhập môn lập trình web" do ban kỹ thuật biên soạn.
 - Khoá gồm 4 buổi: HTML/CSS cơ bản, JavaScript đầu tay, làm quen Git, thực hành dự án mini.
-- Buổi học khoá diễn ra trong các tuần đào tạo kỹ năng (tuần lẻ) tại phòng A2-304; học viên mang laptop cá nhân.
+- Buổi học khoá diễn ra trong các tuần đào tạo kỹ năng (tuần lẻ) tại phòng 203 tòa C2; học viên mang laptop cá nhân.
 
 ## 5. Chọn ban chính thức
 - Sau 1 tháng (kể từ buổi sinh hoạt đầu tiên), tân thành viên phải chọn ban chính thức: ban kỹ thuật, ban truyền thông hoặc ban hậu cần.

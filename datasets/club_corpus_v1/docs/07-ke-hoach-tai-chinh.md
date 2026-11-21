@@ -3,7 +3,7 @@
 ## 1. Khoản thu - quỹ thành viên
 - Mức quỹ: 50.000đ/tháng/thành viên.
 - Hạn đóng: trước ngày 10 hằng tháng.
-- Ngườii thu: Trưởng ban hậu cần Phạm Thuỳ Dương; thành viên nộp trực tiếp tại phòng A2-304 vào giờ hành chính thứ 2, thứ 4, thứ 6.
+- Ngườii thu: Trưởng ban hậu cần Phạm Thuỳ Dương; thành viên nộp trực tiếp tại phòng 203 tòa C2 vào giờ hành chính thứ 2, thứ 4, thứ 6.
 - Khoản thu được ghi ngay vào sổ quỹ với họ tên, mã TV (IT-xxx), số tiền và ngày nộp.
 
 ## 2. Quy trình chi tiêu
@@ -21,7 +21,7 @@
 | Tổng | 12.000.000đ | Trình BCN họp duyệt |
 
 ## 4. Minh bạch tài chính
-- Bảng thu chi được công khai mỗi tháng tại phòng A2-304 chậm nhất vào ngày 15 của tháng sau.
+- Bảng thu chi được công khai mỗi tháng tại phòng 203 tòa C2 chậm nhất vào ngày 15 của tháng sau.
 - Bảng thu chi ghi: tồn đầu tháng, khoản thu (danh sách nộp quỹ), khoản chi (hạng mục, số tiền, ngườii duyệt), tồn cuối tháng.
 - Thành viên có quyền hỏi chi tiết bất kỳ dòng nào tại buổi sinh hoạt thứ 5; ban hậu cần phải trả lờii tại chỗ hoặc trong vòng 3 ngày làm việc.
 
@@ -45,5 +45,5 @@
 - Dự toán thu 5 tháng học kỳ với 25 thành viên: 25 x 50.000đ x 5 = 6.250.000đ; phần thu phục vụ chi thường xuyên, phần chi lớn (CodeFest 6.000.000đ) được Chủ nhiệm phê duyệt riêng theo từng đợt.
 
 ## 9. Kiểm kê và lưu trữ
-- Sổ quỹ, hoá đơn, biên bản họp duyệt chi lưu tại phòng A2-304, lưu trữ tối thiểu 2 năm.
+- Sổ quỹ, hoá đơn, biên bản họp duyệt chi lưu tại phòng 203 tòa C2, lưu trữ tối thiểu 2 năm.
 - Việc bàn giao sổ quỹ giữa các nhiệm kỳ ban hậu cần do Phó chủ nhiệm Lê Quốc Bảo chứng kiến.
