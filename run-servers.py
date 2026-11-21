@@ -2,12 +2,27 @@ import os
 import sys
 import subprocess
 import time
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(r"D:\Projects\dusnx-platform")
 PYTHON_EXE = ROOT / "python/.venv/Scripts/python.exe"
 if not PYTHON_EXE.exists():
     PYTHON_EXE = Path(sys.executable)
+
+def ensure_ollama():
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2) as r:
+            return
+    except Exception:
+        pass
+    ollama_bin = Path(r"D:\Apps\Ollama\ollama.exe")
+    if ollama_bin.exists():
+        print("Starting Ollama background server...")
+        subprocess.Popen([str(ollama_bin), "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(2)
+
+ensure_ollama()
 
 CHECKPOINT = ROOT / "training-results/colab-run-01/extracted/dusnx-router-full-01/router.pt"
 GW_DLL = ROOT / "runtime/gateway-8090/Dusnx.Gateway.dll"
@@ -21,7 +36,7 @@ ai_env = {
     "DUSNX_DEVICE": "cpu",
     "DUSNX_DATA_DIR": str(ROOT / "python/data"),
     "DUSNX_PROVIDER": "ollama",
-    "DUSNX_OLLAMA_MODEL": "qwen2.5:0.5b",
+    "DUSNX_OLLAMA_MODEL": "qwen2.5:1.5b-instruct",
     "DUSNX_ENABLE_LLM_EVAL": "0",
 }
 

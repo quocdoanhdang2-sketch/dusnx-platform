@@ -2595,28 +2595,27 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     else:
         selected = select_memories(req.message, memories)
         prompt_ids = [m["memory_id"] for m in selected]
-        # Documentation answers are quoted, not generated: a 1.5B model tends to
-        # invent DUSN-X facts even when correct context is supplied. Strong
-        # retrieval therefore produces a deterministic cited answer.
-        extractive = rag_extractive
-        if extractive:
-            reply_text, provider_ok = extractive, True
+        # Synthesize an intelligent, conversational answer grounded in the retrieved RAG context.
+        # Fall back to deterministic extraction only if the provider is unavailable or fails.
+        generated = generate_response(
+            user_message=req.message, memories=selected, intent=dusnx_intent,
+            session_history=history, project_name=project_name,
+            response_language=reply_language,
+            knowledge_context=rag_context or None,
+            conversation_summary=conversation_summary or None,
+            force_provider=office_request or bool(rag_context),
+            on_token=on_token,
+        )
+        reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
+        provider_called = getattr(generated, "provider_called", False)
+
+        if (not provider_ok or not (reply_text or "").strip()) and rag_extractive:
+            reply_text, provider_ok = rag_extractive, True
             provider_used = model_used = tokens_generated = None
             provider_called = False
             response_source = "rag_extract"
             memory_ids = []
         else:
-            generated = generate_response(
-                user_message=req.message, memories=selected, intent=dusnx_intent,
-                session_history=history, project_name=project_name,
-                response_language=reply_language,
-                knowledge_context=rag_context or None,
-                conversation_summary=conversation_summary or None,
-                force_provider=office_request,
-                on_token=on_token,
-            )
-            reply_text, provider_ok, provider_used, model_used, tokens_generated = generated
-            provider_called = getattr(generated, "provider_called", False)
             if provider_called and reply_text:
                 for bad_phrase in ("hãy trả lời", "câu hỏi của bạn là", "yêu cầu người dùng"):
                     if bad_phrase in reply_text.lower():
