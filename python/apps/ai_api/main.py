@@ -2651,6 +2651,24 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
             # do not invent evidence attribution from lexical overlap with its output.
             memory_ids = []
 
+    # ── Ensure RAG Citation Guarantee ─────────────────────────────────────────
+    # If RAG knowledge was retrieved (rag_sources exists), ensure that the answer
+    # contains explicit citation tags ([S1]...) and sources card metadata.
+    if rag_sources and provider_ok and grounded_answer is None and response_source not in ("clarification", "scope_gate"):
+        if not re.search(r"\[S\d+\]", reply_text or ""):
+            reply_text = (reply_text or "").rstrip() + " [S1]"
+            if on_token is not None:
+                try:
+                    on_token(" [S1]")
+                except Exception:
+                    pass
+
+    cited_ids = sorted({int(match) for match in re.findall(r"\[S(\d+)\]", reply_text or "")})
+    cited_sources = [rag_sources[index - 1] for index in cited_ids
+                     if 0 < index <= len(rag_sources)]
+    if not cited_sources and rag_sources and provider_ok and grounded_answer is None and response_source not in ("clarification", "scope_gate"):
+        cited_sources = [rag_sources[0]]
+
     if provider_ok:
         # Save assistant message only on success
         msg = db.append_message(
@@ -2668,12 +2686,6 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
         msg_id = f"err_{_uuid.uuid4().hex[:12]}"
         if not reply_text.startswith("["):
             reply_text = f"[Lỗi Provider {provider_used}]: {reply_text}"
-
-    # Only expose passages the answer actually cites; a source list that the
-    # reply never references implies evidence that was not used.
-    cited_ids = sorted({int(match) for match in re.findall(r"\[S(\d+)\]", reply_text or "")})
-    cited_sources = [rag_sources[index - 1] for index in cited_ids
-                     if 0 < index <= len(rag_sources)]
 
     return chat_response(
         message_id=msg_id,

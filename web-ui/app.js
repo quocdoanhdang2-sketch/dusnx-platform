@@ -2131,7 +2131,7 @@ function runDemoQuestion() {
     "Cuộc thi Hackathon IT CodeFest 2026 diễn ra vào thời gian nào và cơ cấu giải thưởng ra sao?",
     "Quy chuẩn Git Flow và quy tắc đặt tên nhánh Pull Request của Ban Kỹ thuật quy định thế nào?",
     "Tiêu chí chấm điểm và barem đánh giá cuộc thi Hackathon IT CodeFest 2026 gồm những gì?",
-    "Quy định khai thác máy chủ Server AI và card GPU Lab A2-305 như thế nào?",
+    "Quy định khai thác máy chủ Server AI và card GPU Lab C1-C5 như thế nào?",
     "Lộ trình đào tạo chuyên sâu AI & Data Science 2026 của CLB IT gồm những nội dung gì?",
     "Tiêu chuẩn đánh giá và quyền lợi của thành viên xuất sắc CLB IT là gì?",
   ];
