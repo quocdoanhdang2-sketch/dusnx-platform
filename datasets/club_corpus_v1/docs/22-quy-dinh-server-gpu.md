@@ -1,7 +1,7 @@
-# Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab A2-305
+# Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab C1-C5
 
 ## 1. Cơ sở vật chất và cấu hình phần cứng
-Hệ thống máy chủ tính toán hiệu năng cao đặt tại phòng Lab A2-305 do Ban Kỹ thuật CLB IT chịu trách nhiệm vận hành gồm:
+Hệ thống máy chủ tính toán hiệu năng cao đặt tại phòng Lab C1-C5 do Ban Kỹ thuật CLB IT chịu trách nhiệm vận hành gồm:
 - 01 Server Deep Learning: CPU AMD EPYC 32 cores, 128GB RAM, 02 Card đồ họa NVIDIA RTX 4090 24GB VRAM.
 - 02 Trạm làm việc Data Science: CPU Intel Core i9, 64GB RAM, 01 Card NVIDIA RTX 3090 24GB VRAM.
 - Hệ thống lưu trữ mạng NAS nội bộ 16TB tốc độ cao dành cho tập dữ liệu (datasets).

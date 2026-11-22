@@ -1,7 +1,7 @@
-# Quy định sử dụng phòng lab A2-305
+# Quy định sử dụng phòng lab C1-C5
 
 ## 1. Giờ mở phòng
-- Phòng lab A2-305 mở từ thứ 2 đến thứ 7 (T2-T7), khung giờ 08:00-21:00.
+- Phòng lab C1-C5 mở từ thứ 2 đến thứ 7 (T2-T7), khung giờ 08:00-21:00.
 - Ngoài khung giờ trên, phòng đóng cửa và không có ngườii trực; ngoại lệ cho sự kiện CLB phải được Chủ nhiệm Nguyễn Minh Anh phê duyệt trước 3 ngày.
 
 ## 2. Đăng ký sử dụng
@@ -10,7 +10,7 @@
 - Mỗi lượt sử dụng tối đa 3 tiếng; muốn dùng tiếp phải đăng ký lại nếu không có ngườii chờ.
 
 ## 3. Quy tắc sử dụng
-- Tuyệt đối cấm ăn uống trong phòng lab A2-305; chai nước đậy nắp chỉ để dưới kệ cửa.
+- Tuyệt đối cấm ăn uống trong phòng lab C1-C5; chai nước đậy nắp chỉ để dưới kệ cửa.
 - Giữ trật tự, không gây ồn ảnh hưởng phòng học lân cận; điện thoại để chế độ im lặng.
 - Không tự ý di chuyển thiết bị giữa các bàn; không cắm thiết bị cá nhân quá công suất (bàn là, nồi điện...).
 - Ra về phải tắt hết thiết bị: máy tính, màn hình, điều hoà, đèn; kéo ghế ngay ngắn và kiểm tra rác cá nhân.
@@ -41,5 +41,5 @@
 - Không chỉnh sửa cài đặt hệ thống, mạng, hoặc thờii gian hệ thống của máy lab.
 
 ## 9. Chế độ bảo trì
-- Ban kỹ thuật bảo trì máy vào tối thứ 7 hằng tuần; thờii điểm này phòng A2-305 không nhận đăng ký.
+- Ban kỹ thuật bảo trì máy vào tối thứ 7 hằng tuần; thờii điểm này phòng C1-C5 không nhận đăng ký.
 - Các công cụ mới được duyệt sẽ được cài đợt bảo trì tuần đầu của tháng tiếp theo; danh sách niêm yết tại phòng 203 tòa C2.

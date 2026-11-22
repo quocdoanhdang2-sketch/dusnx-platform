@@ -23,7 +23,7 @@ CLB gồm Ban chủ nhiệm và 3 ban chuyên môn:
 ## 5. Điều kiện thành lập nhóm project
 - Nhóm project cần tối thiểu 3 thành viên, trong đó ít nhất 1 thành viên có mã IT từ IT-001 trở lên (đã hoàn thành onboarding).
 - Nhóm phải nộp đề cương gồm: tên project, mục tiêu, phạm vi, tiến độ 4 tuần, danh sách thành viên kèm mã TV cho Trưởng ban kỹ thuật Đỗ Nam Khánh trước khi triển khai.
-- Project được duyệt sẽ được cấp phòng lab A2-305 theo quy định đăng ký; project xuất sắc được ưu tiên trình bày tại Demo Day.
+- Project được duyệt sẽ được cấp phòng lab C1-C5 theo quy định đăng ký; project xuất sắc được ưu tiên trình bày tại Demo Day.
 
 ## 6. Thành viên và quyền hạn
 - Thành viên có quyền tham gia đầy đủ buổi sinh hoạt, workshop, hackathon và được bầu cử BCN khi đủ điều kiện.
@@ -38,7 +38,7 @@ CLB gồm Ban chủ nhiệm và 3 ban chuyên môn:
 ## 8. Văn bản liên quan
 Quy chế này có hiệu lực cùng các văn bản sau và được đọc kèm khi cần tra cứu:
 - Nội quy sinh hoạt (điểm danh, chuyên cần 70%, kỷ luật 3-5 lần vi phạm).
-- Quy định phòng lab A2-305 và quy định bảo mật thiết bị.
+- Quy định phòng lab C1-C5 và quy định bảo mật thiết bị.
 - Kế hoạch tài chính học kỳ và quy định đóng quỹ.
 - Thể lệ IT CodeFest 2026, kế hoạch Demo Day 15/01/2027 và kế hoạch tuyển thành viên đợt 2.
 - Văn bản giải thích thuộc quyền của Ban chủ nhiệm; trường hợp mâu thuẫn giữa các văn bản, quy chế hoạt động được ưu tiên áp dụng.

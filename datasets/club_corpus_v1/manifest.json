@@ -7,15 +7,15 @@
     {
       "id": "doc-01",
       "path": "datasets/club_corpus_v1/docs/01-quy-che-hoat-dong.md",
-      "sha256": "05f42ec73daf1da7f981afa9bb6c903851951ca4277507102e6dd20fbc70c14f",
-      "bytes": 4546,
+      "sha256": "fd6c6048c7c761bf1430f5582b8cb2a7d5b5f7c3d57a2511ada4bafeeb07c3a5",
+      "bytes": 4544,
       "title": "Quy chế hoạt động CLB IT"
     },
     {
       "id": "doc-02",
       "path": "datasets/club_corpus_v1/docs/02-ban-chu-nhiem.md",
-      "sha256": "d0ca2d481b55c69762012406cd99123c5d88d4cdc6ad2310fdc6eb81161e7e00",
-      "bytes": 4683,
+      "sha256": "4f2d9dbf154add1546a76fd77995ca319a91b2f81e3c0897c0f858b62f4a739d",
+      "bytes": 4682,
       "title": "Ban chủ nhiệm CLB IT nhiệm kỳ 2026-2027"
     },
     {
@@ -28,23 +28,23 @@
     {
       "id": "doc-04",
       "path": "datasets/club_corpus_v1/docs/04-it-codefest-2026.md",
-      "sha256": "041f33d9cdcaf776e684720f91bb0b800363234d649d732327b13a3e06e8ad30",
-      "bytes": 4714,
+      "sha256": "3b6de8aa2f90e01d3ff1932467d1aa286cdd012d2602400bab1516315e7d76fb",
+      "bytes": 4713,
       "title": "Thể lệ Hackathon \"IT CodeFest 2026\""
     },
     {
       "id": "doc-05",
       "path": "datasets/club_corpus_v1/docs/05-don-dang-ky-thanh-vien.md",
-      "sha256": "4d4abb2284d7b47bee24ab0fea8241f9981242fd91b69924cbb963390be0b9d4",
-      "bytes": 3859,
+      "sha256": "e5326950aee2fd7dc525ac96618947509a9aa45155b7fe7ea968c5854817b7e6",
+      "bytes": 3858,
       "title": "Đơn đăng ký tham gia CLB IT"
     },
     {
       "id": "doc-06",
       "path": "datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md",
-      "sha256": "ef539b2b5b27ad1d4fa7abd8d6e1cb28c11e5730c4cd56887d367b1f4a5c642a",
-      "bytes": 3884,
-      "title": "Quy định sử dụng phòng lab A2-305"
+      "sha256": "8789f8d38febb09c79935e5c4ef06baf0528b8f0f89ee0e04df73e1b5ebb3277",
+      "bytes": 3880,
+      "title": "Quy định sử dụng phòng lab C1-C5"
     },
     {
       "id": "doc-07",
@@ -56,8 +56,8 @@
     {
       "id": "doc-08",
       "path": "datasets/club_corpus_v1/docs/08-onboarding-tan-thanh-vien.md",
-      "sha256": "f922e91e4d1c0c665dd4e99c141ae108938ed2c94a64b00fa41baa982597f414",
-      "bytes": 4506,
+      "sha256": "90dfc4f776b646515b4b90e3ae5d8732dec692f40de7d8687a6bd16be5193515",
+      "bytes": 4503,
       "title": "Chương trình onboarding tân thành viên CLB IT"
     },
     {
@@ -70,22 +70,22 @@
     {
       "id": "doc-10",
       "path": "datasets/club_corpus_v1/docs/10-lich-workshop.md",
-      "sha256": "961119f6fab700b6301192fc8f34d174cbb6b1c173826b3234389f084a71982b",
-      "bytes": 4152,
+      "sha256": "e726026dc576e0cef679ff8b3204d08e8056ec774affa7293b21f285fd0fb157",
+      "bytes": 4151,
       "title": "Lịch workshop tháng 12/2026 của CLB IT"
     },
     {
       "id": "doc-11",
       "path": "datasets/club_corpus_v1/docs/11-danh-sach-thanh-vien.md",
-      "sha256": "de757e7809b2482ae19f0436cb423d40530a2d0e489f180197dbf4118f2f7af1",
-      "bytes": 3462,
+      "sha256": "a647c8fe24784883f4b0de141b68cfd2331078b441db05993e8a9c93b5a9f051",
+      "bytes": 3461,
       "title": "Danh sách thành viên CLB IT"
     },
     {
       "id": "doc-12",
       "path": "datasets/club_corpus_v1/docs/12-quy-dinh-bao-mat-thiet-bi.md",
-      "sha256": "683bcdc644fa4f8354d9473fc89bc2c9b110994181d37edb600ec3094ab3c1e5",
-      "bytes": 4237,
+      "sha256": "05e591ca7b4c893fa6269f1a335e4bc065e8685b6e9ea47a6b3e2a5eac01479b",
+      "bytes": 4235,
       "title": "Quy định bảo mật và sử dụng thiết bị CLB IT"
     },
     {
@@ -112,8 +112,8 @@
     {
       "id": "doc-16",
       "path": "datasets/club_corpus_v1/docs/16-dong-quy-clb.md",
-      "sha256": "cd20e4b6e35ba2c0966e7e241ad7c8cdeeb763f2a86045b55c96ef598e1e74c6",
-      "bytes": 4143,
+      "sha256": "4cd365b895844af8555f6fd866035bfe189e2e74c38b35be87768d192a959e74",
+      "bytes": 4142,
       "title": "Quy định đóng quỹ CLB IT"
     },
     {
@@ -147,16 +147,16 @@
     {
       "id": "doc-21",
       "path": "datasets/club_corpus_v1/docs/21-tai-lieu-onboarding-git-github.md",
-      "sha256": "e6957dba6125b33f341218a5794d0cad0b4fef885d5f0d1f0fb2839993011548",
-      "bytes": 2303,
+      "sha256": "32341de3299e592ba892c6045614872885928650c739668c8f77133e14f3e325",
+      "bytes": 2346,
       "title": "Cẩm nang Hướng dẫn Git và GitHub căn bản cho Tân thành viên"
     },
     {
       "id": "doc-22",
       "path": "datasets/club_corpus_v1/docs/22-quy-dinh-server-gpu.md",
-      "sha256": "f455bf314b6b6cf33719efdf0c2e23e03a204328c5f2493eebb5b1d9d19261a1",
-      "bytes": 2696,
-      "title": "Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab A2-305"
+      "sha256": "c63bfd21b63a153b9adc4325f840df71a18f5318c11c147178393a101844f4f7",
+      "bytes": 2720,
+      "title": "Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab C1-C5"
     },
     {
       "id": "doc-23",
@@ -182,14 +182,14 @@
     {
       "id": "doc-26",
       "path": "datasets/club_corpus_v1/docs/26-lo-trinh-dao-tao-ai-data-science.md",
-      "sha256": "604eb34756fc7ac7f0ab6ab764d956b1022ab5532cb36e281b21aa84d1759359",
-      "bytes": 3265,
+      "sha256": "8628e5ea612f57242a84432ea793056c5aa96a328f585953b036a14907f483e7",
+      "bytes": 3296,
       "title": "Lộ trình Đào tạo Chuyên sâu Trí tuệ Nhân tạo và Khoa học Dữ liệu 2026"
     }
   ],
   "totals": {
     "documents": 26,
-    "bytes": 96005
+    "bytes": 96086
   },
-  "manifest_sha256": "33d8cc5767ce3d877ccb6c55a7d20ae815cf080878fe7c91a3c0dad35a0ce120"
+  "manifest_sha256": "693c1efdd501aa699e9fefb1de1222aad64e3bb5f9385a38ab6de195623e59b2"
 }

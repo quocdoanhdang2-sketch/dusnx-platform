@@ -90,5 +90,5 @@ def test_overview_question_uses_charter_purpose_and_structure():
 
 def test_overview_route_does_not_hijack_document_questions():
     answer = _answer("Quy định sử dụng phòng lab của CLB là gì?")
-    assert "A2-305" in answer
+    assert "C1-C5" in answer
     assert "tổ chức sinh viên tình nguyện" not in answer

@@ -58,7 +58,7 @@ schedule:
 
 rooms:
   sinh_hoat: Phòng A2-304, tòa A
-  lab: Phòng A2-305, tòa A
+  lab: Phòng C1-C5, tòa A
   lab_hours: "Thứ 2-Thứ 7, 08:00-21:00"
   lab_rules:
     - Cấm ăn uống trong phòng lab
@@ -172,7 +172,7 @@ corpus:
       "path": "datasets/club_corpus_v1/docs/06-quy-dinh-phong-lab.md",
       "sha256": "ac5e0ab20b0b9fc2ca68706964abb8d1f4df3289eff6a5f82165075649309f09",
       "bytes": 3879,
-      "title": "Quy định sử dụng phòng lab A2-305"
+      "title": "Quy định sử dụng phòng lab C1-C5"
     },
     {
       "id": "doc-07",
@@ -284,7 +284,7 @@ corpus:
       "path": "datasets/club_corpus_v1/docs/22-quy-dinh-server-gpu.md",
       "sha256": "f455bf314b6b6cf33719efdf0c2e23e03a204328c5f2493eebb5b1d9d19261a1",
       "bytes": 2696,
-      "title": "Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab A2-305"
+      "title": "Quy định Quản lý và Khai thác Máy chủ AI & Server GPU Lab C1-C5"
     },
     {
       "id": "doc-23",

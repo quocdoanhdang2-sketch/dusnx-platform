@@ -27,6 +27,6 @@ Chương trình đào tạo chuyên sâu AI & Data Science do Ban Kỹ thuật C
 - **Đồ án tốt nghiệp (Capstone Project):** Xây dựng hệ thống Trợ lý ảo AI ứng dụng RAG + LoRA phục vụ một nghiệp vụ thực tiễn trong nhà trường hoặc doanh nghiệp.
 
 ## 3. Đánh giá và cấp chứng chỉ
-- Học viên phải tham gia tối thiểu 80% số buổi học lý thuyết và thực hành tại Lab A2-305.
+- Học viên phải tham gia tối thiểu 80% số buổi học lý thuyết và thực hành tại Lab C1-C5.
 - Điểm đánh giá gồm: Bài tập tuần (30%), Bài kiểm tra giữa kỳ (30%) và Đồ án Capstone (40%).
 - Đạt từ 7.0/10 điểm trở lên được cấp Chứng nhận Chuyên đề của CLB IT và được giới thiệu thực tập tại các đối tác công nghệ của CLB.

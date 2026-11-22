@@ -22,7 +22,7 @@
 ## 5. Xử lý chậm đóng
 - Chậm hạn ngày 10: Trưởng ban hậu cần nhắc 1 lần (trực tiếp hoặc qua danh sách niêm yết tại phòng 203 tòa C2).
 - Sau 7 ngày kể từ lần nhắc vẫn chưa đóng: báo Ban chủ nhiệm để làm việc với thành viên.
-- Kéo dài quá 1 tháng chưa hoàn thành: tạm dừng quyền đăng ký sự kiện và sử dụng phòng lab A2-305 cho đến khi đóng đủ; tiếp tục vi phạm xử lý theo nội quy kỷ luật của CLB.
+- Kéo dài quá 1 tháng chưa hoàn thành: tạm dừng quyền đăng ký sự kiện và sử dụng phòng lab C1-C5 cho đến khi đóng đủ; tiếp tục vi phạm xử lý theo nội quy kỷ luật của CLB.
 
 ## 6. Giám sát
 - Việc thu chi quỹ chịu sự giám sát của toàn thể thành viên tại buổi sinh hoạt thứ 5 hằng tuần; câu hỏi về sổ quỹ được trả lờii ngay hoặc trong 3 ngày làm việc.

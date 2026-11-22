@@ -27,7 +27,7 @@ Ngườii đăng ký điền đầy đủ các mục sau:
 ## 5. Quyền lợi thành viên
 - Được cấp mã thành viên (mã TV dạng IT-xxx) để điểm danh và đăng ký sự kiện.
 - Được tham gia đầy đủ buổi sinh hoạt thứ 5 hằng tuần (18:30-21:00, phòng 203 tòa C2), các workshop và hackathon IT CodeFest.
-- Được sử dụng phòng lab A2-305 theo quy định và được phân mentor trong 2 tuần đầu sau khi gia nhập.
+- Được sử dụng phòng lab C1-C5 theo quy định và được phân mentor trong 2 tuần đầu sau khi gia nhập.
 - Được đề cử danh hiệu "Thành viên xuất sắc" mỗi học kỳ và nhận giấy khen, hoàn lại 1 tháng quỹ nếu đạt.
 
 ## 6. Nghĩa vụ kèm theo

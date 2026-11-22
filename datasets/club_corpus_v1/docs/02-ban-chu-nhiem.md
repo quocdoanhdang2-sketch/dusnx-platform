@@ -18,7 +18,7 @@ Ban chủ nhiệm (BCN) nhiệm kỳ 2026-2027 gồm 5 thành viên:
 - Tổng hợp biên bản họp BCN, lưu trữ hồ sơ CLB.
 - Điều phối công tác giữa 3 ban khi có sự kiện lớn như IT CodeFest 2026.
 ### 2.3. Trưởng ban kỹ thuật - Đỗ Nam Khánh
-- Phụ trách lịch workshop, duyệt đề cương nhóm project và quản lý phòng lab A2-305.
+- Phụ trách lịch workshop, duyệt đề cương nhóm project và quản lý phòng lab C1-C5.
 - Tiếp nhận đăng ký workshop và đăng ký sử dụng lab của thành viên.
 - Tiếp nhận báo cáo hỏng hóc thiết bị lab.
 ### 2.4. Trưởng ban truyền thông - Trần Hà Vy

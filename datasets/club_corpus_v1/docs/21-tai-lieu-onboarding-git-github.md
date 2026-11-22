@@ -41,4 +41,4 @@ Khi gặp thông báo xung đột mã nguồn:
 5. Tạo commit hoàn tất xung đột và thông báo lên kênh trao đổi của nhóm.
 
 ## 4. Trợ giúp kỹ thuật
-Nếu gặp khó khăn trong quá trình làm việc với Git, thành viên có thể liên hệ trực tiếp Trưởng ban Kỹ thuật hoặc tham gia buổi Office Hours vào chiều Thứ Bảy hàng tuần tại phòng Lab A2-305.
+Nếu gặp khó khăn trong quá trình làm việc với Git, thành viên có thể liên hệ trực tiếp Trưởng ban Kỹ thuật hoặc tham gia buổi Office Hours vào chiều Thứ Bảy hàng tuần tại phòng Lab C1-C5.

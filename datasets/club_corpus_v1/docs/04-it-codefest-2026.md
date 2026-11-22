@@ -44,7 +44,7 @@
 - Ban tổ chức xác nhận bằng phiếu hồi đáp trước 15/12/2026; đội chưa nhận xác nhận coi như chưa hoàn tất đăng ký.
 
 ## 9. Hỗ trợ thí sinh và quy định tham quan
-- Trước ngày thi, đội được phép dùng phòng lab A2-305 để chuẩn bị theo quy định đăng ký (tối đa 3 tiếng/lượt).
+- Trước ngày thi, đội được phép dùng phòng lab C1-C5 để chuẩn bị theo quy định đăng ký (tối đa 3 tiếng/lượt).
 - Khán giả được vào sảnh tòa B xem phần chấm demo từ 15:00 ngày 21/12/2026; giữ trật tự, không gợi ý cho đội đang trình bày.
 - Thí sinh cần giấy tờ xác nhận tham gia (phục vụ xin xác nhận hoạt động) đăng ký với ban hậu cần trước 20/12/2026.
 

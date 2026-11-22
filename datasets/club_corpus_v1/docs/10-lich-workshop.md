@@ -4,7 +4,7 @@
 - Cả 3 workshop đều diễn ra lúc 18:30 tại phòng 203, tòa C2, kết thúc dự kiến 21:00.
 - Giảng viên: các thành viên ban kỹ thuật của CLB, dưới sự phụ trách của Trưởng ban kỹ thuật Đỗ Nam Khánh.
 - Đăng ký: thành viên đăng ký với Trưởng ban kỹ thuật Đỗ Nam Khánh (đăng ký trước tại phòng 203 tòa C2); nên đăng ký trước mỗi buổi ít nhất 2 ngày.
-- Yêu cầu chung: mang theo laptop cá nhân; thành viên mới chưa có laptop có thể đăng ký dùng máy phòng lab A2-305 theo quy định.
+- Yêu cầu chung: mang theo laptop cá nhân; thành viên mới chưa có laptop có thể đăng ký dùng máy phòng lab C1-C5 theo quy định.
 
 ## 2. Workshop 1: "Git & GitHub từ con số 0" - 27/11/2026
 - Đối tượng: thành viên mới và bất kỳ ai chưa dùng Git.

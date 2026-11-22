@@ -10,7 +10,7 @@ Tân thành viên sau khi trúng tuyển (công bố danh sách ngày 22/12/2026
 
 ## 3. Chế độ mentor
 - Trong 2 tuần đầu, mỗi tân thành viên được phân 1 mentor là thành viên lâu năm.
-- Mentor hỗ trợ trả lờii thắc mắc, hướng dẫn cài đặt công cụ cơ bản và dẫn tham quan phòng lab A2-305.
+- Mentor hỗ trợ trả lờii thắc mắc, hướng dẫn cài đặt công cụ cơ bản và dẫn tham quan phòng lab C1-C5.
 - Mentor báo cáo tiến độ của tân thành viên cho Trưởng ban kỹ thuật Đỗ Nam Khánh vào cuối tuần thứ 2.
 
 ## 4. Khoá học nội bộ
@@ -29,7 +29,7 @@ Tân thành viên sau khi trúng tuyển (công bố danh sách ngày 22/12/2026
 - [ ] Gặp mentor được phân và trao đổi lịch hỗ trợ.
 - [ ] Đóng quỹ tháng đầu 50.000đ cho Trưởng ban hậu cần Phạm Thuỳ Dương.
 - [ ] Đọc nội quy sinh hoạt, quy định phòng lab và quy định bảo mật thiết bị.
-- [ ] Đăng ký tham quan lab A2-305 với Trưởng ban kỹ thuật Đỗ Nam Khánh.
+- [ ] Đăng ký tham quan lab C1-C5 với Trưởng ban kỹ thuật Đỗ Nam Khánh.
 - [ ] Tham gia nhóm trao đổi nội bộ của CLB để nhận thông báo.
 
 ## 7. Đánh giá hoàn thành onboarding
@@ -37,7 +37,7 @@ Tân thành viên sau khi trúng tuyển (công bố danh sách ngày 22/12/2026
 - Trường hợp không hoàn thành, Ban chủ nhiệm sẽ trao đổi riêng; có thể kéo dài thêm 2 tuần hỗ trợ trước khi quyết định tiếp tục hay không.
 
 ## 8. Quyền lợi bổ sung trong tháng onboarding
-- Được sử dụng phòng lab A2-305 miễn phí theo quy định đăng ký với Trưởng ban kỹ thuật Đỗ Nam Khánh.
+- Được sử dụng phòng lab C1-C5 miễn phí theo quy định đăng ký với Trưởng ban kỹ thuật Đỗ Nam Khánh.
 - Được tham dự các workshop của CLB trong tháng onboarding mà không cần đóng phí riêng.
 - Được ưu tiên đăng ký tham quan và cổ vũ IT CodeFest 2026 (20-21/12/2026, sảnh tòa B) để làm quen không khí sự kiện.
 

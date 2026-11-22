@@ -23,7 +23,7 @@ Danh sách này liệt kê 8 thành viên chính thức hiện có của CLB IT 
 ## 4. Cách sử dụng mã TV
 - Điểm danh: thành viên đọc mã TV khi điểm danh tại buổi sinh hoạt thứ 5, 18:30-18:45, phòng 203 tòa C2.
 - Đăng ký sự kiện: ghi mã TV khi đăng ký workshop (với Trưởng ban kỹ thuật Đỗ Nam Khánh), team building (với Trưởng ban hậu cần Phạm Thuỳ Dương) hoặc đội thi IT CodeFest 2026.
-- Sử dụng lab: mã TV dùng để đăng ký phòng lab A2-305 và làm tài khoản đăng nhập máy theo quy định bảo mật thiết bị.
+- Sử dụng lab: mã TV dùng để đăng ký phòng lab C1-C5 và làm tài khoản đăng nhập máy theo quy định bảo mật thiết bị.
 
 ## 5. Ghi chú
 - Mã TV được cấp tăng dần theo thứ tự gia nhập; thành viên mới (đợt 2) sẽ nhận mã tiếp theo sau IT-008.

@@ -1,7 +1,7 @@
 # Quy định bảo mật và sử dụng thiết bị CLB IT
 
 ## 1. Tài khoản máy lab
-- Mỗi thành viên được cấp 1 tài khoản máy tính phòng lab A2-305 theo mã thành viên (ví dụ: tài khoản `it001` cho mã TV IT-001).
+- Mỗi thành viên được cấp 1 tài khoản máy tính phòng lab C1-C5 theo mã thành viên (ví dụ: tài khoản `it001` cho mã TV IT-001).
 - Tài khoản cấp khi thành viên hoàn thành onboarding; Trưởng ban kỹ thuật Đỗ Nam Khánh quản lý việc tạo, khoá và xoá tài khoản.
 - Mật khẩu do thành viên tự đặt ngay khi nhận tài khoản; không dùng mật khẩu quá đơn giản và không chia sẻ tài khoản cho ngườii khác.
 
@@ -42,4 +42,4 @@
 
 ## 9. Đăng ký và thu hồi quyền
 - Đề xuất cấp tài khoản mới gửi Trưởng ban kỹ thuật Đỗ Nam Khánh sau khi tân thành viên dự đủ 2 buổi sinh hoạt đầu.
-- Thành viên 3 tháng không đăng nhập tài khoản lab có thể bị tạm khoá; mở lại khi có nhu cầu đăng ký sử dụng phòng A2-305.
+- Thành viên 3 tháng không đăng nhập tài khoản lab có thể bị tạm khoá; mở lại khi có nhu cầu đăng ký sử dụng phòng C1-C5.
