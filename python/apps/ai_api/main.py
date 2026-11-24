@@ -1274,13 +1274,16 @@ def _detect_unverified_club_question(text: str) -> bool:
 
 _OUT_OF_SCOPE_QUERY = re.compile(
     r"(?i)\b("
-    r"thời+i*\s*tiết|nhiệt\s*độ|dự\s*báo\s*thời\s*tiết|"
-    r"giá\s*vàng|vàng\s*miếng|chỉ\s*vàng|tỷ\s*giá|chứng\s*khoán|bitcoin|crypto|tiền\s*ảo|"
-    r"nấu\s*phở|cách\s*nấu|món\s*ăn|công\s*thức\s*nấu|nấu\s*ăn|"
-    r"world\s*cup|vô\s*địch\s*(?:thế\s*giới|world\s*cup)|bóng\s*đá|ngoại\s*hạng\s*anh|"
+    r"thời+i*\s*tiết|nhiệt\s*độ|dự\s*báo\s*thời\s*tiết|trời\s*(?:mưa|nắng)|"
+    r"giá\s*vàng|vàng\s*miếng|chỉ\s*vàng|tỷ\s*giá|chứng\s*khoán|cổ\s*phiếu|giá\s*xăng|giá\s*đô|bitcoin|crypto|tiền\s*ảo|"
+    r"nấu\s*phở|cách\s*nấu|món\s*ăn|công\s*thức\s*nấu|nấu\s*ăn|quán\s*ăn\s*ngon|du\s*lịch|"
+    r"world\s*cup|vô\s*địch\s*(?:thế\s*giới|world\s*cup)|bóng\s*đá|ngoại\s*hạng\s*anh|đội\s*tuyển|sea\s*games|olympic|"
     r"cheat\s*game|code\s*cheat|mod\s*game|hack\s*game|"
     r"hack\s*(?:tài\s*khoản|facebook|fb|mạng\s*xã\s*hội|zalo|pass|mật\s*khẩu)|"
-    r"xổ\s*số|kết\s*quả\s*xổ\s*số|lô\s*đề|vietlott|"
+    r"xổ\s*số|kết\s*quả\s*xổ\s*số|lô\s*đề|vietlott|tử\s*vi|bói\s*toán|cung\s*hoàng\s*đạo|"
+    r"tổng\s*thống|thủ\s*tướng|thủ\s*đô\s*(?:nước|của)|dân\s*số\s*(?:việt\s*nam|thế\s*giới)|"
+    r"tư\s*vấn\s*tình\s*cảm|tán\s*gái|người\s*yêu|chữa\s*bệnh|uống\s*thuốc|"
+    r"phim\s*(?:gì|nào)\s*hay|ca\s*sĩ|diễn\s*viên|kể\s*chuyện\s*cười|làm\s*thơ|"
     r"thầy\s*(?:giáo\s*)?dạy\s*(?:môn\s*)?toán|cô\s*(?:giáo\s*)?dạy|giáo\s*viên\s*dạy\s*môn"
     r")\b"
 )
@@ -2109,18 +2112,25 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     # retrieved passages would become the text being translated.
     transform_request = _is_transform_request(req.message) or office_request
     # When current_mode == "lora": App B skips RAG retrieval to showcase pure LoRA persona & behavior
+    is_explicit_out_of_scope = (
+        not office_request
+        and not transform_request
+        and _detect_out_of_scope_query(req.message)
+        and not _detect_unverified_club_question(req.message)
+    )
     retrieval_query = req.message
-    if history:
+    if history and not is_explicit_out_of_scope:
         has_followup_marker = bool(re.search(
-            r"\b(?:nó|đó|kia|này|khóa này|chương trình này|lộ trình này|sau đó|xong|tiếp theo|thế nào|ra sao|được không)\b",
+            r"\b(?:nó|đó|kia|này|khóa này|chương trình này|lộ trình này|sau đó|xong|tiếp theo|vậy thì|còn nữa)\b",
             req.message.lower()))
-        if len(req.message.split()) <= 15 or has_followup_marker:
+        if len(req.message.split()) <= 5 or has_followup_marker:
             prev_user_msgs = [h.get("content", "") for h in history if h.get("role") == "user"]
             if prev_user_msgs:
                 last_msg = prev_user_msgs[-1].strip()
                 retrieval_query = f"{last_msg} {req.message}"
 
     if (current_mode != "lora" and not office_request
+            and not is_explicit_out_of_scope
             and not _is_translation_request(req.message)
             and (rag.should_retrieve(retrieval_query) or rag.is_domain_question(retrieval_query))):
         candidate_hits = rag.retrieve(retrieval_query, top_k=5)
@@ -2206,11 +2216,20 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
                           or (_looks_like_question(req.message)
                               and rag.is_domain_question(req.message)))
     if scope_question and rag_extractive is None and not rag_hits:
-        reply_text = (
-            "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
-            if reply_language == "en" else
-            "Kho tài liệu và quy chế CLB IT chưa có thông tin về nội dung này. Bạn vui lòng liên hệ Ban chủ nhiệm CLB để được hướng dẫn trực tiếp."
-        )
+        if is_explicit_out_of_scope:
+            reply_text = (
+                "Sorry, I am the dedicated AI Assistant for the IT Club (ICTU), so I only support questions related to club regulations, schedules, labs, funds, events, and your personal club notes. Your question is outside the IT Club's scope — feel free to ask me anything about the club!"
+                if reply_language == "en" else
+                "Xin lỗi bạn nhé, mình là Trợ lý AI chuyên trách của CLB IT - ICTU nên chỉ hỗ trợ tra cứu thông tin, quy chế, lịch sinh hoạt, phòng Lab, sự kiện và các hoạt động xoay quanh CLB IT thôi ạ. Nội dung bạn vừa hỏi nằm ngoài phạm vi của CLB nên mình chưa thể hỗ trợ được. Bạn cần tìm hiểu thêm thông tin gì về CLB IT cứ hỏi mình nhé!"
+            )
+        else:
+            reply_text = (
+                "The IT Club documentation and regulations do not contain information on this topic. Please contact the Club Management Board for direct assistance."
+                if reply_language == "en" else
+                "Kho tài liệu và quy chế CLB IT hiện chưa có thông tin về nội dung này. Bạn vui lòng liên hệ Ban chủ nhiệm CLB IT để được hướng dẫn trực tiếp nhé!"
+            )
+        if on_token is not None:
+            on_token(reply_text)
         s_ver, _, _, _, _, _, _ = advance(
             db, user_id, req.message, req.feedback_value, platform="web",
             event_type="chat_message", project_id=req.project_id)
@@ -2218,7 +2237,8 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
                                 memory_ids_used=[], state_version=s_ver)
         return chat_response(
             message_id=msg["message_id"], reply=reply_text,
-            intent="clarify_unverified_club_information", selected_agent="conversation",
+            intent="out_of_scope_club" if is_explicit_out_of_scope else "clarify_unverified_club_information",
+            selected_agent="conversation",
             next_action="clarify", confidence=1.0, runtime_mode=RUNTIME_MODE,
             routing_source="scope_gate", provider_used=None,
             provider_ok=True, state_version=s_ver, memory_ids_used=[],

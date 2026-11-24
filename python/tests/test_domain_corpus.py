@@ -6,7 +6,7 @@ import pytest
 from dusnx_core import domain_corpus
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-LOCKED_MANIFEST = REPO_ROOT / "datasets" / "domain_corpus_v1" / "manifest.json"
+LOCKED_MANIFEST = REPO_ROOT / "datasets" / "club_corpus_v1" / "manifest.json"
 
 
 def write_corpus(root: Path) -> Path:
@@ -48,5 +48,5 @@ def test_manifest_rejects_duplicates_and_paths_outside_the_root(tmp_path):
 
 def test_locked_repository_corpus_matches_its_manifest():
     manifest = domain_corpus.load_manifest(LOCKED_MANIFEST)
-    assert 10 <= len(manifest["documents"]) <= 20
+    assert len(manifest["documents"]) == 26
     assert domain_corpus.verify(manifest) == []
