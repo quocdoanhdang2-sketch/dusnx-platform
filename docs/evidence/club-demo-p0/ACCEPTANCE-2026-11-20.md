@@ -81,7 +81,7 @@ DUSNX_RAG_DB=runtime/club-rag/rag.db python python/scripts/evaluate_domain_rag.p
 10. **Câu hỏi tổng quan CLB trả lời từ quy chế, không bám nhầm mẫu đơn:**
    - Trước đây "CLB IT là gì?" trích nhầm mẫu đơn đăng ký. Đã thêm route nhận diện câu hỏi tổng quan (`_CLUB_OVERVIEW_QUERY`) và hàm `_club_overview_answer` đọc trực tiếp các chunk của `01-quy-che-hoat-dong.md`, trả về mục đích, tôn chỉ và 3 ban chuyên môn kèm `[S1]`.
    - Route chỉ kích hoạt khi câu hỏi mở đầu bằng dạng "CLB IT là gì / giới thiệu về CLB / cho biết về CLB"; câu hỏi tài liệu cụ thể (ví dụ "Quy định sử dụng phòng lab…") vẫn đi luồng trích xuất thường. Regression test `test_overview_route_does_not_hijack_document_questions` PASS.
-   - Đã kiểm tra live: "CLB IT là gì?" và "Bạn biết gì về CLB IT?" trả cùng nội dung quy chế có trích dẫn; "Quy định sử dụng phòng lab của CLB là gì?" vẫn trả đúng A2-305.
+   - Đã kiểm tra live: "CLB IT là gì?" và "Bạn biết gì về CLB IT?" trả cùng nội dung quy chế có trích dẫn; "Quy định sử dụng phòng lab của CLB là gì?" vẫn trả đúng C1-C5.
 
 ## Giới hạn đã biết (ghi trung thực)
 

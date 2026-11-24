@@ -2654,7 +2654,8 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     # ── Ensure RAG Citation Guarantee ─────────────────────────────────────────
     # If RAG knowledge was retrieved (rag_sources exists), ensure that the answer
     # contains explicit citation tags ([S1]...) and sources card metadata.
-    if rag_sources and provider_ok and grounded_answer is None and response_source not in ("clarification", "scope_gate"):
+    # Exclude translation / text transformation requests of user-provided prose.
+    if rag_sources and not transform_request and provider_ok and grounded_answer is None and response_source not in ("clarification", "scope_gate"):
         if not re.search(r"\[S\d+\]", reply_text or ""):
             reply_text = (reply_text or "").rstrip() + " [S1]"
             if on_token is not None:
@@ -2666,7 +2667,7 @@ def _chat_impl(req: ChatRequest, user: dict, on_token=None):
     cited_ids = sorted({int(match) for match in re.findall(r"\[S(\d+)\]", reply_text or "")})
     cited_sources = [rag_sources[index - 1] for index in cited_ids
                      if 0 < index <= len(rag_sources)]
-    if not cited_sources and rag_sources and provider_ok and grounded_answer is None and response_source not in ("clarification", "scope_gate"):
+    if not cited_sources and rag_sources and not transform_request and provider_ok and grounded_answer is None and response_source not in ("clarification", "scope_gate"):
         cited_sources = [rag_sources[0]]
 
     if provider_ok:

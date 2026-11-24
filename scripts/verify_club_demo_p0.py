@@ -38,7 +38,7 @@ CASES = [
         "name": "Lab room rules (memory/RAG gate)",
         "query": "Quy định sử dụng phòng lab của CLB là gì?",
         "expected_top_doc": "06-quy-dinh-phong-lab.md",
-        "expected_terms": ["A2-305", "cấm ăn uống"],
+        "expected_terms": ["C1-C5", "cấm ăn uống"],
         "forbidden_terms": ["Tôi chưa đủ bối cảnh để chọn thông tin phù hợp", "Tôi chưa rõ"],
         "expect_provider_called": None,
         "expect_refusal": False,
