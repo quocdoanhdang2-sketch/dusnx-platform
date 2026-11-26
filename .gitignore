@@ -47,3 +47,8 @@ test-output-provider-diagnostics-*/
 **/.tmp-*/
 certs/
 *.pem
+
+# Temporary Office lock files and local demo training configs
+~$*
+**/~$*
+artifacts/demo_train.config.json
