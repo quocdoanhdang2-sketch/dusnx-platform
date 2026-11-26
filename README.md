@@ -24,7 +24,6 @@
 7. [Cấu trúc Thư mục Dự án](#7-cấu-trúc-thư-mục-dự-án)
 8. [Hướng dẫn Cài đặt, Khởi chạy & Kiểm thử](#8-hướng-dẫn-cài-đặt-khởi-chạy--kiểm-thử)
 9. [Kịch bản Demo Trực tiếp trước Hội đồng](#9-kịch-bản-demo-trực-tiếp-trước-hội-đồng)
-10. [Bộ 4 Tài liệu Bàn giao Chính thức chuẩn Samsung SIC](#10-bộ-4-tài-liệu-bàn-giao-chính-thức-chuẩn-samsung-sic)
 
 ---
 
@@ -127,11 +126,6 @@ Toàn bộ kho tài liệu được lưu tại `datasets/club_corpus_v1/docs/` d
 
 ```text
 dusnx-platform/
-├── Capstone_Deliverables/       # Trọn bộ 4 file bàn giao chính thức chuẩn Samsung SIC
-│   ├── SIC_AI_Capstone_Project_Action_Plan_Nhom2_DUSNX.docx
-│   ├── SIC_AI_Capstone_Project_Work_Breakdown_Structure_Nhom2_DUSNX.xlsx
-│   ├── SIC_AI_Capstone_Project_Final_Report_Nhom2_DUSNX.docx
-│   └── SIC_AI_Capstone_Project_Presentation_Nhom2_DUSNX.pptx
 ├── datasets/
 │   ├── club_corpus_v1/          # Kho 26 tài liệu chuẩn CLB IT (.md) + manifest.json (SHA-256)
 │   ├── club_sft_train_v1/       # Dữ liệu huấn luyện SFT/LoRA (train / validation / test JSONL)
@@ -190,15 +184,3 @@ Mở trình duyệt tại **`http://127.0.0.1:8090`** và lần lượt thử 4 
 2. **Xác thực dữ liệu cập nhật mới nhất:** Hỏi *"Quy định sử dụng phòng lab CLB IT thế nào?"* $\rightarrow$ Trả về chính xác quy định **Lab C1-C5** kèm nguồn `DOC-06`.
 3. **Thử thách chống ảo giác (Scope Gate):** Hỏi *"Thời tiết hôm nay ở Sa Pa thế nào?"* hoặc *"Giá vàng hôm nay bao nhiêu?"* $\rightarrow$ Hệ thống từ chối khéo lịch sự rằng nằm ngoài phạm vi CLB IT, không bịa đặt và không gắn nguồn giả.
 4. **Sổ tay cá nhân & Kho 26 tài liệu:** Nhắn *"Nhớ rằng tôi phụ trách mảng AI của CLB"* rồi hỏi lại *"Tôi phụ trách mảng nào?"*; sau đó mở tab **Kho tài liệu CLB** để xem đủ 26 văn bản và bấm **Kiểm tra toàn vẹn (`SHA-256 OK`)**.
-
----
-
-## 10. Bộ 4 Tài liệu Bàn giao Chính thức chuẩn Samsung SIC
-
-| STT | Tài liệu chính thức | Đường dẫn | Nội dung nổi bật |
-| :-: | :--- | :--- | :--- |
-| 1 | **Action Plan** | `Capstone_Deliverables/SIC_AI_Capstone_Project_Action_Plan_Nhom2_DUSNX.docx` | Mục tiêu, tóm tắt, phương pháp Hybrid AI, dữ liệu, phân công Nhóm 2 |
-| 2 | **Work Breakdown Structure** | `Capstone_Deliverables/SIC_AI_Capstone_Project_Work_Breakdown_Structure_Nhom2_DUSNX.xlsx` | 4 giai đoạn, 20 đầu việc, biểu đồ Gantt 4 tuần & công thức tiến độ 100% |
-| 3 | **Final Report** | `Capstone_Deliverables/SIC_AI_Capstone_Project_Final_Report_Nhom2_DUSNX.docx` | Báo cáo 6 chương đầy đủ kèm 7 sơ đồ, biểu đồ Benchmark & ảnh chụp Web UI thật |
-| 4 | **Presentation Slides** | `Capstone_Deliverables/SIC_AI_Capstone_Project_Presentation_Nhom2_DUSNX.pptx` | 12 slide chuẩn Master Samsung (UNIT 01–04) tích hợp ảnh demo thực tế |
-| + | **Speaker Notes & Metrics** | `SIC_AI_Capstone_Project_DUSNX_Speaker_Notes.docx`, `DUSN-X_So_Lieu_Huan_Luyen_Va_Benchmark.xlsx` | Kịch bản thuyết trình chi tiết & bảng số liệu huấn luyện mở rộng |
