@@ -55,6 +55,7 @@ artifacts/demo_train.config.json
 
 # Local Capstone submission deliverables (kept on local disk only, not on GitHub)
 Capstone_Deliverables/
+Capstone_Nop_Bai_Chinh_Thuc/
 SIC_AI_Capstone_Project_*.pptx
 SIC_AI_Capstone_Project_*.docx
 DUSN-X_Bao_Cao_*.docx
